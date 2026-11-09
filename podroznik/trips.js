@@ -115,6 +115,7 @@
         <summary><h3 class="section">Archiwum <span class="muted">(${past.length})</span></h3></summary>
         ${past.map(card).join("")}
       </details>`;
+    html += `<a class="plan-link st-link" href="#/statystyki"><span aria-hidden="true">📊</span> Statystyki <span class="muted">– kilometry, kraje, mapa</span><b aria-hidden="true">›</b></a>`;
     return { title: "Podróżnik", html: html + fab, after: home.after, cleanup: home.cleanup };
   });
 

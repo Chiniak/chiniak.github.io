@@ -69,7 +69,7 @@ Rzeczy do przetestowania na prawdziwym telefonie: **[DO-SPRAWDZENIA.md](DO-SPRAW
 35. ⬜ Spakowanie do **APK** (TWA, jak KWS) i instalacja na telefonie.
 
 ## Etap 8 – Bonusy na później ⬜
-36. ⬜ Statystyki: km, liczba lotów, kraje, mapa odwiedzonych miejsc.
+36. ✅ Statystyki: km, loty, dni, noce, kraje z flagami, rekordy, mapa tras; filtr po latach.
 37. ✅ Budżet podróży i wydatki – kategorie, waluty z kursami (ręcznie lub z NBP), ceny biletów wliczane same, „zostało na dzień”.
 38. ✅ Dokumenty: paszport, dowód, ubezpieczenie, wiza… – ważność, przypomnienia, ostrzeżenie „paszport ważny < 6 mies. po powrocie”, skan.
 39. ⬜ Wklejenie maila z potwierdzeniem → automatyczne odczytanie danych biletu.
@@ -94,6 +94,7 @@ Rzeczy do przetestowania na prawdziwym telefonie: **[DO-SPRAWDZENIA.md](DO-SPRAW
 | `lock.js` | Etap 6: blokada PIN-em / odciskiem palca |
 | `docs.js` | Etap 8: dokumenty z datą ważności |
 | `budget.js` | Etap 8: budżet i wydatki |
+| `stats.js` | Etap 8: statystyki i mapa (lotniska offline z `lib/airports.js`, reszta przez Open-Meteo) |
 | `tickets.js` | Etap 2: szczegóły odcinka, bilety, pełny ekran, skaner kodów |
 | `lib/` | pdf.js, bwip-js (rysowanie kodów), ZXing (odczyt kodów) – dołączone, działają offline |
 | `sw.js` | Offline – przy każdej zmianie plików aplikacji podbić `CACHE` (`podroznik-vN`) |

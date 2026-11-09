@@ -83,6 +83,8 @@ Adres (po scaleniu pull requesta): https://chiniak.github.io/podroznik/
 - ⬜ Przypomnienie o wygasającym dokumencie przychodzi (np. ustaw dokument wygasający za 20 dni z przypomnieniem 30 dni)
 - ⬜ Budżet: szybkie dodawanie wydatku w podróży (kwota z przecinkiem, waluta zapamiętana), pole waluty i kategorii mieszczą się na ekranie
 - ⬜ „🏦 Pobierz kursy z NBP” działa na telefonie z internetem (w testach nie było dostępu do sieci)
+- ⬜ Statystyki: „🔎 Uzupełnij położenie” na telefonie z internetem znajduje dworce i miasta (w testach wyszukiwarka była symulowana)
+- ⬜ Mapa w statystykach czytelna na telefonie, kraje po polsku z flagami
 
 ## Znane ograniczenia (nie błędy, ale do oceny)
 - Godziny są „na zegarku” (czas lokalny z biletu) – czas lotu między strefami czasowymi może wyjść o godzinę za dużo / za mało
