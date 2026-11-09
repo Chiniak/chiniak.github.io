@@ -532,3 +532,26 @@ html.lock-pending body > *:not(#lock) { visibility: hidden; }
 .lk-pad button:active { background: var(--accent-soft); }
 .lk-pad button[data-k="del"], .lk-pad button[data-k="bio"] { background: transparent; font-size: 24px; }
 .lk-forgot { margin-top: 22px; border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 14px; text-decoration: underline; cursor: pointer; }
+
+/* ---------- etap 8: dokumenty ---------- */
+.doc-card { position: relative; display: flex; gap: 12px; align-items: flex-start; margin-bottom: 10px; padding: 12px 14px;
+  background: var(--surface); border: 1px solid var(--line); border-left: 6px solid var(--line); border-radius: var(--radius); color: inherit; text-decoration: none; }
+.doc-card.st-ok { border-left-color: #2e8b57; }
+.doc-card.st-soon { border-left-color: #d08a17; }
+.doc-card.st-expired { border-left-color: #d14a3d; }
+.doc-ico { flex: none; width: 44px; height: 44px; border-radius: 12px; background: var(--surface-2); display: grid; place-items: center; font-size: 22px; }
+.doc-main { flex: 1; min-width: 0; }
+.doc-title { font-weight: 700; overflow-wrap: anywhere; }
+.doc-num { font-family: ui-monospace, Menlo, monospace; font-size: 15px; letter-spacing: .04em; }
+.doc-valid { font-size: 14px; color: var(--muted); }
+.st-soon .doc-valid { color: var(--warn); font-weight: 600; }
+.st-expired .doc-valid { color: #d14a3d; font-weight: 600; }
+.doc-warn { font-size: 13px; margin-top: 4px; color: var(--warn); }
+.doc-clip { position: absolute; top: 10px; right: 12px; }
+.doc-head { text-align: center; padding: 18px 16px; margin-bottom: 12px; background: var(--surface); border: 1px solid var(--line); border-top: 6px solid var(--line); border-radius: var(--radius); }
+.doc-head.st-ok { border-top-color: #2e8b57; } .doc-head.st-soon { border-top-color: #d08a17; } .doc-head.st-expired { border-top-color: #d14a3d; }
+.doc-big-ico { font-size: 40px; }
+.doc-big-num { font-family: ui-monospace, Menlo, monospace; font-size: 26px; font-weight: 700; letter-spacing: .06em; margin: 6px 0; overflow-wrap: anywhere; user-select: all; }
+.doc-img { width: 100%; border-radius: 12px; border: 1px solid var(--line); }
+.doc-file { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.doc-file span { flex: 1; min-width: 120px; }

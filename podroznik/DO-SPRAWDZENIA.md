@@ -77,6 +77,11 @@ Adres (po scaleniu pull requesta): https://chiniak.github.io/podroznik/
 - ⬜ **Odcisk palca** (jeśli telefon pozwala) – włączenie w ustawieniach blokady i odblokowanie palcem
 - ⬜ Blokada a powiadomienie: dotknięcie przypomnienia przy zablokowanej aplikacji pokazuje PIN, potem właściwy ekran
 
+## Etap 8 – Bonusy
+- ⬜ **Aktualizacja bazy**: po wgraniu nowej wersji na telefon z danymi z etapów 0–6 nic nie znika (baza przechodzi z wersji 1 na 2)
+- ⬜ Dokumenty: dodanie paszportu ze zdjęciem z aparatu, kopiowanie numeru, ostrzeżenie o ważności przy podróży
+- ⬜ Przypomnienie o wygasającym dokumencie przychodzi (np. ustaw dokument wygasający za 20 dni z przypomnieniem 30 dni)
+
 ## Znane ograniczenia (nie błędy, ale do oceny)
 - Godziny są „na zegarku” (czas lokalny z biletu) – czas lotu między strefami czasowymi może wyjść o godzinę za dużo / za mało
 - Zdjęcie podróży (pkt 6 planu) – na razie tylko kolor

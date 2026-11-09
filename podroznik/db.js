@@ -1,11 +1,11 @@
 /* Podróżnik – baza danych w telefonie (IndexedDB).
-   Wszystkie magazyny tworzone od razu w wersji 1, żeby kolejne etapy nie potrzebowały migracji.
+   Wersja 1: magazyny etapów 0–6. Wersja 2 (etap 8): dokumenty i wydatki – brakujące magazyny są dokładane, dane zostają.
    Użycie: await DB.put("trips", {...}); await DB.get("trips", id); await DB.all("trips");
            await DB.byIndex("segments", "tripId", id); await DB.del("trips", id);
            await DB.getSetting("theme", "auto"); await DB.setSetting("theme", "dark"); */
 (function () {
   const NAME = "podroznik";
-  const VERSION = 1;
+  const VERSION = 2;
 
   // magazyn -> indeksy (pole, po którym można szybko wyszukiwać)
   const STORES = {
@@ -16,6 +16,8 @@
     packItems: ["tripId"],                     // rzeczy do spakowania / zadania przed wyjazdem
     templates: [],                             // szablony list pakowania
     reminders: ["tripId", "at"],               // przypomnienia
+    docs:      ["type"],                       // dokumenty: paszport, dowód, ubezpieczenie… (etap 8)
+    expenses:  ["tripId", "date"],             // wydatki w podróży (etap 8)
   };
 
   let opening = null;

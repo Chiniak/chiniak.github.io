@@ -256,10 +256,20 @@
   App.Tickets = { nearestCard };
 
   /* ================= ZAKŁADKA BILETY ================= */
+  // link do dokumentów (etap 8) – z ostrzeżeniem, gdy coś wygasło albo zaraz wygaśnie
+  async function docsLink() {
+    if (!App.Docs) return "";
+    const s = await App.Docs.summary();
+    const txt = !s.total ? "paszport, dowód, ubezpieczenie – z datą ważności"
+      : s.expired ? `❗ wygasłe: ${s.expired}` : s.soon ? `⚠️ wygasa wkrótce: ${s.soon}` : `${s.total} · wszystkie ważne`;
+    return `<a class="plan-link${s.expired || s.soon ? " warn" : ""}" href="#/dokumenty" style="margin-bottom:10px"><span aria-hidden="true">🛂</span> Dokumenty <span class="muted">– ${txt}</span><b aria-hidden="true">›</b></a>`;
+  }
+
   App.route(/^\/bilety$/, async () => {
     const { upcoming, past, bySeg } = await upcomingWithTickets();
+    const docs = await docsLink();
     if (!upcoming.length && !past.length) {
-      return App.empty("🎫", "Nie masz jeszcze biletów",
+      return docs + App.empty("🎫", "Nie masz jeszcze biletów",
         "Otwórz podróż, kliknij lot, pociąg albo nocleg i dodaj zdjęcie, PDF lub zeskanuj kod biletu.",
         `<a class="btn primary" href="#/podroze">Przejdź do podróży</a>`);
     }
@@ -280,7 +290,7 @@
           <a class="tk-row-more" href="#/odcinek/${s.id}" aria-label="Szczegóły odcinka">›</a>
         </div>`;
     };
-    let html = await nearestCard();
+    let html = docs + await nearestCard();
     if (upcoming.length > 1) html += `<h3 class="section">Nadchodzące</h3>${upcoming.slice(1).map(row).join("")}`;
     if (past.length) html += `
       <details class="archive">

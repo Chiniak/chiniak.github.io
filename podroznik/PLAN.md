@@ -71,7 +71,7 @@ Rzeczy do przetestowania na prawdziwym telefonie: **[DO-SPRAWDZENIA.md](DO-SPRAW
 ## Etap 8 – Bonusy na później ⬜
 36. ⬜ Statystyki: km, liczba lotów, kraje, mapa odwiedzonych miejsc.
 37. ⬜ Budżet podróży i wydatki.
-38. ⬜ Dokumenty: paszport (ważność + przypomnienie), ubezpieczenie, wiza.
+38. ✅ Dokumenty: paszport, dowód, ubezpieczenie, wiza… – ważność, przypomnienia, ostrzeżenie „paszport ważny < 6 mies. po powrocie”, skan.
 39. ⬜ Wklejenie maila z potwierdzeniem → automatyczne odczytanie danych biletu.
 40. ⬜ Pogoda w miejscu docelowym w dniach podróży.
 
@@ -92,6 +92,7 @@ Rzeczy do przetestowania na prawdziwym telefonie: **[DO-SPRAWDZENIA.md](DO-SPRAW
 | `reminders.js` | Etap 5: licznik, baner przypomnień, powiadomienia, ustawienia, eksport .ics |
 | `backup.js` | Etap 6: kopia zapasowa (eksport/import, opcjonalnie zaszyfrowana hasłem) |
 | `lock.js` | Etap 6: blokada PIN-em / odciskiem palca |
+| `docs.js` | Etap 8: dokumenty z datą ważności |
 | `tickets.js` | Etap 2: szczegóły odcinka, bilety, pełny ekran, skaner kodów |
 | `lib/` | pdf.js, bwip-js (rysowanie kodów), ZXing (odczyt kodów) – dołączone, działają offline |
 | `sw.js` | Offline – przy każdej zmianie plików aplikacji podbić `CACHE` (`podroznik-vN`) |
@@ -99,4 +100,4 @@ Rzeczy do przetestowania na prawdziwym telefonie: **[DO-SPRAWDZENIA.md](DO-SPRAW
 
 Magazyny w bazie (przygotowane od razu, by kolejne etapy nie wymagały migracji):
 `trips`, `segments` (transport + noclegi), `files` (bilety: zdjęcia/PDF/kody), `planItems`,
-`packItems`, `templates`, `reminders`, `settings`.
+`packItems`, `templates`, `reminders`, `settings`; od wersji 2 bazy (etap 8): `docs`, `expenses`.

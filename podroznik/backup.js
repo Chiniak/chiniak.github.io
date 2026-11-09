@@ -8,7 +8,8 @@
   const { esc, plural } = App;
   const LOCAL_SETTINGS = new Set(["lock", "remShown", "remDismissed", "planTrip", "packTrip", "lastBackup"]);
   const COUNT_LABELS = [["trips", "podróże", "podróż", "podróży"], ["segments", "odcinki", "odcinek", "odcinków"], ["files", "bilety", "bilet", "biletów"],
-    ["planItems", "punkty planu", "punkt planu", "punktów planu"], ["packItems", "rzeczy i zadania", "rzecz/zadanie", "rzeczy i zadań"]];
+    ["planItems", "punkty planu", "punkt planu", "punktów planu"], ["packItems", "rzeczy i zadania", "rzecz/zadanie", "rzeczy i zadań"],
+    ["docs", "dokumenty", "dokument", "dokumentów"], ["expenses", "wydatki", "wydatek", "wydatków"]];
 
   /* ---------- base64 i szyfrowanie ---------- */
   function bytesToB64(bytes) {
@@ -46,7 +47,7 @@
     for (const st of DB.stores) {
       let rows = await DB.all(st);
       if (st === "settings") rows = rows.filter(r => !LOCAL_SETTINGS.has(r.key));
-      if (st === "files") rows = await Promise.all(rows.map(async f => {
+      rows = await Promise.all(rows.map(async f => {
         if (!(f.blob instanceof Blob)) return f;
         const { blob, ...rest } = f;
         return { ...rest, blobData: await blobToDataUrl(blob), blobName: blob.name || f.name || "", blobType: blob.type || f.mime || "" };
@@ -108,7 +109,7 @@
       for (const r of rows) {
         if (st === "settings" ? (!r.key || LOCAL_SETTINGS.has(r.key)) : !r.id) continue;
         let rec = r;
-        if (st === "files" && r.blobData) {
+        if (r.blobData) {
           const { blobData, blobName, blobType, ...rest } = r;
           const blob = dataUrlToBlob(blobData);
           rec = { ...rest, blob: new File([blob], blobName || rest.name || "bilet", { type: blobType || blob.type }) };

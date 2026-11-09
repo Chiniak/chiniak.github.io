@@ -115,6 +115,21 @@
       out.push({ id: `plan:${i.id}`, tripId: i.tripId, href: `/plan/${i.tripId}`, at: addMin(ev, -cfg.plan), eventAt: ev,
         title: `Za ${dur(cfg.plan)}: ${i.title}`, body: i.place && !/^https?:/i.test(i.place) ? i.place : trips[i.tripId].name });
     }
+    // dokumenty (etap 8): N dni przed wygaśnięciem i jeszcze raz 14 dni przed
+    const DOCS = { paszport: "Paszport", dowod: "Dowód osobisty", prawo_jazdy: "Prawo jazdy", ubezpieczenie: "Ubezpieczenie",
+      wiza: "Wiza", karta: "Karta płatnicza", szczepienie: "Szczepienie", inne: "Dokument" };
+    for (const d of data.docs || []) {
+      if (!d.expires || !(+d.remind > 0)) continue;
+      const name = `${DOCS[d.type] || "Dokument"}${d.person ? ` (${d.person})` : ""}`;
+      // ile dni naprawdę zostało (przypomnienie pokazane później nie może kłamać)
+      const left = Math.max(0, Math.round((parse(d.expires) - parse(now.slice(0, 10))) / 86400000));
+      const leftTxt = left === 0 ? "dziś" : left === 1 ? "jutro" : `za ${left} dni`;
+      for (const days of [...new Set([+d.remind, 14])].filter(x => x <= +d.remind)) {
+        const day = parse(d.expires); day.setDate(day.getDate() - days);
+        out.push({ id: `doc:${d.id}:${days}`, href: `/dokument/${d.id}`, at: `${fmtLocal(day).slice(0, 10)}T10:00`, eventAt: `${d.expires}T23:59`,
+          title: `${name} traci ważność ${leftTxt}`, body: `Ważny do ${fmtDay(d.expires)}. Sprawdź, ile trwa wyrobienie nowego.` });
+      }
+    }
     return out.sort((a, b) => a.at.localeCompare(b.at));
   }
 
@@ -122,17 +137,18 @@
   function active(list, now = nowStr()) {
     const due = list.filter(r => r.at <= now && now < r.eventAt), best = {};
     for (const r of due) {
-      const key = r.id.startsWith("seg:") ? r.id.split(":").slice(0, 2).join(":") + (r.id.endsWith(":out") ? ":out" : "") : r.id;
+      const key = r.id.startsWith("seg:") ? r.id.split(":").slice(0, 2).join(":") + (r.id.endsWith(":out") ? ":out" : "")
+        : r.id.startsWith("doc:") ? r.id.split(":").slice(0, 2).join(":") : r.id;
       if (!best[key] || best[key].at < r.at) best[key] = r;
     }
     return Object.values(best).sort((a, b) => a.at.localeCompare(b.at));
   }
 
   async function load() {
-    const [trips, segments, packItems, planItems, saved] = await Promise.all([
-      DB.all("trips"), DB.all("segments"), DB.all("packItems"), DB.all("planItems"), DB.getSetting("reminders", null)]);
+    const [trips, segments, packItems, planItems, docs, saved] = await Promise.all([
+      DB.all("trips"), DB.all("segments"), DB.all("packItems"), DB.all("planItems"), DB.all("docs"), DB.getSetting("reminders", null)]);
     const cfg = config(saved);
-    return { cfg, list: cfg.enabled ? compute({ trips, segments, packItems, planItems }, cfg) : [] };
+    return { cfg, list: cfg.enabled ? compute({ trips, segments, packItems, planItems, docs }, cfg) : [] };
   }
 
   // pokazuje przypomnienia, których czas właśnie minął (i jeszcze nie były pokazane); zwraca wszystkie aktywne
