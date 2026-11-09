@@ -115,7 +115,8 @@
         <summary><h3 class="section">Archiwum <span class="muted">(${past.length})</span></h3></summary>
         ${past.map(card).join("")}
       </details>`;
-    html += `<a class="plan-link st-link" href="#/statystyki"><span aria-hidden="true">📊</span> Statystyki <span class="muted">– kilometry, kraje, mapa</span><b aria-hidden="true">›</b></a>`;
+    html += `<a class="plan-link st-link" href="#/wklej"><span aria-hidden="true">📧</span> Dodaj z maila <span class="muted">– wklej potwierdzenie rezerwacji</span><b aria-hidden="true">›</b></a>`;
+    html += `<a class="plan-link" href="#/statystyki" style="margin-top:8px"><span aria-hidden="true">📊</span> Statystyki <span class="muted">– kilometry, kraje, mapa</span><b aria-hidden="true">›</b></a>`;
     return { title: "Podróżnik", html: html + fab, after: home.after, cleanup: home.cleanup };
   });
 
@@ -293,7 +294,8 @@
       action: `<a class="icon-btn" href="#/podroze/${id}/edytuj" aria-label="Edytuj podróż">${editIcon}</a>`,
       html: head + (wx && wx.data ? App.Weather.strip(wx.data, t) : "") +
         (timeline || App.empty("🗺️", "Pusta oś czasu", "Dodaj pierwszy lot, pociąg, autobus albo nocleg – wybierz poniżej.")) +
-        `<h3 class="section">Dodaj</h3><div class="type-grid">${typeButtons}</div>`,
+        `<h3 class="section">Dodaj</h3><div class="type-grid">${typeButtons}</div>
+         <a class="plan-link" href="#/wklej?trip=${id}" style="margin-top:10px"><span aria-hidden="true">📧</span> Z maila <span class="muted">– wklej potwierdzenie lotu, pociągu, hotelu</span><b aria-hidden="true">›</b></a>`,
       after(view) {
         // pogoda: pokazane zapisane dane, świeże pobierane w tle (jeśli są starsze niż 3 h)
         if (wx) wx.refresh().then(changed => { if (changed) App.render(); }).catch(() => {});
@@ -343,6 +345,9 @@
     // nowy odcinek: data startu podróży jako podpowiedź, żeby kalendarz nie otwierał się na dzisiejszym dniu
     const t0 = TYPES[type] ? type : "lot";
     let v = s || { type: t0, currency: "PLN", depart: `${trip.start}T${t0 === "nocleg" ? "15:00" : "08:00"}` };
+    // dane odczytane z maila (etap 8, email.js) – jednorazowo wypełniają nowy odcinek
+    const fromMail = !s && !!App.prefill;
+    if (fromMail) { v = { ...v, ...App.prefill }; App.prefill = null; }
     let cur = v.type;
 
     const typeChips = Object.entries(TYPES).map(([k, T]) => `
@@ -407,7 +412,8 @@
             await DB.put("trips", { ...trip, start: d1 < trip.start ? d1 : trip.start, end: d2 > trip.end ? d2 : trip.end });
             App.toast("Zapisano · daty podróży poszerzone");
           } else App.toast(s ? "Zapisano zmiany" : "Dodano do podróży");
-          App.back(s ? `#/odcinek/${s.id}` : `#/podroze/${trip.id}`);
+          if (fromMail) location.replace(`#/podroze/${trip.id}`);
+          else App.back(s ? `#/odcinek/${s.id}` : `#/podroze/${trip.id}`);
         });
         const del = view.querySelector("#del");
         if (del) del.addEventListener("click", async () => {

@@ -228,7 +228,7 @@
     const c = cache[norm(text)];
     if (c && !c.none) return c;
     if (!online || (c && c.none)) return null;
-    await geocode([text], () => {});
+    try { await geocode([text], () => {}); } catch (e) { return null; } // brak sieci – spróbujemy innym razem
     const c2 = (await DB.getSetting("geoCache", {}))[norm(text)];
     return c2 && !c2.none ? c2 : null;
   }

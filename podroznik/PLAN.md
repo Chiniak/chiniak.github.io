@@ -68,11 +68,11 @@ Rzeczy do przetestowania na prawdziwym telefonie: **[DO-SPRAWDZENIA.md](DO-SPRAW
 34. ⬜ Hosting na `chiniak.github.io/podroznik/`.
 35. ⬜ Spakowanie do **APK** (TWA, jak KWS) i instalacja na telefonie.
 
-## Etap 8 – Bonusy na później ⬜
+## Etap 8 – Bonusy ✅
 36. ✅ Statystyki: km, loty, dni, noce, kraje z flagami, rekordy, mapa tras; filtr po latach.
 37. ✅ Budżet podróży i wydatki – kategorie, waluty z kursami (ręcznie lub z NBP), ceny biletów wliczane same, „zostało na dzień”.
 38. ✅ Dokumenty: paszport, dowód, ubezpieczenie, wiza… – ważność, przypomnienia, ostrzeżenie „paszport ważny < 6 mies. po powrocie”, skan.
-39. ⬜ Wklejenie maila z potwierdzeniem → automatyczne odczytanie danych biletu.
+39. ✅ Wklejenie maila z potwierdzeniem (lub „Udostępnij → Podróżnik”) → odczyt lotów, pociągów, autobusów i hoteli w telefonie.
 40. ✅ Pogoda w miejscu docelowym: prognoza (do 16 dni) na stronie podróży i w planie dnia; dla dalszych podróży – jak było rok temu.
 
 ---
@@ -96,6 +96,7 @@ Rzeczy do przetestowania na prawdziwym telefonie: **[DO-SPRAWDZENIA.md](DO-SPRAW
 | `budget.js` | Etap 8: budżet i wydatki |
 | `stats.js` | Etap 8: statystyki i mapa (lotniska offline z `lib/airports.js`, reszta przez Open-Meteo) |
 | `weather.js` | Etap 8: pogoda (Open-Meteo) |
+| `email.js` | Etap 8: odczyt rezerwacji z maila |
 | `tickets.js` | Etap 2: szczegóły odcinka, bilety, pełny ekran, skaner kodów |
 | `lib/` | pdf.js, bwip-js (rysowanie kodów), ZXing (odczyt kodów) – dołączone, działają offline |
 | `sw.js` | Offline – przy każdej zmianie plików aplikacji podbić `CACHE` (`podroznik-vN`) |

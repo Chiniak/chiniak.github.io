@@ -624,3 +624,12 @@ html.lock-pending body > *:not(#lock) { visibility: hidden; }
 .wx-last div { display: flex; flex-direction: column; }
 .wx-big { font-size: 30px; }
 .wx-badge { float: right; font-size: 13px; font-weight: 600; color: var(--muted); margin-left: 8px; }
+
+/* ---------- etap 8: z maila ---------- */
+.em-text { width: 100%; min-height: 160px; padding: 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; font-size: 14px; resize: vertical; }
+.em-text:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.em-card { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 8px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.em-card.em-bad { border-color: var(--warn); }
+.em-card .tv-link { padding: 0; min-height: 36px; color: var(--accent); }
+.em-save { margin-top: 10px; display: flex; flex-direction: column; gap: 12px; }
+.em-save select { min-height: 46px; padding: 0 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; }

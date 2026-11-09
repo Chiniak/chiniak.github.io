@@ -86,10 +86,13 @@ Adres (po scaleniu pull requesta): https://chiniak.github.io/podroznik/
 - ⬜ Statystyki: „🔎 Uzupełnij położenie” na telefonie z internetem znajduje dworce i miasta (w testach wyszukiwarka była symulowana)
 - ⬜ Mapa w statystykach czytelna na telefonie, kraje po polsku z flagami
 - ⬜ Pogoda: na telefonie z internetem pojawia się prognoza przy podróży w ciągu 16 dni (w testach serwis był symulowany) i ikonki w planie dnia
+- ⬜ **Z maila – na prawdziwych mailach** (LOT, Ryanair, Wizz Air, PKP Intercity, FlixBus, Booking.com, Airbnb…): które odczytuje dobrze, a które źle? Zapisz przewoźnika – poprawię wzorce (testowane na 5 przykładowych mailach)
+- ⬜ Gmail → ⋮ → „Udostępnij” / zaznacz tekst → „Udostępnij” → Podróżnik (działa tylko w aplikacji dodanej do ekranu głównego)
 
 ## Znane ograniczenia (nie błędy, ale do oceny)
 - Godziny są „na zegarku” (czas lokalny z biletu) – czas lotu między strefami czasowymi może wyjść o godzinę za dużo / za mało
 - Zdjęcie podróży (pkt 6 planu) – na razie tylko kolor
+- Odczyt z maila jest „wzorcowy” (bez sztucznej inteligencji) – nietypowy układ maila może nie zostać rozpoznany; wtedy dodaj ręcznie
 - Karty z Apple/Google Wallet (.pkpass) – jeszcze nie ma (pkt 16)
 - Blokada PIN chroni przed podejrzeniem, ale dane w pamięci przeglądarki nie są szyfrowane (zaszyfrowana może być kopia zapasowa)
 - Powiadomienia w tle: aplikacja internetowa nie może sama obudzić się o dokładnej godzinie – Chrome sprawdza „kilka razy na dobę”; pewny jest kalendarz (.ics) albo wersja APK

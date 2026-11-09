@@ -92,7 +92,7 @@
     for (const [re, fn] of routes) { match = path.match(re); if (match) { handler = fn; break; } }
     if (!handler) { location.replace("#/podroze"); return; }
 
-    const TAB_OF = { odcinek: "podroze", bilet: "bilety", skanuj: "bilety", punkt: "plan", rzecz: "pakowanie", dokumenty: "bilety", dokument: "bilety", budzet: "podroze", wydatek: "podroze", statystyki: "podroze" };
+    const TAB_OF = { odcinek: "podroze", bilet: "bilety", skanuj: "bilety", punkt: "plan", rzecz: "pakowanie", dokumenty: "bilety", dokument: "bilety", budzet: "podroze", wydatek: "podroze", statystyki: "podroze", wklej: "podroze" };
     const first = path.split("/")[1];
     const tab = TAB_OF[first] || first;
     document.querySelectorAll(".tabbar a").forEach(a => {
@@ -204,6 +204,12 @@
     window.addEventListener("online", updateOnline);
     window.addEventListener("offline", updateOnline);
     updateOnline();
+    // udostępnienie tekstu do aplikacji (np. maila z Gmaila → „Udostępnij” → Podróżnik) – manifest share_target
+    if (location.search) {
+      const sp = new URLSearchParams(location.search);
+      const shared = [sp.get("title"), sp.get("text"), sp.get("url")].filter(Boolean).join("\n");
+      if (shared) { App.sharedText = shared; history.replaceState(null, "", location.pathname + "#/wklej"); }
+    }
     if (!location.hash) history.replaceState(null, "", "#/podroze");
     render();
   }

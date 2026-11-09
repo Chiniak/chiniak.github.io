@@ -56,6 +56,9 @@
     } finally { clearTimeout(timer); }
   }
 
+  // po nieudanej próbie (brak sieci, serwis nie odpowiada) nie próbuj ponownie przez 10 minut
+  const failedAt = {};
+
   const shiftYear = (s, n) => `${+s.slice(0, 4) + n}${s.slice(4)}`.replace(/-02-29$/, "-02-28");
 
   // zwraca zapisane dane od razu; refresh() pobiera nowe, jeśli trzeba (true = coś się zmieniło)
@@ -69,8 +72,12 @@
     async function refresh() {
       if (!navigator.onLine || trip.end < today) return false;
       if (valid && Date.now() - valid.at < 3 * 3600 * 1000) return false;
+      if (failedAt[trip.id] && Date.now() - failedAt[trip.id] < 10 * 60 * 1000) return false;
+      try { return await load(); } catch (e) { failedAt[trip.id] = Date.now(); return false; }
+    }
+    async function load() {
       const p = await place(trip);
-      if (!p) return false;
+      if (!p) { failedAt[trip.id] = Date.now(); return false; } // nie wiadomo gdzie (albo brak sieci do wyszukania)
       const last = App.addDays(today, MAX_AHEAD);
       let data;
       if (trip.start <= last) {
