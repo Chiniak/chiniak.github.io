@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Podróżnik</title>
+  <meta name="description" content="Twoje podróże, bilety, plan dnia i lista pakowania w jednym miejscu – działa offline.">
+  <meta name="theme-color" content="#0f6e6e" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0e1416" media="(prefers-color-scheme: dark)">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon-192.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="stylesheet" href="style.css">
+  <!-- blokada PIN: ukryj treść, zanim lock.js pokaże ekran blokady (bez mignięcia danych) -->
+  <script>try { if (localStorage.getItem("podroznik-lock") === "1") document.documentElement.classList.add("lock-pending"); } catch (e) {}</script>
+</head>
+<body>
+  <header class="topbar">
+    <button id="back" class="icon-btn" type="button" aria-label="Wstecz" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <h1 id="title">Podróżnik</h1>
+    <span id="offline" class="badge" hidden>offline</span>
+    <div id="action"></div>
+  </header>
+
+  <main id="view" tabindex="-1"></main>
+
+  <nav class="tabbar" aria-label="Menu główne">
+    <a href="#/podroze" data-tab="podroze">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 16l20-6-20-6 3 6-3 6z"/><path d="M5 10h8"/></svg>
+      <span>Podróże</span>
+    </a>
+    <a href="#/bilety" data-tab="bilety">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 012-2h14a2 2 0 012 2v3a2 2 0 000 4v3a2 2 0 01-2 2H5a2 2 0 01-2-2v-3a2 2 0 000-4z"/><path d="M14 5v14" stroke-dasharray="2 2"/></svg>
+      <span>Bilety</span>
+    </a>
+    <a href="#/plan" data-tab="plan">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+      <span>Plan</span>
+    </a>
+    <a href="#/pakowanie" data-tab="pakowanie">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="7" width="16" height="13" rx="2"/><path d="M9 7V4h6v3M4 12h16"/></svg>
+      <span>Pakowanie</span>
+    </a>
+    <a href="#/ustawienia" data-tab="ustawienia">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>
+      <span>Ustawienia</span>
+    </a>
+  </nav>
+
+  <script src="db.js"></script>
+  <script src="app.js"></script>
+  <script src="trips.js"></script>
+  <script src="tickets.js"></script>
+  <script src="plan.js"></script>
+  <script src="pack.js"></script>
+  <script src="reminders-core.js"></script>
+  <script src="reminders.js"></script>
+  <script src="backup.js"></script>
+  <script src="lock.js"></script>
+  <script src="docs.js"></script>
+  <script src="budget.js"></script>
+  <script src="stats.js"></script>
+  <script src="weather.js"></script>
+  <script src="email.js"></script>
+</body>
+</html>
