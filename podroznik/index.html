@@ -14,8 +14,12 @@
 </head>
 <body>
   <header class="topbar">
+    <button id="back" class="icon-btn" type="button" aria-label="Wstecz" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
     <h1 id="title">Podróżnik</h1>
     <span id="offline" class="badge" hidden>offline</span>
+    <div id="action"></div>
   </header>
 
   <main id="view" tabindex="-1"></main>
@@ -45,5 +49,6 @@
 
   <script src="db.js"></script>
   <script src="app.js"></script>
+  <script src="trips.js"></script>
 </body>
 </html>

@@ -1,9 +1,9 @@
 /* Podróżnik – działanie offline.
    Pliki aplikacji: najpierw sieć (aktualizacje od razu), zapisana kopia gdy brak internetu.
    Przy każdej zmianie plików podbij numer CACHE. Dane użytkownika są w IndexedDB, nie tutaj. */
-const CACHE = "podroznik-v1";
+const CACHE = "podroznik-v2";
 const APP = [
-  "./", "./index.html", "./style.css", "./db.js", "./app.js", "./manifest.webmanifest",
+  "./", "./index.html", "./style.css", "./db.js", "./app.js", "./trips.js", "./manifest.webmanifest",
   "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png",
 ];
 

@@ -19,13 +19,13 @@ Legenda: ✅ zrobione · 🔄 w trakcie · ⬜ do zrobienia
 4. ✅ Dolne menu: **Podróże · Bilety · Plan · Pakowanie · Ustawienia**.
 5. ✅ Ciemny / jasny motyw (lub automatyczny), układ pod telefon.
 
-## Etap 1 – Podróże i odcinki transportu ⬜
-6. ⬜ Tworzenie **podróży**: nazwa, cel, daty od–do, zdjęcie/kolor.
-7. ⬜ Dodawanie **odcinków**: ✈️ lot, 🚆 pociąg, 🚌 autobus, ⛴️ prom, 🚗 auto/wynajem, 🚕 taxi/Uber, 🚇 metro, inne.
-8. ⬜ Pola odcinka: skąd, dokąd, data i godzina odjazdu/przyjazdu, przewoźnik, nr lotu/pociągu, miejsce/wagon/gate/peron, nr rezerwacji, cena, notatka.
-9. ⬜ Noclegi jako osobny typ (hotel, adres, check-in/out).
-10. ⬜ Oś czasu podróży – odcinki w kolejności.
-11. ⬜ Lista podróży: **nadchodzące / trwające / archiwum**.
+## Etap 1 – Podróże i odcinki transportu ✅
+6. ✅ Tworzenie **podróży**: nazwa, cel, daty od–do, zdjęcie/kolor.
+7. ✅ Dodawanie **odcinków**: ✈️ lot, 🚆 pociąg, 🚌 autobus, ⛴️ prom, 🚗 auto/wynajem, 🚕 taxi/Uber, 🚇 metro, inne.
+8. ✅ Pola odcinka: skąd, dokąd, data i godzina odjazdu/przyjazdu, przewoźnik, nr lotu/pociągu, miejsce/wagon/gate/peron, nr rezerwacji, cena, notatka.
+9. ✅ Noclegi jako osobny typ (hotel, adres, check-in/out).
+10. ✅ Oś czasu podróży – odcinki w kolejności.
+11. ✅ Lista podróży: **nadchodzące / trwające / archiwum**.
 
 ## Etap 2 – Bilety do szybkiego pokazania ⬜
 12. ⬜ Podpinanie do odcinka **zdjęcia, PDF lub zrzutu ekranu** biletu.
@@ -82,7 +82,8 @@ Legenda: ✅ zrobione · 🔄 w trakcie · ⬜ do zrobienia
 | `index.html` | Szkielet: nagłówek, miejsce na widok, dolne menu |
 | `style.css` | Wygląd, kolory jako zmienne, motyw jasny/ciemny |
 | `db.js` | Baza IndexedDB – wszystkie magazyny danych (`DB.put/get/all/byIndex/del`) |
-| `app.js` | Nawigacja (`#/podroze`, `#/bilety`…), widoki, ustawienia |
+| `app.js` | Rdzeń: router (`App.route`), górny pasek, pomocniki dat, zakładki etapów 2–4, ustawienia |
+| `trips.js` | Etap 1: lista podróży, formularze podróży i odcinków, oś czasu |
 | `sw.js` | Offline – przy każdej zmianie plików aplikacji podbić `CACHE` (`podroznik-vN`) |
 | `manifest.webmanifest` | Instalacja na ekranie głównym |
 
