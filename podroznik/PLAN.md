@@ -59,10 +59,10 @@ Rzeczy do przetestowania na prawdziwym telefonie: **[DO-SPRAWDZENIA.md](DO-SPRAW
 > Uwaga: w PWA powiadomienia przy zamkniętej aplikacji nie zawsze przychodzą punktualnie –
 > pewniejsze będą w APK (etap 7). Dodatkowo eksport do kalendarza (.ics) jako zabezpieczenie.
 
-## Etap 6 – Bezpieczeństwo danych ⬜
-31. ⬜ **Eksport / import kopii zapasowej** (plik JSON + załączniki).
+## Etap 6 – Bezpieczeństwo danych ✅
+31. ✅ **Eksport / import kopii zapasowej** (plik JSON + załączniki).
 32. ✅ Eksport podróży do kalendarza (.ics) – zrobione w etapie 5 (z alarmami) + „Dodaj do Google Kalendarza”.
-33. ⬜ (opcjonalnie) Blokada PIN / odcisk palca dla biletów i dokumentów.
+33. ✅ Blokada PIN-em (całej aplikacji) + odcisk palca, jeśli telefon pozwala. Kopia może być zaszyfrowana hasłem.
 
 ## Etap 7 – Publikacja ⬜
 34. ⬜ Hosting na `chiniak.github.io/podroznik/`.
@@ -90,6 +90,8 @@ Rzeczy do przetestowania na prawdziwym telefonie: **[DO-SPRAWDZENIA.md](DO-SPRAW
 | `pack.js` | Etap 4: lista rzeczy i zadań, statusy, szablony, postęp |
 | `reminders-core.js` | Etap 5: wyliczanie przypomnień – działa w aplikacji i w service workerze |
 | `reminders.js` | Etap 5: licznik, baner przypomnień, powiadomienia, ustawienia, eksport .ics |
+| `backup.js` | Etap 6: kopia zapasowa (eksport/import, opcjonalnie zaszyfrowana hasłem) |
+| `lock.js` | Etap 6: blokada PIN-em / odciskiem palca |
 | `tickets.js` | Etap 2: szczegóły odcinka, bilety, pełny ekran, skaner kodów |
 | `lib/` | pdf.js, bwip-js (rysowanie kodów), ZXing (odczyt kodów) – dołączone, działają offline |
 | `sw.js` | Offline – przy każdej zmianie plików aplikacji podbić `CACHE` (`podroznik-vN`) |

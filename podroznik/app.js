@@ -129,6 +129,9 @@
 
   App.route(/^\/ustawienia$/, async () => {
     const theme = await DB.getSetting("theme", "auto");
+    const [last, lock] = await Promise.all([DB.getSetting("lastBackup", null), DB.getSetting("lock", null)]);
+    const age = last ? Math.floor((Date.now() - new Date(last.at)) / 86400000) : null;
+    const backupTxt = !last ? "jeszcze nie zrobiona" : age === 0 ? "ostatnia dziś" : `ostatnia ${age} ${App.plural(age, "dzień", "dni", "dni")} temu`;
     const opt = (v, label) => `<button type="button" data-theme-opt="${v}" aria-pressed="${theme === v}">${label}</button>`;
     return {
       html: `
@@ -142,9 +145,13 @@
         </div>
         <a class="plan-link" href="#/ustawienia/przypomnienia"><span aria-hidden="true">🔔</span> Przypomnienia i kalendarz
           <span class="muted">– ${"Notification" in window && Notification.permission === "granted" ? "powiadomienia włączone" : "ustaw powiadomienia"}</span><b aria-hidden="true">›</b></a>
+        <a class="plan-link${!last || age > 30 ? " warn" : ""}" href="#/ustawienia/kopia"><span aria-hidden="true">💾</span> Kopia zapasowa
+          <span class="muted">– ${backupTxt}</span><b aria-hidden="true">›</b></a>
+        <a class="plan-link" href="#/ustawienia/blokada"><span aria-hidden="true">🔒</span> Blokada PIN-em
+          <span class="muted">– ${lock ? "włączona" : "wyłączona"}</span><b aria-hidden="true">›</b></a>
         <div class="card" style="margin-top:12px">
           <h2>O aplikacji</h2>
-          <div class="row"><span class="muted">Wersja</span><b>0.6 · etap 5</b></div>
+          <div class="row"><span class="muted">Wersja</span><b>0.7 · etap 6</b></div>
           <div class="row"><span class="muted">Tryb offline</span><b id="sw-state">…</b></div>
         </div>`,
       after(v) {

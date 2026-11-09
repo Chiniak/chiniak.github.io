@@ -75,6 +75,9 @@
     byIndex: (store, index, value) => tx(store, "readonly", s => s.index(index).getAll(value)),
     del: (store, id) => tx(store, "readwrite", s => s.delete(id)),
     count: (store) => tx(store, "readonly", s => s.count()),
+    // zapis bez zmiany dat (przywracanie kopii zapasowej)
+    putRaw: (store, obj) => tx(store, "readwrite", s => s.put(obj)),
+    clear: (store) => tx(store, "readwrite", s => s.clear()),
     async getSetting(key, fallback) {
       const r = await tx("settings", "readonly", s => s.get(key));
       return r ? r.value : fallback;

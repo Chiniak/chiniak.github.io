@@ -68,8 +68,18 @@ Adres (po scaleniu pull requesta): https://chiniak.github.io/podroznik/
 - ⬜ „📅 Dodaj do Google Kalendarza” na stronie lotu/pociągu otwiera aplikację Google Kalendarz z wypełnionym wydarzeniem
 - ⬜ Czy domyślne przypomnienia (np. 3 h przed lotem, 1 h przed pociągiem, dzień wcześniej o 19:00) pasują – co zmienić?
 
+## Etap 6 – Kopia zapasowa i blokada
+- ⬜ „💾 Zapisz kopię” → menu „Udostępnij” → **Dysk Google** – plik zapisuje się (sprawdź rozmiar przy wielu biletach)
+- ⬜ Przywrócenie kopii na **drugim telefonie / po wyczyszczeniu danych** – bilety (zdjęcia, PDF) otwierają się jak wcześniej
+- ⬜ Kopia z hasłem: złe hasło = komunikat, dobre = dane wracają
+- ⬜ Blokada PIN: po zamknięciu i otwarciu aplikacji pojawia się klawiatura PIN, nie widać przez chwilę danych
+- ⬜ Blokada po powrocie z innej aplikacji (ustawienie „po 1 min” itd.) – na komputerze nie dało się tego przetestować
+- ⬜ **Odcisk palca** (jeśli telefon pozwala) – włączenie w ustawieniach blokady i odblokowanie palcem
+- ⬜ Blokada a powiadomienie: dotknięcie przypomnienia przy zablokowanej aplikacji pokazuje PIN, potem właściwy ekran
+
 ## Znane ograniczenia (nie błędy, ale do oceny)
 - Godziny są „na zegarku” (czas lokalny z biletu) – czas lotu między strefami czasowymi może wyjść o godzinę za dużo / za mało
 - Zdjęcie podróży (pkt 6 planu) – na razie tylko kolor
 - Karty z Apple/Google Wallet (.pkpass) – jeszcze nie ma (pkt 16)
+- Blokada PIN chroni przed podejrzeniem, ale dane w pamięci przeglądarki nie są szyfrowane (zaszyfrowana może być kopia zapasowa)
 - Powiadomienia w tle: aplikacja internetowa nie może sama obudzić się o dokładnej godzinie – Chrome sprawdza „kilka razy na dobę”; pewny jest kalendarz (.ics) albo wersja APK

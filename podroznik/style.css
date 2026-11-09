@@ -500,3 +500,35 @@ button.plan-link { width: 100%; border: 0; font: inherit; font-weight: 600; text
 .sw input:checked + .sw-ui { background: var(--accent); }
 .sw input:checked + .sw-ui::after { left: 21px; }
 .sw input:focus-visible + .sw-ui { outline: 2px solid var(--text); outline-offset: 2px; }
+
+/* ---------- etap 6: kopia zapasowa i blokada ---------- */
+.plan-link.warn { background: rgba(208,138,23,.14); }
+.warn-txt { color: var(--warn); }
+.bk-box { margin-top: 12px; display: flex; flex-direction: column; gap: 10px; }
+.bk-box .row { padding: 6px 0; }
+.card .btn.wide + .btn.wide { margin-top: 0; }
+
+/* do czasu decyzji lock.js nic nie widać */
+html.lock-pending body > *:not(#lock) { visibility: hidden; }
+#lock {
+  position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; overflow-y: auto;
+  padding: calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom));
+  background: var(--bg); outline: none;
+}
+.lk-box { width: 100%; max-width: 320px; text-align: center; }
+.lk-icon { width: 64px; height: 64px; border-radius: 16px; }
+.lk-box h2 { margin: 10px 0 2px; font-size: 20px; }
+.lk-msg { margin: 0 0 14px; color: var(--muted); min-height: 1.4em; }
+.lk-dots { display: flex; justify-content: center; gap: 14px; margin-bottom: 24px; }
+.lk-dots i { width: 14px; height: 14px; border-radius: 99px; border: 2px solid var(--muted); }
+.lk-dots i.on { background: var(--accent); border-color: var(--accent); }
+.lk-dots.shake { animation: lk-shake .35s; }
+@keyframes lk-shake { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+.lk-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px 22px; justify-items: center; }
+.lk-pad button {
+  width: 72px; height: 72px; border-radius: 99px; border: 0; background: var(--surface-2); color: var(--text);
+  font: inherit; font-size: 28px; font-weight: 500; cursor: pointer;
+}
+.lk-pad button:active { background: var(--accent-soft); }
+.lk-pad button[data-k="del"], .lk-pad button[data-k="bio"] { background: transparent; font-size: 24px; }
+.lk-forgot { margin-top: 22px; border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 14px; text-decoration: underline; cursor: pointer; }
