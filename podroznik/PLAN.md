@@ -10,6 +10,8 @@ pakowania i przygotowań, licznik do następnej podróży z przypomnieniami.
 
 Legenda: ✅ zrobione · 🔄 w trakcie · ⬜ do zrobienia
 
+Rzeczy do przetestowania na prawdziwym telefonie: **[DO-SPRAWDZENIA.md](DO-SPRAWDZENIA.md)** – uzupełniane po każdym etapie.
+
 ---
 
 ## Etap 0 – Fundament ✅
