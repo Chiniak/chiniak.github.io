@@ -5,7 +5,7 @@
      #/podroze/:id                szczegóły podróży z osią czasu
      #/podroze/:id/edytuj         edycja (i usuwanie) podróży
      #/podroze/:id/dodaj?typ=lot  nowy odcinek lub nocleg
-     #/odcinek/:id                edycja (i usuwanie) odcinka
+     #/odcinek/:id/edytuj         edycja (i usuwanie) odcinka  (szczegóły odcinka z biletami: tickets.js)
    Godziny zapisywane są jako czas lokalny miejsca: "2026-11-13T08:15". */
 (function () {
   const { esc, todayStr, dayDiff, plural } = App;
@@ -70,6 +70,7 @@
     const segsOf = {};
     segs.forEach(s => (segsOf[s.tripId] = segsOf[s.tripId] || []).push(s));
 
+    const nearest = App.Tickets ? await App.Tickets.nearestCard() : "";
     const fab = `<a class="fab" href="#/podroze/nowa" aria-label="Nowa podróż">${plusIcon}<span>Nowa podróż</span></a>`;
     if (!trips.length) {
       return {
@@ -103,7 +104,7 @@
     const future = trips.filter(t => status(t) === "future").sort((a, b) => a.start.localeCompare(b.start));
     const past = trips.filter(t => status(t) === "past").sort((a, b) => b.start.localeCompare(a.start));
 
-    let html = "";
+    let html = nearest;
     if (now.length) html += `<h3 class="section">Trwające</h3>${now.map(card).join("")}`;
     html += `<h3 class="section">Nadchodzące</h3>` +
       (future.length ? future.map(card).join("") : `<p class="muted small">Brak zaplanowanych wyjazdów.</p>`);
@@ -191,7 +192,10 @@
     return out.length ? `<div class="chips">${out.map(c => `<span>${c}</span>`).join("")}</div>` : "";
   }
 
-  function segCard(s) {
+  // 🎫 przy odcinku, który ma podpięte bilety
+  const ticketMark = n => n ? `<span class="tl-tickets" title="Bilety: ${n}">🎫${n > 1 ? " " + n : ""}</span>` : "";
+
+  function segCard(s, nTickets = 0) {
     const T = typeOf(s);
     if (s.type === "nocleg") {
       const nights = s.arrive ? dayDiff(s.depart, s.arrive) : 0;
@@ -199,7 +203,7 @@
         <a class="tl-card" href="#/odcinek/${s.id}">
           <div class="tl-ico" aria-hidden="true">${T.icon}</div>
           <div class="tl-main">
-            <div class="tl-time">Zameldowanie ${App.time(s.depart)}${nights > 0 ? ` <span class="muted">· ${nights} ${plural(nights, "noc", "noce", "nocy")}</span>` : ""}</div>
+            <div class="tl-time">Zameldowanie ${App.time(s.depart)}${nights > 0 ? ` <span class="muted">· ${nights} ${plural(nights, "noc", "noce", "nocy")}</span>` : ""}${ticketMark(nTickets)}</div>
             <div class="tl-route">${esc(s.name || "Nocleg")}</div>
             ${s.address ? `<div class="muted small">${esc(s.address)}</div>` : ""}
             ${chips(s)}
@@ -213,7 +217,7 @@
         <div class="tl-ico" aria-hidden="true">${T.icon}</div>
         <div class="tl-main">
           <div class="tl-time">${App.time(s.depart)}${s.arrive ? ` → ${App.time(s.arrive)}${arriveDay > 0 ? `<sup>+${arriveDay}</sup>` : ""}` : ""}
-            ${dur ? `<span class="muted">· ${dur}</span>` : ""}</div>
+            ${dur ? `<span class="muted">· ${dur}</span>` : ""}${ticketMark(nTickets)}</div>
           <div class="tl-route">${esc(s.from || "?")} → ${esc(s.to || "?")}</div>
           ${chips(s)}
         </div>
@@ -232,12 +236,14 @@
     const t = await DB.get("trips", id);
     if (!t) { location.replace("#/podroze"); return ""; }
     const segs = (await DB.byIndex("segments", "tripId", id)).sort(bySegTime);
+    const nFiles = {};
+    for (const f of await DB.byIndex("files", "tripId", id)) nFiles[f.segmentId] = (nFiles[f.segmentId] || 0) + 1;
 
     // pozycje osi czasu: [dzień, czas, html]
     const items = [];
     for (const s of segs) {
       if (!s.depart) continue;
-      items.push([s.depart.slice(0, 10), s.depart, segCard(s)]);
+      items.push([s.depart.slice(0, 10), s.depart, segCard(s, nFiles[s.id])]);
       if (s.type === "nocleg" && s.arrive && s.arrive.slice(0, 10) !== s.depart.slice(0, 10))
         items.push([s.arrive.slice(0, 10), s.arrive, checkoutCard(s)]);
     }
@@ -324,7 +330,7 @@
 
     return {
       title: s ? `${TYPES[cur].icon} ${TYPES[cur].name}` : "Nowy odcinek",
-      back: `#/podroze/${trip.id}`,
+      back: s ? `#/odcinek/${s.id}` : `#/podroze/${trip.id}`,
       html: `
         <form id="seg-form" class="form" novalidate>
           <div class="type-chips" role="radiogroup" aria-label="Rodzaj">${typeChips}</div>
@@ -380,7 +386,7 @@
             await DB.put("trips", { ...trip, start: d1 < trip.start ? d1 : trip.start, end: d2 > trip.end ? d2 : trip.end });
             App.toast("Zapisano · daty podróży poszerzone");
           } else App.toast(s ? "Zapisano zmiany" : "Dodano do podróży");
-          App.back(`#/podroze/${trip.id}`);
+          App.back(s ? `#/odcinek/${s.id}` : `#/podroze/${trip.id}`);
         });
         const del = view.querySelector("#del");
         if (del) del.addEventListener("click", async () => {
@@ -388,11 +394,14 @@
           for (const r of await DB.byIndex("files", "segmentId", s.id)) await DB.del("files", r.id);
           await DB.del("segments", s.id);
           App.toast("Usunięto");
-          App.back(`#/podroze/${trip.id}`);
+          location.replace(`#/podroze/${trip.id}`);
         });
       },
     };
   }
   App.route(/^\/podroze\/([\w-]+)\/dodaj$/, ([tripId], q) => segForm({ tripId, type: q.typ }));
-  App.route(/^\/odcinek\/([\w-]+)$/, ([segId]) => segForm({ segId }));
+  App.route(/^\/odcinek\/([\w-]+)\/edytuj$/, ([segId]) => segForm({ segId }));
+
+  // wspólne elementy dla biletów (tickets.js)
+  App.Trips = { TYPES, typeOf, chips, status, COLORS, bySegTime, editIcon, plusIcon };
 })();

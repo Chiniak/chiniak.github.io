@@ -41,6 +41,16 @@
     return `${fmt(o).format(A)} – ${fmt({ ...o, year: y ? "numeric" : undefined }).format(B)}`;
   };
 
+  // wczytanie biblioteki dopiero, gdy jest potrzebna (pliki w lib/ są też w pamięci offline)
+  const scripts = {};
+  App.loadScript = src => scripts[src] || (scripts[src] = new Promise((resolve, reject) => {
+    const el = document.createElement("script");
+    el.src = src;
+    el.onload = resolve;
+    el.onerror = () => { delete scripts[src]; el.remove(); reject(new Error("Nie udało się wczytać: " + src)); };
+    document.head.appendChild(el);
+  }));
+
   App.toast = msg => {
     let t = $("#toast");
     if (!t) { t = document.createElement("div"); t.id = "toast"; t.setAttribute("role", "status"); document.body.appendChild(t); }
@@ -67,7 +77,10 @@
 
   const TAB_TITLES = { podroze: "Podróże", bilety: "Bilety", plan: "Plan", pakowanie: "Pakowanie", ustawienia: "Ustawienia" };
 
+  // r.cleanup z poprzedniego widoku (np. wyłączenie kamery, zwolnienie blokady ekranu)
+  let cleanup = null;
   async function render() {
+    if (cleanup) { try { cleanup(); } catch (e) { console.warn(e); } cleanup = null; }
     const raw = location.hash.slice(1) || "/podroze";
     const [path, qs] = raw.split("?");
     const query = Object.fromEntries(new URLSearchParams(qs || ""));
@@ -75,7 +88,9 @@
     for (const [re, fn] of routes) { match = path.match(re); if (match) { handler = fn; break; } }
     if (!handler) { location.replace("#/podroze"); return; }
 
-    const tab = path.split("/")[1] === "odcinek" ? "podroze" : path.split("/")[1];
+    const TAB_OF = { odcinek: "podroze", bilet: "bilety", skanuj: "bilety" };
+    const first = path.split("/")[1];
+    const tab = TAB_OF[first] || first;
     document.querySelectorAll(".tabbar a").forEach(a => {
       const on = a.dataset.tab === tab;
       a.classList.toggle("active", on);
@@ -99,13 +114,12 @@
     $("#action").innerHTML = r.action || "";
     view.innerHTML = r.html;
     if (r.after) r.after(view);
+    cleanup = r.cleanup || null;
     window.scrollTo(0, 0);
   }
   App.render = render;
 
   /* ---------- proste zakładki (kolejne etapy) ---------- */
-  App.route(/^\/bilety$/, () => App.empty("🎫", "Bilety pod ręką",
-    "Zdjęcia, PDF-y i kody QR biletów – otwierane jednym kliknięciem, także bez internetu.", soon("Etap 2")));
   App.route(/^\/plan$/, () => App.empty("🗓️", "Plan dnia i podróży",
     "Rozkład dzień po dniu: transport, noclegi i Twoje własne punkty z mapą.", soon("Etap 3")));
   App.route(/^\/pakowanie$/, () => App.empty("✅", "Co zabrać",
@@ -126,7 +140,7 @@
         </div>
         <div class="card">
           <h2>O aplikacji</h2>
-          <div class="row"><span class="muted">Wersja</span><b>0.2 · etap 1</b></div>
+          <div class="row"><span class="muted">Wersja</span><b>0.3 · etap 2</b></div>
           <div class="row"><span class="muted">Tryb offline</span><b id="sw-state">…</b></div>
         </div>`,
       after(v) {

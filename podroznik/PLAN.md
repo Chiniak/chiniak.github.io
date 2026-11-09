@@ -27,11 +27,11 @@ Legenda: ✅ zrobione · 🔄 w trakcie · ⬜ do zrobienia
 10. ✅ Oś czasu podróży – odcinki w kolejności.
 11. ✅ Lista podróży: **nadchodzące / trwające / archiwum**.
 
-## Etap 2 – Bilety do szybkiego pokazania ⬜
-12. ⬜ Podpinanie do odcinka **zdjęcia, PDF lub zrzutu ekranu** biletu.
-13. ⬜ Widok „pokaż bilet” – pełny ekran, jasność na maksa, blokada wygaszania.
-14. ⬜ **Skaner kodu QR / kreskowego** – zapis kodu i wyświetlanie go ostro i czytelnie.
-15. ⬜ Na ekranie głównym przycisk **„Najbliższy bilet”** – jedno kliknięcie.
+## Etap 2 – Bilety do szybkiego pokazania ✅ (bez pkt 16)
+12. ✅ Podpinanie do odcinka **zdjęcia, PDF lub zrzutu ekranu** biletu.
+13. ✅ Widok „pokaż bilet” – pełny ekran, białe tło, blokada wygaszania. (Jasności strona WWW nie zmienia – do sprawdzenia w APK.)
+14. ✅ **Skaner kodu QR / kreskowego** – zapis kodu i wyświetlanie go ostro i czytelnie.
+15. ✅ Na ekranie głównym przycisk **„Najbliższy bilet”** – jedno kliknięcie.
 16. ⬜ (później) Import kart pokładowych Apple/Google Wallet (.pkpass).
 
 ## Etap 3 – Plan dnia i plan podróży ⬜
@@ -84,6 +84,8 @@ Legenda: ✅ zrobione · 🔄 w trakcie · ⬜ do zrobienia
 | `db.js` | Baza IndexedDB – wszystkie magazyny danych (`DB.put/get/all/byIndex/del`) |
 | `app.js` | Rdzeń: router (`App.route`), górny pasek, pomocniki dat, zakładki etapów 2–4, ustawienia |
 | `trips.js` | Etap 1: lista podróży, formularze podróży i odcinków, oś czasu |
+| `tickets.js` | Etap 2: szczegóły odcinka, bilety, pełny ekran, skaner kodów |
+| `lib/` | pdf.js, bwip-js (rysowanie kodów), ZXing (odczyt kodów) – dołączone, działają offline |
 | `sw.js` | Offline – przy każdej zmianie plików aplikacji podbić `CACHE` (`podroznik-vN`) |
 | `manifest.webmanifest` | Instalacja na ekranie głównym |
 
