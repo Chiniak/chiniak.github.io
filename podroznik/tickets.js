@@ -237,9 +237,10 @@
     return d === 1 ? "jutro" : `za ${d} ${App.plural(d, "dzień", "dni", "dni")}`;
   }
 
-  async function nearestCard() {
+  // skipSeg: nie pokazuj, gdy ten sam odcinek jest już w liczniku na ekranie głównym (tam jest przycisk „Bilet”)
+  async function nearestCard({ skipSeg } = {}) {
     const { upcoming, bySeg } = await upcomingWithTickets();
-    if (!upcoming.length) return "";
+    if (!upcoming.length || upcoming[0].id === skipSeg) return "";
     const s = upcoming[0], T = Tr().typeOf(s);
     return `
       <a class="next-ticket" href="#/bilet/${bySeg[s.id][0].id}">
@@ -327,6 +328,7 @@
             ? `Zameldowanie ${App.time(s.depart)}${s.arrive ? ` · wymeldowanie ${App.fmtDay(s.arrive)} ${App.time(s.arrive)}` : ""}${nights > 0 ? ` · ${nights} ${App.plural(nights, "noc", "noce", "nocy")}` : ""}`
             : `${App.time(s.depart)}${s.arrive ? ` → ${App.time(s.arrive)}` : ""}${dur ? ` · ${dur}` : ""}`}</div>
           ${mapLink}
+          ${s.depart && App.Reminders ? `<a class="map-link" href="${esc(App.Reminders.gcalUrl(s))}" target="_blank" rel="noopener">📅 Dodaj do Google Kalendarza</a>` : ""}
           ${Tr().chips(s)}
           ${s.note ? `<p class="note">${esc(s.note)}</p>` : ""}
           ${trip ? `<a class="muted small trip-link" href="#/podroze/${trip.id}">Podróż: ${esc(trip.name)}</a>` : ""}

@@ -450,3 +450,53 @@ main {
 .tpl-ico { flex: none; width: 42px; height: 42px; border-radius: 12px; background: var(--surface-2); display: grid; place-items: center; font-size: 22px; }
 .tpl-txt { display: flex; flex-direction: column; min-width: 0; }
 .tpl-del { flex: none; width: 48px; border: 0; border-left: 1px solid var(--line); background: transparent; color: var(--muted); font-size: 18px; cursor: pointer; }
+
+/* ---------- etap 5: licznik i przypomnienia ---------- */
+button.plan-link { width: 100%; border: 0; font: inherit; font-weight: 600; text-align: left; cursor: pointer; margin-top: 8px; }
+
+.cd-card {
+  position: relative; overflow: hidden; margin-bottom: 10px; padding: 14px 16px 14px;
+  background: var(--surface); border: 1px solid var(--line); border-top: 6px solid var(--c); border-radius: var(--radius);
+}
+.cd-label { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.cd-label a { color: var(--text); text-decoration: none; }
+.cd-time { display: flex; gap: 8px; margin: 10px 0 8px; }
+.cd-time div { flex: 1; text-align: center; padding: 10px 4px; border-radius: 12px; background: var(--surface-2); }
+.cd-time b { display: block; font-size: 32px; line-height: 1.1; font-variant-numeric: tabular-nums; color: var(--c); }
+:root[data-theme="dark"] .cd-time b { color: var(--text); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .cd-time b { color: var(--text); } }
+.cd-time span { font-size: 12px; color: var(--muted); }
+.cd-sub { display: block; color: var(--text); text-decoration: none; font-weight: 600; overflow-wrap: anywhere; }
+.cd-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.cd-actions .btn { flex: 1; min-height: 42px; padding: 0 10px; font-size: 14px; white-space: nowrap; }
+
+.rm-due { margin-bottom: 10px; border-radius: var(--radius); overflow: hidden; border: 1px solid rgba(208,138,23,.45); background: rgba(208,138,23,.10); }
+.rm-row { display: flex; align-items: center; gap: 10px; padding: 8px 6px 8px 12px; }
+.rm-row + .rm-row { border-top: 1px solid rgba(208,138,23,.3); }
+.rm-bell { font-size: 20px; }
+.rm-txt { flex: 1; min-width: 0; color: var(--text); text-decoration: none; display: flex; flex-direction: column; }
+.rm-txt span { font-size: 14px; color: var(--muted); }
+.rm-x { flex: none; width: 40px; height: 40px; border: 0; background: transparent; color: var(--muted); font-size: 16px; cursor: pointer; }
+
+.rm-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.rm-note { font-size: 14px; color: var(--muted); margin: 12px 0 0; }
+.rm-note b { color: var(--text); }
+.rm-types { padding: 4px 16px; }
+.rm-type { padding: 10px 0; border-top: 1px solid var(--line); }
+.rm-type:first-child { border-top: 0; }
+.rm-type-name { font-weight: 700; margin-bottom: 4px; }
+.rm-type-opts { display: flex; flex-direction: column; gap: 2px; }
+.rm-sel { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 44px; }
+.rm-sel select { min-height: 40px; padding: 0 8px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; font-size: 15px; }
+.rm-up { text-decoration: none; color: inherit; align-items: center; }
+.rm-up b { text-align: left; }
+.rm-when { flex: none; text-align: right !important; font-size: 13px; color: var(--accent); }
+
+/* przełącznik */
+.sw { position: relative; display: flex; align-items: center; gap: 12px; min-height: 44px; cursor: pointer; }
+.sw input { position: absolute; opacity: 0; pointer-events: none; }
+.sw-ui { flex: none; position: relative; width: 44px; height: 26px; border-radius: 99px; background: var(--line); transition: .15s; }
+.sw-ui::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 99px; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.3); transition: .15s; }
+.sw input:checked + .sw-ui { background: var(--accent); }
+.sw input:checked + .sw-ui::after { left: 21px; }
+.sw input:focus-visible + .sw-ui { outline: 2px solid var(--text); outline-offset: 2px; }

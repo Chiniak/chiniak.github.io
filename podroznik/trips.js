@@ -70,7 +70,9 @@
     const segsOf = {};
     segs.forEach(s => (segsOf[s.tripId] = segsOf[s.tripId] || []).push(s));
 
-    const nearest = App.Tickets ? await App.Tickets.nearestCard() : "";
+    // licznik do wyjazdu / odjazdu i aktywne przypomnienia (etap 5); bilet pokazany osobno, jeśli to inny odcinek niż w liczniku
+    const home = App.Reminders ? await App.Reminders.homeCards() : { html: "" };
+    const nearest = App.Tickets ? await App.Tickets.nearestCard({ skipSeg: home.segId }) : "";
     const fab = `<a class="fab" href="#/podroze/nowa" aria-label="Nowa podróż">${plusIcon}<span>Nowa podróż</span></a>`;
     if (!trips.length) {
       return {
@@ -104,7 +106,7 @@
     const future = trips.filter(t => status(t) === "future").sort((a, b) => a.start.localeCompare(b.start));
     const past = trips.filter(t => status(t) === "past").sort((a, b) => b.start.localeCompare(a.start));
 
-    let html = nearest;
+    let html = home.html + nearest;
     if (now.length) html += `<h3 class="section">Trwające</h3>${now.map(card).join("")}`;
     html += `<h3 class="section">Nadchodzące</h3>` +
       (future.length ? future.map(card).join("") : `<p class="muted small">Brak zaplanowanych wyjazdów.</p>`);
@@ -113,7 +115,7 @@
         <summary><h3 class="section">Archiwum <span class="muted">(${past.length})</span></h3></summary>
         ${past.map(card).join("")}
       </details>`;
-    return { title: "Podróżnik", html: html + fab };
+    return { title: "Podróżnik", html: html + fab, after: home.after, cleanup: home.cleanup };
   });
 
   /* ================= FORMULARZ PODRÓŻY ================= */
@@ -273,7 +275,8 @@
         ${t.note ? `<p class="note">${esc(t.note)}</p>` : ""}
       </div>
       <a class="plan-link" href="#/plan/${t.id}"><span aria-hidden="true">🗓️</span> Plan dnia po dniu <span class="muted">– zwiedzanie, jedzenie, mapa</span><b aria-hidden="true">›</b></a>
-      <a class="plan-link" href="#/pakowanie/${t.id}"><span aria-hidden="true">🧳</span> Pakowanie <span class="muted">– ${packTxt}</span><b aria-hidden="true">›</b></a>`;
+      <a class="plan-link" href="#/pakowanie/${t.id}"><span aria-hidden="true">🧳</span> Pakowanie <span class="muted">– ${packTxt}</span><b aria-hidden="true">›</b></a>
+      <button type="button" class="plan-link" id="ics-trip"><span aria-hidden="true">📅</span> Do kalendarza <span class="muted">– plik .ics z przypomnieniami</span><b aria-hidden="true">›</b></button>`;
 
     const typeButtons = Object.entries(TYPES).map(([k, T]) =>
       `<a class="type-btn" href="#/podroze/${id}/dodaj?typ=${k}"><span aria-hidden="true">${T.icon}</span>${T.name}</a>`).join("");
@@ -285,6 +288,10 @@
       html: head +
         (timeline || App.empty("🗺️", "Pusta oś czasu", "Dodaj pierwszy lot, pociąg, autobus albo nocleg – wybierz poniżej.")) +
         `<h3 class="section">Dodaj</h3><div class="type-grid">${typeButtons}</div>`,
+      after(view) {
+        const b = view.querySelector("#ics-trip");
+        if (b) b.onclick = () => App.Reminders.exportTrips([t.id], t.name);
+      },
     };
   });
 

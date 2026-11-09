@@ -50,18 +50,18 @@ Rzeczy do przetestowania na prawdziwym telefonie: **[DO-SPRAWDZENIA.md](DO-SPRAW
 25. ✅ **Szablony list** („Weekend”, „Lot z bagażem podręcznym”, „Służbowo”, „Zima”) – kopiowane jednym kliknięciem.
 26. ✅ Pasek postępu („Spakowane 18/25”).
 
-## Etap 5 – Licznik i przypomnienia ⬜
-27. ⬜ Duży **licznik do następnej podróży** na ekranie głównym (dni / godz / min).
-28. ⬜ Licznik do najbliższego odjazdu w trakcie podróży.
-29. ⬜ **Powiadomienia**: dzień przed, 3 h przed, „czas wyjść”, „otwórz odprawę online” (24 h przed lotem), „nie spakowano jeszcze X rzeczy”.
-30. ⬜ Ustawienia przypomnień dla każdego typu transportu.
+## Etap 5 – Licznik i przypomnienia ✅
+27. ✅ Duży **licznik do następnej podróży** na ekranie głównym (dni / godz / min).
+28. ✅ Licznik do najbliższego odjazdu w trakcie podróży.
+29. ✅ **Powiadomienia**: dzień przed, 3 h przed, „czas wyjść”, „otwórz odprawę online” (24 h przed lotem), „nie spakowano jeszcze X rzeczy”.
+30. ✅ Ustawienia przypomnień dla każdego typu transportu.
 
 > Uwaga: w PWA powiadomienia przy zamkniętej aplikacji nie zawsze przychodzą punktualnie –
 > pewniejsze będą w APK (etap 7). Dodatkowo eksport do kalendarza (.ics) jako zabezpieczenie.
 
 ## Etap 6 – Bezpieczeństwo danych ⬜
 31. ⬜ **Eksport / import kopii zapasowej** (plik JSON + załączniki).
-32. ⬜ Eksport podróży do kalendarza (.ics).
+32. ✅ Eksport podróży do kalendarza (.ics) – zrobione w etapie 5 (z alarmami) + „Dodaj do Google Kalendarza”.
 33. ⬜ (opcjonalnie) Blokada PIN / odcisk palca dla biletów i dokumentów.
 
 ## Etap 7 – Publikacja ⬜
@@ -88,6 +88,8 @@ Rzeczy do przetestowania na prawdziwym telefonie: **[DO-SPRAWDZENIA.md](DO-SPRAW
 | `trips.js` | Etap 1: lista podróży, formularze podróży i odcinków, oś czasu |
 | `plan.js` | Etap 3: plan dzień po dniu, karta „Dziś”, punkty planu, przeciąganie, nawigacja |
 | `pack.js` | Etap 4: lista rzeczy i zadań, statusy, szablony, postęp |
+| `reminders-core.js` | Etap 5: wyliczanie przypomnień – działa w aplikacji i w service workerze |
+| `reminders.js` | Etap 5: licznik, baner przypomnień, powiadomienia, ustawienia, eksport .ics |
 | `tickets.js` | Etap 2: szczegóły odcinka, bilety, pełny ekran, skaner kodów |
 | `lib/` | pdf.js, bwip-js (rysowanie kodów), ZXing (odczyt kodów) – dołączone, działają offline |
 | `sw.js` | Offline – przy każdej zmianie plików aplikacji podbić `CACHE` (`podroznik-vN`) |

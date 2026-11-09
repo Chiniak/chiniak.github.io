@@ -57,7 +57,19 @@ Adres (po scaleniu pull requesta): https://chiniak.github.io/podroznik/
 - ⬜ Zadanie z terminem w przeszłości jest na czerwono „po terminie”
 - ⬜ Czy gotowe szablony mają sensowne rzeczy – co dodać / usunąć?
 
+## Etap 5 – Licznik i przypomnienia
+- ⬜ Ustawienia → Przypomnienia → „Włącz powiadomienia” – okienko zgody Androida, potem „Wyślij próbne” pojawia się na pasku
+- ⬜ Dotknięcie powiadomienia otwiera aplikację na właściwym ekranie (lot, pakowanie…)
+- ⬜ **Powiadomienia przy zamkniętej aplikacji** – czy „Sprawdzanie w tle” pokazuje „włączone” po dodaniu do ekranu głównego i kilku dniach używania; czy przypomnienia przychodzą bez otwierania aplikacji (i z jakim opóźnieniem)
+- ⬜ Po otwarciu aplikacji zaległe przypomnienia pokazują się od razu (i baner na ekranie głównym)
+- ⬜ Licznik na ekranie głównym tyka, liczby mieszczą się na wąskim ekranie
+- ⬜ Eksport .ics → „Udostępnij” → aplikacja Kalendarz (Samsung / inna) importuje wydarzenia **z alarmami**
+- ⬜ Godziny w kalendarzu – czy zgadzają się przy wyjeździe za granicę (plik ma czas „na zegarku”, bez strefy czasowej)
+- ⬜ „📅 Dodaj do Google Kalendarza” na stronie lotu/pociągu otwiera aplikację Google Kalendarz z wypełnionym wydarzeniem
+- ⬜ Czy domyślne przypomnienia (np. 3 h przed lotem, 1 h przed pociągiem, dzień wcześniej o 19:00) pasują – co zmienić?
+
 ## Znane ograniczenia (nie błędy, ale do oceny)
 - Godziny są „na zegarku” (czas lokalny z biletu) – czas lotu między strefami czasowymi może wyjść o godzinę za dużo / za mało
 - Zdjęcie podróży (pkt 6 planu) – na razie tylko kolor
 - Karty z Apple/Google Wallet (.pkpass) – jeszcze nie ma (pkt 16)
+- Powiadomienia w tle: aplikacja internetowa nie może sama obudzić się o dokładnej godzinie – Chrome sprawdza „kilka razy na dobę”; pewny jest kalendarz (.ics) albo wersja APK

@@ -81,8 +81,9 @@
   const TAB_TITLES = { podroze: "Podróże", bilety: "Bilety", plan: "Plan", pakowanie: "Pakowanie", ustawienia: "Ustawienia" };
 
   // r.cleanup z poprzedniego widoku (np. wyłączenie kamery, zwolnienie blokady ekranu)
-  let cleanup = null;
+  let cleanup = null, renderSeq = 0;
   async function render() {
+    const seq = ++renderSeq;
     if (cleanup) { try { cleanup(); } catch (e) { console.warn(e); } cleanup = null; }
     const raw = location.hash.slice(1) || "/podroze";
     const [path, qs] = raw.split("?");
@@ -107,6 +108,8 @@
       console.error(e);
       r = { title: "Błąd", html: App.empty("⚠️", "Coś poszło nie tak", App.esc(e.message || e)) };
     }
+    // w międzyczasie przełączono ekran (wolniejszy widok skończył się wczytywać później) – nie nadpisuj nowszego
+    if (seq !== renderSeq) return;
     if (typeof r === "string") r = { html: r };
     const title = r.title || TAB_TITLES[tab] || "Podróżnik";
     $("#title").textContent = title;
@@ -137,9 +140,11 @@
           <h2>Dane w telefonie</h2>
           <div id="storage" class="muted">Sprawdzam…</div>
         </div>
-        <div class="card">
+        <a class="plan-link" href="#/ustawienia/przypomnienia"><span aria-hidden="true">🔔</span> Przypomnienia i kalendarz
+          <span class="muted">– ${"Notification" in window && Notification.permission === "granted" ? "powiadomienia włączone" : "ustaw powiadomienia"}</span><b aria-hidden="true">›</b></a>
+        <div class="card" style="margin-top:12px">
           <h2>O aplikacji</h2>
-          <div class="row"><span class="muted">Wersja</span><b>0.5 · etap 4</b></div>
+          <div class="row"><span class="muted">Wersja</span><b>0.6 · etap 5</b></div>
           <div class="row"><span class="muted">Tryb offline</span><b id="sw-state">…</b></div>
         </div>`,
       after(v) {

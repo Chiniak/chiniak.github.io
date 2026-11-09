@@ -32,7 +32,12 @@
         }
         if (!db.objectStoreNames.contains("settings")) db.createObjectStore("settings", { keyPath: "key" });
       };
-      req.onsuccess = () => resolve(req.result);
+      req.onsuccess = () => {
+        const db = req.result;
+        // aplikacja i service worker mają osobne połączenia – przy aktualizacji bazy zamknij stare
+        db.onversionchange = () => { db.close(); opening = null; };
+        resolve(db);
+      };
       req.onerror = () => { opening = null; reject(req.error); };
       req.onblocked = () => console.warn("Baza zablokowana – zamknij inne karty z aplikacją.");
     });
@@ -77,5 +82,5 @@
     setSetting: (key, value) => tx("settings", "readwrite", s => s.put({ key, value })),
   };
 
-  window.DB = DB;
+  self.DB = DB; // self = okno albo service worker (sprawdzanie przypomnień w tle)
 })();
