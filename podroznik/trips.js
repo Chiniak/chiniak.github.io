@@ -250,6 +250,10 @@
     items.sort((a, b) => a[1].localeCompare(b[1]));
 
     const total = dayDiff(t.start, t.end) + 1;
+    const pk = App.Pack ? await App.Pack.summary(id) : null;
+    const packTxt = pk && pk.total + pk.todo
+      ? `spakowane ${pk.done}/${pk.total}${pk.buy ? ` · do kupienia ${pk.buy}` : ""}${pk.todo ? ` · zadania ${pk.todoDone}/${pk.todo}` : ""}`
+      : "lista rzeczy i zadań przed wyjazdem";
     let timeline = "", lastDay = null;
     for (const [day, , html] of items) {
       if (day !== lastDay) {
@@ -268,7 +272,8 @@
         <span class="pill pill-${status(t)}">${statusText(t)}</span>
         ${t.note ? `<p class="note">${esc(t.note)}</p>` : ""}
       </div>
-      <a class="plan-link" href="#/plan/${t.id}"><span aria-hidden="true">🗓️</span> Plan dnia po dniu <span class="muted">– zwiedzanie, jedzenie, mapa</span><b aria-hidden="true">›</b></a>`;
+      <a class="plan-link" href="#/plan/${t.id}"><span aria-hidden="true">🗓️</span> Plan dnia po dniu <span class="muted">– zwiedzanie, jedzenie, mapa</span><b aria-hidden="true">›</b></a>
+      <a class="plan-link" href="#/pakowanie/${t.id}"><span aria-hidden="true">🧳</span> Pakowanie <span class="muted">– ${packTxt}</span><b aria-hidden="true">›</b></a>`;
 
     const typeButtons = Object.entries(TYPES).map(([k, T]) =>
       `<a class="type-btn" href="#/podroze/${id}/dodaj?typ=${k}"><span aria-hidden="true">${T.icon}</span>${T.name}</a>`).join("");

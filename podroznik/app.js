@@ -71,7 +71,6 @@
       <p>${text}</p>
       ${extra}
     </div>`;
-  const soon = s => `<span class="soon">${s}</span>`;
 
   /* ---------- router ---------- */
   const routes = [];
@@ -92,7 +91,7 @@
     for (const [re, fn] of routes) { match = path.match(re); if (match) { handler = fn; break; } }
     if (!handler) { location.replace("#/podroze"); return; }
 
-    const TAB_OF = { odcinek: "podroze", bilet: "bilety", skanuj: "bilety", punkt: "plan" };
+    const TAB_OF = { odcinek: "podroze", bilet: "bilety", skanuj: "bilety", punkt: "plan", rzecz: "pakowanie" };
     const first = path.split("/")[1];
     const tab = TAB_OF[first] || first;
     document.querySelectorAll(".tabbar a").forEach(a => {
@@ -124,8 +123,6 @@
   App.render = render;
 
   /* ---------- proste zakładki (kolejne etapy) ---------- */
-  App.route(/^\/pakowanie$/, () => App.empty("✅", "Co zabrać",
-    "Listy rzeczy do spakowania i zadań przed wyjazdem, z szablonami i postępem.", soon("Etap 4")));
 
   App.route(/^\/ustawienia$/, async () => {
     const theme = await DB.getSetting("theme", "auto");
@@ -142,7 +139,7 @@
         </div>
         <div class="card">
           <h2>O aplikacji</h2>
-          <div class="row"><span class="muted">Wersja</span><b>0.4 · etap 3</b></div>
+          <div class="row"><span class="muted">Wersja</span><b>0.5 · etap 4</b></div>
           <div class="row"><span class="muted">Tryb offline</span><b id="sw-state">…</b></div>
         </div>`,
       after(v) {

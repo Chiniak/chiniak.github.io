@@ -43,12 +43,12 @@ Rzeczy do przetestowania na prawdziwym telefonie: **[DO-SPRAWDZENIA.md](DO-SPRAW
 20. ✅ Przycisk **„Nawiguj”** – otwiera Google Maps z adresem.
 21. ✅ Widok „Dziś”: co teraz, co dalej, ile czasu do następnego punktu.
 
-## Etap 4 – Pakowanie i przygotowanie ⬜
-22. ⬜ Lista rzeczy do zabrania z kategoriami (dokumenty, ubrania, elektronika, kosmetyki, leki…).
-23. ⬜ Statusy: **do kupienia → do spakowania → spakowane ✅**.
-24. ⬜ Osobna lista **„Do zrobienia przed wyjazdem”** (odprawa online, ubezpieczenie, waluta, klucze, ładowarki…).
-25. ⬜ **Szablony list** („Weekend”, „Lot z bagażem podręcznym”, „Służbowo”, „Zima”) – kopiowane jednym kliknięciem.
-26. ⬜ Pasek postępu („Spakowane 18/25”).
+## Etap 4 – Pakowanie i przygotowanie ✅
+22. ✅ Lista rzeczy do zabrania z kategoriami (dokumenty, ubrania, elektronika, kosmetyki, leki…).
+23. ✅ Statusy: **do kupienia → do spakowania → spakowane ✅**.
+24. ✅ Osobna lista **„Do zrobienia przed wyjazdem”** (odprawa online, ubezpieczenie, waluta, klucze, ładowarki…).
+25. ✅ **Szablony list** („Weekend”, „Lot z bagażem podręcznym”, „Służbowo”, „Zima”) – kopiowane jednym kliknięciem.
+26. ✅ Pasek postępu („Spakowane 18/25”).
 
 ## Etap 5 – Licznik i przypomnienia ⬜
 27. ⬜ Duży **licznik do następnej podróży** na ekranie głównym (dni / godz / min).
@@ -87,6 +87,7 @@ Rzeczy do przetestowania na prawdziwym telefonie: **[DO-SPRAWDZENIA.md](DO-SPRAW
 | `app.js` | Rdzeń: router (`App.route`), górny pasek, pomocniki dat, zakładki etapów 2–4, ustawienia |
 | `trips.js` | Etap 1: lista podróży, formularze podróży i odcinków, oś czasu |
 | `plan.js` | Etap 3: plan dzień po dniu, karta „Dziś”, punkty planu, przeciąganie, nawigacja |
+| `pack.js` | Etap 4: lista rzeczy i zadań, statusy, szablony, postęp |
 | `tickets.js` | Etap 2: szczegóły odcinka, bilety, pełny ekran, skaner kodów |
 | `lib/` | pdf.js, bwip-js (rysowanie kodów), ZXing (odczyt kodów) – dołączone, działają offline |
 | `sw.js` | Offline – przy każdej zmianie plików aplikacji podbić `CACHE` (`podroznik-vN`) |

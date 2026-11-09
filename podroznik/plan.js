@@ -126,6 +126,16 @@
     return now[0] || fut[0] || past[0];
   }
 
+  // opcje przełącznika podróży: trwające, nadchodzące, potem archiwum (także dla pakowania)
+  function tripOptions(trips, id) {
+    const today = App.todayStr();
+    const rank = t => (t.end < today ? 2 : t.start > today ? 1 : 0);
+    return trips.slice()
+      .sort((a, b) => rank(a) - rank(b) || (rank(a) === 2 ? b.start.localeCompare(a.start) : a.start.localeCompare(b.start)))
+      .map(t => `<option value="${t.id}" ${t.id === id ? "selected" : ""}>${esc(t.name)} · ${App.fmtRange(t.start, t.end)}${t.end < today ? " (archiwum)" : ""}</option>`)
+      .join("");
+  }
+
   App.route(/^\/plan$/, async () => {
     const trips = await DB.all("trips");
     if (!trips.length) return App.empty("🗓️", "Plan dnia i podróży",
@@ -148,13 +158,9 @@
     const ongoing = trip.start <= today && today <= trip.end;
 
     // przełącznik podróży
-    const order = trips.slice().sort((a, b) => {
-      const rank = t => (t.end < today ? 2 : t.start > today ? 1 : 0);
-      return rank(a) - rank(b) || (rank(a) === 2 ? b.start.localeCompare(a.start) : a.start.localeCompare(b.start));
-    });
     const switcher = trips.length > 1 ? `
       <label class="pl-switch"><span class="sr">Podróż</span>
-        <select id="pl-trip">${order.map(t => `<option value="${t.id}" ${t.id === id ? "selected" : ""}>${esc(t.name)} · ${App.fmtRange(t.start, t.end)}${t.end < today ? " (archiwum)" : ""}</option>`).join("")}</select>
+        <select id="pl-trip">${tripOptions(trips, id)}</select>
       </label>` : "";
 
     // dni: od początku do końca podróży + dni spoza zakresu, na których coś jest
@@ -365,5 +371,5 @@
   App.route(/^\/plan\/([\w-]+)\/nowy$/, ([tripId], q) => itemForm({ tripId, date: q.d }));
   App.route(/^\/punkt\/([\w-]+)$/, ([itemId]) => itemForm({ itemId }));
 
-  App.Plan = { segEvents, CATS };
+  App.Plan = { segEvents, CATS, pickTrip, tripOptions, routeIcon };
 })();

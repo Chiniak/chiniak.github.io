@@ -48,6 +48,15 @@ Adres (po scaleniu pull requesta): https://chiniak.github.io/podroznik/
 - ⬜ Pole godziny (zegar Androida) i daty w formularzu punktu
 - ⬜ Koszty z przecinkiem (np. 12,50) liczą się poprawnie
 
+## Etap 4 – Pakowanie
+- ⬜ Szybkie dodawanie: po dodaniu rzeczy klawiatura zostaje otwarta i można wpisywać dalej
+- ⬜ Odhaczanie kółkiem i 🛒 „do kupienia” – łatwo trafić palcem, strona nie przeskakuje
+- ⬜ Wybór kategorii (lista rozwijana) i daty zadania obok pola tekstowego – mieszczą się na wąskim ekranie
+- ⬜ Szablony: dodanie kilku po kolei, rzeczy się nie dublują
+- ⬜ „⭐ Zapisz jako szablon” – okienko z nazwą działa w aplikacji zainstalowanej na ekranie głównym
+- ⬜ Zadanie z terminem w przeszłości jest na czerwono „po terminie”
+- ⬜ Czy gotowe szablony mają sensowne rzeczy – co dodać / usunąć?
+
 ## Znane ograniczenia (nie błędy, ale do oceny)
 - Godziny są „na zegarku” (czas lokalny z biletu) – czas lotu między strefami czasowymi może wyjść o godzinę za dużo / za mało
 - Zdjęcie podróży (pkt 6 planu) – na razie tylko kolor

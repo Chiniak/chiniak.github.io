@@ -385,3 +385,68 @@ main {
 .pl-cost { font-size: 13px; color: var(--muted); margin: 6px 4px 0; text-align: right; }
 .pl-past { margin-top: 14px; }
 .pl-past .pl-day:first-of-type { margin-top: 4px; }
+
+/* ---------- etap 4: pakowanie ---------- */
+.plan-link + .plan-link { margin-top: 8px; }
+.pk-progress { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 12px; }
+.pk-prog-top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.pk-prog-top b { font-size: 17px; }
+.pk-prog-top span { font-size: 14px; color: var(--muted); }
+.pk-progress .bar { height: 10px; margin: 8px 0 6px; }
+.pk-prog-sub { font-size: 14px; color: var(--muted); min-height: 1em; }
+
+.pk-tabs { grid-template-columns: 1fr 1fr; margin-bottom: 12px; }
+.pk-add { display: flex; gap: 8px; margin-bottom: 6px; }
+.pk-add input, .pk-add select {
+  min-width: 0; min-height: 48px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--text); font: inherit;
+}
+.pk-add input[name="name"] { flex: 1; }
+.pk-add select { flex: none; width: 116px; padding: 0 6px; font-size: 14px; }
+.pk-add input[type="date"] { flex: none; width: 142px; padding: 0 8px; font-size: 14px; }
+.pk-add .btn { flex: none; width: 48px; padding: 0; }
+.pk-add input:focus, .pk-add select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+
+.pk-group { margin-top: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.pk-cat { margin: 0; padding: 10px 14px 6px; font-size: 14px; font-weight: 700; }
+.pk-cat .muted { font-weight: 400; float: right; }
+.pk-row { display: flex; align-items: center; gap: 4px; min-height: 52px; padding: 0 6px; border-top: 1px solid var(--line); }
+.pk-group > .pk-row:first-child { border-top: 0; }
+.pk-check {
+  flex: none; width: 44px; height: 44px; border: 0; background: transparent; cursor: pointer;
+  display: grid; place-items: center; color: transparent;
+}
+.pk-check svg { width: 26px; height: 26px; padding: 3px; border-radius: 99px; border: 2px solid var(--muted); fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; box-sizing: border-box; }
+.pk-check[aria-pressed="true"] { color: var(--accent-ink); }
+.pk-check[aria-pressed="true"] svg { background: var(--accent); border-color: var(--accent); }
+.pk-name { flex: 1; min-width: 0; padding: 12px 4px; color: var(--text); text-decoration: none; overflow-wrap: anywhere; }
+.is-done .pk-name { color: var(--muted); text-decoration: line-through; }
+.pk-buy { flex: none; width: 44px; height: 44px; border: 0; border-radius: 12px; background: transparent; font-size: 20px; cursor: pointer; filter: grayscale(1); opacity: .35; }
+.pk-buy[aria-pressed="true"] { filter: none; opacity: 1; background: rgba(208,138,23,.16); }
+.is-buy .pk-name::after { content: "do kupienia"; margin-left: 8px; font-size: 12px; font-weight: 600; color: var(--warn); }
+.pk-due { display: block; font-size: 13px; color: var(--muted); }
+.pk-due.late { color: #d14a3d; font-weight: 600; }
+.pk-empty { text-align: center; padding: 24px 12px; color: var(--muted); }
+.pk-empty p { margin: 0 0 12px; }
+.pk-all { text-align: center; font-size: 17px; font-weight: 600; margin: 18px 0 4px; }
+.pk-hidden { text-align: center; margin: 10px 0 0; }
+.pk-tools { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; flex-wrap: wrap; gap: 6px; }
+.pk-toggle { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; color: var(--muted); font-size: 15px; }
+.pk-toggle input { width: 20px; height: 20px; accent-color: var(--accent); }
+.pk-tools .tv-link { color: var(--accent); }
+.pk-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
+.pk-actions .btn { font-size: 14px; padding: 0 8px; }
+
+.pk-sts { display: flex; gap: 8px; flex-wrap: wrap; }
+.pk-st { position: relative; }
+.pk-st input { position: absolute; opacity: 0; pointer-events: none; }
+.pk-st span { display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-size: 14px; }
+.pk-st input:checked + span { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.pk-st input:focus-visible + span { outline: 2px solid var(--text); outline-offset: 2px; }
+
+.tpl { display: flex; align-items: stretch; margin-bottom: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.tpl-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 0; background: transparent; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.tpl-main:active { background: var(--surface-2); }
+.tpl-ico { flex: none; width: 42px; height: 42px; border-radius: 12px; background: var(--surface-2); display: grid; place-items: center; font-size: 22px; }
+.tpl-txt { display: flex; flex-direction: column; min-width: 0; }
+.tpl-del { flex: none; width: 48px; border: 0; border-left: 1px solid var(--line); background: transparent; color: var(--muted); font-size: 18px; cursor: pointer; }
