@@ -149,9 +149,12 @@
           <span class="muted">– ${backupTxt}</span><b aria-hidden="true">›</b></a>
         <a class="plan-link" href="#/ustawienia/blokada"><span aria-hidden="true">🔒</span> Blokada PIN-em
           <span class="muted">– ${lock ? "włączona" : "wyłączona"}</span><b aria-hidden="true">›</b></a>
+        ${/^android-app:\/\/io\.github\.chiniak\.podroznik/.test(document.referrer) ? "" : `
+        <a class="plan-link" href="Podroznik.apk" download style="margin-top:8px"><span aria-hidden="true">📲</span> Aplikacja na Androida
+          <span class="muted">– pobierz APK (430 KB)</span><b aria-hidden="true">›</b></a>`}
         <div class="card" style="margin-top:12px">
           <h2>O aplikacji</h2>
-          <div class="row"><span class="muted">Wersja</span><b>0.7 · etap 6</b></div>
+          <div class="row"><span class="muted">Wersja</span><b>1.0 · etapy 0–8</b></div>
           <div class="row"><span class="muted">Tryb offline</span><b id="sw-state">…</b></div>
         </div>`,
       after(v) {

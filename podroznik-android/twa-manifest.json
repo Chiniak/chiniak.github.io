@@ -1,0 +1,52 @@
+{
+  "packageId": "io.github.chiniak.podroznik",
+  "host": "chiniak.github.io",
+  "name": "Podróżnik",
+  "launcherName": "Podróżnik",
+  "display": "standalone",
+  "themeColor": "#0F6E6E",
+  "themeColorDark": "#0E1416",
+  "navigationColor": "#0E1416",
+  "navigationColorDark": "#0E1416",
+  "navigationDividerColor": "#000000",
+  "navigationDividerColorDark": "#000000",
+  "backgroundColor": "#0E1416",
+  "enableNotifications": true,
+  "startUrl": "/podroznik/index.html#/podroze",
+  "iconUrl": "https://chiniak.github.io/podroznik/icon-512.png",
+  "maskableIconUrl": "https://chiniak.github.io/podroznik/icon-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "./podroznik.keystore",
+    "alias": "podroznik"
+  },
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "shortcuts": [],
+  "generatorApp": "bubblewrap-core",
+  "webManifestUrl": "https://chiniak.github.io/podroznik/manifest.webmanifest",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://chiniak.github.io/podroznik/",
+  "minSdkVersion": 21,
+  "shareTarget": {
+    "action": "/podroznik/index.html",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  "orientation": "portrait",
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "appVersion": "1.0.0"
+}

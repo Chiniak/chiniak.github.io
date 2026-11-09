@@ -64,9 +64,9 @@ Rzeczy do przetestowania na prawdziwym telefonie: **[DO-SPRAWDZENIA.md](DO-SPRAW
 32. ✅ Eksport podróży do kalendarza (.ics) – zrobione w etapie 5 (z alarmami) + „Dodaj do Google Kalendarza”.
 33. ✅ Blokada PIN-em (całej aplikacji) + odcisk palca, jeśli telefon pozwala. Kopia może być zaszyfrowana hasłem.
 
-## Etap 7 – Publikacja ⬜
-34. ⬜ Hosting na `chiniak.github.io/podroznik/`.
-35. ⬜ Spakowanie do **APK** (TWA, jak KWS) i instalacja na telefonie.
+## Etap 7 – Publikacja ✅
+34. ✅ Hosting na `chiniak.github.io/podroznik/` (po scaleniu pull requesta #1).
+35. ✅ **APK** (TWA, jak KWS): `podroznik/Podroznik.apk`, pakiet `io.github.chiniak.podroznik`, projekt w `podroznik-android/`, odcisk w `.well-known/assetlinks.json`.
 
 ## Etap 8 – Bonusy ✅
 36. ✅ Statystyki: km, loty, dni, noce, kraje z flagami, rekordy, mapa tras; filtr po latach.

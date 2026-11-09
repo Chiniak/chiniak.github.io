@@ -89,6 +89,13 @@ Adres (po scaleniu pull requesta): https://chiniak.github.io/podroznik/
 - ⬜ **Z maila – na prawdziwych mailach** (LOT, Ryanair, Wizz Air, PKP Intercity, FlixBus, Booking.com, Airbnb…): które odczytuje dobrze, a które źle? Zapisz przewoźnika – poprawię wzorce (testowane na 5 przykładowych mailach)
 - ⬜ Gmail → ⋮ → „Udostępnij” / zaznacz tekst → „Udostępnij” → Podróżnik (działa tylko w aplikacji dodanej do ekranu głównego)
 
+## Etap 7 – APK na Androida
+- ⬜ Pobranie `Podroznik.apk` (Ustawienia → „Aplikacja na Androida” albo https://chiniak.github.io/podroznik/Podroznik.apk) i instalacja (zgoda na instalację z nieznanych źródeł)
+- ⬜ **Brak paska adresu** u góry aplikacji – jeśli jest, `assetlinks.json` nie został jeszcze odczytany (poczekaj kilka minut po scaleniu, odinstaluj i zainstaluj ponownie)
+- ⬜ Powiadomienia: Android pyta o zgodę, przypomnienia przychodzą jako „Podróżnik”
+- ⬜ Gmail → Udostępnij → **Podróżnik** na liście aplikacji
+- ⬜ Dane: aplikacja z APK i strona w Chrome korzystają z tych samych danych (ta sama przeglądarka) – sprawdzić, czy podróże są w obu
+
 ## Znane ograniczenia (nie błędy, ale do oceny)
 - Godziny są „na zegarku” (czas lokalny z biletu) – czas lotu między strefami czasowymi może wyjść o godzinę za dużo / za mało
 - Zdjęcie podróży (pkt 6 planu) – na razie tylko kolor

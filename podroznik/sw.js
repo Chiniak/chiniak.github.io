@@ -4,7 +4,7 @@
 // baza i wyliczanie przypomnień – do sprawdzania w tle (Periodic Background Sync)
 importScripts("db.js", "reminders-core.js");
 
-const CACHE = "podroznik-v12";
+const CACHE = "podroznik-v13";
 const APP = [
   "./", "./index.html", "./style.css", "./db.js", "./app.js", "./trips.js", "./manifest.webmanifest",
   "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png", "./tickets.js", "./plan.js", "./pack.js", "./reminders-core.js", "./reminders.js", "./backup.js", "./lock.js", "./docs.js", "./budget.js", "./stats.js", "./weather.js", "./email.js",
@@ -32,6 +32,7 @@ self.addEventListener("fetch", e => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
   if (url.origin !== location.origin || !url.pathname.startsWith(new URL("./", self.registration.scope).pathname)) return;
+  if (url.pathname.endsWith(".apk")) return; // plik APK pobierany wprost, bez zapisu w pamięci offline
   e.respondWith(
     fetch(req, { cache: "no-cache" })
       .then(res => {
