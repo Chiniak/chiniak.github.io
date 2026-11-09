@@ -171,7 +171,7 @@
         if (del) del.addEventListener("click", async () => {
           const segs = await DB.byIndex("segments", "tripId", t.id);
           if (!confirm(`Usunąć podróż „${t.name}”${segs.length ? ` razem z ${segs.length} ${plural(segs.length, "odcinkiem", "odcinkami", "odcinkami")}` : ""}? Tego nie da się cofnąć.`)) return;
-          for (const store of ["segments", "files", "planItems", "packItems", "reminders"]) {
+          for (const store of ["segments", "files", "planItems", "packItems", "reminders", "expenses"]) {
             for (const r of await DB.byIndex(store, "tripId", t.id)) await DB.del(store, r.id);
           }
           await DB.del("trips", t.id);
@@ -256,6 +256,9 @@
     const packTxt = pk && pk.total + pk.todo
       ? `spakowane ${pk.done}/${pk.total}${pk.buy ? ` · do kupienia ${pk.buy}` : ""}${pk.todo ? ` · zadania ${pk.todoDone}/${pk.todo}` : ""}`
       : "lista rzeczy i zadań przed wyjazdem";
+    const bg = App.Budget ? await App.Budget.summary(id) : null;
+    const bgTxt = !bg ? "" : bg.budget ? `wydano ${App.Budget.money(bg.spent, bg.home)} z ${App.Budget.money(bg.budget, bg.home)}`
+      : bg.spent ? `wydano ${App.Budget.money(bg.spent, bg.home)}` : "wydatki, waluty, ile zostało";
     let timeline = "", lastDay = null;
     for (const [day, , html] of items) {
       if (day !== lastDay) {
@@ -276,6 +279,7 @@
       </div>
       <a class="plan-link" href="#/plan/${t.id}"><span aria-hidden="true">🗓️</span> Plan dnia po dniu <span class="muted">– zwiedzanie, jedzenie, mapa</span><b aria-hidden="true">›</b></a>
       <a class="plan-link" href="#/pakowanie/${t.id}"><span aria-hidden="true">🧳</span> Pakowanie <span class="muted">– ${packTxt}</span><b aria-hidden="true">›</b></a>
+      ${bg ? `<a class="plan-link${bg.budget && bg.spent > bg.budget ? " warn" : ""}" href="#/budzet/${t.id}"><span aria-hidden="true">💰</span> Budżet <span class="muted">– ${bgTxt}</span><b aria-hidden="true">›</b></a>` : ""}
       <button type="button" class="plan-link" id="ics-trip"><span aria-hidden="true">📅</span> Do kalendarza <span class="muted">– plik .ics z przypomnieniami</span><b aria-hidden="true">›</b></button>`;
 
     const typeButtons = Object.entries(TYPES).map(([k, T]) =>

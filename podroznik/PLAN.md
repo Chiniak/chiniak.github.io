@@ -70,7 +70,7 @@ Rzeczy do przetestowania na prawdziwym telefonie: **[DO-SPRAWDZENIA.md](DO-SPRAW
 
 ## Etap 8 – Bonusy na później ⬜
 36. ⬜ Statystyki: km, liczba lotów, kraje, mapa odwiedzonych miejsc.
-37. ⬜ Budżet podróży i wydatki.
+37. ✅ Budżet podróży i wydatki – kategorie, waluty z kursami (ręcznie lub z NBP), ceny biletów wliczane same, „zostało na dzień”.
 38. ✅ Dokumenty: paszport, dowód, ubezpieczenie, wiza… – ważność, przypomnienia, ostrzeżenie „paszport ważny < 6 mies. po powrocie”, skan.
 39. ⬜ Wklejenie maila z potwierdzeniem → automatyczne odczytanie danych biletu.
 40. ⬜ Pogoda w miejscu docelowym w dniach podróży.
@@ -93,6 +93,7 @@ Rzeczy do przetestowania na prawdziwym telefonie: **[DO-SPRAWDZENIA.md](DO-SPRAW
 | `backup.js` | Etap 6: kopia zapasowa (eksport/import, opcjonalnie zaszyfrowana hasłem) |
 | `lock.js` | Etap 6: blokada PIN-em / odciskiem palca |
 | `docs.js` | Etap 8: dokumenty z datą ważności |
+| `budget.js` | Etap 8: budżet i wydatki |
 | `tickets.js` | Etap 2: szczegóły odcinka, bilety, pełny ekran, skaner kodów |
 | `lib/` | pdf.js, bwip-js (rysowanie kodów), ZXing (odczyt kodów) – dołączone, działają offline |
 | `sw.js` | Offline – przy każdej zmianie plików aplikacji podbić `CACHE` (`podroznik-vN`) |

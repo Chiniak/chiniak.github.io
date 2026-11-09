@@ -555,3 +555,35 @@ html.lock-pending body > *:not(#lock) { visibility: hidden; }
 .doc-img { width: 100%; border-radius: 12px; border: 1px solid var(--line); }
 .doc-file { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .doc-file span { flex: 1; min-width: 120px; }
+
+/* ---------- etap 8: budżet ---------- */
+.bg-sum { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; }
+.bg-top { display: flex; justify-content: space-between; align-items: baseline; }
+.bg-top span { color: var(--muted); }
+.bg-top b { font-size: 26px; font-variant-numeric: tabular-nums; }
+.bg-bar { height: 10px; margin: 10px 0 6px; }
+.bg-bar.over i { background: #d14a3d; }
+.bg-sub { font-size: 14px; color: var(--muted); margin-top: 4px; }
+.bg-sub b { color: var(--text); }
+.over-txt { color: #d14a3d !important; }
+.bg-warn { font-size: 13px; color: var(--warn); margin-top: 6px; }
+.bg-cats { padding: 10px 16px; }
+.bg-cat { display: grid; grid-template-columns: 112px 1fr auto; align-items: center; gap: 10px; min-height: 32px; font-size: 14px; }
+.bg-cat-bar { height: 8px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
+.bg-cat-bar i { display: block; height: 100%; background: var(--accent); }
+.bg-cat b { font-variant-numeric: tabular-nums; }
+.bg-add { display: flex; flex-direction: column; gap: 8px; margin: 12px 0 4px; }
+.bg-add-row { display: flex; gap: 8px; }
+.bg-add input, .bg-add select { min-width: 0; min-height: 48px; padding: 0 8px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; }
+.bg-add input[name="amount"] { flex: 1; }
+.bg-add input[name="currency"] { flex: none; width: 78px; text-transform: uppercase; }
+.bg-add select { flex: none; width: 104px; font-size: 14px; padding: 0 4px; }
+.bg-add .btn { flex: none; width: 48px; padding: 0; }
+.bg-add .bg-date { align-self: flex-start; min-height: 40px; font-size: 14px; }
+.bg-add input:focus, .bg-add select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.bg-row { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 6px 14px; border-top: 1px solid var(--line); color: inherit; text-decoration: none; }
+.bg-row-ico { flex: none; font-size: 18px; }
+.bg-row-name { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.bg-row-amt { flex: none; display: flex; flex-direction: column; align-items: flex-end; font-variant-numeric: tabular-nums; }
+.bg-rate { display: inline-flex; align-items: center; gap: 6px; }
+.bg-rate input { width: 90px; min-height: 40px; padding: 0 8px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; text-align: right; }
