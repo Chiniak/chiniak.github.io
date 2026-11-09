@@ -85,6 +85,7 @@ Adres (po scaleniu pull requesta): https://chiniak.github.io/podroznik/
 - ⬜ „🏦 Pobierz kursy z NBP” działa na telefonie z internetem (w testach nie było dostępu do sieci)
 - ⬜ Statystyki: „🔎 Uzupełnij położenie” na telefonie z internetem znajduje dworce i miasta (w testach wyszukiwarka była symulowana)
 - ⬜ Mapa w statystykach czytelna na telefonie, kraje po polsku z flagami
+- ⬜ Pogoda: na telefonie z internetem pojawia się prognoza przy podróży w ciągu 16 dni (w testach serwis był symulowany) i ikonki w planie dnia
 
 ## Znane ograniczenia (nie błędy, ale do oceny)
 - Godziny są „na zegarku” (czas lokalny z biletu) – czas lotu między strefami czasowymi może wyjść o godzinę za dużo / za mało

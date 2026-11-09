@@ -611,3 +611,16 @@ html.lock-pending body > *:not(#lock) { visibility: hidden; }
 .st-missing p { margin: 6px 0; }
 .st-countries { display: flex; flex-wrap: wrap; gap: 8px; }
 .st-countries span { padding: 4px 10px; border-radius: 99px; background: var(--surface-2); font-size: 14px; }
+
+/* ---------- etap 8: pogoda ---------- */
+.wx { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px; margin-bottom: 8px; }
+.wx-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.wx-days { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 0 -4px; padding: 0 4px; }
+.wx-days::-webkit-scrollbar { display: none; }
+.wx-day { flex: none; min-width: 58px; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 6px 4px; border-radius: 12px; background: var(--surface-2); }
+.wx-ico { font-size: 22px; line-height: 1.2; }
+.wx-rain { font-size: 11px; color: #2f6fd6; }
+.wx-last { display: flex; align-items: center; gap: 12px; }
+.wx-last div { display: flex; flex-direction: column; }
+.wx-big { font-size: 30px; }
+.wx-badge { float: right; font-size: 13px; font-weight: 600; color: var(--muted); margin-left: 8px; }

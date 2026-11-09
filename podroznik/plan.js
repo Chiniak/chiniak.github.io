@@ -152,6 +152,7 @@
     const [trip, trips] = await Promise.all([DB.get("trips", id), DB.all("trips")]);
     if (!trip) { location.replace("#/plan"); return ""; }
     DB.setSetting("planTrip", id);
+    const wx = App.Weather ? await App.Weather.get(trip) : null;
     const [segs, items] = await Promise.all([DB.byIndex("segments", "tripId", id), DB.byIndex("planItems", "tripId", id)]);
     const events = segEvents(segs);
     const today = App.todayStr();
@@ -211,7 +212,7 @@
       const sec = `
         <section class="pl-day${day === today ? " is-today" : ""}" data-date="${day}" ${day === today ? 'id="pl-today"' : ""}>
           <div class="pl-day-head">
-            <h3>${App.fmtDayLong(day)} <span class="muted">· ${tag}${day === today ? " · dziś" : ""}</span></h3>
+            <h3>${App.fmtDayLong(day)} <span class="muted">· ${tag}${day === today ? " · dziś" : ""}</span>${wx ? App.Weather.dayBadge(wx.data, day) : ""}</h3>
             <a class="icon-btn pl-add" href="#/plan/${id}/nowy?d=${day}" aria-label="Dodaj punkt: ${App.fmtDay(day)}">${Tr().plusIcon}</a>
           </div>
           <div class="pl-list">${rows || `<a class="pl-empty" href="#/plan/${id}/nowy?d=${day}">+ Dodaj punkt planu</a>`}</div>
@@ -234,6 +235,7 @@
       action: `<a class="icon-btn" href="#/podroze/${id}" aria-label="Podróż: oś czasu, transport i noclegi">${routeIcon}</a>`,
       html,
       after(view) {
+        if (wx) wx.refresh().then(changed => { if (changed) App.render(); }).catch(() => {});
         const sel = view.querySelector("#pl-trip");
         if (sel) sel.onchange = () => location.replace(`#/plan/${sel.value}`);
         if (ongoing) {

@@ -260,6 +260,7 @@
     const bg = App.Budget ? await App.Budget.summary(id) : null;
     const bgTxt = !bg ? "" : bg.budget ? `wydano ${App.Budget.money(bg.spent, bg.home)} z ${App.Budget.money(bg.budget, bg.home)}`
       : bg.spent ? `wydano ${App.Budget.money(bg.spent, bg.home)}` : "wydatki, waluty, ile zostało";
+    const wx = App.Weather ? await App.Weather.get(t) : null;
     let timeline = "", lastDay = null;
     for (const [day, , html] of items) {
       if (day !== lastDay) {
@@ -290,10 +291,12 @@
       title: t.name,
       back: "#/podroze",
       action: `<a class="icon-btn" href="#/podroze/${id}/edytuj" aria-label="Edytuj podróż">${editIcon}</a>`,
-      html: head +
+      html: head + (wx && wx.data ? App.Weather.strip(wx.data, t) : "") +
         (timeline || App.empty("🗺️", "Pusta oś czasu", "Dodaj pierwszy lot, pociąg, autobus albo nocleg – wybierz poniżej.")) +
         `<h3 class="section">Dodaj</h3><div class="type-grid">${typeButtons}</div>`,
       after(view) {
+        // pogoda: pokazane zapisane dane, świeże pobierane w tle (jeśli są starsze niż 3 h)
+        if (wx) wx.refresh().then(changed => { if (changed) App.render(); }).catch(() => {});
         const b = view.querySelector("#ics-trip");
         if (b) b.onclick = () => App.Reminders.exportTrips([t.id], t.name);
       },

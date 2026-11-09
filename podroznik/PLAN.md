@@ -73,7 +73,7 @@ Rzeczy do przetestowania na prawdziwym telefonie: **[DO-SPRAWDZENIA.md](DO-SPRAW
 37. ✅ Budżet podróży i wydatki – kategorie, waluty z kursami (ręcznie lub z NBP), ceny biletów wliczane same, „zostało na dzień”.
 38. ✅ Dokumenty: paszport, dowód, ubezpieczenie, wiza… – ważność, przypomnienia, ostrzeżenie „paszport ważny < 6 mies. po powrocie”, skan.
 39. ⬜ Wklejenie maila z potwierdzeniem → automatyczne odczytanie danych biletu.
-40. ⬜ Pogoda w miejscu docelowym w dniach podróży.
+40. ✅ Pogoda w miejscu docelowym: prognoza (do 16 dni) na stronie podróży i w planie dnia; dla dalszych podróży – jak było rok temu.
 
 ---
 
@@ -95,6 +95,7 @@ Rzeczy do przetestowania na prawdziwym telefonie: **[DO-SPRAWDZENIA.md](DO-SPRAW
 | `docs.js` | Etap 8: dokumenty z datą ważności |
 | `budget.js` | Etap 8: budżet i wydatki |
 | `stats.js` | Etap 8: statystyki i mapa (lotniska offline z `lib/airports.js`, reszta przez Open-Meteo) |
+| `weather.js` | Etap 8: pogoda (Open-Meteo) |
 | `tickets.js` | Etap 2: szczegóły odcinka, bilety, pełny ekran, skaner kodów |
 | `lib/` | pdf.js, bwip-js (rysowanie kodów), ZXing (odczyt kodów) – dołączone, działają offline |
 | `sw.js` | Offline – przy każdej zmianie plików aplikacji podbić `CACHE` (`podroznik-vN`) |

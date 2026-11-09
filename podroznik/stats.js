@@ -218,5 +218,20 @@
     };
   });
 
-  App.Stats = { compute, airports, km, iataIn };
+  // położenie jednego miejsca: kod lotniska → zapamiętane → (gdy online=true) wyszukiwarka; używane przez pogodę
+  async function locate(text, { online = false } = {}) {
+    if (!text) return null;
+    const air = await airports();
+    const a = iataIn(text, air);
+    if (a) return a;
+    const cache = await DB.getSetting("geoCache", {});
+    const c = cache[norm(text)];
+    if (c && !c.none) return c;
+    if (!online || (c && c.none)) return null;
+    await geocode([text], () => {});
+    const c2 = (await DB.getSetting("geoCache", {}))[norm(text)];
+    return c2 && !c2.none ? c2 : null;
+  }
+
+  App.Stats = { compute, airports, km, iataIn, locate };
 })();
