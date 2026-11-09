@@ -1,0 +1,7 @@
+FlixBus – Twoja rezerwacja
+Numer rezerwacji: 3012345678
+Linia N1234
+14.11.2026
+08:30 Warszawa Zachodnia
+14:05 Berlin ZOB
+Miejsce 12

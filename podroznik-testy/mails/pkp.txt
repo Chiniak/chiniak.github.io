@@ -1,0 +1,7 @@
+PKP Intercity - bilet na przejazd
+Pociąg EIP 5300
+Data: 13.11.2026
+Odjazd: Kraków Główny 07:10
+Przyjazd: Gdańsk Główny 12:50
+Wagon 5, miejsce 42
+Cena: 179,00 zł

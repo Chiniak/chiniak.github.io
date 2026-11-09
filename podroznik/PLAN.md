@@ -10,6 +10,8 @@ pakowania i przygotowań, licznik do następnej podróży z przypomnieniami.
 
 Legenda: ✅ zrobione · 🔄 w trakcie · ⬜ do zrobienia
 
+**Stan projektu i jak kontynuować: [STAN-PROJEKTU.md](STAN-PROJEKTU.md).**
+
 Rzeczy do przetestowania na prawdziwym telefonie: **[DO-SPRAWDZENIA.md](DO-SPRAWDZENIA.md)** – uzupełniane po każdym etapie.
 
 ---
