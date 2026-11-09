@@ -267,7 +267,8 @@
         <div class="dates">${App.fmtRange(t.start, t.end)} · ${total} ${plural(total, "dzień", "dni", "dni")}</div>
         <span class="pill pill-${status(t)}">${statusText(t)}</span>
         ${t.note ? `<p class="note">${esc(t.note)}</p>` : ""}
-      </div>`;
+      </div>
+      <a class="plan-link" href="#/plan/${t.id}"><span aria-hidden="true">🗓️</span> Plan dnia po dniu <span class="muted">– zwiedzanie, jedzenie, mapa</span><b aria-hidden="true">›</b></a>`;
 
     const typeButtons = Object.entries(TYPES).map(([k, T]) =>
       `<a class="type-btn" href="#/podroze/${id}/dodaj?typ=${k}"><span aria-hidden="true">${T.icon}</span>${T.name}</a>`).join("");

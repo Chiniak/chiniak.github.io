@@ -34,12 +34,12 @@ Legenda: ✅ zrobione · 🔄 w trakcie · ⬜ do zrobienia
 15. ✅ Na ekranie głównym przycisk **„Najbliższy bilet”** – jedno kliknięcie.
 16. ⬜ (później) Import kart pokładowych Apple/Google Wallet (.pkpass).
 
-## Etap 3 – Plan dnia i plan podróży ⬜
-17. ⬜ Plan dzień po dniu – odcinki transportu wskakują same.
-18. ⬜ Własne punkty: godzina, nazwa, miejsce, link do mapy, notatka, koszt.
-19. ⬜ Przeciąganie, by zmienić kolejność.
-20. ⬜ Przycisk **„Nawiguj”** – otwiera Google Maps z adresem.
-21. ⬜ Widok „Dziś”: co teraz, co dalej, ile czasu do następnego punktu.
+## Etap 3 – Plan dnia i plan podróży ✅
+17. ✅ Plan dzień po dniu – odcinki transportu wskakują same.
+18. ✅ Własne punkty: godzina, nazwa, miejsce, link do mapy, notatka, koszt.
+19. ✅ Przeciąganie, by zmienić kolejność.
+20. ✅ Przycisk **„Nawiguj”** – otwiera Google Maps z adresem.
+21. ✅ Widok „Dziś”: co teraz, co dalej, ile czasu do następnego punktu.
 
 ## Etap 4 – Pakowanie i przygotowanie ⬜
 22. ⬜ Lista rzeczy do zabrania z kategoriami (dokumenty, ubrania, elektronika, kosmetyki, leki…).
@@ -84,6 +84,7 @@ Legenda: ✅ zrobione · 🔄 w trakcie · ⬜ do zrobienia
 | `db.js` | Baza IndexedDB – wszystkie magazyny danych (`DB.put/get/all/byIndex/del`) |
 | `app.js` | Rdzeń: router (`App.route`), górny pasek, pomocniki dat, zakładki etapów 2–4, ustawienia |
 | `trips.js` | Etap 1: lista podróży, formularze podróży i odcinków, oś czasu |
+| `plan.js` | Etap 3: plan dzień po dniu, karta „Dziś”, punkty planu, przeciąganie, nawigacja |
 | `tickets.js` | Etap 2: szczegóły odcinka, bilety, pełny ekran, skaner kodów |
 | `lib/` | pdf.js, bwip-js (rysowanie kodów), ZXing (odczyt kodów) – dołączone, działają offline |
 | `sw.js` | Offline – przy każdej zmianie plików aplikacji podbić `CACHE` (`podroznik-vN`) |

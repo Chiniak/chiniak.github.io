@@ -303,8 +303,10 @@
 
     const dur = s.arrive && s.type !== "nocleg" ? App.duration(App.minutes(s.depart, s.arrive)) : "";
     const nights = s.type === "nocleg" && s.arrive ? App.dayDiff(s.depart, s.arrive) : 0;
-    const mapLink = s.type === "nocleg" && s.address
-      ? `<a class="map-link" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.address)}" target="_blank" rel="noopener">📍 ${esc(s.address)}</a>` : "";
+    // „Nawiguj”: do noclegu albo na miejsce odjazdu (lotnisko, dworzec, przystanek)
+    const navTo = s.type === "nocleg" ? (s.address || s.name) : s.from;
+    const mapLink = navTo
+      ? `<a class="map-link" href="${esc(App.mapsUrl(navTo))}" target="_blank" rel="noopener">📍 Nawiguj: ${esc(navTo)}</a>` : "";
 
     const tiles = files.map(f => `
       <a class="tk-tile" href="#/bilet/${f.id}">

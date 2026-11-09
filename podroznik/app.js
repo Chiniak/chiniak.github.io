@@ -51,6 +51,10 @@
     document.head.appendChild(el);
   }));
 
+  // link do nawigacji w Google Maps (na Androidzie otwiera aplikację Mapy); wklejony link do mapy zostaje bez zmian
+  App.mapsUrl = place => /^https?:\/\//i.test(place) ? place
+    : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(place)}`;
+
   App.toast = msg => {
     let t = $("#toast");
     if (!t) { t = document.createElement("div"); t.id = "toast"; t.setAttribute("role", "status"); document.body.appendChild(t); }
@@ -88,7 +92,7 @@
     for (const [re, fn] of routes) { match = path.match(re); if (match) { handler = fn; break; } }
     if (!handler) { location.replace("#/podroze"); return; }
 
-    const TAB_OF = { odcinek: "podroze", bilet: "bilety", skanuj: "bilety" };
+    const TAB_OF = { odcinek: "podroze", bilet: "bilety", skanuj: "bilety", punkt: "plan" };
     const first = path.split("/")[1];
     const tab = TAB_OF[first] || first;
     document.querySelectorAll(".tabbar a").forEach(a => {
@@ -120,8 +124,6 @@
   App.render = render;
 
   /* ---------- proste zakładki (kolejne etapy) ---------- */
-  App.route(/^\/plan$/, () => App.empty("🗓️", "Plan dnia i podróży",
-    "Rozkład dzień po dniu: transport, noclegi i Twoje własne punkty z mapą.", soon("Etap 3")));
   App.route(/^\/pakowanie$/, () => App.empty("✅", "Co zabrać",
     "Listy rzeczy do spakowania i zadań przed wyjazdem, z szablonami i postępem.", soon("Etap 4")));
 
@@ -140,7 +142,7 @@
         </div>
         <div class="card">
           <h2>O aplikacji</h2>
-          <div class="row"><span class="muted">Wersja</span><b>0.3 · etap 2</b></div>
+          <div class="row"><span class="muted">Wersja</span><b>0.4 · etap 3</b></div>
           <div class="row"><span class="muted">Tryb offline</span><b id="sw-state">…</b></div>
         </div>`,
       after(v) {
