@@ -296,7 +296,7 @@ main {
 .tv-switch { max-width: 280px; width: 100%; margin: 0 auto; grid-template-columns: 1fr 1fr; background: #eef1f1; }
 .tv-switch button { color: #111; }
 .tv-switch button[aria-pressed="true"] { background: #fff; color: #0f6e6e; }
-.tv-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; min-height: 240px; }
+.tv-body { flex: 1 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; min-height: 240px; }
 .tv-code { width: min(100%, 420px); height: auto; image-rendering: pixelated; }
 .tv-code.linear { width: 100%; max-width: 560px; }
 .tv-fmt { font-size: 12px; color: #777; }
@@ -633,3 +633,21 @@ html.lock-pending body > *:not(#lock) { visibility: hidden; }
 .em-card .tv-link { padding: 0; min-height: 36px; color: var(--accent); }
 .em-save { margin-top: 10px; display: flex; flex-direction: column; gap: 12px; }
 .em-save select { min-height: 46px; padding: 0 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; }
+
+/* ---------- etap 9: zdjęcie w tle podróży ---------- */
+.has-photo {
+  background-image: linear-gradient(180deg, rgba(0,0,0,.12), rgba(0,0,0,.62)), var(--photo);
+  background-size: cover; background-position: center; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.5);
+}
+.has-photo .muted, .trip-head.has-photo .dates { color: rgba(255,255,255,.88); }
+.trip-card.has-photo { min-height: 110px; display: flex; flex-direction: column; justify-content: flex-end; }
+.trip-head.has-photo { min-height: 170px; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-start; }
+.trip-head.has-photo .dest { font-size: 22px; }
+.has-photo .pill { text-shadow: none; }
+.cover-pick { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; padding: 10px; border-radius: 12px;
+  border: 1px dashed var(--line); min-height: 64px; }
+.cover-pick.has-photo { min-height: 130px; border-style: solid; }
+.tv-pass { margin: 8px 16px; color: #142022; font-size: 14px; }
+.tv-pass summary { cursor: pointer; color: #5b6b6e; }
+.tv-pass .row { border-color: #e3e8e9; }
+.tv-pass .row b { text-align: right; overflow-wrap: anywhere; }

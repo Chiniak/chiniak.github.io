@@ -54,7 +54,7 @@
         const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=1&language=pl&format=json`);
         if (!r.ok) throw new Error(`serwer odpowiedział ${r.status}`);
         const j = await r.json();
-        if (j.results && j.results[0]) { const x = j.results[0]; hit = { lat: x.latitude, lon: x.longitude, cc: x.country_code, name: x.name }; break; }
+        if (j.results && j.results[0]) { const x = j.results[0]; hit = { lat: x.latitude, lon: x.longitude, cc: x.country_code, name: x.name, tz: x.timezone || "" }; break; }
       }
       cache[key] = hit || { none: true };
       if (hit) found++;
@@ -233,5 +233,19 @@
     return c2 && !c2.none ? c2 : null;
   }
 
-  App.Stats = { compute, airports, km, iataIn, locate };
+  // strefy czasowe odcinków (etap 9): z kodu lotniska w „skąd” / „dokąd”; "" = sprawdzone, nieznana
+  async function fillTz(segs) {
+    const todo = segs.filter(s => s.type !== "nocleg" && (s.tzFrom === undefined || s.tzTo === undefined || s.tzKey !== `${s.from}|${s.to}`));
+    if (!todo.length) return false;
+    const air = await airports();
+    for (const s of todo) {
+      const a = iataIn(s.from, air), b = iataIn(s.to, air);
+      s.tzFrom = (a && a.tz) || ""; s.tzTo = (b && b.tz) || ""; s.tzKey = `${s.from}|${s.to}`;
+      const cur = await DB.get("segments", s.id);
+      if (cur) await DB.putRaw("segments", { ...cur, tzFrom: s.tzFrom, tzTo: s.tzTo, tzKey: s.tzKey });
+    }
+    return true;
+  }
+
+  App.Stats = { compute, airports, km, iataIn, locate, fillTz };
 })();

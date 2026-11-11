@@ -16,6 +16,46 @@
   App.time = s => (s && s.length > 10 ? s.slice(11, 16) : "");
   // godziny zapisane jako czas lokalny miejsca ("2026-11-13T08:15"), więc różnica jest liczona "na zegarku"
   App.minutes = (from, to) => Math.round((new Date(to) - new Date(from)) / 60000);
+  /* strefy czasowe (etap 9): odcinek może mieć tzFrom / tzTo (strefa IANA lotniska, np. "Europe/Lisbon"),
+     wtedy czas podróży liczony jest dokładnie, a nie „na zegarku” */
+  const tzFmt = {};
+  // przesunięcie strefy względem UTC (w minutach) w chwili ms
+  const tzOffsetAt = (tz, ms) => {
+    try {
+      const f = tzFmt[tz] || (tzFmt[tz] = new Intl.DateTimeFormat("en-US", { timeZone: tz, hourCycle: "h23",
+        year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }));
+      const p = Object.fromEntries(f.formatToParts(new Date(ms)).map(x => [x.type, x.value]));
+      return (Date.UTC(+p.year, p.month - 1, +p.day, +p.hour % 24, +p.minute) - Math.floor(ms / 60000) * 60000) / 60000;
+    } catch (e) { return null; } // nieznana strefa
+  };
+  // "2026-11-13T08:15" w strefie tz → chwila (ms od 1970); bez strefy – czas telefonu
+  App.instant = (s, tz) => {
+    const [d, t = "00:00"] = s.split("T");
+    const [y, m, dd] = d.split("-").map(Number), [h, mi] = t.split(":").map(Number);
+    if (!tz) return new Date(y, m - 1, dd, h || 0, mi || 0).getTime();
+    const wall = Date.UTC(y, m - 1, dd, h || 0, mi || 0);
+    let off = tzOffsetAt(tz, wall);
+    if (off == null) return new Date(y, m - 1, dd, h || 0, mi || 0).getTime();
+    off = tzOffsetAt(tz, wall - off * 60000); // druga próba – poprawne także przy zmianie czasu
+    return wall - off * 60000;
+  };
+  // czas trwania odcinka w minutach – ze strefami, gdy obie znane
+  App.segMinutes = s => s.tzFrom && s.tzTo
+    ? Math.round((App.instant(s.arrive, s.tzTo) - App.instant(s.depart, s.tzFrom)) / 60000)
+    : App.minutes(s.depart, s.arrive);
+  // różnica czasu na miejscu (w godzinach), np. +1 dla Warszawa → Lizbona: -1
+  App.tzShift = s => {
+    if (!s.tzFrom || !s.tzTo || s.tzFrom === s.tzTo || !s.arrive) return 0;
+    const at = App.instant(s.arrive, s.tzTo);
+    const d = (tzOffsetAt(s.tzTo, at) - tzOffsetAt(s.tzFrom, at)) / 60;
+    return isFinite(d) ? d : 0;
+  };
+  App.tzShiftText = s => {
+    const d = App.tzShift(s);
+    if (!d) return "";
+    const n = Math.abs(d);
+    return `🕒 ${d > 0 ? "+" : "−"}${String(n).replace(".", ",")} h na miejscu`;
+  };
   App.duration = min => {
     if (!(min > 0)) return "";
     const h = Math.floor(min / 60), m = min % 60;
@@ -54,6 +94,17 @@
   // link do nawigacji w Google Maps (na Androidzie otwiera aplikację Mapy); wklejony link do mapy zostaje bez zmian
   App.mapsUrl = place => /^https?:\/\//i.test(place) ? place
     : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(place)}`;
+
+  // zmniejszenie zdjęcia (np. tło podróży) – mniej miejsca w telefonie i w kopii zapasowej
+  App.resizeImage = async (blob, max = 1280, quality = 0.82) => {
+    const bmp = await createImageBitmap(blob);
+    const k = Math.min(1, max / Math.max(bmp.width, bmp.height));
+    const c = document.createElement("canvas");
+    c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+    c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+    bmp.close && bmp.close();
+    return new Promise(res => c.toBlob(res, "image/jpeg", quality));
+  };
 
   App.toast = msg => {
     let t = $("#toast");

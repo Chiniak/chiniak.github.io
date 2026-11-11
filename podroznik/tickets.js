@@ -188,15 +188,81 @@
     bwipjs.toCanvas(canvas, opts);
   }
 
+  /* ---------- karty .pkpass (Apple Wallet; wiele linii i przewoźników wysyła je mailem) – etap 9 ----------
+     .pkpass to archiwum ZIP z plikiem pass.json: kod (barcodes[0]) i pola karty (miejsce, gate, nr lotu…) */
+  async function zipEntry(buf, wanted) {
+    const v = new DataView(buf), u8 = new Uint8Array(buf);
+    let eocd = -1;
+    for (let i = buf.byteLength - 22; i >= Math.max(0, buf.byteLength - 66000); i--) if (v.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+    if (eocd < 0) throw new Error("To nie jest plik .pkpass (uszkodzone archiwum).");
+    let p = v.getUint32(eocd + 16, true);
+    const n = v.getUint16(eocd + 10, true);
+    for (let k = 0; k < n; k++) {
+      if (v.getUint32(p, true) !== 0x02014b50) break;
+      const method = v.getUint16(p + 10, true), size = v.getUint32(p + 20, true);
+      const nameLen = v.getUint16(p + 28, true), extraLen = v.getUint16(p + 30, true), commentLen = v.getUint16(p + 32, true);
+      const local = v.getUint32(p + 42, true);
+      const name = new TextDecoder().decode(u8.subarray(p + 46, p + 46 + nameLen));
+      p += 46 + nameLen + extraLen + commentLen;
+      if (name !== wanted) continue;
+      const start = local + 30 + v.getUint16(local + 26, true) + v.getUint16(local + 28, true);
+      const data = u8.subarray(start, start + size);
+      if (method === 0) return data;
+      if (method !== 8 || !self.DecompressionStream) throw new Error("Ten telefon nie umie rozpakować pliku .pkpass.");
+      return new Uint8Array(await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).arrayBuffer());
+    }
+    throw new Error("W pliku .pkpass brakuje pass.json.");
+  }
+  const PK_FORMATS = { PKBarcodeFormatQR: "qr_code", PKBarcodeFormatPDF417: "pdf417", PKBarcodeFormatAztec: "aztec", PKBarcodeFormatCode128: "code_128" };
+  async function readPkpass(file) {
+    const raw = new TextDecoder().decode(await zipEntry(await file.arrayBuffer(), "pass.json")).replace(/^\ufeff/, "");
+    const pass = JSON.parse(raw);
+    const bc = (pass.barcodes && pass.barcodes[0]) || pass.barcode;
+    const style = ["boardingPass", "eventTicket", "generic", "coupon", "storeCard"].find(k => pass[k]);
+    const fields = [];
+    if (style) for (const g of ["headerFields", "primaryFields", "secondaryFields", "auxiliaryFields", "backFields"])
+      for (const f of pass[style][g] || []) if (f && f.value != null && f.value !== "") fields.push({ key: String(f.key || ""), label: String(f.label || ""), value: String(f.value) });
+    return {
+      code: bc && bc.message ? { text: bc.message, format: PK_FORMATS[bc.format] || "qr_code" } : null,
+      label: [pass.organizationName, pass.description].filter(Boolean).join(" · ").slice(0, 60) || "Karta Wallet",
+      fields: fields.slice(0, 30),
+    };
+  }
+  // pola karty → puste pola odcinka (miejsce, gate, numer, rezerwacja…); nic nie jest nadpisywane
+  function fillFromPass(seg, fields) {
+    const MAP = [["seat", /seat|miejsce/i], ["gate", /gate|bramk/i], ["terminal", /terminal/i], ["number", /flight|lot\b|train|pociąg|nr/i],
+      ["booking", /pnr|confirmation|booking|reserv|rezerw/i], ["car", /coach|car\b|wagon/i], ["platform", /platform|peron|track|tor\b/i]];
+    const keys = new Set(Tr().typeOf(seg).extra.map(x => x[0]).concat("booking"));
+    const out = {};
+    for (const [field, re] of MAP) {
+      if (!keys.has(field) || seg[field]) continue;
+      const f = fields.find(x => re.test(x.key) || re.test(x.label));
+      if (f && f.value.length <= 40) out[field] = f.value;
+    }
+    return out;
+  }
+
   /* ---------- dodawanie plików ---------- */
-  const kindOf = file => file.type === "application/pdf" || /\.pdf$/i.test(file.name) ? "pdf" : file.type.startsWith("image/") ? "image" : null;
+  const kindOf = file => /\.pkpass$/i.test(file.name) || file.type === "application/vnd.apple.pkpass" ? "pkpass"
+    : file.type === "application/pdf" || /\.pdf$/i.test(file.name) ? "pdf" : file.type.startsWith("image/") ? "image" : null;
   const baseName = n => (n || "").replace(/\.[^.]+$/, "").slice(0, 40);
 
   async function addFiles(seg, fileList) {
-    let added = 0, codes = 0, skipped = 0;
+    let added = 0, codes = 0, skipped = 0, pkErr = "";
     for (const file of fileList) {
       const kind = kindOf(file);
       if (!kind) { skipped++; continue; }
+      if (kind === "pkpass") {
+        try {
+          const pk = await readPkpass(file);
+          if (!pk.code) throw new Error("Karta nie ma kodu.");
+          await DB.put("files", { tripId: seg.tripId, segmentId: seg.id, kind: "code", label: pk.label, code: pk.code, passFields: pk.fields });
+          const fill = fillFromPass(seg, pk.fields);
+          if (Object.keys(fill).length) { Object.assign(seg, fill); await DB.put("segments", { ...(await DB.get("segments", seg.id)), ...fill }); }
+          added++; codes++;
+        } catch (e) { pkErr = e.message || "Nie udało się odczytać karty .pkpass"; }
+        continue;
+      }
       App.toast(`Zapisuję ${fileList.length > 1 ? `${added + 1}/${fileList.length}` : "bilet"}…`);
       const rec = await DB.put("files", {
         tripId: seg.tripId, segmentId: seg.id, kind, mime: file.type, name: file.name,
@@ -208,7 +274,8 @@
     }
     let msg = added ? `Dodano ${added} ${App.plural(added, "bilet", "bilety", "biletów")}` : "Nie dodano żadnego pliku";
     if (codes) msg += ` · wykryto ${codes === 1 ? "kod" : codes + " kody"}`;
-    if (skipped) msg += ` · pominięto ${skipped} (tylko zdjęcia i PDF)`;
+    if (skipped) msg += ` · pominięto ${skipped} (tylko zdjęcia, PDF i .pkpass)`;
+    if (pkErr) msg = added ? `${msg} · ${pkErr}` : pkErr;
     App.toast(msg);
   }
 
@@ -228,9 +295,9 @@
   }
 
   function relTime(s) {
-    const now = nowStr();
-    if (s.depart <= now) return s.type === "nocleg" ? "trwa pobyt" : "w drodze";
-    const min = App.minutes(now, s.depart);
+    // strefa lotniska wylotu znana → licznik dokładny, nawet gdy telefon jest jeszcze w innej strefie
+    const min = Math.round((App.instant(s.depart, s.tzFrom) - Date.now()) / 60000);
+    if (min <= 0) return s.type === "nocleg" ? "trwa pobyt" : "w drodze";
     if (min < 60) return `za ${min} min`;
     if (min < 24 * 60) return `za ${Math.floor(min / 60)} h ${min % 60 ? (min % 60) + " min" : ""}`.trim();
     const d = App.dayDiff(App.todayStr(), s.depart);
@@ -312,7 +379,9 @@
     const T = Tr().typeOf(s);
     const urls = [];
 
-    const dur = s.arrive && s.type !== "nocleg" ? App.duration(App.minutes(s.depart, s.arrive)) : "";
+    if (App.Stats && s.type !== "nocleg") await App.Stats.fillTz([s]).catch(() => {});
+    const dur = s.arrive && s.type !== "nocleg" ? App.duration(App.segMinutes(s)) : "";
+    const shift = s.type !== "nocleg" ? App.tzShiftText(s) : "";
     const nights = s.type === "nocleg" && s.arrive ? App.dayDiff(s.depart, s.arrive) : 0;
     // „Nawiguj”: do noclegu albo na miejsce odjazdu (lotnisko, dworzec, przystanek)
     const navTo = s.type === "nocleg" ? (s.address || s.name) : s.from;
@@ -337,6 +406,7 @@
           <div class="seg-times">${s.type === "nocleg"
             ? `Zameldowanie ${App.time(s.depart)}${s.arrive ? ` · wymeldowanie ${App.fmtDay(s.arrive)} ${App.time(s.arrive)}` : ""}${nights > 0 ? ` · ${nights} ${App.plural(nights, "noc", "noce", "nocy")}` : ""}`
             : `${App.time(s.depart)}${s.arrive ? ` → ${App.time(s.arrive)}` : ""}${dur ? ` · ${dur}` : ""}`}</div>
+          ${shift ? `<div class="muted small">${shift} · godziny podane w czasie lokalnym lotnisk</div>` : ""}
           ${mapLink}
           ${s.depart && App.Reminders ? `<a class="map-link" href="${esc(App.Reminders.gcalUrl(s))}" target="_blank" rel="noopener">📅 Dodaj do Google Kalendarza</a>` : ""}
           ${Tr().chips(s)}
@@ -345,11 +415,11 @@
         </div>
 
         <h3 class="section">Bilety</h3>
-        ${files.length ? `<div class="tk-grid">${tiles}</div>` : `<p class="muted small">Dodaj zdjęcie, zrzut ekranu lub PDF biletu albo zeskanuj jego kod – będzie dostępny bez internetu.</p>`}
+        ${files.length ? `<div class="tk-grid">${tiles}</div>` : `<p class="muted small">Dodaj zdjęcie, zrzut ekranu, PDF lub kartę .pkpass (Apple Wallet) biletu albo zeskanuj jego kod – będzie dostępny bez internetu.</p>`}
         <div class="add-row">
           <a class="btn" href="#/skanuj/${id}">${camIcon} Skanuj kod</a>
           <label class="btn primary">${clipIcon} Zdjęcie / PDF
-            <input type="file" id="pick" accept="image/*,application/pdf,.pdf" multiple hidden></label>
+            <input type="file" id="pick" accept="image/*,application/pdf,.pdf,.pkpass,application/vnd.apple.pkpass" multiple hidden></label>
         </div>`,
       after(view) {
         view.querySelector("#pick").addEventListener("change", async e => {
@@ -447,6 +517,8 @@
               <button type="button" data-mode="oryginal" aria-pressed="false">Oryginał</button>
             </div>` : ""}
           <div class="tv-body" id="tv-body"></div>
+          ${f.passFields && f.passFields.length ? `<details class="tv-pass"><summary>Dane z karty Wallet (${f.passFields.length})</summary>
+            ${f.passFields.map(x => `<div class="row"><span>${esc(x.label || x.key)}</span><b>${esc(x.value)}</b></div>`).join("")}</details>` : ""}
           ${nav}
           <div class="tv-foot">
             <button type="button" class="tv-link" id="tv-rename">Zmień nazwę</button>

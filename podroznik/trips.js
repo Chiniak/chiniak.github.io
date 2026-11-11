@@ -64,6 +64,25 @@
   const plusIcon = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>`;
   const editIcon = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>`;
 
+  /* ---------- zdjęcie w tle podróży (etap 9) ----------
+     rekord w magazynie "files": { tripId, segmentId: "cover", kind: "cover", blob } – kopia zapasowa obejmuje go sama */
+  async function covers(tripId) {
+    const all = await DB.byIndex("files", "segmentId", "cover");
+    return Object.fromEntries(all.filter(f => !tripId || f.tripId === tripId).map(f => [f.tripId, f]));
+  }
+  // ustawia tło elementom [data-cover="id podróży"]; zwraca funkcję sprzątającą
+  function paintCovers(root, map) {
+    const urls = [];
+    root.querySelectorAll("[data-cover]").forEach(el => {
+      const f = map[el.dataset.cover];
+      if (!f || !(f.blob instanceof Blob)) return;
+      const u = URL.createObjectURL(f.blob); urls.push(u);
+      el.style.setProperty("--photo", `url("${u}")`);
+      el.classList.add("has-photo");
+    });
+    return () => urls.forEach(u => URL.revokeObjectURL(u));
+  }
+
   /* ================= LISTA PODRÓŻY ================= */
   App.route(/^\/podroze$/, async () => {
     const [trips, segs] = await Promise.all([DB.all("trips"), DB.all("segments")]);
@@ -92,7 +111,7 @@
         stays && `${stays} ${plural(stays, "nocleg", "noclegi", "noclegów")}`,
       ].filter(Boolean).join(" · ");
       return `
-        <a class="trip-card" href="#/podroze/${t.id}" style="--c:${esc(t.color || COLORS[0])}">
+        <a class="trip-card" href="#/podroze/${t.id}" data-cover="${t.id}" style="--c:${esc(t.color || COLORS[0])}">
           <div class="trip-top">
             <h2>${esc(t.name)}</h2>
             <span class="pill pill-${status(t)}">${statusText(t)}</span>
@@ -117,7 +136,13 @@
       </details>`;
     html += `<a class="plan-link st-link" href="#/wklej"><span aria-hidden="true">📧</span> Dodaj z maila <span class="muted">– wklej potwierdzenie rezerwacji</span><b aria-hidden="true">›</b></a>`;
     html += `<a class="plan-link" href="#/statystyki" style="margin-top:8px"><span aria-hidden="true">📊</span> Statystyki <span class="muted">– kilometry, kraje, mapa</span><b aria-hidden="true">›</b></a>`;
-    return { title: "Podróżnik", html: html + fab, after: home.after, cleanup: home.cleanup };
+    const cov = await covers();
+    let unpaint = null;
+    return {
+      title: "Podróżnik", html: html + fab,
+      after(v) { unpaint = paintCovers(v, cov); if (home.after) home.after(v); },
+      cleanup() { if (unpaint) unpaint(); if (home.cleanup) home.cleanup(); },
+    };
   });
 
   /* ================= FORMULARZ PODRÓŻY ================= */
@@ -125,6 +150,8 @@
     const t = id ? await DB.get("trips", id) : null;
     if (id && !t) { location.replace("#/podroze"); return ""; }
     const v = t || { name: "", destination: "", start: "", end: "", color: COLORS[0], note: "" };
+    const cover = t ? (await covers(t.id))[t.id] : null;
+    let newCover = null, dropCover = false, unpaint = null, previewUrl = null;
     const swatches = COLORS.map(c => `
       <label class="swatch" style="--c:${c}">
         <input type="radio" name="color" value="${c}" ${c === v.color ? "checked" : ""}><span aria-label="kolor ${c}"></span>
@@ -144,6 +171,11 @@
             <label class="field"><span>Do</span><input type="date" name="end" required value="${esc(v.end)}"></label>
           </div>
           <fieldset class="field"><legend>Kolor</legend><div class="swatches">${swatches}</div></fieldset>
+          <div class="field"><span>Zdjęcie w tle</span>
+            <div class="cover-pick" id="cover-box" data-cover="${t ? t.id : ""}">
+              <label class="btn">🖼️ ${cover ? "Zmień zdjęcie" : "Wybierz zdjęcie"}<input type="file" id="cover" accept="image/*" hidden></label>
+              ${cover ? `<button type="button" class="btn" id="cover-del">Usuń</button>` : ""}
+            </div></div>
           <label class="field"><span>Notatka</span>
             <textarea name="note" rows="3" placeholder="opcjonalnie">${esc(v.note)}</textarea></label>
           <p class="error" id="err" hidden></p>
@@ -157,6 +189,20 @@
           f.end.min = f.start.value;
         });
         if (!t) f.name.focus();
+        const box = view.querySelector("#cover-box");
+        if (cover) unpaint = paintCovers(view, { [t.id]: cover });
+        view.querySelector("#cover").addEventListener("change", async e => {
+          const file = e.target.files[0];
+          if (!file) return;
+          try { newCover = await App.resizeImage(file); } catch (err) { App.toast("Nie udało się wczytać zdjęcia"); return; }
+          dropCover = false;
+          if (previewUrl) URL.revokeObjectURL(previewUrl);
+          previewUrl = URL.createObjectURL(newCover);
+          box.style.setProperty("--photo", `url("${previewUrl}")`);
+          box.classList.add("has-photo");
+        });
+        const cdel = view.querySelector("#cover-del");
+        if (cdel) cdel.onclick = () => { dropCover = true; newCover = null; box.classList.remove("has-photo"); cdel.hidden = true; };
         f.addEventListener("submit", async e => {
           e.preventDefault();
           const d = Object.fromEntries(new FormData(f));
@@ -166,6 +212,8 @@
           if (!d.end) d.end = d.start;
           if (d.end < d.start) return err("Data końca nie może być przed datą początku.");
           const rec = await DB.put("trips", { ...(t || {}), ...d, name: d.name.trim(), destination: d.destination.trim() });
+          if ((newCover || dropCover) && cover) await DB.del("files", cover.id);
+          if (newCover) await DB.put("files", { tripId: rec.id, segmentId: "cover", kind: "cover", mime: "image/jpeg", name: "tlo.jpg", label: "Tło podróży", blob: newCover });
           App.toast(t ? "Zapisano zmiany" : "Podróż utworzona");
           if (t) App.back(`#/podroze/${rec.id}`); else location.replace(`#/podroze/${rec.id}`);
         });
@@ -181,6 +229,7 @@
           location.replace("#/podroze");
         });
       },
+      cleanup() { if (unpaint) unpaint(); if (previewUrl) URL.revokeObjectURL(previewUrl); },
     };
   }
   App.route(/^\/podroze\/nowa$/, () => tripForm(null));
@@ -215,13 +264,14 @@
         </a>`;
     }
     const arriveDay = s.arrive ? dayDiff(s.depart, s.arrive) : 0;
-    const dur = s.arrive ? App.duration(App.minutes(s.depart, s.arrive)) : "";
+    const dur = s.arrive ? App.duration(App.segMinutes(s)) : "";
+    const shift = App.tzShiftText(s);
     return `
       <a class="tl-card" href="#/odcinek/${s.id}">
         <div class="tl-ico" aria-hidden="true">${T.icon}</div>
         <div class="tl-main">
           <div class="tl-time">${App.time(s.depart)}${s.arrive ? ` → ${App.time(s.arrive)}${arriveDay > 0 ? `<sup>+${arriveDay}</sup>` : ""}` : ""}
-            ${dur ? `<span class="muted">· ${dur}</span>` : ""}${ticketMark(nTickets)}</div>
+            ${dur ? `<span class="muted">· ${dur}</span>` : ""}${shift ? ` <span class="muted small">· ${shift}</span>` : ""}${ticketMark(nTickets)}</div>
           <div class="tl-route">${esc(s.from || "?")} → ${esc(s.to || "?")}</div>
           ${chips(s)}
         </div>
@@ -240,6 +290,7 @@
     const t = await DB.get("trips", id);
     if (!t) { location.replace("#/podroze"); return ""; }
     const segs = (await DB.byIndex("segments", "tripId", id)).sort(bySegTime);
+    if (App.Stats) await App.Stats.fillTz(segs).catch(() => {}); // strefy czasowe lotnisk (etap 9)
     const nFiles = {};
     for (const f of await DB.byIndex("files", "tripId", id)) nFiles[f.segmentId] = (nFiles[f.segmentId] || 0) + 1;
 
@@ -262,6 +313,8 @@
     const bgTxt = !bg ? "" : bg.budget ? `wydano ${App.Budget.money(bg.spent, bg.home)} z ${App.Budget.money(bg.budget, bg.home)}`
       : bg.spent ? `wydano ${App.Budget.money(bg.spent, bg.home)}` : "wydatki, waluty, ile zostało";
     const wx = App.Weather ? await App.Weather.get(t) : null;
+    const cov = await covers(id);
+    let unpaint = null;
     let timeline = "", lastDay = null;
     for (const [day, , html] of items) {
       if (day !== lastDay) {
@@ -274,7 +327,7 @@
     }
 
     const head = `
-      <div class="trip-head" style="--c:${esc(t.color || COLORS[0])}">
+      <div class="trip-head" data-cover="${t.id}" style="--c:${esc(t.color || COLORS[0])}">
         ${t.destination ? `<div class="dest">${esc(t.destination)}</div>` : ""}
         <div class="dates">${App.fmtRange(t.start, t.end)} · ${total} ${plural(total, "dzień", "dni", "dni")}</div>
         <span class="pill pill-${status(t)}">${statusText(t)}</span>
@@ -296,7 +349,9 @@
         (timeline || App.empty("🗺️", "Pusta oś czasu", "Dodaj pierwszy lot, pociąg, autobus albo nocleg – wybierz poniżej.")) +
         `<h3 class="section">Dodaj</h3><div class="type-grid">${typeButtons}</div>
          <a class="plan-link" href="#/wklej?trip=${id}" style="margin-top:10px"><span aria-hidden="true">📧</span> Z maila <span class="muted">– wklej potwierdzenie lotu, pociągu, hotelu</span><b aria-hidden="true">›</b></a>`,
+      cleanup() { if (unpaint) unpaint(); },
       after(view) {
+        unpaint = paintCovers(view, cov);
         // pogoda: pokazane zapisane dane, świeże pobierane w tle (jeśli są starsze niż 3 h)
         if (wx) wx.refresh().then(changed => { if (changed) App.render(); }).catch(() => {});
         const b = view.querySelector("#ics-trip");
