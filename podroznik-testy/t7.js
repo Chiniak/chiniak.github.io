@@ -1,7 +1,7 @@
 const { chromium, devices } = require('playwright');
 const SP = process.argv[2];
 (async () => {
-  const b = await chromium.launch(); const ctx = await b.newContext({ ...devices['Pixel 7'] }); const p = await ctx.newPage();
+  const b = await chromium.launch(); const ctx = await b.newContext({ ...devices['Pixel 7'], locale: 'pl-PL' }); const p = await ctx.newPage();
   const errs=[]; p.on('pageerror', e=>errs.push(e.message)); p.on('console', m=>{ if(m.type()==='error') errs.push(m.text())});
   let promptAnswer = 'Mój weekend';
   p.on('dialog', d => d.type()==='prompt' ? d.accept(promptAnswer) : d.accept());

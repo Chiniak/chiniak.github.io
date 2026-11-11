@@ -2,7 +2,7 @@
 const { chromium, devices } = require('playwright');
 const dir = process.argv[2] || 'podroznik-testy';
 (async () => { const b = await chromium.launch();
-  const mk = async () => { const c = await b.newContext({ ...devices['Pixel 7'], acceptDownloads: true }); await c.route(/open-meteo|nbp/, r => r.abort()); const p = await c.newPage(); p.on('pageerror', e => errs.push(e.message)); return p; };
+  const mk = async () => { const c = await b.newContext({ ...devices['Pixel 7'], locale: 'pl-PL', acceptDownloads: true }); await c.route(/open-meteo|nbp/, r => r.abort()); const p = await c.newPage(); p.on('pageerror', e => errs.push(e.message)); return p; };
   const errs = []; const p = await mk();
   await p.goto('http://localhost:8765/podroznik/#/podroze'); await p.waitForTimeout(500);
   const id = await p.evaluate(async () => {

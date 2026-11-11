@@ -2,7 +2,7 @@ const { chromium, devices } = require('playwright');
 const SP = process.argv[2], FX = SP + '/fx';
 (async () => {
   const b = await chromium.launch({ args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', `--use-file-for-fake-video-capture=${FX}/cam.y4m`] });
-  const ctx = await b.newContext({ ...devices['Pixel 7'], permissions: ['camera'] });
+  const ctx = await b.newContext({ ...devices['Pixel 7'], locale: 'pl-PL', permissions: ['camera'] });
   const p = await ctx.newPage();
   const errs=[]; p.on('pageerror', e=>errs.push(e.message)); p.on('console', m=>{ if(m.type()==='error') errs.push(m.text())});
   p.on('dialog', d => { console.log('dialog:', d.message()); d.accept(); });

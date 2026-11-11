@@ -2,7 +2,7 @@
 const { chromium, devices } = require('playwright');
 (async () => { const b = await chromium.launch();
   const run = async (mode) => {
-    const ctx = await b.newContext({ ...devices['Pixel 7'], geolocation: { latitude: 50.0614, longitude: 19.9366 }, permissions: ['geolocation'] });
+    const ctx = await b.newContext({ ...devices['Pixel 7'], locale: 'pl-PL', geolocation: { latitude: 50.0614, longitude: 19.9366 }, permissions: ['geolocation'] });
     await ctx.route(/open-meteo/, r => r.abort());
     const hits = [];
     await ctx.route(/overpass|maps\.mail\.ru/, r => { const u = new URL(r.request().url()).hostname; hits.push(u);
@@ -32,7 +32,7 @@ const { chromium, devices } = require('playwright');
   };
   await run('mirror'); await run('down');
   // wszystko wyłączone
-  const ctx = await b.newContext({ ...devices['Pixel 7'] }); await ctx.route(/overpass|maps\.mail\.ru|wikipedia|open-meteo/, r => r.fulfill({ status: 503, body: '' }));
+  const ctx = await b.newContext({ ...devices['Pixel 7'], locale: 'pl-PL' }); await ctx.route(/overpass|maps\.mail\.ru|wikipedia|open-meteo/, r => r.fulfill({ status: 503, body: '' }));
   const p = await ctx.newPage(); await p.goto('http://localhost:8765/podroznik/#/podroze'); await p.waitForTimeout(400);
   const id = await p.evaluate(() => DB.put('trips', { name: 'X', start: '2027-05-01', end: '2027-05-03' }).then(t => t.id));
   await p.goto(`http://localhost:8765/podroznik/#/odkrywaj/${id}?t=atrakcje&lat=50.06&lon=19.93&gdzie=tutaj`); await p.waitForSelector('.dc-list p:has-text("⚠️")', { timeout: 20000 });

@@ -1,7 +1,7 @@
 const { chromium, devices } = require('playwright');
 const SP = process.argv[2];
 (async () => {
-  const b = await chromium.launch({ channel: 'chromium' }); const ctx = await b.newContext({ ...devices['Pixel 7'] }); const p = await ctx.newPage();
+  const b = await chromium.launch({ channel: 'chromium' }); const ctx = await b.newContext({ ...devices['Pixel 7'], locale: 'pl-PL' }); const p = await ctx.newPage();
   const errs=[]; p.on('pageerror', e=>errs.push(e.message)); p.on('console', m=>{ if(m.type()==='error') errs.push(m.text())});
   const PLACES = { 'Kraków Główny': null, 'Kraków': {latitude:50.06,longitude:19.94,country_code:'PL',name:'Kraków'}, 'Gdańsk': {latitude:54.35,longitude:18.65,country_code:'PL',name:'Gdańsk'},
     'Lizbona': {latitude:38.72,longitude:-9.14,country_code:'PT',name:'Lizbona'}, 'Porto': {latitude:41.15,longitude:-8.61,country_code:'PT',name:'Porto'}, 'Berlin': {latitude:52.52,longitude:13.40,country_code:'DE',name:'Berlin'} };

@@ -18,7 +18,7 @@
     inne: { icon: "📦", name: "Inne" },
   };
   const num = v => { const n = parseFloat(String(v ?? "").replace(/\s/g, "").replace(",", ".")); return isFinite(n) ? n : 0; };
-  const money = (n, cur) => `${(Math.round(n * 100) / 100).toLocaleString("pl-PL", { minimumFractionDigits: Number.isInteger(Math.round(n * 100) / 100) ? 0 : 2, maximumFractionDigits: 2 })} ${cur}`;
+  const money = (n, cur) => `${(Math.round(n * 100) / 100).toLocaleString((self.I18N ? I18N.locale : "pl-PL"), { minimumFractionDigits: Number.isInteger(Math.round(n * 100) / 100) ? 0 : 2, maximumFractionDigits: 2 })} ${cur}`;
   const cur3 = c => (c || "").trim().toUpperCase().slice(0, 5);
 
   async function load(tripId) {
@@ -115,7 +115,7 @@
         </div>
         ${who}
         <input type="date" name="date" value="${defDate}" aria-label="Dzień" class="bg-date">
-        <datalist id="bg-curs">${[...new Set(curList.concat(["PLN", "EUR", "USD", "GBP", "CHF", "CZK"]))].map(c => `<option value="${c}">`).join("")}</datalist>
+        <datalist id="bg-curs">${[...new Set(curList.concat(["PLN", "EUR", "USD", "GBP", "CHF", "CZK", "CNY", "THB", "VND", "LAK"]))].map(c => `<option value="${c}">`).join("")}</datalist>
       </form>`;
 
     // lista wg dni (najnowsze na górze)
@@ -192,10 +192,12 @@
           let ok = 0;
           for (const c of d.currencies) {
             try {
-              const r = await fetch(`https://api.nbp.pl/api/exchangerates/rates/a/${encodeURIComponent(c)}/?format=json`);
+              // tabela A (główne waluty), a gdy waluty tam nie ma – tabela B (np. VND, LAK, KHR, MMK)
+              let r = await fetch(`https://api.nbp.pl/api/exchangerates/rates/a/${encodeURIComponent(c)}/?format=json`);
+              if (r.status === 404) r = await fetch(`https://api.nbp.pl/api/exchangerates/rates/b/${encodeURIComponent(c)}/?format=json`);
               if (!r.ok) continue;
               const j = await r.json();
-              cfg[`rate_${c}`].value = String(j.rates[0].mid).replace(".", ",");
+              cfg[`rate_${c}`].value = String(+j.rates[0].mid.toPrecision(6)).replace(".", ",");
               ok++;
             } catch (err) { /* brak internetu albo waluty spoza tabeli A */ }
           }

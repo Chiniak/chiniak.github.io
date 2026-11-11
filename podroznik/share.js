@@ -73,7 +73,7 @@
     }
     const ideas = items.filter(i => !i.date);
     if (ideas.length) txt += `\n💡 Pomysły\n${ideas.map(i => `• ${i.title}`).join("\n")}\n`;
-    return txt.trim();
+    return self.I18N ? I18N.trText(txt.trim()) : txt.trim();
   }
 
   /* ================= WYSYŁANIE ================= */

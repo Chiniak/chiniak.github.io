@@ -1,7 +1,7 @@
 const { chromium, devices } = require('playwright');
 const fs = require('fs'); const SP = process.argv[2];
 (async () => {
-  const b = await chromium.launch({ channel: 'chromium' }); const ctx = await b.newContext({ ...devices['Pixel 7'], permissions: ['notifications'], acceptDownloads: true });
+  const b = await chromium.launch({ channel: 'chromium' }); const ctx = await b.newContext({ ...devices['Pixel 7'], locale: 'pl-PL', permissions: ['notifications'], acceptDownloads: true });
   const p = await ctx.newPage();
   const errs=[]; p.on('pageerror', e=>errs.push(e.message)); p.on('console', m=>{ if(m.type()==='error') errs.push(m.text())});
   const shot = async (n, full) => { await p.waitForTimeout(400); await p.screenshot({ path: `${SP}/${n}.png`, fullPage: !!full }); };

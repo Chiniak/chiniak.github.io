@@ -61,8 +61,9 @@
     }).join("");
     const transfers = s.transfers.map(t => `
       <div class="sp-transfer"><b>${esc(t.from)}</b> <span aria-hidden="true">→</span><span class="sr">oddaje</span> <b>${esc(t.to)}</b><span class="sp-amt">${m(t.amount)}</span></div>`).join("");
-    const text = `Rozliczenie: ${d.trip.name}\nRazem: ${m(s.total)}\n` +
+    const text0 = `Rozliczenie: ${d.trip.name}\nRazem: ${m(s.total)}\n` +
       (s.transfers.length ? s.transfers.map(t => `• ${t.from} → ${t.to}: ${m(t.amount)}`).join("\n") : "Wszyscy rozliczeni.");
+    const text = self.I18N ? I18N.trText(text0) : text0;
 
     return {
       title: `Rozliczenie · ${d.trip.name}`,

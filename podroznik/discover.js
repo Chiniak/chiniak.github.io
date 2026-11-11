@@ -9,8 +9,11 @@
   const { esc, plural } = App;
   const P = () => App.Places;
   const norm = s => String(s || "").trim().toLowerCase();
-  const cache = new Map(); // wyniki w pamięci – powrót na ekran nie pobiera ich od nowa
+  const cache = new Map();
+  const EN_FIRST = () => (self.I18N && I18N.lang === "en"); // wyniki w pamięci – powrót na ekran nie pobiera ich od nowa
 
+  // Amap szuka po chińsku
+  const AMAP_WORD = { "atrakcje turystyczne": "景点", muzea: "博物馆", parki: "公园", restauracje: "餐厅", kawiarnie: "咖啡", bary: "酒吧" };
   const TABS = { atrakcje: "🏛️ Atrakcje", jedzenie: "🍽️ Jedzenie", szukaj: "🔎 Szukaj" };
   const KIND = {
     museum: "muzeum", attraction: "atrakcja", viewpoint: "punkt widokowy", gallery: "galeria", zoo: "zoo", theme_park: "park rozrywki",
@@ -55,7 +58,8 @@
     const score = (t.wikidata ? 3 : 0) + (t.wikipedia ? 3 : 0) + (/museum|attraction|castle/.test(type) ? 1 : 0) + (t.website ? 1 : 0)
       + (t.opening_hours ? 1 : 0) + (t.cuisine ? 1 : 0) + (t.image ? 1 : 0);
     return {
-      id: `${el.type}/${el.id}`, name: t["name:pl"] || t.name, lat, lon, type, kind: KIND[type] || type.replace(/_/g, " "),
+      id: `${el.type}/${el.id}`, name: (EN_FIRST() ? t["name:en"] || t["name:pl"] : t["name:pl"] || t["name:en"]) || t.name,
+      local: (t["name:pl"] || t["name:en"]) && t.name !== (t["name:pl"] || t["name:en"]) && t.name !== t["name:en"] ? t.name : "", lat, lon, type, kind: KIND[type] || type.replace(/_/g, " "),
       cuisine, hours: t.opening_hours || "", website: t.website || t["contact:website"] || "", wikipedia: t.wikipedia || "",
       address: addr, dist: c ? P().km(c, { lat, lon }) : 0, score,
       cat: t.amenity ? "jedzenie" : /park|garden/.test(type) ? "natura" : "zwiedzanie",
@@ -110,7 +114,7 @@
   /* ---------- Wikipedia: artykuły o miejscach w pobliżu (zapas, gdy serwery map nie odpowiadają) ---------- */
   const NOT_SIGHT = /ulica|aleja|plac(?! zabaw)|stacja|przystanek|dzielnica|osiedle|gmina|parafia|freguesia|street|avenue|station|district|neighbourhood|szkoła|school|hotel|bank|firma|company|przedsiębiorstwo/i;
   async function wikiNearby(c) {
-    for (const lang of ["pl", "en"]) {
+    for (const lang of (self.I18N && I18N.lang === "en") ? ["en", "pl"] : ["pl", "en"]) {
       try {
         const r = await fetch(`https://${lang}.wikipedia.org/w/api.php?` + new URLSearchParams({
           action: "query", format: "json", origin: "*", generator: "geosearch", ggscoord: `${c.lat}|${c.lon}`, ggsradius: "5000",
@@ -174,7 +178,7 @@
       .concat(hotels.map(h => `<a class="st-chip${q.lat == h.lat && q.lon == h.lon ? " on" : ""}" href="#/odkrywaj/${id}?${new URLSearchParams({ t: tab, lat: h.lat, lon: h.lon, gdzie: h.name || "nocleg" })}">🏨 ${esc(h.name || "Nocleg")}</a>`))
       .join("");
     const items = await DB.byIndex("planItems", "tripId", id);
-    const have = new Set(items.map(i => norm(i.title)));
+    const have = new Map(items.map(i => [norm(i.title), i])); // nazwa → punkt planu (do odznaczania)
 
     const needCenter = !c && tab !== "szukaj";
     return {
@@ -190,18 +194,31 @@
             ? `Nie udało się ustalić położenia „${esc(trip.destination)}”${navigator.onLine ? "" : " – brak internetu"}. Wybierz „📍 Tutaj” albo wpisz miejsce w zakładce Szukaj.`
             : "Wpisz cel podróży (np. „Lizbona”) w ustawieniach podróży albo wybierz „📍 Tutaj”.",
             `<a class="btn" href="#/podroze/${id}/edytuj">Ustaw cel podróży</a>`) : ""}
+        ${c && tab !== "szukaj" ? `<div class="dc-google"><span class="muted small">${App.navApp === "amap" ? "Amap:" : App.navApp === "geo" ? "W aplikacji map:" : "Mapy Google:"}</span>${(tab === "jedzenie" ? [["🍽️", "restauracje"], ["☕", "kawiarnie"], ["🍺", "bary"]] : [["🏛️", "atrakcje turystyczne"], ["🖼️", "muzea"], ["🌳", "parki"]])
+          .map(([i, w]) => `<a class="st-chip" href="${esc(App.mapsSearchUrl(App.navApp === "amap" ? AMAP_WORD[w] || w : w, c.lat, c.lon))}" target="_blank" rel="noopener">${i} ${w.split(" ")[0]}</a>`).join("")}</div>` : ""}
         <div id="dc-list" class="dc-list">${needCenter || tab === "szukaj" && !q.q ? "" : `<p class="muted small">Szukam w okolicy${c ? ` „${esc(c.label)}”` : ""}…</p>`}</div>
         <p class="muted small dc-src">Dane: © OpenStreetMap, opisy: Wikipedia. Wymaga internetu.</p>`,
       after(view) {
         const box = view.querySelector("#dc-list");
         const gps = view.querySelector("#dc-gps");
+        // położenie: najpierw ostatnie znane (od razu), potem dokładny GPS; własny limit czasu – nie wisi na „Ustalam…”
         if (gps) gps.onclick = () => {
           if (!navigator.geolocation) { App.toast("Telefon nie udostępnia położenia"); return; }
-          gps.textContent = "📍 Ustalam…";
-          navigator.geolocation.getCurrentPosition(
-            pos => location.replace(link({ lat: pos.coords.latitude.toFixed(5), lon: pos.coords.longitude.toFixed(5), gdzie: "tutaj" })),
-            () => { gps.textContent = "📍 Tutaj"; App.toast("Brak zgody na położenie albo GPS wyłączony"); },
-            { enableHighAccuracy: false, timeout: 15000, maximumAge: 300000 });
+          if (gps.disabled) return;
+          gps.disabled = true; gps.textContent = "📍 Ustalam…";
+          let done = false;
+          const ok = pos => { if (done) return; done = true; clearTimeout(watchdog);
+            location.replace(link({ lat: pos.coords.latitude.toFixed(5), lon: pos.coords.longitude.toFixed(5), gdzie: "tutaj" })); };
+          const fail = msg => { if (done) return; done = true; clearTimeout(watchdog);
+            gps.disabled = false; gps.textContent = "📍 Tutaj"; App.toast(msg); };
+          const watchdog = setTimeout(() => fail("Telefon nie podał położenia – włącz lokalizację (GPS) i spróbuj jeszcze raz"), 25000);
+          navigator.geolocation.getCurrentPosition(ok, err => {
+            if (err.code === 1) return fail("Brak zgody na lokalizację – zezwól w ustawieniach telefonu (Chrome → Uprawnienia → Lokalizacja)");
+            gps.textContent = "📍 Ustalam (GPS)…";
+            navigator.geolocation.getCurrentPosition(ok,
+              e2 => fail(e2.code === 1 ? "Brak zgody na lokalizację" : "Nie udało się ustalić położenia – włącz GPS albo wyjdź bliżej okna"),
+              { enableHighAccuracy: true, timeout: 20000, maximumAge: 60000 });
+          }, { enableHighAccuracy: false, timeout: 6000, maximumAge: 30 * 60000 });
         };
 
         const render = list => {
@@ -210,7 +227,7 @@
             <div class="dc-card">
               ${p.thumb ? `<img class="dc-img" src="${esc(p.thumb)}" alt="" loading="lazy">` : `<div class="dc-img dc-ico" aria-hidden="true">${(App.Plan.CATS[p.cat] || App.Plan.CATS.inne).icon}</div>`}
               <div class="dc-main">
-                <b>${esc(p.name)}</b>
+                <b>${esc(p.name)}</b>${p.local ? `<span class="small dc-local" lang="und">${esc(p.local)}</span>` : ""}
                 <span class="muted small">${[p.kind, p.cuisine, p.dist ? `${P().fmtDist(p.dist)} stąd` : ""].filter(Boolean).map(esc).join(" · ")}</span>
                 ${p.desc ? `<span class="small">${esc(p.desc)}</span>` : ""}
                 ${p.hours ? `<span class="muted small">🕒 ${esc(p.hours.slice(0, 60))}</span>` : ""}
@@ -218,15 +235,27 @@
                   ${p.website ? `<a href="${esc(p.website)}" target="_blank" rel="noopener">Strona ↗</a>` : ""}
                   <a href="${esc(App.mapsUrl(`${p.lat},${p.lon}`))}" target="_blank" rel="noopener">Nawiguj ↗</a></span>
               </div>
-              <button type="button" class="btn dc-add${have.has(norm(p.name)) ? " done" : ""}" data-i="${i}" ${have.has(norm(p.name)) ? "disabled" : ""}>${have.has(norm(p.name)) ? "✓ w planie" : "💡 Do pomysłów"}</button>
+              <button type="button" class="btn dc-add${have.has(norm(p.name)) ? " done" : ""}" data-i="${i}" aria-pressed="${have.has(norm(p.name))}">${have.has(norm(p.name)) ? "✓ w planie" : "💡 Do pomysłów"}</button>
             </div>`).join("");
+          const setBtn = (b, on) => { b.textContent = on ? "✓ w planie" : "💡 Do pomysłów"; b.classList.toggle("done", on); b.setAttribute("aria-pressed", on); };
           box.querySelectorAll(".dc-add").forEach(b => b.onclick = async () => {
             const p = list[+b.dataset.i];
-            await DB.put("planItems", { tripId: id, date: "", time: "", title: p.name.slice(0, 100), cat: p.cat,
+            const k = norm(p.name);
+            // drugie kliknięcie: odznacz (pomysł znika; punkt przypisany już do dnia – po potwierdzeniu)
+            if (have.has(k)) {
+              const it = await DB.get("planItems", have.get(k).id);
+              if (it && it.date && !confirm(`„${it.title}” jest już w planie na ${App.fmtDay(it.date)}. Usunąć z planu?`)) return;
+              if (it) await DB.del("planItems", it.id);
+              have.delete(k);
+              setBtn(b, false);
+              App.toast(it && it.date ? "Usunięto z planu" : "Usunięto z pomysłów");
+              return;
+            }
+            const rec = await DB.put("planItems", { tripId: id, date: "", time: "", title: p.name.slice(0, 100), cat: p.cat,
               place: p.address ? `${p.name}, ${p.address}` : p.name, lat: p.lat, lon: p.lon,
               note: [p.kind, p.cuisine, p.desc].filter(Boolean).join(" · ").slice(0, 300), cost: "", currency: "PLN", order: 1e6 });
-            have.add(norm(p.name));
-            b.textContent = "✓ w planie"; b.disabled = true; b.classList.add("done");
+            have.set(k, rec);
+            setBtn(b, true);
             if (navigator.vibrate) navigator.vibrate(15);
             App.toast("Dodano do pomysłów – wybierzesz dzień w planie");
           });

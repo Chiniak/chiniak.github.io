@@ -1,6 +1,6 @@
 const { chromium, devices } = require('playwright');
 (async () => {
-  const b = await chromium.launch(); const ctx = await b.newContext({ ...devices['Pixel 7'] }); const p = await ctx.newPage();
+  const b = await chromium.launch(); const ctx = await b.newContext({ ...devices['Pixel 7'], locale: 'pl-PL' }); const p = await ctx.newPage();
   await p.goto('http://localhost:8765/podroznik/'); await p.waitForTimeout(400);
   const tid = await p.evaluate(async()=>{ const T=App.todayStr(); const t=await DB.put('trips',{name:'X',start:T,end:T});
     for (const [i,n] of ['A','B','C','D'].entries()) await DB.put('planItems',{tripId:t.id,date:T,time:'',title:n,order:i}); return t.id; });

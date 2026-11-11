@@ -28,6 +28,8 @@
   async function place(trip) {
     const L = App.Stats && App.Stats.locate;
     if (!L) return null;
+    // cel podróży – wyszukiwarka OpenStreetMap (places.js), a bez niej / bez wyniku: lotnisko albo Open-Meteo
+    if (trip.destination && App.Places) { const c = await App.Places.center(trip); if (c && c.label === trip.destination) return { lat: c.lat, lon: c.lon, label: trip.destination }; }
     if (trip.destination) { const p = await L(trip.destination, { online: navigator.onLine }); if (p) return { ...p, label: trip.destination }; }
     const segs = (await DB.byIndex("segments", "tripId", trip.id)).filter(s => s.depart && s.type !== "nocleg").sort((a, b) => a.depart.localeCompare(b.depart));
     for (const s of segs.slice(0, 1)) {
