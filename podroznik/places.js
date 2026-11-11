@@ -29,9 +29,13 @@
     const rest = parts.filter(p => p !== name && !/^\d{2,}[-\s]?\d*$/.test(p)).slice(0, 2);
     return [name, ...rest].filter(Boolean).join(", ");
   };
-  async function search(q, near) {
-    const p = { q };
-    if (near) { const d = 0.35; p.viewbox = `${near.lon - d},${near.lat + d},${near.lon + d},${near.lat - d}`; }
+  async function search(q, near, { bounded = false, limit = 6 } = {}) {
+    const p = { q, limit: String(limit) };
+    if (near) {
+      const d = bounded ? 0.015 : 0.35; // bounded: tylko okolica (ok. 1,5 km), np. restauracje w pobliżu
+      p.viewbox = `${near.lon - d},${near.lat + d},${near.lon + d},${near.lat - d}`;
+      if (bounded) p.bounded = "1";
+    }
     const res = await nominatim(p);
     return res.map(x => {
       const name = x.name || String(x.display_name).split(",")[0];

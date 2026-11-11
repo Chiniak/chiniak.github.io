@@ -24,13 +24,26 @@
     turkish: "turecka", kebab: "kebab", regional: "regionalna", ice_cream: "lody", cake: "ciasta", bakery: "piekarnia", local: "lokalna" };
 
   /* ---------- Overpass (OpenStreetMap) ---------- */
+  // kilka serwerów Overpass – główny bywa przeciążony (429 / 504); każdy ma 20 s
+  const OVERPASS = ["https://overpass-api.de/api/interpreter", "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+    "https://overpass.private.coffee/api/interpreter"];
+  let lastErr = "";
   async function overpass(query) {
-    const r = await fetch("https://overpass-api.de/api/interpreter", {
-      method: "POST", body: "data=" + encodeURIComponent(query),
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    });
-    if (!r.ok) throw new Error(`serwer map odpowiedział ${r.status}`);
-    return (await r.json()).elements || [];
+    const errs = [];
+    for (const url of OVERPASS) {
+      const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 20000);
+      try {
+        const r = await fetch(url, { method: "POST", body: "data=" + encodeURIComponent(query), signal: ctl.signal,
+          headers: { "Content-Type": "application/x-www-form-urlencoded" } });
+        if (!r.ok) { errs.push(String(r.status)); continue; }
+        const j = await r.json();
+        if (j.remark && /runtime error|timed out/i.test(j.remark) && !(j.elements || []).length) { errs.push("limit czasu"); continue; }
+        return j.elements || [];
+      } catch (e) { errs.push(e.name === "AbortError" ? "brak odpowiedzi" : "błąd sieci"); }
+      finally { clearTimeout(timer); }
+    }
+    lastErr = errs.join(", ");
+    throw new Error(`serwery map nie odpowiadają (${lastErr})`);
   }
   function toPlace(el, c) {
     const t = el.tags || {};
@@ -49,19 +62,42 @@
     };
   }
   async function attractions(c) {
-    const a = `(around:6000,${c.lat},${c.lon})`;
-    const els = await overpass(`[out:json][timeout:25];(
+    let els;
+    try { els = await overpassAttractions(c); } catch (e) {
+      const w = await wikiNearby(c); // zapas: artykuły z Wikipedii o miejscach w pobliżu
+      if (w.length) return w;
+      throw e;
+    }
+    return dedupe(els.map(e => toPlace(e, c)).filter(Boolean))
+      .sort((x, y) => y.score - x.score || x.dist - y.dist).slice(0, 40);
+  }
+  function overpassAttractions(c) {
+    const a = `(around:3500,${c.lat},${c.lon})`;
+    return overpass(`[out:json][timeout:20];(
       nwr["tourism"~"^(attraction|museum|viewpoint|gallery|zoo|theme_park|aquarium)$"]["name"]${a};
       nwr["historic"~"^(monument|castle|memorial|ruins|archaeological_site|fort|palace)$"]["name"]["wikidata"]${a};
       nwr["leisure"~"^(park|garden)$"]["name"]["wikidata"]${a};
       nwr["amenity"="place_of_worship"]["name"]["wikipedia"]${a};
-    );out center tags 300;`);
-    return dedupe(els.map(e => toPlace(e, c)).filter(Boolean))
-      .sort((x, y) => y.score - x.score || x.dist - y.dist).slice(0, 40);
+    );out center tags 200;`);
   }
   async function food(c) {
-    const els = await overpass(`[out:json][timeout:25];
-      nwr["amenity"~"^(restaurant|cafe|bar|pub|ice_cream)$"]["name"](around:1500,${c.lat},${c.lon});out center tags 300;`);
+    let els;
+    try {
+      els = await overpass(`[out:json][timeout:20];
+        nwr["amenity"~"^(restaurant|cafe|bar|pub|ice_cream)$"]["name"](around:1200,${c.lat},${c.lon});out center tags 200;`);
+    } catch (e) {
+      // zapas: wyszukiwarka OpenStreetMap (Nominatim) – restauracje i kawiarnie w okolicy
+      const out = [];
+      for (const [q, type] of [["restaurant", "restaurant"], ["cafe", "cafe"]]) {
+        try {
+          for (const r of await App.Places.search(q, c, { bounded: true, limit: 20 }))
+            out.push({ id: `${r.lat},${r.lon}`, name: r.name, lat: r.lat, lon: r.lon, type, kind: KIND[type], cuisine: "", hours: "",
+              website: "", wikipedia: "", address: r.address.replace(r.name + ", ", ""), dist: P().km(c, r), score: 0, cat: "jedzenie" });
+        } catch (x) { /* dalej */ }
+      }
+      if (out.length) return dedupe(out).sort((x, y) => x.dist - y.dist).slice(0, 40);
+      throw e;
+    }
     // najpierw miejsca z pełniejszym opisem (kuchnia, godziny, strona), potem najbliższe
     return dedupe(els.map(e => toPlace(e, c)).filter(Boolean))
       .sort((x, y) => Math.min(y.score, 3) - Math.min(x.score, 3) || x.dist - y.dist).slice(0, 40);
@@ -69,6 +105,27 @@
   function dedupe(list) {
     const seen = new Set();
     return list.filter(p => { const k = norm(p.name); if (seen.has(k)) return false; seen.add(k); return true; });
+  }
+
+  /* ---------- Wikipedia: artykuły o miejscach w pobliżu (zapas, gdy serwery map nie odpowiadają) ---------- */
+  const NOT_SIGHT = /ulica|aleja|plac(?! zabaw)|stacja|przystanek|dzielnica|osiedle|gmina|parafia|freguesia|street|avenue|station|district|neighbourhood|szkoła|school|hotel|bank|firma|company|przedsiębiorstwo/i;
+  async function wikiNearby(c) {
+    for (const lang of ["pl", "en"]) {
+      try {
+        const r = await fetch(`https://${lang}.wikipedia.org/w/api.php?` + new URLSearchParams({
+          action: "query", format: "json", origin: "*", generator: "geosearch", ggscoord: `${c.lat}|${c.lon}`, ggsradius: "5000",
+          ggslimit: "50", prop: "coordinates|pageimages|description", piprop: "thumbnail", pithumbsize: "200" }));
+        if (!r.ok) continue;
+        const pages = Object.values(((await r.json()).query || {}).pages || {});
+        const list = pages.filter(pg => pg.coordinates && !NOT_SIGHT.test(`${pg.title} ${pg.description || ""}`)).map(pg => ({
+          id: `wiki/${lang}/${pg.pageid}`, name: pg.title, lat: pg.coordinates[0].lat, lon: pg.coordinates[0].lon, type: "", kind: "",
+          cuisine: "", hours: "", website: "", wikipedia: "", address: "", desc: pg.description || "", thumb: pg.thumbnail ? pg.thumbnail.source : "",
+          wikiUrl: `https://${lang}.wikipedia.org/wiki/${encodeURIComponent(pg.title.replace(/ /g, "_"))}`,
+          dist: P().km(c, pg.coordinates[0]), score: pg.thumbnail ? 1 : 0, cat: "zwiedzanie" }));
+        if (list.length) return list.sort((x, y) => y.score - x.score || x.dist - y.dist).slice(0, 40);
+      } catch (e) { /* następny język */ }
+    }
+    return [];
   }
 
   /* ---------- Wikipedia: krótki opis i miniatura dla atrakcji z linkiem do artykułu ---------- */
@@ -182,7 +239,7 @@
             cache.set(key, list);
             if (box.isConnected) render(list);
           } catch (e) {
-            if (box.isConnected) box.innerHTML = `<p class="muted small">⚠️ ${navigator.onLine ? "Serwer map nie odpowiada – spróbuj za chwilę." : "Brak internetu – odkrywanie działa tylko online."}</p>`;
+            if (box.isConnected) box.innerHTML = `<p class="muted small">⚠️ ${navigator.onLine ? `Serwery map nie odpowiadają – spróbuj za chwilę albo użyj zakładki „🔎 Szukaj”.${lastErr ? ` <span class="dc-err">(${esc(lastErr)})</span>` : ""}` : "Brak internetu – odkrywanie działa tylko online."}</p>`;
           }
         };
         if (tab === "szukaj") {
