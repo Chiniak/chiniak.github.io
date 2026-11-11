@@ -225,5 +225,5 @@
     };
   });
 
-  App.Backup = { exportBackup, readBackup, restore, snapshot, encrypt, decrypt };
+  App.Backup = { exportBackup, readBackup, restore, snapshot, encrypt, decrypt, blobToDataUrl, dataUrlToBlob, deliver };
 })();

@@ -10,6 +10,8 @@ pakowania i przygotowań, licznik do następnej podróży z przypomnieniami.
 
 Legenda: ✅ zrobione · 🔄 w trakcie · ⬜ do zrobienia
 
+**Stan projektu i jak kontynuować: [STAN-PROJEKTU.md](STAN-PROJEKTU.md).**
+
 Rzeczy do przetestowania na prawdziwym telefonie: **[DO-SPRAWDZENIA.md](DO-SPRAWDZENIA.md)** – uzupełniane po każdym etapie.
 
 ---
@@ -29,12 +31,12 @@ Rzeczy do przetestowania na prawdziwym telefonie: **[DO-SPRAWDZENIA.md](DO-SPRAW
 10. ✅ Oś czasu podróży – odcinki w kolejności.
 11. ✅ Lista podróży: **nadchodzące / trwające / archiwum**.
 
-## Etap 2 – Bilety do szybkiego pokazania ✅ (bez pkt 16)
+## Etap 2 – Bilety do szybkiego pokazania ✅
 12. ✅ Podpinanie do odcinka **zdjęcia, PDF lub zrzutu ekranu** biletu.
 13. ✅ Widok „pokaż bilet” – pełny ekran, białe tło, blokada wygaszania. (Jasności strona WWW nie zmienia – do sprawdzenia w APK.)
 14. ✅ **Skaner kodu QR / kreskowego** – zapis kodu i wyświetlanie go ostro i czytelnie.
 15. ✅ Na ekranie głównym przycisk **„Najbliższy bilet”** – jedno kliknięcie.
-16. ⬜ (później) Import kart pokładowych Apple/Google Wallet (.pkpass).
+16. ✅ Import kart .pkpass (Apple Wallet) – kod, pola karty, uzupełnienie miejsca / gate / rezerwacji (etap 9).
 
 ## Etap 3 – Plan dnia i plan podróży ✅
 17. ✅ Plan dzień po dniu – odcinki transportu wskakują same.
@@ -64,9 +66,9 @@ Rzeczy do przetestowania na prawdziwym telefonie: **[DO-SPRAWDZENIA.md](DO-SPRAW
 32. ✅ Eksport podróży do kalendarza (.ics) – zrobione w etapie 5 (z alarmami) + „Dodaj do Google Kalendarza”.
 33. ✅ Blokada PIN-em (całej aplikacji) + odcisk palca, jeśli telefon pozwala. Kopia może być zaszyfrowana hasłem.
 
-## Etap 7 – Publikacja ⬜
-34. ⬜ Hosting na `chiniak.github.io/podroznik/`.
-35. ⬜ Spakowanie do **APK** (TWA, jak KWS) i instalacja na telefonie.
+## Etap 7 – Publikacja ✅
+34. ✅ Hosting na `chiniak.github.io/podroznik/` (po scaleniu pull requesta #1).
+35. ✅ **APK** (TWA, jak KWS): `podroznik/Podroznik.apk`, pakiet `io.github.chiniak.podroznik`, projekt w `podroznik-android/`, odcisk w `.well-known/assetlinks.json`.
 
 ## Etap 8 – Bonusy ✅
 36. ✅ Statystyki: km, loty, dni, noce, kraje z flagami, rekordy, mapa tras; filtr po latach.
@@ -74,6 +76,24 @@ Rzeczy do przetestowania na prawdziwym telefonie: **[DO-SPRAWDZENIA.md](DO-SPRAW
 38. ✅ Dokumenty: paszport, dowód, ubezpieczenie, wiza… – ważność, przypomnienia, ostrzeżenie „paszport ważny < 6 mies. po powrocie”, skan.
 39. ✅ Wklejenie maila z potwierdzeniem (lub „Udostępnij → Podróżnik”) → odczyt lotów, pociągów, autobusów i hoteli w telefonie.
 40. ✅ Pogoda w miejscu docelowym: prognoza (do 16 dni) na stronie podróży i w planie dnia; dla dalszych podróży – jak było rok temu.
+
+## Etap 9 – Dokończenie ✅
+41. ✅ **Strefy czasowe** – czas lotu liczony dokładnie ze stref lotnisk (np. WAW → LIS: 3 h 50 min, a nie 2 h 50 min) i informacja „🕒 −1 h na miejscu”; licznik do biletu liczy według strefy lotniska wylotu.
+42. ✅ **Zdjęcie jako tło podróży** – na liście podróży i w nagłówku (zmniejszane do 1280 px, w kopii zapasowej).
+43. ✅ **Karty .pkpass** (pkt 16) – patrz wyżej.
+
+## Etap 10 – Jak w Wanderlog ✅
+44. ✅ **Wyszukiwarka miejsc** w punkcie planu (OpenStreetMap) – zapisuje położenie punktu.
+45. ✅ **Mapa planu** – punkty dnia ponumerowane w kolejności, nocleg, linia trasy, dzień po dniu albo wszystkie dni (Leaflet + OpenStreetMap).
+46. ✅ **Czas dojścia / dojazdu** między punktami w planie i na mapie (🚶 12 min · 900 m) + „Trasa w Mapach Google” dla całego dnia.
+47. ✅ **Ułóż najkrótszą trasę** dnia (start z noclegu; punkty z godziną zostają na miejscu).
+48. ✅ **Pomysły** – punkty bez dnia, jednym wyborem przenoszone do dnia; widoczne na mapie.
+49. ✅ **Odkrywaj** – atrakcje (z opisem i zdjęciem z Wikipedii) i jedzenie w pobliżu celu, noclegu albo „tutaj” (GPS), wyszukiwarka; „💡 Do pomysłów”.
+50. ✅ **Rozliczenie w grupie** – uczestnicy, kto płacił i za kogo, salda i najkrótsza lista przelewów, wysłanie rozliczenia.
+51. ✅ **Wspólna podróż bez serwera** – wysłanie podróży plikiem i scalanie zmian (nowsza wersja wygrywa) + plan jako tekst do komunikatora.
+
+Czego (świadomie) nie ma: edycji na żywo przez kilka osób (wymaga serwera i kont), asystenta AI (wymaga płatnego klucza),
+automatycznego czytania Gmaila (wymaga weryfikacji aplikacji przez Google) – zamiast tego jest „Udostępnij → Podróżnik” i wklejanie maila.
 
 ---
 
@@ -97,6 +117,10 @@ Rzeczy do przetestowania na prawdziwym telefonie: **[DO-SPRAWDZENIA.md](DO-SPRAW
 | `stats.js` | Etap 8: statystyki i mapa (lotniska offline z `lib/airports.js`, reszta przez Open-Meteo) |
 | `weather.js` | Etap 8: pogoda (Open-Meteo) |
 | `email.js` | Etap 8: odczyt rezerwacji z maila |
+| `places.js` | Etap 10: wyszukiwarka miejsc, mapa planu, odległości, układanie trasy |
+| `discover.js` | Etap 10: odkrywanie atrakcji i jedzenia (Overpass, Wikipedia) |
+| `split.js` | Etap 10: rozliczenie wydatków w grupie |
+| `share.js` | Etap 10: wspólna podróż (plik) i plan jako tekst |
 | `tickets.js` | Etap 2: szczegóły odcinka, bilety, pełny ekran, skaner kodów |
 | `lib/` | pdf.js, bwip-js (rysowanie kodów), ZXing (odczyt kodów) – dołączone, działają offline |
 | `sw.js` | Offline – przy każdej zmianie plików aplikacji podbić `CACHE` (`podroznik-vN`) |

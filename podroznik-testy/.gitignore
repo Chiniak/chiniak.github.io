@@ -1,0 +1,8 @@
+fx/cam.y4m
+*.png
+!fx/*.png
+*.ics
+backup*.json
+b3.json
+bad.json
+out.ics

@@ -5,7 +5,7 @@
      #/plan/:tripId/nowy?d=DATA   nowy punkt planu
      #/punkt/:id                  edycja (i usuwanie) punktu
    Punkt planu (magazyn "planItems"):
-     { id, tripId, date: "RRRR-MM-DD", time: "GG:MM" | "", title, cat, place, note, cost, currency, order }
+     { id, tripId, date: "RRRR-MM-DD" | "" (pomysł bez dnia, etap 10), time: "GG:MM" | "", title, cat, place, lat?, lon?, note, cost, currency, order }
    Transport i noclegi wskakują do planu same (z magazynu "segments") – edytuje się je w podróży.
    Kolejność: punkty mają ręczną kolejność ("order", przeciąganie ≡); odcinki wstawiane są według godziny. */
 (function () {
@@ -27,6 +27,7 @@
 
   const navIcon = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l18-8-8 18-2-8z"/></svg>`;
   const routeIcon = `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.5 6H15a3 3 0 010 6H9a3 3 0 000 6h6.5"/></svg>`;
+  const mapIcon = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>`;
   const handleIcon = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14M5 12h14M5 16h14"/></svg>`;
   const navLink = (place, label = "Nawiguj") => place
     ? `<a class="pl-nav" href="${esc(App.mapsUrl(place))}" target="_blank" rel="noopener" aria-label="${label}: ${esc(place)}">${navIcon}</a>` : "";
@@ -167,7 +168,7 @@
     // dni: od początku do końca podróży + dni spoza zakresu, na których coś jest
     const days = [];
     for (let d = trip.start; d <= trip.end; d = App.addDays(d, 1)) days.push(d);
-    const extra = new Set(items.map(i => i.date).concat(events.map(e => e.at.slice(0, 10))).filter(d => d < trip.start || d > trip.end));
+    const extra = new Set(items.map(i => i.date).filter(Boolean).concat(events.map(e => e.at.slice(0, 10))).filter(d => d < trip.start || d > trip.end));
     const allDays = [...new Set([...extra].filter(d => d < trip.start).sort().concat(days, [...extra].filter(d => d > trip.end).sort()))];
 
     const total = days.length;
@@ -177,6 +178,29 @@
       const n = App.dayDiff(today, trip.start);
       html += `<p class="pl-info">Do wyjazdu ${n === 1 ? "1 dzień" : `${n} ${plural(n, "dzień", "dni", "dni")}`} · ${App.fmtRange(trip.start, trip.end)}</p>`;
     }
+
+    // etap 10: mapa, odkrywanie i pomysły (punkty bez dnia)
+    const P = App.Places;
+    html += `<div class="pl-tools">
+        <a class="plan-link" href="#/mapa/${id}"><span aria-hidden="true">🗺️</span> Mapa i trasa <span class="muted">– punkty dnia, odległości</span><b aria-hidden="true">›</b></a>
+        <a class="plan-link" href="#/odkrywaj/${id}"><span aria-hidden="true">🔭</span> Odkrywaj <span class="muted">– atrakcje i jedzenie w okolicy</span><b aria-hidden="true">›</b></a>
+      </div>`;
+    const ideas = items.filter(i => !i.date).sort(byOrder);
+    const dayOpts = days.map(d => `<option value="${d}">${App.fmtDay(d)}</option>`).join("");
+    html += `
+      <details class="archive pl-ideas"${ideas.length && ideas.length <= 6 ? " open" : ""}>
+        <summary><h3 class="section">💡 Pomysły – bez dnia <span class="muted">(${ideas.length})</span></h3></summary>
+        ${ideas.map(it => `
+          <div class="pl-row pl-idea">
+            <a class="pl-main" href="#/punkt/${it.id}">
+              <div class="pl-title"><span aria-hidden="true">${catOf(it).icon}</span> ${esc(it.title)}</div>
+              ${it.place ? `<div class="pl-sub">${esc(/^https?:/i.test(it.place) ? "📍 link do mapy" : it.place)}</div>` : ""}
+            </a>
+            <label class="pl-move"><span class="sr">Przenieś do dnia</span>
+              <select data-move="${it.id}"><option value="">+ dzień</option>${dayOpts}</select></label>
+          </div>`).join("")}
+        <a class="pl-empty" href="#/plan/${id}/nowy?d=pomysl">+ Dodaj pomysł</a>
+      </details>`;
 
     const costs = {};
     let pastHtml = "", pastN = 0;
@@ -189,7 +213,14 @@
       dayItems.forEach(i => { const c = num(i.cost); if (c) { const cur = i.currency || "PLN"; dayCost[cur] = (dayCost[cur] || 0) + c; costs[cur] = (costs[cur] || 0) + c; } });
       const costTxt = Object.entries(dayCost).map(([c, v]) => money(v, c)).join(" + ");
 
-      const rows = mergeDay(dayItems, dayEvents).map(({ it, ev }) => ev ? `
+      let prevXY = P && P.hasXY(P.hotelFor(segs, day)) ? P.hotelFor(segs, day) : null;
+      const legHtml = it => {
+        if (!P || !P.hasXY(it)) return "";
+        const l = prevXY ? P.leg(prevXY, it) : null;
+        prevXY = it;
+        return l ? `<div class="pl-leg" aria-label="Dojście">${l.icon} ${l.txt}</div>` : "";
+      };
+      const rows = mergeDay(dayItems, dayEvents).map(({ it, ev }) => ev ? (prevXY = null, `
         <div class="pl-row pl-seg">
           <div class="pl-time">${App.time(ev.at)}</div>
           <a class="pl-main" href="${ev.href}">
@@ -197,7 +228,7 @@
             ${ev.sub ? `<div class="pl-sub">${esc(ev.sub)}</div>` : ""}
           </a>
           ${navLink(ev.nav)}
-        </div>` : `
+        </div>`) : `${legHtml(it)}
         <div class="pl-row pl-user" data-id="${it.id}">
           <div class="pl-time">${it.time || "–"}</div>
           <a class="pl-main" href="#/punkt/${it.id}">
@@ -213,6 +244,7 @@
         <section class="pl-day${day === today ? " is-today" : ""}" data-date="${day}" ${day === today ? 'id="pl-today"' : ""}>
           <div class="pl-day-head">
             <h3>${App.fmtDayLong(day)} <span class="muted">· ${tag}${day === today ? " · dziś" : ""}</span>${wx ? App.Weather.dayBadge(wx.data, day) : ""}</h3>
+            ${dayItems.length ? `<a class="icon-btn pl-dmap" href="#/mapa/${id}?d=${day}" aria-label="Mapa dnia: ${App.fmtDay(day)}">${mapIcon}</a>` : ""}
             <a class="icon-btn pl-add" href="#/plan/${id}/nowy?d=${day}" aria-label="Dodaj punkt: ${App.fmtDay(day)}">${Tr().plusIcon}</a>
           </div>
           <div class="pl-list">${rows || `<a class="pl-empty" href="#/plan/${id}/nowy?d=${day}">+ Dodaj punkt planu</a>`}</div>
@@ -246,6 +278,14 @@
           }, 60000);
         }
         view.querySelectorAll(".pl-handle").forEach(h => enableDrag(h));
+        view.querySelectorAll("[data-move]").forEach(sel2 => sel2.onchange = async () => {
+          if (!sel2.value) return;
+          const it = await DB.get("planItems", sel2.dataset.move);
+          const rec = await DB.put("planItems", { ...it, date: sel2.value, time: "", order: 1e6 });
+          await placeInDay(rec);
+          App.toast(`Dodano do planu: ${App.fmtDay(sel2.value)}`);
+          App.render();
+        });
       },
       cleanup() { clearInterval(timer); },
     };
@@ -263,7 +303,8 @@
       let raf = null, lastY = e.clientY;
       const step = () => {
         const y = lastY;
-        const prev = row.previousElementSibling, next = row.nextElementSibling;
+        const sib = (el, dir) => { let x = el[dir]; while (x && x.classList.contains("pl-leg")) x = x[dir]; return x; };
+        const prev = sib(row, "previousElementSibling"), next = sib(row, "nextElementSibling");
         if (prev) { const r = prev.getBoundingClientRect(); if (y < r.top + r.height / 2) list.insertBefore(row, prev); }
         if (next) { const r = next.getBoundingClientRect(); if (y > r.top + r.height / 2) list.insertBefore(next, row); }
         if (y < 90) scrollBy(0, -8); else if (y > innerHeight - 110) scrollBy(0, 8);
@@ -311,14 +352,20 @@
     if (itemId && !it) { location.replace("#/plan"); return ""; }
     const trip = await DB.get("trips", it ? it.tripId : tripId);
     if (!trip) { location.replace("#/plan"); return ""; }
-    const v = it || { date: date || (trip.start <= App.todayStr() && App.todayStr() <= trip.end ? App.todayStr() : trip.start), time: "", title: "", cat: "zwiedzanie", place: "", note: "", cost: "", currency: "PLN" };
+    const v = it || { date: date === "pomysl" ? "" : date || (trip.start <= App.todayStr() && App.todayStr() <= trip.end ? App.todayStr() : trip.start), time: "", title: "", cat: "zwiedzanie", place: "", note: "", cost: "", currency: "PLN" };
+    // dzień: dni podróży + „pomysł bez dnia” (+ dzień spoza podróży, jeśli punkt już taki ma)
+    const dayList = [];
+    for (let d = trip.start; d <= trip.end; d = App.addDays(d, 1)) dayList.push(d);
+    if (v.date && !dayList.includes(v.date)) { dayList.push(v.date); dayList.sort(); }
+    const dateOpts = `<option value="" ${!v.date ? "selected" : ""}>💡 Pomysł – bez dnia</option>` +
+      dayList.map(d => `<option value="${d}" ${d === v.date ? "selected" : ""}>${App.fmtDay(d)}${d < trip.start || d > trip.end ? " (poza podróżą)" : ""}</option>`).join("");
 
     const cats = Object.entries(CATS).map(([k, C]) => `
       <label class="type-chip"><input type="radio" name="cat" value="${k}" ${k === (v.cat || "inne") ? "checked" : ""}>
         <span><b aria-hidden="true">${C.icon}</b>${C.name}</span></label>`).join("");
 
     return {
-      title: it ? "Edytuj punkt" : "Nowy punkt planu",
+      title: it ? (it.date ? "Edytuj punkt" : "Edytuj pomysł") : v.date ? "Nowy punkt planu" : "Nowy pomysł",
       back: `#/plan/${trip.id}`,
       html: `
         <form id="pl-form" class="form" novalidate>
@@ -326,11 +373,11 @@
           <label class="field"><span>Co</span>
             <input name="title" required maxlength="100" placeholder="np. Oceanarium, kolacja w Time Out Market" value="${esc(v.title)}"></label>
           <div class="grid2">
-            <label class="field"><span>Dzień</span><input type="date" name="date" required value="${esc(v.date)}"></label>
+            <label class="field"><span>Dzień</span><select name="date">${dateOpts}</select></label>
             <label class="field"><span>Godzina (opcjonalnie)</span><input type="time" name="time" value="${esc(v.time)}"></label>
           </div>
-          <label class="field"><span>Miejsce – adres, nazwa lub link do mapy</span>
-            <input name="place" maxlength="500" placeholder="np. Esplanada D. Carlos I, Lizbona" value="${esc(v.place)}"></label>
+          ${App.Places ? App.Places.searchBox(v) : `<label class="field"><span>Miejsce – adres, nazwa lub link do mapy</span>
+            <input name="place" maxlength="500" value="${esc(v.place)}"></label>`}
           <div class="grid2 price">
             <label class="field"><span>Koszt</span><input name="cost" inputmode="decimal" placeholder="np. 25" value="${esc(v.cost)}"></label>
             <label class="field"><span>Waluta</span><input name="currency" maxlength="5" autocapitalize="characters" value="${esc(v.currency || "PLN")}"></label>
@@ -344,19 +391,26 @@
       after(view) {
         const f = view.querySelector("#pl-form");
         if (!it) f.title.focus();
+        if (App.Places) App.Places.bindSearch(f, trip);
         f.addEventListener("submit", async e => {
           e.preventDefault();
           const d = Object.fromEntries(new FormData(f));
           for (const k in d) d[k] = String(d[k]).trim();
           const err = m => { const p = view.querySelector("#err"); p.textContent = m; p.hidden = false; };
           if (!d.title) return err("Wpisz, co planujesz.");
-          if (!d.date) return err("Wybierz dzień.");
+          if (!d.date) d.time = ""; // pomysł nie ma godziny
+          // położenie z wyszukiwarki (liczby) albo brak
+          const lat = parseFloat(d.lat), lon = parseFloat(d.lon);
+          delete d.lat; delete d.lon;
+          const xy = isFinite(lat) && isFinite(lon) ? { lat, lon, geoNone: false } : { lat: null, lon: null, geoNone: it && it.place === d.place ? !!it.geoNone : false };
+          if (!isFinite(lat) && it && it.place === d.place && App.Places && App.Places.hasXY(it)) { xy.lat = it.lat; xy.lon = it.lon; }
           if (d.cost && !num(d.cost)) return err("Koszt musi być liczbą, np. 25 albo 12,50.");
           d.currency = (d.currency || "PLN").toUpperCase();
           const moved = !it || it.date !== d.date || it.time !== d.time;
-          const rec = await DB.put("planItems", { ...(it || {}), ...d, tripId: trip.id, order: it ? it.order : 1e6 });
+          const rec = await DB.put("planItems", { ...(it || {}), ...d, ...xy, tripId: trip.id, order: it ? it.order : 1e6 });
           if (moved) await placeInDay(rec);
-          if (d.date < trip.start || d.date > trip.end) App.toast("Zapisano · ten dzień jest poza datami podróży");
+          if (!d.date) App.toast(it ? "Zapisano pomysł" : "Dodano do pomysłów");
+          else if (d.date < trip.start || d.date > trip.end) App.toast("Zapisano · ten dzień jest poza datami podróży");
           else App.toast(it ? "Zapisano zmiany" : "Dodano do planu");
           App.back(`#/plan/${trip.id}`);
         });
@@ -373,5 +427,5 @@
   App.route(/^\/plan\/([\w-]+)\/nowy$/, ([tripId], q) => itemForm({ tripId, date: q.d }));
   App.route(/^\/punkt\/([\w-]+)$/, ([itemId]) => itemForm({ itemId }));
 
-  App.Plan = { segEvents, CATS, pickTrip, tripOptions, routeIcon };
+  App.Plan = { segEvents, CATS, catOf, pickTrip, tripOptions, routeIcon, placeInDay };
 })();

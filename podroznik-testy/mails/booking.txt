@@ -1,0 +1,8 @@
+Booking.com
+Potwierdzenie rezerwacji
+Numer rezerwacji: 4012345678
+Hotel Avenida Palace
+Adres: Rua 1º de Dezembro 123, Lizbona, Portugalia
+Zameldowanie: piątek, 20 listopada 2026 (od 15:00)
+Wymeldowanie: wtorek, 24 listopada 2026 (do 12:00)
+Cena całkowita: 1280 zł

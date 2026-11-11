@@ -1,0 +1,6 @@
+Your booking is confirmed
+Reservation number: AB1C2D
+Flight FR 1234 Krakow (KRK) to Porto (OPO)
+Sat, 12 Dec 2026  Departs 06:15  Arrives 09:40
+Seat 17C
+Total paid: 89.99 EUR
