@@ -190,18 +190,31 @@
             ? `Nie udało się ustalić położenia „${esc(trip.destination)}”${navigator.onLine ? "" : " – brak internetu"}. Wybierz „📍 Tutaj” albo wpisz miejsce w zakładce Szukaj.`
             : "Wpisz cel podróży (np. „Lizbona”) w ustawieniach podróży albo wybierz „📍 Tutaj”.",
             `<a class="btn" href="#/podroze/${id}/edytuj">Ustaw cel podróży</a>`) : ""}
+        ${c && tab !== "szukaj" ? `<div class="dc-google"><span class="muted small">Mapy Google:</span>${(tab === "jedzenie" ? [["🍽️", "restauracje"], ["☕", "kawiarnie"], ["🍺", "bary"]] : [["🏛️", "atrakcje turystyczne"], ["🖼️", "muzea"], ["🌳", "parki"]])
+          .map(([i, w]) => `<a class="st-chip" href="https://www.google.com/maps/search/${encodeURIComponent(w)}/@${c.lat.toFixed(5)},${c.lon.toFixed(5)},15z" target="_blank" rel="noopener">${i} ${w.split(" ")[0]}</a>`).join("")}</div>` : ""}
         <div id="dc-list" class="dc-list">${needCenter || tab === "szukaj" && !q.q ? "" : `<p class="muted small">Szukam w okolicy${c ? ` „${esc(c.label)}”` : ""}…</p>`}</div>
         <p class="muted small dc-src">Dane: © OpenStreetMap, opisy: Wikipedia. Wymaga internetu.</p>`,
       after(view) {
         const box = view.querySelector("#dc-list");
         const gps = view.querySelector("#dc-gps");
+        // położenie: najpierw ostatnie znane (od razu), potem dokładny GPS; własny limit czasu – nie wisi na „Ustalam…”
         if (gps) gps.onclick = () => {
           if (!navigator.geolocation) { App.toast("Telefon nie udostępnia położenia"); return; }
-          gps.textContent = "📍 Ustalam…";
-          navigator.geolocation.getCurrentPosition(
-            pos => location.replace(link({ lat: pos.coords.latitude.toFixed(5), lon: pos.coords.longitude.toFixed(5), gdzie: "tutaj" })),
-            () => { gps.textContent = "📍 Tutaj"; App.toast("Brak zgody na położenie albo GPS wyłączony"); },
-            { enableHighAccuracy: false, timeout: 15000, maximumAge: 300000 });
+          if (gps.disabled) return;
+          gps.disabled = true; gps.textContent = "📍 Ustalam…";
+          let done = false;
+          const ok = pos => { if (done) return; done = true; clearTimeout(watchdog);
+            location.replace(link({ lat: pos.coords.latitude.toFixed(5), lon: pos.coords.longitude.toFixed(5), gdzie: "tutaj" })); };
+          const fail = msg => { if (done) return; done = true; clearTimeout(watchdog);
+            gps.disabled = false; gps.textContent = "📍 Tutaj"; App.toast(msg); };
+          const watchdog = setTimeout(() => fail("Telefon nie podał położenia – włącz lokalizację (GPS) i spróbuj jeszcze raz"), 25000);
+          navigator.geolocation.getCurrentPosition(ok, err => {
+            if (err.code === 1) return fail("Brak zgody na lokalizację – zezwól w ustawieniach telefonu (Chrome → Uprawnienia → Lokalizacja)");
+            gps.textContent = "📍 Ustalam (GPS)…";
+            navigator.geolocation.getCurrentPosition(ok,
+              e2 => fail(e2.code === 1 ? "Brak zgody na lokalizację" : "Nie udało się ustalić położenia – włącz GPS albo wyjdź bliżej okna"),
+              { enableHighAccuracy: true, timeout: 20000, maximumAge: 60000 });
+          }, { enableHighAccuracy: false, timeout: 6000, maximumAge: 30 * 60000 });
         };
 
         const render = list => {

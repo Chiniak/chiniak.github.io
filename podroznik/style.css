@@ -710,3 +710,5 @@ button.st-chip { font: inherit; font-size: 14px; cursor: pointer; }
 .sp-transfer { display: flex; align-items: center; gap: 8px; padding: 10px 0; border-top: 1px solid var(--line); flex-wrap: wrap; }
 .sp-transfer:first-child { border-top: 0; padding-top: 0; }
 .sp-amt { margin-left: auto; font-weight: 700; font-size: 17px; }
+.dc-google { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 4px 0 8px; }
+.dc-google .st-chip { min-height: 34px; font-size: 13px; padding: 0 12px; }

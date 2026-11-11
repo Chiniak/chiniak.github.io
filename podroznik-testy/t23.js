@@ -1,0 +1,31 @@
+// „📍 Tutaj”: zwykłe położenie, brak zgody, GPS bez odpowiedzi (limit czasu); linki do Map Google
+const { chromium, devices } = require('playwright');
+(async () => { const b = await chromium.launch();
+  const page = async (opts, init) => {
+    const ctx = await b.newContext({ ...devices['Pixel 7'], ...opts });
+    await ctx.route(/open-meteo/, r => r.fulfill({ json: { results: [{ latitude: 38.72, longitude: -9.14, country_code: 'PT', name: 'Lizbona' }] } }));
+    await ctx.route(/overpass|maps\.mail\.ru|wikipedia/, r => r.fulfill({ json: { elements: [] } }));
+    if (init) await ctx.addInitScript(init);
+    const p = await ctx.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message));
+    await p.goto('http://localhost:8765/podroznik/#/podroze'); await p.waitForTimeout(400);
+    const id = await p.evaluate(() => DB.put('trips', { name: 'Lizbona', destination: 'Lizbona', start: '2027-05-01', end: '2027-05-03' }).then(t => t.id));
+    await p.goto(`http://localhost:8765/podroznik/#/odkrywaj/${id}`); await p.waitForTimeout(800);
+    return p; };
+  let p = await page({ geolocation: { latitude: 50.0614, longitude: 19.9366 }, permissions: ['geolocation'] });
+  console.log('google links:', await p.$$eval('.dc-google a', e => e.map(a => a.textContent.trim() + ' ' + a.href)));
+  await p.click('#dc-gps'); await p.waitForTimeout(800);
+  console.log('[ok] url:', p.url().split('?')[1], p.errs);
+  p = await page({});
+  await p.evaluate(() => { navigator.geolocation.getCurrentPosition = (ok, err) => setTimeout(() => err({ code: 1 }), 50); });
+  await p.click('#dc-gps'); await p.waitForTimeout(600);
+  console.log('[denied]', await p.textContent('#toast'), '|', await p.textContent('#dc-gps'));
+  p = await page({});
+  await p.evaluate(() => { navigator.geolocation.getCurrentPosition = () => {}; });
+  await p.click('#dc-gps'); await p.waitForTimeout(1000); console.log('[hang] after 1 s:', await p.textContent('#dc-gps'));
+  await p.waitForTimeout(25000);
+  console.log('[hang] after 26 s:', await p.textContent('#toast'), '|', await p.textContent('#dc-gps'), p.errs);
+  p = await page({});
+  await p.evaluate(() => { let n = 0; navigator.geolocation.getCurrentPosition = (ok, err, o) => { n++; if (n === 1) setTimeout(() => err({ code: 3 }), 50); else setTimeout(() => ok({ coords: { latitude: 52.23, longitude: 21.01 } }), 300); }; });
+  await p.click('#dc-gps'); await p.waitForTimeout(150); console.log('[2nd try] label:', await p.textContent('#dc-gps')); await p.waitForTimeout(800);
+  console.log('[2nd try] url:', p.url().split('?')[1]);
+  await b.close(); })();
