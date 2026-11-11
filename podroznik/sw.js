@@ -4,10 +4,10 @@
 // baza i wyliczanie przypomnień – do sprawdzania w tle (Periodic Background Sync)
 importScripts("i18n-en.js", "i18n.js", "db.js", "reminders-core.js");
 
-const CACHE = "podroznik-v21";
+const CACHE = "podroznik-v22";
 const APP = [
   "./", "./index.html", "./style.css", "./i18n-en.js", "./i18n.js", "./db.js", "./app.js", "./trips.js", "./manifest.webmanifest",
-  "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png", "./tickets.js", "./plan.js", "./pack.js", "./reminders-core.js", "./reminders.js", "./backup.js", "./lock.js", "./docs.js", "./budget.js", "./stats.js", "./weather.js", "./email.js", "./places.js", "./discover.js", "./split.js", "./share.js",
+  "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png", "./tickets.js", "./plan.js", "./pack.js", "./reminders-core.js", "./reminders.js", "./backup.js", "./lock.js", "./docs.js", "./budget.js", "./stats.js", "./weather.js", "./email.js", "./places.js", "./discover.js", "./split.js", "./share.js", "./offline.js", "./phrases.js",
   // biblioteki do biletów – od razu w pamięci, żeby działały offline także za pierwszym razem
   "./lib/pdf.min.js", "./lib/pdf.worker.min.js", "./lib/bwip-js.min.js", "./lib/zxing.min.js", "./lib/airports.js", "./lib/world.js", "./lib/leaflet.js", "./lib/leaflet.css", "./lib/images/layers.png", "./lib/images/layers-2x.png",
 ];
@@ -32,13 +32,17 @@ self.addEventListener("activate", e => {
 const TILES = "mapa-kafelki", TILE_MAX = 4000;
 const TILE_HOSTS = /(^|\.)(tile\.openstreetmap\.org|basemaps\.cartocdn\.com)$/;
 let tileCount = null;
+// klucz kafelka bez poddomeny (a/b/c/d.basemaps…) – ten sam kafelek nie jest zapisywany 4 razy;
+// tak samo zapisuje kafelki „Mapa offline” (offline.js) w pamięciach „mapa-offline-<podróż>”
+const canon = u => { const x = new URL(u); if (/basemaps\.cartocdn\.com$/.test(x.hostname)) x.hostname = "a.basemaps.cartocdn.com"; x.search = ""; return x.href; };
 async function tileFetch(req) {
-  const c = await caches.open(TILES);
-  const hit = await c.match(req);
+  const key = canon(req.url);
+  const hit = await caches.match(key); // obejrzane albo pobrane na offline (wszystkie pamięci)
   if (hit) return hit;
+  const c = await caches.open(TILES);
   const res = await fetch(req);
   if (res.ok && res.type !== "opaque") {
-    await c.put(req, res.clone());
+    await c.put(key, res.clone());
     if (tileCount == null) tileCount = (await c.keys()).length; else tileCount++;
     if (tileCount > TILE_MAX) { // usuń najstarsze
       const keys = await c.keys();
@@ -53,6 +57,7 @@ self.addEventListener("fetch", e => {
   const req = e.request;
   if (req.method !== "GET") return;
   const url = new URL(req.url);
+  if (TILE_HOSTS.test(url.hostname) && url.searchParams.has("podroznik-off")) return; // pobieranie „Mapa offline” – wprost z sieci
   if (TILE_HOSTS.test(url.hostname)) { e.respondWith(tileFetch(req).catch(() => Response.error())); return; }
   if (url.origin !== location.origin || !url.pathname.startsWith(new URL("./", self.registration.scope).pathname)) return;
   if (url.pathname.endsWith(".apk")) return; // plik APK pobierany wprost, bez zapisu w pamięci offline

@@ -96,6 +96,15 @@ Adres (po scaleniu pull requesta): https://chiniak.github.io/podroznik/
 - ⬜ Gmail → Udostępnij → **Podróżnik** na liście aplikacji
 - ⬜ Dane: aplikacja z APK i strona w Chrome korzystają z tych samych danych (ta sama przeglądarka) – sprawdzić, czy podróże są w obu
 
+## Etap 11 – Przed Azją (karty, rozmówki, mapa offline)
+- ⬜ Plan → 🚕 Karty dla kierowcy → „Przygotuj karty” (internet): nocleg w Bangkoku / Luang Prabang / Hanoi / Chinach ma nazwę i adres w lokalnym piśmie
+- ⬜ **Czy adres jest właściwy** – porównaj z Mapami Google (wyszukiwarka OSM bierze najbliższy obiekt; może podać sąsiedni budynek)
+- ⬜ Karta otwiera się w trybie samolotowym, ekran nie gaśnie, litery czytelne z odległości
+- ⬜ Strona noclegu → „🚕 Pokaż kierowcy” otwiera kartę od razu
+- ⬜ Rozmówki: pismo tajskie / laotańskie / chińskie wyświetla się poprawnie (bez kwadracików) – **najlepiej poprosić miejscowego o sprawdzenie zwrotów**
+- ⬜ Mapa → „⬇️ Mapa offline”: pobranie przez Wi-Fi (ile trwa, ile MB), potem tryb samolotowy → mapa planu widoczna przy zbliżeniu ulic
+- ⬜ Mapa offline zostaje po zamknięciu aplikacji i po aktualizacji; „Usuń mapę offline” zwalnia miejsce
+
 ## Znane ograniczenia (nie błędy, ale do oceny)
 - Godziny są „na zegarku” (czas lokalny z biletu) – czas lotu między strefami czasowymi może wyjść o godzinę za dużo / za mało
 - Zdjęcie podróży (pkt 6 planu) – na razie tylko kolor

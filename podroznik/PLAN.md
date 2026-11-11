@@ -96,6 +96,11 @@ Rzeczy do przetestowania na prawdziwym telefonie: **[DO-SPRAWDZENIA.md](DO-SPRAW
 53. ✅ **Azja**: mapa z napisami łacińskimi (CARTO), oglądane kafelki offline, nawigacja przez Organic Maps / Amap (geo:), nazwy po polsku/angielsku, kursy NBP z tabeli B (VND, LAK).
 54. ✅ **Język angielski** – Ustawienia → Język (Auto / Polski / English).
 
+## Etap 11 – Przed wyjazdem do Azji ✅
+55. ✅ **Karty dla kierowcy** – nocleg i punkty planu z nazwą i adresem w lokalnym piśmie (tajski, laotański, chiński, wietnamski…) + „Proszę mnie tu zawieźć”, pełny ekran, działa offline (Plan → 🚕 Karty dla kierowcy; strona noclegu → „Pokaż kierowcy”).
+56. ✅ **Rozmówki** – 14 zwrotów (taksówka, jedzenie, alergia, lekarz) po chińsku, tajsku, wietnamsku i laotańsku, z wymową; dotknięcie = duże litery.
+57. ✅ **Mapa offline** – pobranie mapy miejsc podróży (obszary wokół noclegów i punktów, przegląd całej podróży, widoczny fragment mapy) przed wyjazdem; zostaje w telefonie do usunięcia.
+
 Czego (świadomie) nie ma: edycji na żywo przez kilka osób (wymaga serwera i kont), asystenta AI (wymaga płatnego klucza),
 automatycznego czytania Gmaila (wymaga weryfikacji aplikacji przez Google) – zamiast tego jest „Udostępnij → Podróżnik” i wklejanie maila.
 
@@ -125,6 +130,8 @@ automatycznego czytania Gmaila (wymaga weryfikacji aplikacji przez Google) – z
 | `discover.js` | Etap 10: odkrywanie atrakcji i jedzenia (Overpass, Wikipedia) |
 | `split.js` | Etap 10: rozliczenie wydatków w grupie |
 | `share.js` | Etap 10: wspólna podróż (plik) i plan jako tekst |
+| `phrases.js` | Etap 11: karty dla kierowcy (lokalny adres), rozmówki |
+| `offline.js` | Etap 11: pobieranie mapy na offline |
 | `tickets.js` | Etap 2: szczegóły odcinka, bilety, pełny ekran, skaner kodów |
 | `lib/` | pdf.js, bwip-js (rysowanie kodów), ZXing (odczyt kodów) – dołączone, działają offline |
 | `sw.js` | Offline – przy każdej zmianie plików aplikacji podbić `CACHE` (`podroznik-vN`) |

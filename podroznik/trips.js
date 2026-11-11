@@ -226,6 +226,7 @@
             for (const r of await DB.byIndex(store, "tripId", t.id)) await DB.del(store, r.id);
           }
           await DB.del("trips", t.id);
+          if (self.caches) caches.delete(`mapa-offline-${t.id}`).catch(() => {}); // pobrana mapa offline tej podróży
           App.toast("Podróż usunięta");
           location.replace("#/podroze");
         });

@@ -408,6 +408,7 @@
             : `${App.time(s.depart)}${s.arrive ? ` → ${App.time(s.arrive)}` : ""}${dur ? ` · ${dur}` : ""}`}</div>
           ${shift ? `<div class="muted small">${shift} · godziny podane w czasie lokalnym lotnisk</div>` : ""}
           ${mapLink}
+          ${s.type === "nocleg" && s.lat != null ? `<a class="map-link" href="#/karty/${s.tripId}?k=s:${s.id}">🚕 Pokaż kierowcy (adres w lokalnym piśmie)</a>` : ""}
           ${s.depart && App.Reminders ? `<a class="map-link" href="${esc(App.Reminders.gcalUrl(s))}" target="_blank" rel="noopener">📅 Dodaj do Google Kalendarza</a>` : ""}
           ${Tr().chips(s)}
           ${s.note ? `<p class="note">${esc(s.note)}</p>` : ""}
