@@ -719,3 +719,7 @@ button.st-chip { font: inherit; font-size: 14px; cursor: pointer; }
 @keyframes mp-pulse { 50% { opacity: .4; } }
 .mp-pop .leaflet-popup-content { margin: 8px; }
 .mp-pop .btn { min-height: 40px; white-space: nowrap; color: var(--accent-ink); text-decoration: none; }
+.dc-local { color: var(--muted); }
+.mp-map .leaflet-control-layers { border-radius: 10px; }
+.mp-map .leaflet-control-layers-toggle { width: 40px; height: 40px; background-size: 22px; }
+.mp-map .leaflet-control-layers-list { font-size: 14px; }

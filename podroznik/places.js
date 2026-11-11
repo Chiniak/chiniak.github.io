@@ -19,7 +19,7 @@
     if (wait > 0) await sleep(wait);
     lastCall = Date.now();
     const r = await fetch("https://nominatim.openstreetmap.org/search?" +
-      new URLSearchParams({ format: "jsonv2", limit: "6", "accept-language": "pl", ...params }));
+      new URLSearchParams({ format: "jsonv2", limit: "6", "accept-language": "pl,en", ...params }));
     if (!r.ok) throw new Error(`wyszukiwarka odpowiedziała ${r.status}`);
     return r.json();
   }
@@ -47,7 +47,7 @@
     const wait = lastCall + 1100 - Date.now();
     if (wait > 0) await sleep(wait);
     lastCall = Date.now();
-    const r = await fetch("https://nominatim.openstreetmap.org/reverse?" + new URLSearchParams({ format: "jsonv2", lat, lon, zoom: "18", "accept-language": "pl" }));
+    const r = await fetch("https://nominatim.openstreetmap.org/reverse?" + new URLSearchParams({ format: "jsonv2", lat, lon, zoom: "18", "accept-language": "pl,en" }));
     if (!r.ok) throw new Error(`wyszukiwarka odpowiedziała ${r.status}`);
     const x = await r.json();
     if (!x || x.error) return null;
@@ -238,6 +238,42 @@
     };
   }
 
+  /* ---------- podkład mapy ----------
+     „latin”: CARTO Voyager – nazwy alfabetem łacińskim (Chiny, Laos, Wietnam, Tajlandia czytelne bez znajomości pisma),
+     „osm”: OpenStreetMap – nazwy w lokalnym języku. Kafelki obejrzane online zostają w telefonie (sw.js) i działają offline. */
+  const LAYERS = {
+    latin: { name: "Napisy łacińskie", url: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
+      attr: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>, © <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>' },
+    osm: { name: "Nazwy lokalne", url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+      attr: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>' },
+  };
+  // kraje, gdzie lokalne pismo nie jest łacińskie (z grubsza: Azja, Bliski Wschód, Rosja, Grecja, Bałkany wsch.)
+  const nonLatin = (lat, lon) => (lon > 25 && lon < 180 && lat > -11 && lat < 78) && !(lon < 45 && lat > 35 && lat < 42 && lon < 30);
+  async function baseLayer(map, at) {
+    let pick = await DB.getSetting("mapLayer", "auto");
+    if (!LAYERS[pick]) pick = at && !nonLatin(at[0], at[1]) ? "osm" : "latin";
+    const layers = {};
+    for (const [k, L0] of Object.entries(LAYERS)) layers[k] = L.tileLayer(L0.url, { maxZoom: 19, subdomains: "abcd", crossOrigin: true, _k: k });
+    layers[pick].addTo(map);
+    const ctl = L.control.layers(Object.fromEntries(Object.entries(layers).map(([k, l]) => [LAYERS[k].name, l])), null, { position: "bottomleft" }).addTo(map);
+    const attr = document.querySelector("#mp-attr-src");
+    const setAttr = k => { if (attr) attr.innerHTML = LAYERS[k].attr; };
+    setAttr(pick);
+    map.on("baselayerchange", e => { const k = e.layer.options._k; setAttr(k); DB.setSetting("mapLayer", k); });
+    // serwer kafelków nie odpowiada (np. w Chinach) – przełącz na drugi
+    let bad = 0, good = 0;
+    for (const [k, l] of Object.entries(layers)) {
+      l.on("tileload", () => { good++; });
+      l.on("tileerror", () => {
+        if (++bad >= 6 && !good && navigator.onLine && map.hasLayer(l)) {
+          const other = Object.keys(layers).find(x => x !== k);
+          map.removeLayer(l); layers[other].addTo(map); setAttr(other); bad = 0;
+        }
+      });
+    }
+    return ctl;
+  }
+
   /* ================= EKRAN MAPY ================= */
   const pinHtml = (label, color, cls = "") => `<div class="mp-pin ${cls}" style="--pc:${color}"><span>${esc(label)}</span></div>`;
 
@@ -287,7 +323,7 @@
       if (!pts.length) list = `<p class="muted small">${sel === "pomysly" ? "Brak pomysłów." : "Na ten dzień nie ma jeszcze punktów."}</p>`;
     }
     const routePts = (hasXY(hotel) ? [hotel] : []).concat(located.map(p => p.it));
-    const gmaps = sel !== "pomysly" && sel !== "wszystko" && routePts.length >= 2 ? (() => {
+    const gmaps = App.navApp === "google" && sel !== "pomysly" && sel !== "wszystko" && routePts.length >= 2 ? (() => {
       const ll = p => `${p.lat},${p.lon}`;
       const wp = routePts.slice(1, -1).slice(0, 8).map(ll).join("|");
       return `https://www.google.com/maps/dir/?api=1&origin=${ll(routePts[0])}&destination=${ll(routePts[routePts.length - 1])}${wp ? `&waypoints=${encodeURIComponent(wp)}` : ""}&travelmode=walking`;
@@ -303,7 +339,7 @@
         <form class="pl-search mp-search" id="mp-search"><input name="q" placeholder="Szukaj miejsca, np. Oceanarium" autocomplete="off" aria-label="Szukaj miejsca">
           <button class="btn" type="submit" aria-label="Szukaj">🔎</button></form>
         <div class="card mp-card"><div id="mp-map" class="mp-map" role="application" aria-label="Mapa punktów planu"></div>
-          <div class="mp-attr"><span class="mp-hint">Dotknij mapy, by dodać tam punkt.</span> ${navigator.onLine ? "" : "Bez internetu podkład mapy się nie wczyta – punkty i trasa są widoczne. "}© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></div></div>
+          <div class="mp-attr"><span class="mp-hint">Dotknij mapy, by dodać tam punkt.</span> ${navigator.onLine ? "" : "Offline: widać fragmenty mapy oglądane wcześniej. "}<span id="mp-attr-src"></span></div></div>
         ${missing ? `<button type="button" class="btn wide" id="mp-geo">📍 Znajdź położenie ${missing} ${plural(missing, "miejsca", "miejsc", "miejsc")} (internet)</button>` : ""}
         ${noPlace ? `<p class="muted small">${noPlace} ${plural(noPlace, "punkt nie ma", "punkty nie mają", "punktów nie ma")} wpisanego miejsca – dodaj je w punkcie, by pojawił się na mapie.</p>` : ""}
         ${canOpt || gmaps ? `<div class="add-row">
@@ -321,7 +357,6 @@
         } catch (e) { el.innerHTML = `<p class="muted small" style="padding:12px">Nie udało się wczytać mapy.</p>`; return; }
         if (!el.isConnected) return;
         map = L.map(el, { zoomControl: true, attributionControl: false });
-        L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
         const bounds = [];
         const add = (p, html, title, href) => {
           const m = L.marker([p.lat, p.lon], { icon: L.divIcon({ html, className: "mp-icon", iconSize: [30, 30], iconAnchor: [15, 15] }), title }).addTo(map);
@@ -336,6 +371,9 @@
         for (const [d, line] of lines) if (line.length >= 2) L.polyline(line.map(p => [p.lat, p.lon]), { color: colorOf(d), weight: 3, opacity: .8, dashArray: "6 6" }).addTo(map);
         // widok: punkty dnia → wszystkie punkty i noclegi podróży → cel podróży → Polska
         const others = items.filter(hasXY).concat(segs.filter(s => s.type === "nocleg" && hasXY(s))).map(p => [p.lat, p.lon]);
+        const firstAt = bounds[0] || others[0] || (trip.geo && !trip.geo.none ? [trip.geo.lat, trip.geo.lon] : null);
+        await baseLayer(map, firstAt);
+        if (!map) return;
         if (bounds.length) map.fitBounds(bounds, { padding: [30, 30], maxZoom: 15 });
         else if (others.length) map.fitBounds(others, { padding: [30, 30], maxZoom: 14 });
         else {

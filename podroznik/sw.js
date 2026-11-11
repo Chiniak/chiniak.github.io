@@ -4,12 +4,12 @@
 // baza i wyliczanie przypomnień – do sprawdzania w tle (Periodic Background Sync)
 importScripts("db.js", "reminders-core.js");
 
-const CACHE = "podroznik-v19";
+const CACHE = "podroznik-v20";
 const APP = [
   "./", "./index.html", "./style.css", "./db.js", "./app.js", "./trips.js", "./manifest.webmanifest",
   "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png", "./tickets.js", "./plan.js", "./pack.js", "./reminders-core.js", "./reminders.js", "./backup.js", "./lock.js", "./docs.js", "./budget.js", "./stats.js", "./weather.js", "./email.js", "./places.js", "./discover.js", "./split.js", "./share.js",
   // biblioteki do biletów – od razu w pamięci, żeby działały offline także za pierwszym razem
-  "./lib/pdf.min.js", "./lib/pdf.worker.min.js", "./lib/bwip-js.min.js", "./lib/zxing.min.js", "./lib/airports.js", "./lib/world.js", "./lib/leaflet.js", "./lib/leaflet.css",
+  "./lib/pdf.min.js", "./lib/pdf.worker.min.js", "./lib/bwip-js.min.js", "./lib/zxing.min.js", "./lib/airports.js", "./lib/world.js", "./lib/leaflet.js", "./lib/leaflet.css", "./lib/images/layers.png", "./lib/images/layers-2x.png",
 ];
 
 self.addEventListener("install", e => {
@@ -27,10 +27,33 @@ self.addEventListener("activate", e => {
   })());
 });
 
+/* kafelki mapy (etap 10): obejrzane online zostają w telefonie – mapa działa potem bez internetu (np. w Azji bez roamingu).
+   Tylko to, co było oglądane (bez masowego pobierania – zasady OpenStreetMap). Najwyżej ok. 4000 kafelków (~60 MB). */
+const TILES = "mapa-kafelki", TILE_MAX = 4000;
+const TILE_HOSTS = /(^|\.)(tile\.openstreetmap\.org|basemaps\.cartocdn\.com)$/;
+let tileCount = null;
+async function tileFetch(req) {
+  const c = await caches.open(TILES);
+  const hit = await c.match(req);
+  if (hit) return hit;
+  const res = await fetch(req);
+  if (res.ok && res.type !== "opaque") {
+    await c.put(req, res.clone());
+    if (tileCount == null) tileCount = (await c.keys()).length; else tileCount++;
+    if (tileCount > TILE_MAX) { // usuń najstarsze
+      const keys = await c.keys();
+      for (const k of keys.slice(0, keys.length - TILE_MAX + 200)) await c.delete(k);
+      tileCount = TILE_MAX - 200;
+    }
+  }
+  return res;
+}
+
 self.addEventListener("fetch", e => {
   const req = e.request;
   if (req.method !== "GET") return;
   const url = new URL(req.url);
+  if (TILE_HOSTS.test(url.hostname)) { e.respondWith(tileFetch(req).catch(() => Response.error())); return; }
   if (url.origin !== location.origin || !url.pathname.startsWith(new URL("./", self.registration.scope).pathname)) return;
   if (url.pathname.endsWith(".apk")) return; // plik APK pobierany wprost, bez zapisu w pamięci offline
   e.respondWith(

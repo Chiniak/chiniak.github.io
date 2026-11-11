@@ -92,8 +92,23 @@
   }));
 
   // link do nawigacji w Google Maps (na Androidzie otwiera aplikację Mapy); wklejony link do mapy zostaje bez zmian
-  App.mapsUrl = place => /^https?:\/\//i.test(place) ? place
-    : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(place)}`;
+  // Aplikacja do nawigacji (Ustawienia): "google" – Mapy Google, "geo" – wybór aplikacji telefonu (Organic Maps, Maps.me, Amap…),
+  // "amap" – Amap 高德 (Chiny, gdzie Google nie działa). Miejsce: tekst/adres albo „szer.,dł.”.
+  App.navApp = "google";
+  App.mapsUrl = place => {
+    if (/^https?:\/\//i.test(place)) return place;
+    const m = /^\s*(-?\d{1,2}(?:\.\d+)?)\s*,\s*(-?\d{1,3}(?:\.\d+)?)\s*$/.exec(place || "");
+    const q = encodeURIComponent(place);
+    if (App.navApp === "geo") return m ? `geo:${m[1]},${m[2]}?q=${m[1]},${m[2]}` : `geo:0,0?q=${q}`;
+    if (App.navApp === "amap") return m ? `https://uri.amap.com/marker?position=${m[2]},${m[1]}&coordinate=wgs84&callnative=1`
+      : `https://uri.amap.com/search?keyword=${q}&callnative=1`;
+    return `https://www.google.com/maps/dir/?api=1&destination=${q}`;
+  };
+  // wyszukiwanie w okolicy (Odkrywaj): „restauracje” wokół punktu
+  App.mapsSearchUrl = (what, lat, lon) => App.navApp === "amap"
+    ? `https://uri.amap.com/search?keyword=${encodeURIComponent(what)}&center=${lon},${lat}&coordinate=wgs84&callnative=1`
+    : App.navApp === "geo" ? `geo:${lat},${lon}?q=${encodeURIComponent(what)}`
+    : `https://www.google.com/maps/search/${encodeURIComponent(what)}/@${(+lat).toFixed(5)},${(+lon).toFixed(5)},15z`;
 
   // zmniejszenie zdjęcia (np. tło podróży) – mniej miejsca w telefonie i w kopii zapasowej
   App.resizeImage = async (blob, max = 1280, quality = 0.82) => {
@@ -194,6 +209,18 @@
           <h2>Dane w telefonie</h2>
           <div id="storage" class="muted">Sprawdzam…</div>
         </div>
+        <div class="card">
+          <h2>Nawigacja i mapy</h2>
+          <label class="field"><span>Przycisk „Nawiguj” otwiera</span>
+            <select id="nav-app">
+              <option value="google" ${App.navApp === "google" ? "selected" : ""}>Mapy Google</option>
+              <option value="geo" ${App.navApp === "geo" ? "selected" : ""}>Aplikację z telefonu – do wyboru (Organic Maps, Maps.me, Amap…)</option>
+              <option value="amap" ${App.navApp === "amap" ? "selected" : ""}>Amap 高德 – Chiny</option>
+            </select></label>
+          <p class="small muted" style="margin:8px 0 0">W Chinach Google (Mapy, Gmail) nie działa bez VPN. Do Azji polecamy <b>Organic Maps</b> – darmowe mapy offline:
+            przed wyjazdem pobierz w niej mapy krajów przez Wi-Fi i wybierz tu „Aplikację z telefonu”.</p>
+          <p class="small muted" style="margin:8px 0 0">Mapa w Podróżniku zapamiętuje oglądane fragmenty – przed wyjazdem przejrzyj na niej okolice noclegów i punktów planu, a będą widoczne także bez internetu.</p>
+        </div>
         <a class="plan-link" href="#/ustawienia/przypomnienia"><span aria-hidden="true">🔔</span> Przypomnienia i kalendarz
           <span class="muted">– ${"Notification" in window && Notification.permission === "granted" ? "powiadomienia włączone" : "ustaw powiadomienia"}</span><b aria-hidden="true">›</b></a>
         <a class="plan-link${!last || age > 30 ? " warn" : ""}" href="#/ustawienia/kopia"><span aria-hidden="true">💾</span> Kopia zapasowa
@@ -215,6 +242,7 @@
           v.querySelectorAll("[data-theme-opt]").forEach(x => x.setAttribute("aria-pressed", x === b));
         }));
         showStorage();
+        v.querySelector("#nav-app").onchange = async e => { App.navApp = e.target.value; await DB.setSetting("navApp", App.navApp); App.toast("Zapisano"); };
         $("#sw-state").textContent = navigator.serviceWorker && navigator.serviceWorker.controller ? "włączony" : "uruchomi się po ponownym otwarciu";
       },
     };
@@ -251,6 +279,7 @@
 
   async function start() {
     applyTheme(await DB.getSetting("theme", "auto"));
+    App.navApp = await DB.getSetting("navApp", "google");
     // poproś przeglądarkę, by nie usuwała danych (bilety!) przy braku miejsca
     if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
     if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(e => console.warn("SW:", e));

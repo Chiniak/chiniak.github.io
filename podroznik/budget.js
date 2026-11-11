@@ -115,7 +115,7 @@
         </div>
         ${who}
         <input type="date" name="date" value="${defDate}" aria-label="Dzień" class="bg-date">
-        <datalist id="bg-curs">${[...new Set(curList.concat(["PLN", "EUR", "USD", "GBP", "CHF", "CZK"]))].map(c => `<option value="${c}">`).join("")}</datalist>
+        <datalist id="bg-curs">${[...new Set(curList.concat(["PLN", "EUR", "USD", "GBP", "CHF", "CZK", "CNY", "THB", "VND", "LAK"]))].map(c => `<option value="${c}">`).join("")}</datalist>
       </form>`;
 
     // lista wg dni (najnowsze na górze)
@@ -192,10 +192,12 @@
           let ok = 0;
           for (const c of d.currencies) {
             try {
-              const r = await fetch(`https://api.nbp.pl/api/exchangerates/rates/a/${encodeURIComponent(c)}/?format=json`);
+              // tabela A (główne waluty), a gdy waluty tam nie ma – tabela B (np. VND, LAK, KHR, MMK)
+              let r = await fetch(`https://api.nbp.pl/api/exchangerates/rates/a/${encodeURIComponent(c)}/?format=json`);
+              if (r.status === 404) r = await fetch(`https://api.nbp.pl/api/exchangerates/rates/b/${encodeURIComponent(c)}/?format=json`);
               if (!r.ok) continue;
               const j = await r.json();
-              cfg[`rate_${c}`].value = String(j.rates[0].mid).replace(".", ",");
+              cfg[`rate_${c}`].value = String(+j.rates[0].mid.toPrecision(6)).replace(".", ",");
               ok++;
             } catch (err) { /* brak internetu albo waluty spoza tabeli A */ }
           }
