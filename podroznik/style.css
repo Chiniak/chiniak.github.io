@@ -681,7 +681,8 @@ html.lock-pending body > *:not(#lock) { visibility: hidden; }
 .mp-name .small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mp-leg { font-size: 13px; color: var(--muted); padding: 0 0 0 40px; }
 #mp-geo { margin-top: 10px; }
-.dc-near { align-items: center; }
+.dc-near { align-items: center; flex-wrap: wrap; overflow: visible; margin: 0 0 6px; padding: 2px 0 4px; }
+.dc-near .st-chip { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; line-height: 38px; }
 .dc-near-label { flex: none; }
 button.st-chip { font: inherit; font-size: 14px; cursor: pointer; }
 .dc-search { margin: 6px 0 10px; }

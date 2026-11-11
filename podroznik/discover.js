@@ -113,9 +113,9 @@
     const link = extra => `#/odkrywaj/${id}?${new URLSearchParams({ t: tab, ...(q.lat ? { lat: q.lat, lon: q.lon, gdzie: q.gdzie || "" } : {}), ...extra })}`;
     const tabs = Object.entries(TABS).map(([k, n]) => `<a class="st-chip${k === tab ? " on" : ""}" href="${link({ t: k })}" ${k === tab ? 'aria-current="true"' : ""}>${n}</a>`).join("");
     // „w pobliżu czego”: cel podróży, noclegi z położeniem, telefon (GPS)
-    const near = [`<a class="st-chip${!q.lat ? " on" : ""}" href="#/odkrywaj/${id}?t=${tab}">🎯 ${esc(trip.destination || "cel podróży")}</a>`]
+    const near = [`<button type="button" class="st-chip${q.gdzie === "tutaj" ? " on" : ""}" id="dc-gps">📍 Tutaj</button>`, `<a class="st-chip${!q.lat ? " on" : ""}" href="#/odkrywaj/${id}?t=${tab}">🎯 ${esc(trip.destination || "cel podróży")}</a>`]
       .concat(hotels.map(h => `<a class="st-chip${q.lat == h.lat && q.lon == h.lon ? " on" : ""}" href="#/odkrywaj/${id}?${new URLSearchParams({ t: tab, lat: h.lat, lon: h.lon, gdzie: h.name || "nocleg" })}">🏨 ${esc(h.name || "Nocleg")}</a>`))
-      .concat(`<button type="button" class="st-chip${q.gdzie === "tutaj" ? " on" : ""}" id="dc-gps">📍 Tutaj</button>`).join("");
+      .join("");
     const items = await DB.byIndex("planItems", "tripId", id);
     const have = new Set(items.map(i => norm(i.title)));
 
