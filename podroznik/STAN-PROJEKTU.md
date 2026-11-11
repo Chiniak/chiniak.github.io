@@ -4,9 +4,9 @@ Ostatnia aktualizacja: 11 listopada 2026 (wieczór). Zacznij od przeczytania teg
 
 ## Gdzie co jest
 - Repozytorium: `chiniak/chiniak.github.io`, gałąź **`claude/travel-planning-app-tl9mvf`**
-- Scalone na `main`: PR #1 (etapy 0–8), #2 (etapy 7, 9, 10), #3 i #4 (poprawki Odkrywaj).
-- **PR #5 – OTWARTY, czeka na scalenie przez właściciela**: https://github.com/Chiniak/chiniak.github.io/pull/5
-  (GPS w Odkrywaj, mapa na właściwym celu, dodawanie punktu z mapy, Azja: mapy/nawigacja/waluty, odznaczanie pomysłów, **język angielski**).
+- Wszystko scalone na `main`: PR #1 (etapy 0–8), #2 (etapy 7, 9, 10), #3 i #4 (poprawki Odkrywaj),
+  #5 (GPS w Odkrywaj, mapa na właściwym celu, dodawanie punktu z mapy, Azja: mapy/nawigacja/waluty, odznaczanie pomysłów, **język angielski**).
+- Aplikacja na żywo: https://chiniak.github.io/podroznik/ (wersja „1.1 · etapy 0–10”, pamięć offline `podroznik-v21`).
 - Gałąź robocza: po scaleniu PR zacząć ją od nowa od `origin/main` (git checkout -B … origin/main), nie nadpisywać historii (force push zablokowany).
 - Aplikacja https://chiniak.github.io/podroznik/ , APK https://chiniak.github.io/podroznik/Podroznik.apk
 - `podroznik/` – aplikacja (PWA, czysty JS bez frameworka, dane w IndexedDB, offline przez service worker)
@@ -23,7 +23,7 @@ Nic nie było jeszcze testowane na prawdziwym telefonie – lista: `DO-SPRAWDZEN
 ## Testy na telefonie (właściciel, 11.11)
 - Działa: APK bez paska adresu, przypomnienia, bilet na pełnym ekranie, mapa, Odkrywaj (+ „📍 Tutaj” po poprawce), pomysły, rozliczenie, wyszukiwarka miejsc.
 - Nie sprawdzone: wysyłanie podróży plikiem (brak drugiej osoby), .pkpass (brak biletu).
-- Po PR #5 sprawdzić: mapa nie skacze na San Juan, dotknięcie mapy → punkt, Ustawienia → Język → English, Nawigacja → Organic Maps.
+- Do sprawdzenia przez właściciela (po scaleniu PR #5): mapa nie skacze na San Juan, dotknięcie mapy → punkt, Ustawienia → Język → English, Nawigacja → Organic Maps.
 - Właściciel leci do **Chin, Laosu, Wietnamu i Tajlandii** – stąd mapy z napisami łacińskimi, kafelki offline, Amap/geo:, NBP tabela B.
 
 ## Co zostało
