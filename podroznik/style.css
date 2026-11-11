@@ -755,3 +755,13 @@ button.st-chip { font: inherit; font-size: 14px; cursor: pointer; }
 .of-prog .bar { margin-bottom: 6px; }
 .of-info { margin-top: 14px; }
 #mp-off { width: 100%; border: 0; font: inherit; font-weight: 600; text-align: left; cursor: pointer; margin: 0 0 12px; }
+
+/* zdjęcia miejsc w planie i pomysłach (photos.js) */
+.pl-main.has-ph { display: grid; grid-template-columns: 56px minmax(0, 1fr); column-gap: 10px; align-items: start; }
+.pl-main.has-ph > :not(.pl-photo) { grid-column: 2; }
+.pl-photo { grid-column: 1; grid-row: 1 / span 4; width: 56px; height: 56px; object-fit: cover; border-radius: 10px; background: var(--surface-2); }
+.pl-ph-box { margin: 4px 0 8px; }
+.pl-ph-big { display: block; width: 100%; max-height: 240px; object-fit: cover; border-radius: var(--radius); margin-bottom: 4px; }
+.pl-ph-btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.pl-ph-btns .btn { padding: 0 8px; }
+.pl-ph-btns .btn[hidden] { display: none; }

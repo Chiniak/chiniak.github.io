@@ -34,7 +34,7 @@ const dir = process.argv[2] || 'podroznik-testy';
   };
   const go = async (h, name) => { await p.goto('http://localhost:8765/podroznik/#' + h); await report(name || h); };
   await go('/podroze'); await go('/podroze/' + ids.t); await go('/podroze/' + ids.t + '/edytuj'); await go('/podroze/' + ids.t + '/dodaj?typ=lot');
-  await go('/odcinek/' + ids.s1); await go('/bilety'); await go('/plan/' + ids.t); await go('/plan/' + ids.t + '/nowy'); await go('/mapa/' + ids.t);
+  await go('/odcinek/' + ids.s1); await go('/bilety'); await go('/plan/' + ids.t); await go('/plan/' + ids.t + '/nowy'); await go('/punkt/' + (await p.evaluate(i => DB.byIndex('planItems', 'tripId', i).then(a => a[0].id), ids.t))); await go('/mapa/' + ids.t);
   await go('/odkrywaj/' + ids.t); await go('/karty/' + ids.t); await go('/karty/' + ids.t + '?j=lo'); await go('/mapa-offline/' + ids.t + '?v=38.7,-9.2,38.8,-9.0'); await go('/pakowanie/' + ids.t); await go('/pakowanie/' + ids.t + '?l=todo'); await go('/budzet/' + ids.t); await go('/rozliczenie/' + ids.t);
   await go('/dokumenty'); await go('/statystyki?plan=1'); await go('/wklej'); await go('/udostepnij/' + ids.t); await go('/udostepnij');
   await go('/ustawienia'); await go('/ustawienia/przypomnienia'); await go('/ustawienia/kopia'); await go('/ustawienia/blokada');

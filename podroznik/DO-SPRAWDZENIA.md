@@ -105,6 +105,12 @@ Adres (po scaleniu pull requesta): https://chiniak.github.io/podroznik/
 - ⬜ Mapa → „⬇️ Mapa offline”: pobranie przez Wi-Fi (ile trwa, ile MB), potem tryb samolotowy → mapa planu widoczna przy zbliżeniu ulic
 - ⬜ Mapa offline zostaje po zamknięciu aplikacji i po aktualizacji; „Usuń mapę offline” zwalnia miejsce
 
+## Zdjęcia miejsc
+- ⬜ Plan z internetem: przy znanych miejscach (atrakcje, świątynie, muzea) po chwili pojawiają się miniatury – **czy to właściwe miejsca?**
+- ⬜ Miejsca bez artykułu (restauracje, hotele) – zdjęcie „okolica” z Wikimedia Commons: przydatne czy myli? (można je usunąć w punkcie)
+- ⬜ Punkt → „🔎 Znajdź” / „📷 Własne” (aparat albo galeria) / „Usuń” – usunięte nie wraca samo
+- ⬜ Zdjęcia widoczne w trybie samolotowym; plan nie zwalnia przy wielu punktach
+
 ## Znane ograniczenia (nie błędy, ale do oceny)
 - Godziny są „na zegarku” (czas lokalny z biletu) – czas lotu między strefami czasowymi może wyjść o godzinę za dużo / za mało
 - Zdjęcie podróży (pkt 6 planu) – na razie tylko kolor

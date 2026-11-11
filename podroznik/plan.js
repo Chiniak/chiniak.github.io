@@ -181,6 +181,7 @@
 
     // etap 10: mapa, odkrywanie i pomysły (punkty bez dnia)
     const P = App.Places;
+    const PH = it => App.Photos ? App.Photos.thumb(it) : ""; // zdjęcie miejsca (photos.js)
     html += `<div class="pl-tools">
         <a class="plan-link" href="#/mapa/${id}"><span aria-hidden="true">🗺️</span> Mapa i trasa <span class="muted">– punkty dnia, odległości</span><b aria-hidden="true">›</b></a>
         <a class="plan-link" href="#/odkrywaj/${id}"><span aria-hidden="true">🔭</span> Odkrywaj <span class="muted">– atrakcje i jedzenie w okolicy</span><b aria-hidden="true">›</b></a>
@@ -193,7 +194,7 @@
         <summary><h3 class="section">💡 Pomysły – bez dnia <span class="muted">(${ideas.length})</span></h3></summary>
         ${ideas.map(it => `
           <div class="pl-row pl-idea">
-            <a class="pl-main" href="#/punkt/${it.id}">
+            <a class="pl-main${it.photo ? " has-ph" : ""}" data-pid="${it.id}" href="#/punkt/${it.id}">${PH(it)}
               <div class="pl-title"><span aria-hidden="true">${catOf(it).icon}</span> ${esc(it.title)}</div>
               ${it.place ? `<div class="pl-sub">${esc(/^https?:/i.test(it.place) ? "📍 link do mapy" : it.place)}</div>` : ""}
             </a>
@@ -232,7 +233,7 @@
         </div>`) : `${legHtml(it)}
         <div class="pl-row pl-user" data-id="${it.id}">
           <div class="pl-time">${it.time || "–"}</div>
-          <a class="pl-main" href="#/punkt/${it.id}">
+          <a class="pl-main${it.photo ? " has-ph" : ""}" data-pid="${it.id}" href="#/punkt/${it.id}">${PH(it)}
             <div class="pl-title"><span aria-hidden="true">${catOf(it).icon}</span> ${esc(it.title)}</div>
             ${it.place || num(it.cost) ? `<div class="pl-sub">${[esc(it.place && !/^https?:/i.test(it.place) ? it.place : it.place ? "📍 link do mapy" : ""), num(it.cost) ? money(num(it.cost), it.currency || "PLN") : ""].filter(Boolean).join(" · ")}</div>` : ""}
             ${it.note ? `<div class="pl-note">${esc(it.note)}</div>` : ""}
@@ -279,6 +280,8 @@
           }, 60000);
         }
         view.querySelectorAll(".pl-handle").forEach(h => enableDrag(h));
+        // zdjęcia miejsc: dociągane w tle (Wikipedia) i wstawiane bez przeładowania ekranu
+        if (App.Photos) App.Photos.fill(items, (it, ph) => { if (view.isConnected) App.Photos.paint(view, it, ph); });
         view.querySelectorAll("[data-move]").forEach(sel2 => sel2.onchange = async () => {
           if (!sel2.value) return;
           const it = await DB.get("planItems", sel2.dataset.move);
@@ -348,6 +351,11 @@
     for (let i = 0; i < day.length; i++) if (day[i].order !== i || day[i] === rec) await DB.put("planItems", { ...day[i], order: i });
   }
 
+  // podgląd zdjęcia w formularzu punktu (photos.js)
+  const photoBox = ph => ph && ph.data
+    ? `<img class="pl-ph-big" src="${ph.data}" alt="">${ph.credit ? `<div class="muted small">${ph.page ? `<a href="${esc(ph.page)}" target="_blank" rel="noopener">${esc(ph.credit)} ↗</a>` : esc(ph.credit)}</div>` : ""}`
+    : `<p class="muted small">Zdjęcie pojawi się samo (z Wikipedii), gdy miejsce jest znane – możesz też dodać własne.</p>`;
+
   async function itemForm({ itemId, tripId, date, q = {} }) {
     const it = itemId ? await DB.get("planItems", itemId) : null;
     if (itemId && !it) { location.replace("#/plan"); return ""; }
@@ -389,6 +397,13 @@
           </div>
           <label class="field"><span>Notatka</span>
             <textarea name="note" rows="3" placeholder="np. bilety kupić online, zamknięte w poniedziałki">${esc(v.note)}</textarea></label>
+          ${App.Photos ? `<div class="field"><span>Zdjęcie</span>
+            <div class="pl-ph-box" id="pl-ph">${photoBox(v.photo)}</div>
+            <div class="pl-ph-btns">
+              <button type="button" class="btn" id="pl-ph-find">🔎 Znajdź</button>
+              <label class="btn">📷 Własne<input type="file" id="pl-ph-file" accept="image/*" hidden></label>
+              <button type="button" class="btn" id="pl-ph-del"${v.photo ? "" : " hidden"}>Usuń</button>
+            </div></div>` : ""}
           <p class="error" id="err" hidden></p>
           <button class="btn primary wide" type="submit">${it ? "Zapisz zmiany" : "Dodaj do planu"}</button>
           ${it ? `<button class="btn danger wide" type="button" id="del">Usuń punkt</button>` : ""}
@@ -396,6 +411,34 @@
       after(view) {
         const f = view.querySelector("#pl-form");
         if (!it && !fromMap) f.title.focus();
+        // zdjęcie: undefined = bez zmian, null = usunięte, obiekt = nowe
+        let photo;
+        const phBox = view.querySelector("#pl-ph"), phDel = view.querySelector("#pl-ph-del");
+        const setPhoto = ph => { photo = ph; phBox.innerHTML = photoBox(ph); phDel.hidden = !ph; };
+        if (phBox) {
+          const findBtn = view.querySelector("#pl-ph-find");
+          findBtn.onclick = async () => {
+            const lat = parseFloat(f.lat ? f.lat.value : ""), lon = parseFloat(f.lon ? f.lon.value : "");
+            const probe = { title: f.title.value.trim() || f.place.value.trim(), ...(isFinite(lat) && isFinite(lon) ? { lat, lon } : {}) };
+            if (!probe.title) { App.toast("Wpisz najpierw nazwę miejsca"); return; }
+            findBtn.disabled = true; findBtn.textContent = "Szukam…";
+            try {
+              const hit = await App.Photos.find(probe);
+              if (hit) setPhoto({ data: await App.Photos.toData(hit.src), page: hit.page, credit: hit.credit, auto: true });
+              else App.toast("Nie znaleziono zdjęcia – dodaj własne");
+            } catch (e) { App.toast("Brak internetu albo Wikipedia nie odpowiada"); }
+            findBtn.disabled = false; findBtn.textContent = "🔎 Znajdź";
+          };
+          view.querySelector("#pl-ph-file").onchange = async e => {
+            const file = e.target.files[0];
+            if (!file) return;
+            try {
+              const blob = await App.Photos.toData(URL.createObjectURL(file), 480);
+              setPhoto({ data: blob, page: "", credit: "", auto: false });
+            } catch (err) { App.toast("Nie udało się wczytać zdjęcia"); }
+          };
+          phDel.onclick = () => setPhoto(null);
+        }
         if (App.Places) App.Places.bindSearch(f, trip);
         if (fromMap && q.q) f.querySelector("#pl-find").click();
         if (fromMap && q.lat && App.Places) App.Places.reverse(q.lat, q.lon).then(r => {
@@ -417,6 +460,9 @@
           if (!isFinite(lat) && it && it.place === d.place && App.Places && App.Places.hasXY(it)) { xy.lat = it.lat; xy.lon = it.lon; }
           if (d.cost && !num(d.cost)) return err("Koszt musi być liczbą, np. 25 albo 12,50.");
           d.currency = (d.currency || "PLN").toUpperCase();
+          if (photo !== undefined) Object.assign(d, { photo, photoOff: photo === null, photoTry: Date.now() });
+          else if (it && it.photo && it.photo.auto && (it.title !== d.title || (isFinite(lat) && (lat !== it.lat || lon !== it.lon))))
+            Object.assign(d, { photo: null, photoTry: 0, photoUrl: "" }); // inne miejsce – zdjęcie znajdzie się od nowa
           const moved = !it || it.date !== d.date || it.time !== d.time;
           const rec = await DB.put("planItems", { ...(it || {}), ...d, ...xy, tripId: trip.id, order: it ? it.order : 1e6 });
           if (moved) await placeInDay(rec);
