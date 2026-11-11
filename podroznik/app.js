@@ -158,7 +158,7 @@
     for (const [re, fn] of routes) { match = path.match(re); if (match) { handler = fn; break; } }
     if (!handler) { location.replace("#/podroze"); return; }
 
-    const TAB_OF = { odcinek: "podroze", bilet: "bilety", skanuj: "bilety", punkt: "plan", rzecz: "pakowanie", dokumenty: "bilety", dokument: "bilety", budzet: "podroze", wydatek: "podroze", statystyki: "podroze", wklej: "podroze", mapa: "plan", odkrywaj: "plan", rozliczenie: "podroze", udostepnij: "podroze" };
+    const TAB_OF = { odcinek: "podroze", bilet: "bilety", skanuj: "bilety", punkt: "plan", rzecz: "pakowanie", dokumenty: "bilety", dokument: "bilety", budzet: "podroze", wydatek: "podroze", statystyki: "podroze", wklej: "podroze", mapa: "plan", odkrywaj: "plan", rozliczenie: "podroze", udostepnij: "podroze", "mapa-offline": "plan", karty: "plan" };
     const first = path.split("/")[1];
     const tab = TAB_OF[first] || first;
     document.querySelectorAll(".tabbar a").forEach(a => {
@@ -237,7 +237,7 @@
           <span class="muted">– pobierz APK (430 KB)</span><b aria-hidden="true">›</b></a>`}
         <div class="card" style="margin-top:12px">
           <h2>O aplikacji</h2>
-          <div class="row"><span class="muted">Wersja</span><b>1.1 · etapy 0–10</b></div>
+          <div class="row"><span class="muted">Wersja</span><b>1.2 · etapy 0–11</b></div>
           <div class="row"><span class="muted">Tryb offline</span><b id="sw-state">…</b></div>
         </div>`,
       after(v) {

@@ -184,6 +184,7 @@
     html += `<div class="pl-tools">
         <a class="plan-link" href="#/mapa/${id}"><span aria-hidden="true">🗺️</span> Mapa i trasa <span class="muted">– punkty dnia, odległości</span><b aria-hidden="true">›</b></a>
         <a class="plan-link" href="#/odkrywaj/${id}"><span aria-hidden="true">🔭</span> Odkrywaj <span class="muted">– atrakcje i jedzenie w okolicy</span><b aria-hidden="true">›</b></a>
+        <a class="plan-link" href="#/karty/${id}"><span aria-hidden="true">🚕</span> Karty dla kierowcy <span class="muted">– adresy w lokalnym piśmie, rozmówki</span><b aria-hidden="true">›</b></a>
       </div>`;
     const ideas = items.filter(i => !i.date).sort(byOrder);
     const dayOpts = days.map(d => `<option value="${d}">${App.fmtDay(d)}</option>`).join("");

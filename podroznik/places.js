@@ -13,16 +13,23 @@
   const DAY_COLORS = ["#0f6e6e", "#2f6fd6", "#c2453a", "#d08a17", "#7b4fd1", "#2e8b57", "#b8457f", "#5a6f2b"];
 
   /* ---------- wyszukiwarka miejsc (Nominatim, OpenStreetMap) – najwyżej 1 zapytanie na sekundę ---------- */
-  let lastCall = 0;
-  async function nominatim(params) {
-    const wait = lastCall + 1100 - Date.now();
-    if (wait > 0) await sleep(wait);
-    lastCall = Date.now();
-    const r = await fetch("https://nominatim.openstreetmap.org/search?" +
-      new URLSearchParams({ format: "jsonv2", limit: "6", "accept-language": (self.I18N && I18N.lang === "en") ? "en,pl" : "pl,en", ...params }));
-    if (!r.ok) throw new Error(`wyszukiwarka odpowiedziała ${r.status}`);
-    return r.json();
+  // kolejka: zapytania czekają jedno na drugie (także z kart dla kierowcy – phrases.js)
+  let lastCall = 0, queue = Promise.resolve();
+  function osm(path, params) {
+    const run = async () => {
+      const wait = lastCall + 1100 - Date.now();
+      if (wait > 0) await sleep(wait);
+      lastCall = Date.now();
+      const r = await fetch(`https://nominatim.openstreetmap.org/${path}?` +
+        new URLSearchParams({ format: "jsonv2", "accept-language": (self.I18N && I18N.lang === "en") ? "en,pl" : "pl,en", ...params }));
+      if (!r.ok) throw new Error(`wyszukiwarka odpowiedziała ${r.status}`);
+      return r.json();
+    };
+    const p = queue.then(run, run);
+    queue = p.catch(() => {});
+    return p;
   }
+  const nominatim = params => osm("search", { limit: "6", ...params });
   // krótki adres: „Oceanário, Esplanada D. Carlos I, Lizbona” zamiast pełnego z gminą i kodem
   const shortAddr = (name, display) => {
     const parts = String(display || "").split(",").map(x => x.trim()).filter(Boolean);
@@ -44,12 +51,7 @@
   }
   // nazwa miejsca ze współrzędnych (dotknięcie mapy)
   async function reverse(lat, lon) {
-    const wait = lastCall + 1100 - Date.now();
-    if (wait > 0) await sleep(wait);
-    lastCall = Date.now();
-    const r = await fetch("https://nominatim.openstreetmap.org/reverse?" + new URLSearchParams({ format: "jsonv2", lat, lon, zoom: "18", "accept-language": (self.I18N && I18N.lang === "en") ? "en,pl" : "pl,en" }));
-    if (!r.ok) throw new Error(`wyszukiwarka odpowiedziała ${r.status}`);
-    const x = await r.json();
+    const x = await osm("reverse", { lat, lon, zoom: "18" });
     if (!x || x.error) return null;
     const name = x.name || String(x.display_name || "").split(",")[0];
     return { name, address: shortAddr(name, x.display_name) };
@@ -252,8 +254,11 @@
   async function baseLayer(map, at) {
     let pick = await DB.getSetting("mapLayer", "auto");
     if (!LAYERS[pick]) pick = at && !nonLatin(at[0], at[1]) ? "osm" : "latin";
+    // bez internetu: mapy pobrane na offline (offline.js) są w wersji „Napisy łacińskie”, do zoomu 16 (dalej powiększone)
+    const off = !navigator.onLine;
+    if (off && pick !== "latin" && App.Offline && await App.Offline.any()) pick = "latin";
     const layers = {};
-    for (const [k, L0] of Object.entries(LAYERS)) layers[k] = L.tileLayer(L0.url, { maxZoom: 19, subdomains: "abcd", crossOrigin: true, _k: k });
+    for (const [k, L0] of Object.entries(LAYERS)) layers[k] = L.tileLayer(L0.url, { maxZoom: 19, ...(off ? { maxNativeZoom: 16 } : {}), subdomains: "abcd", crossOrigin: true, _k: k });
     layers[pick].addTo(map);
     const ctl = L.control.layers(Object.fromEntries(Object.entries(layers).map(([k, l]) => [LAYERS[k].name, l])), null, { position: "bottomleft" }).addTo(map);
     const attr = document.querySelector("#mp-attr-src");
@@ -339,7 +344,8 @@
         <form class="pl-search mp-search" id="mp-search"><input name="q" placeholder="Szukaj miejsca, np. Oceanarium" autocomplete="off" aria-label="Szukaj miejsca">
           <button class="btn" type="submit" aria-label="Szukaj">🔎</button></form>
         <div class="card mp-card"><div id="mp-map" class="mp-map" role="application" aria-label="Mapa punktów planu"></div>
-          <div class="mp-attr"><span class="mp-hint">Dotknij mapy, by dodać tam punkt.</span> ${navigator.onLine ? "" : "Offline: widać fragmenty mapy oglądane wcześniej. "}<span id="mp-attr-src"></span></div></div>
+          <div class="mp-attr"><span class="mp-hint">Dotknij mapy, by dodać tam punkt.</span> ${navigator.onLine ? "" : "Offline: widać fragmenty mapy oglądane lub pobrane wcześniej. "}<span id="mp-attr-src"></span></div></div>
+        <button type="button" class="plan-link" id="mp-off"><span aria-hidden="true">⬇️</span> Mapa offline <span class="muted">– zapisz ten fragment i miejsca podróży</span><b aria-hidden="true">›</b></button>
         ${missing ? `<button type="button" class="btn wide" id="mp-geo">📍 Znajdź położenie ${missing} ${plural(missing, "miejsca", "miejsc", "miejsc")} (internet)</button>` : ""}
         ${noPlace ? `<p class="muted small">${noPlace} ${plural(noPlace, "punkt nie ma", "punkty nie mają", "punktów nie ma")} wpisanego miejsca – dodaj je w punkcie, by pojawił się na mapie.</p>` : ""}
         ${canOpt || gmaps ? `<div class="add-row">
@@ -420,6 +426,10 @@
           if (v.length >= 2) location.hash = `#/plan/${id}/nowy?${new URLSearchParams({ d: dayParam, q: v })}`;
         };
 
+        view.querySelector("#mp-off").onclick = () => {
+          const b = map ? map.getBounds() : null;
+          location.hash = `#/mapa-offline/${id}` + (b ? `?v=${[b.getSouth(), b.getWest(), b.getNorth(), b.getEast()].map(x => x.toFixed(4)).join(",")}` : "");
+        };
         const geo = view.querySelector("#mp-geo");
         if (geo) geo.onclick = async () => {
           geo.disabled = true;
@@ -443,5 +453,5 @@
     };
   });
 
-  App.Places = { search, reverse, center, km, leg, fmtDist, hasXY, coordsIn, shortestOrder, optimizeDay, locateMissing, hotelFor, searchBox, bindSearch, DAY_COLORS };
+  App.Places = { osm, LAYERS, search, reverse, center, km, leg, fmtDist, hasXY, coordsIn, shortestOrder, optimizeDay, locateMissing, hotelFor, searchBox, bindSearch, DAY_COLORS };
 })();
