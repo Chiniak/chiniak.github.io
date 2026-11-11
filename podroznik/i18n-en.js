@@ -434,4 +434,10 @@ self.I18N_EN = {
   "Pobieram… {}/{}": "Downloading… {}/{}", "Pobieram… {}/{} · błędy: {}": "Downloading… {}/{} · errors: {}", "Zatrzymano – pobrane kafelki zostają": "Stopped – downloaded tiles are kept",
   "Pobrano · nie udało się {} – spróbuj ponownie": "Downloaded · {} failed – try again", "Mapa offline gotowa ✅": "Offline map ready ✅",
   "Offline: widać fragmenty mapy oglądane lub pobrane wcześniej.": "Offline: map areas viewed or downloaded earlier are shown.",
+
+  /* ---------- zdjęcia miejsc (photos.js) ---------- */
+  "Zdjęcie": "Photo", "🔎 Znajdź": "🔎 Find", "📷 Własne": "📷 My own",
+  "Zdjęcie pojawi się samo (z Wikipedii), gdy miejsce jest znane – możesz też dodać własne.": "A photo appears automatically (from Wikipedia) when the place is known – you can also add your own.",
+  "Wpisz najpierw nazwę miejsca": "Enter the place name first", "Nie znaleziono zdjęcia – dodaj własne": "No photo found – add your own",
+  "Brak internetu albo Wikipedia nie odpowiada": "No internet or Wikipedia is not responding", "Nie udało się wczytać zdjęcia": "Could not load the photo",
 };

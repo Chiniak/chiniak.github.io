@@ -253,7 +253,8 @@
             }
             const rec = await DB.put("planItems", { tripId: id, date: "", time: "", title: p.name.slice(0, 100), cat: p.cat,
               place: p.address ? `${p.name}, ${p.address}` : p.name, lat: p.lat, lon: p.lon,
-              note: [p.kind, p.cuisine, p.desc].filter(Boolean).join(" · ").slice(0, 300), cost: "", currency: "PLN", order: 1e6 });
+              note: [p.kind, p.cuisine, p.desc].filter(Boolean).join(" · ").slice(0, 300), cost: "", currency: "PLN", order: 1e6,
+              photoUrl: p.thumb || "", wikiUrl: p.wikiUrl || "" }); // zdjęcie zapisze plan (photos.js)
             have.set(k, rec);
             setBtn(b, true);
             if (navigator.vibrate) navigator.vibrate(15);

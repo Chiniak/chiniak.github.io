@@ -36,6 +36,7 @@ testy powiadomień (t9, t11–t16) używają `chromium.launch({ channel: 'chromi
 | t24 | mapa: cel z Nominatim (nie San Juan), 📍, dotknięcie mapy → punkt, wyszukiwanie |
 | t25 | Azja: nazwy, odznaczanie pomysłów, podkład łaciński, kafelki offline, nawigacja geo:/Amap, NBP tabela B |
 | t27 | karty dla kierowcy (lokalny adres – Nominatim symulowany), rozmówki, mapa offline: pobieranie, mapa bez internetu, usuwanie |
+| t28 | zdjęcia miejsc: Wikipedia (w pobliżu i po nazwie), Commons, z Odkrywaj, własne, usuwanie, offline (sieć symulowana) |
 | t26 | angielski: wszystkie ekrany, wypisuje teksty, które zostały po polsku (powinno być „OK”) |
 
 Testy ustawiają `locale: 'pl-PL'` – bez tego aplikacja (język „Auto”) przełączy się na angielski.
