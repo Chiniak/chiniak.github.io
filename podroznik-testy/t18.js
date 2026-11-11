@@ -1,7 +1,7 @@
 // etap 9: strefy czasowe lotów, zdjęcie w tle podróży
 const { chromium, devices } = require('playwright');
 const dir = process.argv[2] || 'podroznik-testy';
-(async () => { const b = await chromium.launch(); const p = await (await b.newContext({ ...devices['Pixel 7'], timezoneId: 'Europe/Warsaw' })).newPage();
+(async () => { const b = await chromium.launch(); const p = await (await b.newContext({ ...devices['Pixel 7'], locale: 'pl-PL', timezoneId: 'Europe/Warsaw' })).newPage();
   const errs = []; p.on('pageerror', e => errs.push(e.message));
   await p.goto('http://localhost:8765/podroznik/#/podroze'); await p.waitForTimeout(500);
   const ids = await p.evaluate(async () => {

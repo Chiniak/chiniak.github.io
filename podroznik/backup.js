@@ -6,7 +6,7 @@
    Do kopii NIE trafiają: blokada PIN (lock) i stan na tym telefonie (pokazane przypomnienia, ostatnio otwarte podróże). */
 (function () {
   const { esc, plural } = App;
-  const LOCAL_SETTINGS = new Set(["lock", "remShown", "remDismissed", "planTrip", "packTrip", "lastBackup"]);
+  const LOCAL_SETTINGS = new Set(["lock", "lang", "remShown", "remDismissed", "planTrip", "packTrip", "lastBackup"]);
   const COUNT_LABELS = [["trips", "podróże", "podróż", "podróży"], ["segments", "odcinki", "odcinek", "odcinków"], ["files", "bilety", "bilet", "biletów"],
     ["planItems", "punkty planu", "punkt planu", "punktów planu"], ["packItems", "rzeczy i zadania", "rzecz/zadanie", "rzeczy i zadań"],
     ["docs", "dokumenty", "dokument", "dokumentów"], ["expenses", "wydatki", "wydatek", "wydatków"]];
@@ -133,7 +133,7 @@
     for (const [k] of COUNT_LABELS) counts[k] = await DB.count(k);
     const age = last ? Math.floor((Date.now() - new Date(last.at)) / 86400000) : null;
     const lastTxt = last
-      ? `${new Intl.DateTimeFormat("pl-PL", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(last.at))}${age > 0 ? ` (${age} ${plural(age, "dzień", "dni", "dni")} temu)` : ""}`
+      ? `${new Intl.DateTimeFormat((self.I18N ? I18N.locale : "pl-PL"), { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(last.at))}${age > 0 ? ` (${age} ${plural(age, "dzień", "dni", "dni")} temu)` : ""}`
       : "jeszcze nie było";
     const mb = n => (n / 1048576).toFixed(1).replace(".", ",") + " MB";
 
@@ -198,7 +198,7 @@
           if (!data) { prev.innerHTML = ""; return; }
           const c = {};
           for (const [k] of COUNT_LABELS) c[k] = (data.stores[k] || []).length;
-          const when = data.exportedAt ? new Intl.DateTimeFormat("pl-PL", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(data.exportedAt)) : "?";
+          const when = data.exportedAt ? new Intl.DateTimeFormat((self.I18N ? I18N.locale : "pl-PL"), { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(data.exportedAt)) : "?";
           prev.innerHTML = `
             <div class="bk-box">
               <div class="row"><span class="muted">Kopia z</span><b>${when}</b></div>

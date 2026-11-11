@@ -92,6 +92,10 @@ Rzeczy do przetestowania na prawdziwym telefonie: **[DO-SPRAWDZENIA.md](DO-SPRAW
 50. ✅ **Rozliczenie w grupie** – uczestnicy, kto płacił i za kogo, salda i najkrótsza lista przelewów, wysłanie rozliczenia.
 51. ✅ **Wspólna podróż bez serwera** – wysłanie podróży plikiem i scalanie zmian (nowsza wersja wygrywa) + plan jako tekst do komunikatora.
 
+52. ✅ **Poprawki po testach**: GPS w Odkrywaj, mapa na właściwym celu (Nominatim), „Dodaj tu punkt” z mapy, wyszukiwanie nad mapą, 📍 na mapie, odznaczanie pomysłów.
+53. ✅ **Azja**: mapa z napisami łacińskimi (CARTO), oglądane kafelki offline, nawigacja przez Organic Maps / Amap (geo:), nazwy po polsku/angielsku, kursy NBP z tabeli B (VND, LAK).
+54. ✅ **Język angielski** – Ustawienia → Język (Auto / Polski / English).
+
 Czego (świadomie) nie ma: edycji na żywo przez kilka osób (wymaga serwera i kont), asystenta AI (wymaga płatnego klucza),
 automatycznego czytania Gmaila (wymaga weryfikacji aplikacji przez Google) – zamiast tego jest „Udostępnij → Podróżnik” i wklejanie maila.
 

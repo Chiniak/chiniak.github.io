@@ -1,7 +1,7 @@
 const { chromium, devices } = require('playwright');
 const SP = process.argv[2];
 (async () => {
-  const b = await chromium.launch({ channel: 'chromium' }); const ctx = await b.newContext({ ...devices['Pixel 7'] }); const p = await ctx.newPage();
+  const b = await chromium.launch({ channel: 'chromium' }); const ctx = await b.newContext({ ...devices['Pixel 7'], locale: 'pl-PL' }); const p = await ctx.newPage();
   const errs=[]; p.on('pageerror', e=>errs.push(e.message)); p.on('console', m=>{ if(m.type()==='error') errs.push(m.text())});
   const calls = [];
   const daily = (u, arch) => { const s=new Date(u.searchParams.get('start_date')), e=new Date(u.searchParams.get('end_date')); const time=[],code=[],mx=[],mn=[],pp=[];

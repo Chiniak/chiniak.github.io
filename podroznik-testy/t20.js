@@ -2,7 +2,7 @@
 const { chromium, devices } = require('playwright');
 const dir = process.argv[2] || 'podroznik-testy';
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN8+v9/PQAJYgPWgaukFQAAAABJRU5ErkJggg==', 'base64');
-(async () => { const b = await chromium.launch(); const ctx = await b.newContext({ ...devices['Pixel 7'] }); const p = await ctx.newPage();
+(async () => { const b = await chromium.launch(); const ctx = await b.newContext({ ...devices['Pixel 7'], locale: 'pl-PL' }); const p = await ctx.newPage();
   const errs = []; p.on('pageerror', e => errs.push(e.message));
   const calls = { nom: 0, ovp: 0, wiki: 0 };
   await ctx.route('https://tile.openstreetmap.org/**', r => r.fulfill({ body: PNG, contentType: 'image/png' }));

@@ -67,7 +67,7 @@
     const d = n % 10, dd = n % 100;
     return d >= 2 && d <= 4 && !(dd >= 12 && dd <= 14) ? few : many;
   };
-  const fmt = opts => new Intl.DateTimeFormat("pl-PL", opts);
+  const fmt = opts => new Intl.DateTimeFormat((self.I18N ? I18N.locale : "pl-PL"), opts);
   App.fmtDay = s => fmt({ weekday: "short", day: "numeric", month: "short" }).format(App.parseDay(s));
   App.fmtDayLong = s => fmt({ weekday: "long", day: "numeric", month: "long" }).format(App.parseDay(s));
   App.fmtRange = (a, b) => {
@@ -210,6 +210,11 @@
           <div id="storage" class="muted">Sprawdzam…</div>
         </div>
         <div class="card">
+          <h2>Język / Language</h2>
+          <div class="seg" role="group" aria-label="Język / Language">${["auto", "pl", "en"].map(v => `<button type="button" data-lang-opt="${v}" aria-pressed="${(self.I18N ? I18N.pref : "auto") === v}" translate="no">${{ auto: "Auto", pl: "Polski", en: "English" }[v]}</button>`).join("")}</div>
+          <p class="small muted" style="margin:8px 0 0" translate="no">Auto = ${(self.I18N && I18N.lang === "en") ? "English unless the phone is set to Polish" : "polski, gdy telefon jest po polsku, inaczej angielski"}.</p>
+        </div>
+        <div class="card">
           <h2>Nawigacja i mapy</h2>
           <label class="field"><span>Przycisk „Nawiguj” otwiera</span>
             <select id="nav-app">
@@ -242,6 +247,12 @@
           v.querySelectorAll("[data-theme-opt]").forEach(x => x.setAttribute("aria-pressed", x === b));
         }));
         showStorage();
+        v.querySelectorAll("[data-lang-opt]").forEach(b => b.addEventListener("click", async () => {
+          const val = b.dataset.langOpt;
+          try { localStorage.setItem("podroznik-lang", val); } catch (e) { /* brak dostępu */ }
+          await DB.setSetting("lang", val);
+          location.reload(); // tłumaczenie całego ekranu od nowa
+        }));
         v.querySelector("#nav-app").onchange = async e => { App.navApp = e.target.value; await DB.setSetting("navApp", App.navApp); App.toast("Zapisano"); };
         $("#sw-state").textContent = navigator.serviceWorker && navigator.serviceWorker.controller ? "włączony" : "uruchomi się po ponownym otwarciu";
       },

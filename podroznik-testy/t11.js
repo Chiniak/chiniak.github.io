@@ -5,7 +5,7 @@ const fs = require('fs'); const crypto = require('crypto'); const SP = process.a
   const errs=[]; const watch = p => { p.on('pageerror', e=>errs.push(e.message)); p.on('console', m=>{ if(m.type()==='error') errs.push(m.text())}); };
   const B='http://localhost:8765/podroznik/';
   // ---- phone A: data + backups
-  const A = await b.newContext({ ...devices['Pixel 7'], acceptDownloads: true }); const p = await A.newPage(); watch(p);
+  const A = await b.newContext({ ...devices['Pixel 7'], locale: 'pl-PL', acceptDownloads: true }); const p = await A.newPage(); watch(p);
   let answer = null; p.on('dialog', d => d.type()==='prompt' ? d.accept(answer) : d.accept());
   await p.goto(B); await p.waitForTimeout(600);
   const tid = await p.evaluate(async()=>{ const t=await DB.put('trips',{name:'Lizbona',start:'2026-11-20',end:'2026-11-24'});
@@ -30,7 +30,7 @@ const fs = require('fs'); const crypto = require('crypto'); const SP = process.a
   const e = JSON.parse(fs.readFileSync(encf,'utf8')); console.log('encrypted:', dl.suggestedFilename(), !!e.encrypted, 'no plaintext:', !fs.readFileSync(encf,'utf8').includes('Oceanarium'));
   await p.waitForTimeout(500); console.log('last backup line:', (await p.textContent('.card .row >> nth=1')).replace(/\s+/g,' ').trim());
   // ---- phone B: restore
-  const Bc = await b.newContext({ ...devices['Pixel 7'] }); const q = await Bc.newPage(); watch(q);
+  const Bc = await b.newContext({ ...devices['Pixel 7'], locale: 'pl-PL' }); const q = await Bc.newPage(); watch(q);
   let ans = 'zle-haslo'; q.on('dialog', d => d.type()==='prompt' ? d.accept(ans) : d.accept());
   await q.goto(B+'#/ustawienia/kopia'); await q.waitForTimeout(600);
   await q.setInputFiles('#bk-file', encf); await q.waitForTimeout(2500);

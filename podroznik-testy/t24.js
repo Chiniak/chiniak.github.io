@@ -3,7 +3,7 @@ const { chromium, devices } = require('playwright');
 const dir = process.argv[2] || 'podroznik-testy';
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN8+v9/PQAJYgPWgaukFQAAAABJRU5ErkJggg==', 'base64');
 (async () => { const b = await chromium.launch();
-  const ctx = await b.newContext({ ...devices['Pixel 7'], geolocation: { latitude: 50.0614, longitude: 19.9366 }, permissions: ['geolocation'] });
+  const ctx = await b.newContext({ ...devices['Pixel 7'], locale: 'pl-PL', geolocation: { latitude: 50.0614, longitude: 19.9366 }, permissions: ['geolocation'] });
   await ctx.route('https://tile.openstreetmap.org/**', r => r.fulfill({ body: PNG, contentType: 'image/png' }));
   // Open-Meteo myli „Teneryfa” z San Juan (tak jak u użytkownika)
   await ctx.route(/geocoding-api\.open-meteo/, r => r.fulfill({ json: { results: [{ latitude: 18.4655, longitude: -66.1057, country_code: 'PR', name: 'San Juan' }] } }));

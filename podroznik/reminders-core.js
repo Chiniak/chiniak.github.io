@@ -17,7 +17,7 @@
   const prevDayAt = (s, hhmm) => { const d = parse(s); d.setDate(d.getDate() - 1); return `${fmtLocal(d).slice(0, 10)}T${hhmm}`; };
   const nowStr = () => fmtLocal(new Date());
   const dur = m => (m >= 60 ? `${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60} min` : ""}` : `${m} min`);
-  const fmtDay = s => new Intl.DateTimeFormat("pl-PL", { weekday: "short", day: "numeric", month: "short" }).format(parse(s));
+  const fmtDay = s => new Intl.DateTimeFormat((self.I18N ? I18N.locale : "pl-PL"), { weekday: "short", day: "numeric", month: "short" }).format(parse(s));
   const minutesBetween = (a, b) => Math.round((parse(b) - parse(a)) / 60000);
 
   // [ikona, nazwa, słowo na start]

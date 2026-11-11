@@ -2,7 +2,7 @@
 const { chromium, devices } = require('playwright');
 (async () => { const b = await chromium.launch();
   const page = async (opts, init) => {
-    const ctx = await b.newContext({ ...devices['Pixel 7'], ...opts });
+    const ctx = await b.newContext({ ...devices['Pixel 7'], locale: 'pl-PL', ...opts });
     await ctx.route(/open-meteo/, r => r.fulfill({ json: { results: [{ latitude: 38.72, longitude: -9.14, country_code: 'PT', name: 'Lizbona' }] } }));
     await ctx.route(/overpass|maps\.mail\.ru|wikipedia/, r => r.fulfill({ json: { elements: [] } }));
     if (init) await ctx.addInitScript(init);

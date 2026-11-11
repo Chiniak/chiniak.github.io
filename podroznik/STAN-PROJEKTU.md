@@ -1,10 +1,13 @@
 # Podróżnik – stan projektu (do kontynuacji w nowej sesji)
 
-Ostatnia aktualizacja: 11 listopada 2026. Zacznij od przeczytania tego pliku, potem `PLAN.md` i `DO-SPRAWDZENIA.md`.
+Ostatnia aktualizacja: 11 listopada 2026 (wieczór). Zacznij od przeczytania tego pliku, potem `PLAN.md` i `DO-SPRAWDZENIA.md`.
 
 ## Gdzie co jest
 - Repozytorium: `chiniak/chiniak.github.io`, gałąź **`claude/travel-planning-app-tl9mvf`**
-- Pull request **#1** (etapy 0–8) scalony. Etap 7 (APK) oraz etapy 9–10 są na gałęzi – czekają na nowy pull request.
+- Scalone na `main`: PR #1 (etapy 0–8), #2 (etapy 7, 9, 10), #3 i #4 (poprawki Odkrywaj).
+- **PR #5 – OTWARTY, czeka na scalenie przez właściciela**: https://github.com/Chiniak/chiniak.github.io/pull/5
+  (GPS w Odkrywaj, mapa na właściwym celu, dodawanie punktu z mapy, Azja: mapy/nawigacja/waluty, odznaczanie pomysłów, **język angielski**).
+- Gałąź robocza: po scaleniu PR zacząć ją od nowa od `origin/main` (git checkout -B … origin/main), nie nadpisywać historii (force push zablokowany).
 - Aplikacja https://chiniak.github.io/podroznik/ , APK https://chiniak.github.io/podroznik/Podroznik.apk
 - `podroznik/` – aplikacja (PWA, czysty JS bez frameworka, dane w IndexedDB, offline przez service worker)
 - `podroznik-android/` – projekt APK (Trusted Web Activity, Bubblewrap), instrukcja w jego README
@@ -17,9 +20,15 @@ Wszystkie etapy 0–10 z `PLAN.md` (✅), w tym APK, strefy czasowe, tło podró
 (mapa i trasa dnia, pomysły, odkrywanie, rozliczenie w grupie, wspólna podróż plikiem). Szczegóły: `PLAN.md`.
 Nic nie było jeszcze testowane na prawdziwym telefonie – lista: `DO-SPRAWDZENIA.md`.
 
+## Testy na telefonie (właściciel, 11.11)
+- Działa: APK bez paska adresu, przypomnienia, bilet na pełnym ekranie, mapa, Odkrywaj (+ „📍 Tutaj” po poprawce), pomysły, rozliczenie, wyszukiwarka miejsc.
+- Nie sprawdzone: wysyłanie podróży plikiem (brak drugiej osoby), .pkpass (brak biletu).
+- Po PR #5 sprawdzić: mapa nie skacze na San Juan, dotknięcie mapy → punkt, Ustawienia → Język → English, Nawigacja → Organic Maps.
+- Właściciel leci do **Chin, Laosu, Wietnamu i Tajlandii** – stąd mapy z napisami łacińskimi, kafelki offline, Amap/geo:, NBP tabela B.
+
 ## Co zostało
 1. **Właściciel:** scalić PR #1, zainstalować APK, przejść `DO-SPRAWDZENIA.md` i zgłosić błędy.
-2. Pomysły na dalej: edycja na żywo przez kilka osób (wymagałaby serwera, np. Firebase), mapy offline, licznik w APK według strefy lotniska.
+2. Pomysły na dalej: więcej języków (słownik jak `i18n-en.js`), edycja na żywo przez kilka osób (wymagałaby serwera, np. Firebase), mapy offline, licznik w APK według strefy lotniska.
 3. Poprawki po testach na telefonie (najbardziej prawdopodobne: odczyt maili od prawdziwych przewoźników – `email.js`).
 
 ## Pliki aplikacji (`podroznik/`)
@@ -37,16 +46,21 @@ Nic nie było jeszcze testowane na prawdziwym telefonie – lista: `DO-SPRAWDZEN
 | `backup.js`, `lock.js` | kopia zapasowa (opcjonalnie AES-GCM), blokada PIN / odcisk palca |
 | `docs.js`, `budget.js`, `stats.js`, `weather.js`, `email.js` | etap 8: dokumenty, budżet, statystyki i mapa, pogoda, odczyt maili |
 | `places.js`, `discover.js`, `split.js`, `share.js` | etap 10: mapa i trasa dnia, odkrywanie, rozliczenie w grupie, wspólna podróż |
+| `i18n.js`, `i18n-en.js` | języki: „tłumacz ekranu” (MutationObserver) + słownik PL→EN; `I18N.locale` do dat i liczb |
 | `sw.js` | offline + powiadomienia w tle (periodicsync) + kliknięcie powiadomienia |
 | `lib/` | pdf.js, bwip-js, ZXing, Leaflet, airports.js (OpenFlights), world.js (Natural Earth) – licencje w `lib/` |
 
 ## Zasady i pułapki (ważne przy zmianach)
-- **Po każdej zmianie plików aplikacji podbij `CACHE` w `sw.js`** (teraz `podroznik-v15`) i dopisz nowe pliki do listy `APP`.
+- **Po każdej zmianie plików aplikacji podbij `CACHE` w `sw.js`** (teraz `podroznik-v21`) i dopisz nowe pliki do listy `APP`.
 - Nowy magazyn danych = podbić `VERSION` w `db.js` i dodać do `STORES` (aktualizacja zachowuje dane – test t12).
 - Nasłuch zdarzeń podpinaj do elementów widoku, **nie do `#view`** (zostaje między ekranami → podwójne akcje).
 - Router ignoruje wolniej wczytany starszy ekran (`renderSeq` w `app.js`).
 - `r.cleanup` w widoku – sprzątanie (kamera, liczniki, blokada ekranu).
 - Polska odmiana: `App.plural(n, "1", "2–4", "5+")`.
+- **Nowy tekst na ekranie = dopisz tłumaczenie do `i18n-en.js`** (klucz = tekst polski, `{}` = wstawiana wartość). Brakujące teksty pokazuje test `t26` (ekrany po angielsku).
+- Daty/liczby: `self.I18N ? I18N.locale : "pl-PL"` zamiast "pl-PL". Testy ustawiają `locale: 'pl-PL'` (inaczej aplikacja przejdzie na angielski).
+- Ustawienia: `navApp` (google/geo/amap → `App.mapsUrl`), `mapLayer` (latin/osm), `lang` (też w localStorage `podroznik-lang`).
+- Kafelki mapy w pamięci `mapa-kafelki` (sw.js, do 4000) – nie zaczyna się od „podroznik-”, więc nie jest kasowana przy nowej wersji.
 - Godziny zapisywane jako czas lokalny miejsca: `"RRRR-MM-DDTGG:MM"`.
 - Pogoda i wyszukiwanie miast używają Open-Meteo (bez klucza); po błędzie 10 min przerwy.
 - Etap 10: miejsca – Nominatim (najwyżej 1 zapytanie/s, kolejka w `places.js`), atrakcje – Overpass API, opisy – Wikipedia, podkład mapy – kafelki OpenStreetMap. Wszystko bez klucza, tylko online.

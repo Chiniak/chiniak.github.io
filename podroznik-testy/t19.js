@@ -1,7 +1,7 @@
 // etap 9: import karty .pkpass (Apple Wallet)
 const { chromium, devices } = require('playwright');
 const dir = process.argv[2] || 'podroznik-testy';
-(async () => { const b = await chromium.launch(); const p = await (await b.newContext({ ...devices['Pixel 7'] })).newPage();
+(async () => { const b = await chromium.launch(); const p = await (await b.newContext({ ...devices['Pixel 7'], locale: 'pl-PL' })).newPage();
   const errs = []; p.on('pageerror', e => errs.push(e.message));
   await p.goto('http://localhost:8765/podroznik/#/podroze'); await p.waitForTimeout(500);
   const sid = await p.evaluate(async () => {

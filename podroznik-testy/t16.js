@@ -1,7 +1,7 @@
 const { chromium, devices } = require('playwright'); const fs = require('fs');
 const SP = process.argv[2];
 (async () => {
-  const b = await chromium.launch({ channel: 'chromium' }); const ctx = await b.newContext({ ...devices['Pixel 7'], permissions: ['clipboard-read','clipboard-write'] }); const p = await ctx.newPage();
+  const b = await chromium.launch({ channel: 'chromium' }); const ctx = await b.newContext({ ...devices['Pixel 7'], locale: 'pl-PL', permissions: ['clipboard-read','clipboard-write'] }); const p = await ctx.newPage();
   const errs=[]; p.on('pageerror', e=>errs.push(e.message)); p.on('console', m=>{ if(m.type()==='error') errs.push(m.text())});
   const B='http://localhost:8765/podroznik/';
   await p.goto(B); await p.waitForTimeout(600);

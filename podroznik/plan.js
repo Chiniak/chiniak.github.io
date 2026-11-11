@@ -33,7 +33,7 @@
     ? `<a class="pl-nav" href="${esc(App.mapsUrl(place))}" target="_blank" rel="noopener" aria-label="${label}: ${esc(place)}">${navIcon}</a>` : "";
 
   const num = v => { const n = parseFloat(String(v || "").replace(",", ".")); return isFinite(n) ? n : 0; };
-  const money = (n, cur) => `${n.toLocaleString("pl-PL", Number.isInteger(n) ? {} : { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${cur}`;
+  const money = (n, cur) => `${n.toLocaleString((self.I18N ? I18N.locale : "pl-PL"), Number.isInteger(n) ? {} : { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${cur}`;
 
   function inTime(min) {
     if (min < 1) return "teraz";

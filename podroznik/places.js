@@ -19,7 +19,7 @@
     if (wait > 0) await sleep(wait);
     lastCall = Date.now();
     const r = await fetch("https://nominatim.openstreetmap.org/search?" +
-      new URLSearchParams({ format: "jsonv2", limit: "6", "accept-language": "pl,en", ...params }));
+      new URLSearchParams({ format: "jsonv2", limit: "6", "accept-language": (self.I18N && I18N.lang === "en") ? "en,pl" : "pl,en", ...params }));
     if (!r.ok) throw new Error(`wyszukiwarka odpowiedziała ${r.status}`);
     return r.json();
   }
@@ -47,7 +47,7 @@
     const wait = lastCall + 1100 - Date.now();
     if (wait > 0) await sleep(wait);
     lastCall = Date.now();
-    const r = await fetch("https://nominatim.openstreetmap.org/reverse?" + new URLSearchParams({ format: "jsonv2", lat, lon, zoom: "18", "accept-language": "pl,en" }));
+    const r = await fetch("https://nominatim.openstreetmap.org/reverse?" + new URLSearchParams({ format: "jsonv2", lat, lon, zoom: "18", "accept-language": (self.I18N && I18N.lang === "en") ? "en,pl" : "pl,en" }));
     if (!r.ok) throw new Error(`wyszukiwarka odpowiedziała ${r.status}`);
     const x = await r.json();
     if (!x || x.error) return null;

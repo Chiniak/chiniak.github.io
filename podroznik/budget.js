@@ -18,7 +18,7 @@
     inne: { icon: "📦", name: "Inne" },
   };
   const num = v => { const n = parseFloat(String(v ?? "").replace(/\s/g, "").replace(",", ".")); return isFinite(n) ? n : 0; };
-  const money = (n, cur) => `${(Math.round(n * 100) / 100).toLocaleString("pl-PL", { minimumFractionDigits: Number.isInteger(Math.round(n * 100) / 100) ? 0 : 2, maximumFractionDigits: 2 })} ${cur}`;
+  const money = (n, cur) => `${(Math.round(n * 100) / 100).toLocaleString((self.I18N ? I18N.locale : "pl-PL"), { minimumFractionDigits: Number.isInteger(Math.round(n * 100) / 100) ? 0 : 2, maximumFractionDigits: 2 })} ${cur}`;
   const cur3 = c => (c || "").trim().toUpperCase().slice(0, 5);
 
   async function load(tripId) {

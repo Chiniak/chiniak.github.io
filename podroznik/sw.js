@@ -2,11 +2,11 @@
    Pliki aplikacji: najpierw sieć (aktualizacje od razu), zapisana kopia gdy brak internetu.
    Przy każdej zmianie plików podbij numer CACHE. Dane użytkownika są w IndexedDB, nie tutaj. */
 // baza i wyliczanie przypomnień – do sprawdzania w tle (Periodic Background Sync)
-importScripts("db.js", "reminders-core.js");
+importScripts("i18n-en.js", "i18n.js", "db.js", "reminders-core.js");
 
-const CACHE = "podroznik-v20";
+const CACHE = "podroznik-v21";
 const APP = [
-  "./", "./index.html", "./style.css", "./db.js", "./app.js", "./trips.js", "./manifest.webmanifest",
+  "./", "./index.html", "./style.css", "./i18n-en.js", "./i18n.js", "./db.js", "./app.js", "./trips.js", "./manifest.webmanifest",
   "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png", "./tickets.js", "./plan.js", "./pack.js", "./reminders-core.js", "./reminders.js", "./backup.js", "./lock.js", "./docs.js", "./budget.js", "./stats.js", "./weather.js", "./email.js", "./places.js", "./discover.js", "./split.js", "./share.js",
   // biblioteki do biletów – od razu w pamięci, żeby działały offline także za pierwszym razem
   "./lib/pdf.min.js", "./lib/pdf.worker.min.js", "./lib/bwip-js.min.js", "./lib/zxing.min.js", "./lib/airports.js", "./lib/world.js", "./lib/leaflet.js", "./lib/leaflet.css", "./lib/images/layers.png", "./lib/images/layers-2x.png",
@@ -71,8 +71,9 @@ self.addEventListener("fetch", e => {
 /* ---------- przypomnienia ---------- */
 const showReminder = async r => {
   if (self.Notification && Notification.permission !== "granted") return false;
-  await self.registration.showNotification(r.title, {
-    body: r.body, tag: r.id, icon: "icon-192.png", badge: "icon-192.png", data: { href: r.href }, renotify: true,
+  I18N.setLang(await DB.getSetting("lang", "auto")); // język z Ustawień (service worker nie widzi localStorage)
+  await self.registration.showNotification(I18N.tr(r.title), {
+    body: I18N.tr(r.body), tag: r.id, icon: "icon-192.png", badge: "icon-192.png", data: { href: r.href }, renotify: true,
   });
   return true;
 };

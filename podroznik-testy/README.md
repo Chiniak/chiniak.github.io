@@ -31,6 +31,13 @@ testy powiadomień (t9, t11–t16) używają `chromium.launch({ channel: 'chromi
 | t19 | import karty .pkpass (`fx/karta.pkpass`, generowana przez `gen-pkpass.js`) |
 | t20 | wyszukiwarka miejsc, mapa i trasa dnia, układanie trasy, pomysły, odkrywanie (sieć symulowana) |
 | t21 | rozliczenie w grupie, wspólna podróż plikiem (dwa „telefony”), plan jako tekst |
+| t22 | Odkrywaj, gdy serwery map nie odpowiadają (zapasowe serwery, Wikipedia, Nominatim) |
+| t23 | „📍 Tutaj”: zgoda, brak zgody, GPS bez odpowiedzi, linki do map |
+| t24 | mapa: cel z Nominatim (nie San Juan), 📍, dotknięcie mapy → punkt, wyszukiwanie |
+| t25 | Azja: nazwy, odznaczanie pomysłów, podkład łaciński, kafelki offline, nawigacja geo:/Amap, NBP tabela B |
+| t26 | angielski: wszystkie ekrany, wypisuje teksty, które zostały po polsku (powinno być „OK”) |
+
+Testy ustawiają `locale: 'pl-PL'` – bez tego aplikacja (język „Auto”) przełączy się na angielski.
 
 ## Pliki pomocnicze
 - `fx/` – przykładowe kody i bilety, `gen-kody.js` – jak zostały wygenerowane (bwip-js)

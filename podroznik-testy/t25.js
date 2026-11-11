@@ -3,7 +3,7 @@ const { chromium, devices } = require('playwright');
 const dir = process.argv[2] || 'podroznik-testy';
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN8+v9/PQAJYgPWgaukFQAAAABJRU5ErkJggg==', 'base64');
 (async () => { const b = await chromium.launch();
-  const ctx = await b.newContext({ ...devices['Pixel 7'] });
+  const ctx = await b.newContext({ ...devices['Pixel 7'], locale: 'pl-PL' });
   const tiles = [];
   // kafelki obsługuje service worker – przechwytujemy na poziomie kontekstu (żądania SW też tu trafiają)
   await ctx.route(/cartocdn|tile\.openstreetmap/, r => { tiles.push(new URL(r.request().url()).hostname); r.fulfill({ body: PNG, contentType: 'image/png', headers: { 'Access-Control-Allow-Origin': '*' } }); });

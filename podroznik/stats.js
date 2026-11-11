@@ -11,7 +11,7 @@
   const norm = s => String(s || "").trim().toLowerCase().replace(/\s+/g, " ");
   const flag = cc => cc && cc.length === 2 ? String.fromCodePoint(...[...cc.toUpperCase()].map(c => 0x1f1e6 + c.charCodeAt(0) - 65)) : "🏳️";
   let regionName = cc => cc;
-  try { const dn = new Intl.DisplayNames(["pl"], { type: "region" }); regionName = cc => { try { return dn.of(cc); } catch (e) { return cc; } }; } catch (e) { /* stara przeglądarka */ }
+  try { const dn = new Intl.DisplayNames([self.I18N ? I18N.lang : "pl"], { type: "region" }); regionName = cc => { try { return dn.of(cc); } catch (e) { return cc; } }; } catch (e) { /* stara przeglądarka */ }
 
   /* ---------- lotniska (offline) ---------- */
   let AIR = null;
@@ -70,7 +70,7 @@
     const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLon / 2) ** 2;
     return 2 * 6371 * Math.asin(Math.sqrt(h));
   }
-  const fmtKm = n => `${Math.round(n).toLocaleString("pl-PL")} km`;
+  const fmtKm = n => `${Math.round(n).toLocaleString((self.I18N ? I18N.locale : "pl-PL"))} km`;
 
   /* ---------- liczenie ---------- */
   async function compute({ year, withPlanned }) {
