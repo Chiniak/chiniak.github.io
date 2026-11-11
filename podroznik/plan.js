@@ -347,12 +347,16 @@
     for (let i = 0; i < day.length; i++) if (day[i].order !== i || day[i] === rec) await DB.put("planItems", { ...day[i], order: i });
   }
 
-  async function itemForm({ itemId, tripId, date }) {
+  async function itemForm({ itemId, tripId, date, q = {} }) {
     const it = itemId ? await DB.get("planItems", itemId) : null;
     if (itemId && !it) { location.replace("#/plan"); return ""; }
     const trip = await DB.get("trips", it ? it.tripId : tripId);
     if (!trip) { location.replace("#/plan"); return ""; }
     const v = it || { date: date === "pomysl" ? "" : date || (trip.start <= App.todayStr() && App.todayStr() <= trip.end ? App.todayStr() : trip.start), time: "", title: "", cat: "zwiedzanie", place: "", note: "", cost: "", currency: "PLN" };
+    // z mapy: dotknięte miejsce (lat, lon) albo wpisane wyszukiwanie (q)
+    const fromMap = !it && ((q.lat && q.lon) || q.q);
+    if (!it && q.lat && q.lon && isFinite(+q.lat) && isFinite(+q.lon)) { v.lat = +q.lat; v.lon = +q.lon; v.place = `${(+q.lat).toFixed(5)}, ${(+q.lon).toFixed(5)}`; }
+    if (!it && q.q) v.place = q.q;
     // dzień: dni podróży + „pomysł bez dnia” (+ dzień spoza podróży, jeśli punkt już taki ma)
     const dayList = [];
     for (let d = trip.start; d <= trip.end; d = App.addDays(d, 1)) dayList.push(d);
@@ -390,8 +394,14 @@
         </form>`,
       after(view) {
         const f = view.querySelector("#pl-form");
-        if (!it) f.title.focus();
+        if (!it && !fromMap) f.title.focus();
         if (App.Places) App.Places.bindSearch(f, trip);
+        if (fromMap && q.q) f.querySelector("#pl-find").click();
+        if (fromMap && q.lat && App.Places) App.Places.reverse(q.lat, q.lon).then(r => {
+          if (!r || !f.isConnected || f.lat.value !== String(+q.lat)) return; // użytkownik w międzyczasie zmienił miejsce
+          f.place.value = r.address;
+          if (!f.title.value.trim()) f.title.value = r.name;
+        }).catch(() => {});
         f.addEventListener("submit", async e => {
           e.preventDefault();
           const d = Object.fromEntries(new FormData(f));
@@ -424,7 +434,7 @@
       },
     };
   }
-  App.route(/^\/plan\/([\w-]+)\/nowy$/, ([tripId], q) => itemForm({ tripId, date: q.d }));
+  App.route(/^\/plan\/([\w-]+)\/nowy$/, ([tripId], q) => itemForm({ tripId, date: q.d, q }));
   App.route(/^\/punkt\/([\w-]+)$/, ([itemId]) => itemForm({ itemId }));
 
   App.Plan = { segEvents, CATS, catOf, pickTrip, tripOptions, routeIcon, placeInDay };

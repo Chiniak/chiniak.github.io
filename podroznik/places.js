@@ -42,6 +42,18 @@
       return { name, address: shortAddr(name, x.display_name), lat: +x.lat, lon: +x.lon, kind: x.type || "" };
     });
   }
+  // nazwa miejsca ze współrzędnych (dotknięcie mapy)
+  async function reverse(lat, lon) {
+    const wait = lastCall + 1100 - Date.now();
+    if (wait > 0) await sleep(wait);
+    lastCall = Date.now();
+    const r = await fetch("https://nominatim.openstreetmap.org/reverse?" + new URLSearchParams({ format: "jsonv2", lat, lon, zoom: "18", "accept-language": "pl" }));
+    if (!r.ok) throw new Error(`wyszukiwarka odpowiedziała ${r.status}`);
+    const x = await r.json();
+    if (!x || x.error) return null;
+    const name = x.name || String(x.display_name || "").split(",")[0];
+    return { name, address: shortAddr(name, x.display_name) };
+  }
   // współrzędne wpisane wprost albo w linku do Google Maps („@38.76,-9.09” / „q=38.76,-9.09”)
   function coordsIn(text) {
     const m = String(text || "").match(/(?:@|[?&](?:q|query|destination|ll)=|^\s*)(-?\d{1,2}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)/);
@@ -51,10 +63,30 @@
   }
 
   // środek podróży: cel podróży (lotnisko / zapamiętane / wyszukiwarka), a gdy go brak – pierwszy nocleg z położeniem
+  // cel podróży szukany wyszukiwarką OpenStreetMap (rozumie wyspy, regiony, polskie nazwy); wynik zapisany w podróży (trip.geo)
   async function center(trip, { online = navigator.onLine } = {}) {
-    if (trip.destination && App.Stats) {
-      const p = await App.Stats.locate(trip.destination, { online });
-      if (p) return { lat: p.lat, lon: p.lon, label: trip.destination };
+    if (trip.destination) {
+      const g = trip.geo;
+      if (g && g.text === trip.destination && !g.none) return { lat: g.lat, lon: g.lon, label: trip.destination };
+      const retry = !g || g.text !== trip.destination || Date.now() - (g.at || 0) > 86400000;
+      if (online && retry) {
+        let geo = null;
+        try {
+          const r = await search(trip.destination.replace(/\b[A-Z]{3}\b/g, "").trim() || trip.destination);
+          geo = r[0] ? { text: trip.destination, lat: r[0].lat, lon: r[0].lon, name: r[0].address } : { text: trip.destination, none: true, at: Date.now() };
+        } catch (e) { /* brak sieci – spróbuj innym razem */ }
+        if (geo) {
+          const cur = await DB.get("trips", trip.id);
+          if (cur) await DB.putRaw("trips", { ...cur, geo });
+          trip.geo = geo;
+          if (!geo.none) return { lat: geo.lat, lon: geo.lon, label: trip.destination };
+        }
+      }
+      // bez internetu: kod lotniska w celu (np. „Lizbona LIS”) albo zapamiętane miasto
+      if (App.Stats) {
+        const p = await App.Stats.locate(trip.destination, { online: false });
+        if (p) return { lat: p.lat, lon: p.lon, label: trip.destination };
+      }
     }
     const segs = await DB.byIndex("segments", "tripId", trip.id);
     const h = segs.find(s => s.type === "nocleg" && s.lat != null);
@@ -268,8 +300,10 @@
       back: `#/plan/${id}`,
       html: `
         <div class="st-chips mp-chips">${chips}</div>
+        <form class="pl-search mp-search" id="mp-search"><input name="q" placeholder="Szukaj miejsca, np. Oceanarium" autocomplete="off" aria-label="Szukaj miejsca">
+          <button class="btn" type="submit" aria-label="Szukaj">🔎</button></form>
         <div class="card mp-card"><div id="mp-map" class="mp-map" role="application" aria-label="Mapa punktów planu"></div>
-          <div class="mp-attr">${navigator.onLine ? "" : "Bez internetu podkład mapy się nie wczyta – punkty i trasa są widoczne. "}© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></div></div>
+          <div class="mp-attr"><span class="mp-hint">Dotknij mapy, by dodać tam punkt.</span> ${navigator.onLine ? "" : "Bez internetu podkład mapy się nie wczyta – punkty i trasa są widoczne. "}© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></div></div>
         ${missing ? `<button type="button" class="btn wide" id="mp-geo">📍 Znajdź położenie ${missing} ${plural(missing, "miejsca", "miejsc", "miejsc")} (internet)</button>` : ""}
         ${noPlace ? `<p class="muted small">${noPlace} ${plural(noPlace, "punkt nie ma", "punkty nie mają", "punktów nie ma")} wpisanego miejsca – dodaj je w punkcie, by pojawił się na mapie.</p>` : ""}
         ${canOpt || gmaps ? `<div class="add-row">
@@ -300,11 +334,53 @@
         const lines = sel === "wszystko" ? days.map(d => [d, (hasXY(hotelFor(segs, d)) ? [hotelFor(segs, d)] : []).concat(items.filter(i => i.date === d && hasXY(i)).sort(byOrder))])
           : sel === "pomysly" ? [] : [[sel, routePts]];
         for (const [d, line] of lines) if (line.length >= 2) L.polyline(line.map(p => [p.lat, p.lon]), { color: colorOf(d), weight: 3, opacity: .8, dashArray: "6 6" }).addTo(map);
+        // widok: punkty dnia → wszystkie punkty i noclegi podróży → cel podróży → Polska
+        const others = items.filter(hasXY).concat(segs.filter(s => s.type === "nocleg" && hasXY(s))).map(p => [p.lat, p.lon]);
         if (bounds.length) map.fitBounds(bounds, { padding: [30, 30], maxZoom: 15 });
+        else if (others.length) map.fitBounds(others, { padding: [30, 30], maxZoom: 14 });
         else {
-          const c = await center(trip, { online: false });
-          map.setView(c ? [c.lat, c.lon] : [52.1, 19.4], c ? 12 : 5);
+          map.setView([52.1, 19.4], 5);
+          center(trip).then(c => { if (c && map) map.setView([c.lat, c.lon], 13); });
         }
+
+        // 📍 gdzie jestem
+        let me = null;
+        const Locate = L.Control.extend({ options: { position: "topright" }, onAdd() {
+          const b = L.DomUtil.create("button", "mp-locate");
+          b.type = "button"; b.title = "Gdzie jestem"; b.setAttribute("aria-label", "Pokaż, gdzie jestem"); b.textContent = "📍";
+          L.DomEvent.disableClickPropagation(b);
+          b.onclick = () => {
+            if (!navigator.geolocation) { App.toast("Telefon nie udostępnia położenia"); return; }
+            b.classList.add("busy");
+            const ok = pos => {
+              b.classList.remove("busy");
+              if (!map) return;
+              const ll = [pos.coords.latitude, pos.coords.longitude];
+              if (me) me.setLatLng(ll); else me = L.circleMarker(ll, { radius: 8, color: "#fff", weight: 3, fillColor: "#2f6fd6", fillOpacity: 1 }).addTo(map);
+              map.setView(ll, Math.max(map.getZoom(), 15));
+            };
+            const fail = e => { b.classList.remove("busy"); App.toast(e && e.code === 1 ? "Brak zgody na lokalizację" : "Nie udało się ustalić położenia – włącz GPS"); };
+            navigator.geolocation.getCurrentPosition(ok, e => e.code === 1 ? fail(e)
+              : navigator.geolocation.getCurrentPosition(ok, fail, { enableHighAccuracy: true, timeout: 20000, maximumAge: 60000 }),
+              { enableHighAccuracy: false, timeout: 6000, maximumAge: 30 * 60000 });
+          };
+          return b;
+        } });
+        new Locate().addTo(map);
+
+        // dotknięcie mapy → dodaj tu punkt (do wybranego dnia albo do pomysłów)
+        const dayParam = sel === "pomysly" || sel === "wszystko" ? "pomysl" : sel;
+        map.on("click", e => {
+          const { lat, lng } = e.latlng;
+          const href = `#/plan/${id}/nowy?${new URLSearchParams({ d: dayParam, lat: lat.toFixed(6), lon: lng.toFixed(6) })}`;
+          L.popup({ closeButton: false, className: "mp-pop" }).setLatLng(e.latlng)
+            .setContent(`<a class="btn primary" href="${href}">➕ Dodaj tu ${dayParam === "pomysl" ? "pomysł" : "punkt"}</a>`).openOn(map);
+        });
+        view.querySelector("#mp-search").onsubmit = ev => {
+          ev.preventDefault();
+          const v = ev.target.q.value.trim();
+          if (v.length >= 2) location.hash = `#/plan/${id}/nowy?${new URLSearchParams({ d: dayParam, q: v })}`;
+        };
 
         const geo = view.querySelector("#mp-geo");
         if (geo) geo.onclick = async () => {
@@ -329,5 +405,5 @@
     };
   });
 
-  App.Places = { search, center, km, leg, fmtDist, hasXY, coordsIn, shortestOrder, optimizeDay, locateMissing, hotelFor, searchBox, bindSearch, DAY_COLORS };
+  App.Places = { search, reverse, center, km, leg, fmtDist, hasXY, coordsIn, shortestOrder, optimizeDay, locateMissing, hotelFor, searchBox, bindSearch, DAY_COLORS };
 })();
