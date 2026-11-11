@@ -98,7 +98,7 @@
         title: "Podróżnik",
         html: App.empty("🧳", "Nie masz jeszcze podróży",
           "Dodaj pierwszy wyjazd, a potem jego loty, pociągi, autobusy i noclegi.",
-          `<a class="btn primary" href="#/podroze/nowa">${plusIcon} Dodaj podróż</a>`),
+          `<a class="btn primary" href="#/podroze/nowa">${plusIcon} Dodaj podróż</a><p style="margin-top:14px"><a href="#/udostepnij">📥 Otwórz podróż od kogoś</a></p>`),
       };
     }
 
@@ -135,6 +135,7 @@
         ${past.map(card).join("")}
       </details>`;
     html += `<a class="plan-link st-link" href="#/wklej"><span aria-hidden="true">📧</span> Dodaj z maila <span class="muted">– wklej potwierdzenie rezerwacji</span><b aria-hidden="true">›</b></a>`;
+    html += `<a class="plan-link" href="#/udostepnij" style="margin-top:8px"><span aria-hidden="true">📥</span> Otwórz podróż od kogoś <span class="muted">– plik z Podróżnika</span><b aria-hidden="true">›</b></a>`;
     html += `<a class="plan-link" href="#/statystyki" style="margin-top:8px"><span aria-hidden="true">📊</span> Statystyki <span class="muted">– kilometry, kraje, mapa</span><b aria-hidden="true">›</b></a>`;
     const cov = await covers();
     let unpaint = null;
@@ -336,6 +337,7 @@
       <a class="plan-link" href="#/plan/${t.id}"><span aria-hidden="true">🗓️</span> Plan dnia po dniu <span class="muted">– zwiedzanie, jedzenie, mapa</span><b aria-hidden="true">›</b></a>
       <a class="plan-link" href="#/pakowanie/${t.id}"><span aria-hidden="true">🧳</span> Pakowanie <span class="muted">– ${packTxt}</span><b aria-hidden="true">›</b></a>
       ${bg ? `<a class="plan-link${bg.budget && bg.spent > bg.budget ? " warn" : ""}" href="#/budzet/${t.id}"><span aria-hidden="true">💰</span> Budżet <span class="muted">– ${bgTxt}</span><b aria-hidden="true">›</b></a>` : ""}
+      <a class="plan-link" href="#/udostepnij/${t.id}"><span aria-hidden="true">👥</span> Udostępnij <span class="muted">– wspólna podróż, plan jako tekst</span><b aria-hidden="true">›</b></a>
       <button type="button" class="plan-link" id="ics-trip"><span aria-hidden="true">📅</span> Do kalendarza <span class="muted">– plik .ics z przypomnieniami</span><b aria-hidden="true">›</b></button>`;
 
     const typeButtons = Object.entries(TYPES).map(([k, T]) =>

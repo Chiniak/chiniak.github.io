@@ -1,11 +1,11 @@
 # Podróżnik – stan projektu (do kontynuacji w nowej sesji)
 
-Ostatnia aktualizacja: 9 listopada 2026. Zacznij od przeczytania tego pliku, potem `PLAN.md` i `DO-SPRAWDZENIA.md`.
+Ostatnia aktualizacja: 11 listopada 2026. Zacznij od przeczytania tego pliku, potem `PLAN.md` i `DO-SPRAWDZENIA.md`.
 
 ## Gdzie co jest
 - Repozytorium: `chiniak/chiniak.github.io`, gałąź **`claude/travel-planning-app-tl9mvf`**
-- Pull request: **#1** https://github.com/Chiniak/chiniak.github.io/pull/1 (otwarty, czeka na scalenie przez właściciela)
-- Po scaleniu: aplikacja https://chiniak.github.io/podroznik/ , APK https://chiniak.github.io/podroznik/Podroznik.apk
+- Pull request **#1** (etapy 0–8) scalony. Etap 7 (APK) oraz etapy 9–10 są na gałęzi – czekają na nowy pull request.
+- Aplikacja https://chiniak.github.io/podroznik/ , APK https://chiniak.github.io/podroznik/Podroznik.apk
 - `podroznik/` – aplikacja (PWA, czysty JS bez frameworka, dane w IndexedDB, offline przez service worker)
 - `podroznik-android/` – projekt APK (Trusted Web Activity, Bubblewrap), instrukcja w jego README
 - `podroznik-testy/` – testy Playwright + przykładowe dane, instrukcja w README
@@ -13,15 +13,13 @@ Ostatnia aktualizacja: 9 listopada 2026. Zacznij od przeczytania tego pliku, pot
 - Drugie repozytorium sesji: `chiniak/kws` (aplikacja KWS – nie była zmieniana)
 
 ## Co jest zrobione
-Wszystkie etapy 0–8 z `PLAN.md` (✅), w tym APK. Szczegóły: `PLAN.md`.
+Wszystkie etapy 0–10 z `PLAN.md` (✅), w tym APK, strefy czasowe, tło podróży, .pkpass i funkcje jak w Wanderlog
+(mapa i trasa dnia, pomysły, odkrywanie, rozliczenie w grupie, wspólna podróż plikiem). Szczegóły: `PLAN.md`.
 Nic nie było jeszcze testowane na prawdziwym telefonie – lista: `DO-SPRAWDZENIA.md`.
 
 ## Co zostało
 1. **Właściciel:** scalić PR #1, zainstalować APK, przejść `DO-SPRAWDZENIA.md` i zgłosić błędy.
-2. Drobiazgi (nie zrobione):
-   - **strefy czasowe** – czas lotu między strefami liczony „na zegarku”; `lib/airports.js` ma już strefę (IANA) każdego lotniska, więc można liczyć dokładnie (Intl z timeZone),
-   - **zdjęcie jako tło podróży** (pkt 6 planu – jest tylko kolor),
-   - **karty .pkpass** z Apple/Google Wallet (pkt 16).
+2. Pomysły na dalej: edycja na żywo przez kilka osób (wymagałaby serwera, np. Firebase), mapy offline, licznik w APK według strefy lotniska.
 3. Poprawki po testach na telefonie (najbardziej prawdopodobne: odczyt maili od prawdziwych przewoźników – `email.js`).
 
 ## Pliki aplikacji (`podroznik/`)
@@ -38,18 +36,22 @@ Nic nie było jeszcze testowane na prawdziwym telefonie – lista: `DO-SPRAWDZEN
 | `reminders.js` | licznik, powiadomienia, ustawienia przypomnień, eksport .ics |
 | `backup.js`, `lock.js` | kopia zapasowa (opcjonalnie AES-GCM), blokada PIN / odcisk palca |
 | `docs.js`, `budget.js`, `stats.js`, `weather.js`, `email.js` | etap 8: dokumenty, budżet, statystyki i mapa, pogoda, odczyt maili |
+| `places.js`, `discover.js`, `split.js`, `share.js` | etap 10: mapa i trasa dnia, odkrywanie, rozliczenie w grupie, wspólna podróż |
 | `sw.js` | offline + powiadomienia w tle (periodicsync) + kliknięcie powiadomienia |
-| `lib/` | pdf.js, bwip-js, ZXing, airports.js (OpenFlights), world.js (Natural Earth) – licencje w `lib/` |
+| `lib/` | pdf.js, bwip-js, ZXing, Leaflet, airports.js (OpenFlights), world.js (Natural Earth) – licencje w `lib/` |
 
 ## Zasady i pułapki (ważne przy zmianach)
-- **Po każdej zmianie plików aplikacji podbij `CACHE` w `sw.js`** (teraz `podroznik-v13`) i dopisz nowe pliki do listy `APP`.
+- **Po każdej zmianie plików aplikacji podbij `CACHE` w `sw.js`** (teraz `podroznik-v15`) i dopisz nowe pliki do listy `APP`.
 - Nowy magazyn danych = podbić `VERSION` w `db.js` i dodać do `STORES` (aktualizacja zachowuje dane – test t12).
 - Nasłuch zdarzeń podpinaj do elementów widoku, **nie do `#view`** (zostaje między ekranami → podwójne akcje).
 - Router ignoruje wolniej wczytany starszy ekran (`renderSeq` w `app.js`).
 - `r.cleanup` w widoku – sprzątanie (kamera, liczniki, blokada ekranu).
 - Polska odmiana: `App.plural(n, "1", "2–4", "5+")`.
 - Godziny zapisywane jako czas lokalny miejsca: `"RRRR-MM-DDTGG:MM"`.
-- Pogoda i wyszukiwanie miejsc używają Open-Meteo (bez klucza); po błędzie 10 min przerwy.
+- Pogoda i wyszukiwanie miast używają Open-Meteo (bez klucza); po błędzie 10 min przerwy.
+- Etap 10: miejsca – Nominatim (najwyżej 1 zapytanie/s, kolejka w `places.js`), atrakcje – Overpass API, opisy – Wikipedia, podkład mapy – kafelki OpenStreetMap. Wszystko bez klucza, tylko online.
+- Strefy czasowe odcinków (`tzFrom`, `tzTo`, `tzKey`) uzupełnia `App.Stats.fillTz` przy otwarciu podróży; czas trwania: `App.segMinutes`.
+- Tło podróży = rekord w `files` z `segmentId: "cover"`. Pomysł = punkt planu z `date: ""`.
 
 ## APK i klucz
 - Pakiet `io.github.chiniak.podroznik`, wersja 1.0.0 (versionCode 1), odcisk SHA-256 w `assetlinks.json`.

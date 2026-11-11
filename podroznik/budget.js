@@ -2,7 +2,8 @@
    Trasy:
      #/budzet/:tripId   podsumowanie, kategorie, lista wydatków, szybkie dodawanie, budżet i kursy walut
      #/wydatek/:id      edycja i usuwanie wydatku
-   Wydatek (magazyn "expenses"): { id, tripId, date, title, amount, currency, cat }
+   Wydatek (magazyn "expenses"): { id, tripId, date, title, amount, currency, cat, paidBy?, split? }
+   Wspólna podróż (etap 10, rozliczenie w split.js): trips.people = ["Ja", "Ania"], paidBy = kto płacił, split = za kogo (brak = wszyscy).
    W podróży (trips): budget: { amount, currency } – waluta główna (domyślnie PLN), rates: { EUR: 4.31, ... } – ile waluty głównej za 1 jednostkę.
    Do wydanych doliczane są też ceny z odcinków (bilety, noclegi); koszty z planu dnia pokazane osobno jako „zaplanowane”. */
 (function () {
@@ -46,7 +47,7 @@
     let planned = 0;
     const plannedUnknown = {};
     for (const p of plan) {
-      const c = num(p.cost); if (!c) continue;
+      const c = num(p.cost); if (!c || !p.date) continue; // pomysły bez dnia nie są liczone
       const h = toHome(c, p.currency || home);
       if (h == null) plannedUnknown[cur3(p.currency)] = (plannedUnknown[cur3(p.currency)] || 0) + c; else planned += h;
     }
@@ -96,6 +97,13 @@
     const curList = [home, ...d.currencies];
     const lastCur = await DB.getSetting(`budgetCur:${id}`, ongoing && d.currencies[0] ? d.currencies[0] : home);
     const defDate = ongoing ? today : trip.start > today ? trip.start : trip.end;
+    const people = trip.people || [];
+    const lastPayer = await DB.getSetting(`budgetPayer:${id}`, people[0] || "");
+    const who = people.length > 1 ? `
+        <div class="bg-add-row bg-who">
+          <label><span class="sr">Kto płacił</span><select name="paidBy">${people.map(n => `<option ${n === lastPayer ? "selected" : ""}>${esc(n)}</option>`).join("")}</select></label>
+          <label><span class="sr">Za kogo</span><select name="split"><option value="">za wszystkich</option>${people.map(n => `<option value="${esc(n)}">tylko za: ${esc(n)}</option>`).join("")}</select></label>
+        </div>` : "";
     const add = `
       <form class="bg-add" id="bg-add" autocomplete="off">
         <input name="title" maxlength="60" placeholder="Na co? np. kawa, muzeum" aria-label="Na co">
@@ -105,6 +113,7 @@
           <select name="cat" aria-label="Kategoria">${catOpts}</select>
           <button class="btn primary" type="submit" aria-label="Dodaj wydatek">${App.Trips.plusIcon}</button>
         </div>
+        ${who}
         <input type="date" name="date" value="${defDate}" aria-label="Dzień" class="bg-date">
         <datalist id="bg-curs">${[...new Set(curList.concat(["PLN", "EUR", "USD", "GBP", "CHF", "CZK"]))].map(c => `<option value="${c}">`).join("")}</datalist>
       </form>`;
@@ -121,7 +130,7 @@
           ${rows.map(i => `
             <a class="bg-row" href="${i.kind === "seg" ? `#/odcinek/${i.id}` : `#/wydatek/${i.id}`}">
               <span class="bg-row-ico" aria-hidden="true">${i.icon || (CATS[i.cat] || CATS.inne).icon}</span>
-              <span class="bg-row-name">${esc(i.title || (CATS[i.cat] || CATS.inne).name)}${i.kind === "seg" ? ` <span class="muted small">· z biletów</span>` : ""}</span>
+              <span class="bg-row-name">${esc(i.title || (CATS[i.cat] || CATS.inne).name)}${i.kind === "seg" ? ` <span class="muted small">· z biletów</span>` : ""}${people.length > 1 && i.paidBy ? ` <span class="muted small">· ${esc(i.paidBy)}${i.split && i.split.length && i.split.length < people.length ? ` za: ${i.split.map(esc).join(", ")}` : ""}</span>` : ""}</span>
               <span class="bg-row-amt"><b>${money(i.amount, i.currency)}</b>${i.currency !== home && i.home != null ? `<span class="muted small">${money(i.home, home)}</span>` : ""}</span>
             </a>`).join("")}
         </div>`;
@@ -135,6 +144,7 @@
       title: `Budżet · ${trip.name}`,
       back: `#/podroze/${id}`,
       html: `${summaryCard}${cats ? `<div class="card bg-cats">${cats}</div>` : ""}${add}
+        ${people.length > 1 ? `<a class="plan-link" href="#/rozliczenie/${id}" style="margin:10px 0"><span aria-hidden="true">🤝</span> Rozliczenie <span class="muted">– kto komu ile oddaje</span><b aria-hidden="true">›</b></a>` : ""}
         <div id="bg-list">${list}</div>
         <h3 class="section">Budżet i waluty</h3>
         <form class="card" id="bg-cfg">
@@ -142,6 +152,8 @@
             <label class="field"><span>Budżet całej podróży</span><input name="budget" inputmode="decimal" value="${d.budget ? String(d.budget).replace(".", ",") : ""}" placeholder="np. 3000"></label>
             <label class="field"><span>Waluta główna</span><input name="home" maxlength="5" autocapitalize="characters" value="${home}"></label>
           </div>
+          <label class="field" style="margin-top:12px"><span>Uczestnicy – do dzielenia kosztów (oddziel przecinkami)</span>
+            <input name="people" maxlength="200" placeholder="np. Ja, Ania, Tomek" value="${esc(people.join(", "))}"></label>
           ${rateRows ? `<p class="small muted" style="margin:12px 0 0">Kursy do przeliczenia (ile ${home} za 1 jednostkę):</p>${rateRows}` : ""}
           ${rateRows && home === "PLN" ? `<button type="button" class="btn wide" id="bg-nbp" style="margin-top:8px">🏦 Pobierz kursy z NBP</button>` : ""}
           <button class="btn primary wide" type="submit" style="margin-top:10px">Zapisz budżet i kursy</button>
@@ -153,7 +165,9 @@
           const amount = num(f.amount.value);
           if (!(amount > 0)) { App.toast("Podaj kwotę"); f.amount.focus(); return; }
           const currency = cur3(f.currency.value) || home;
-          await DB.put("expenses", { tripId: id, title: f.title.value.trim(), amount, currency, cat: f.cat.value, date: f.date.value || defDate });
+          const split = f.split && f.split.value ? { paidBy: f.paidBy.value, split: [f.split.value] } : f.paidBy ? { paidBy: f.paidBy.value } : {};
+          await DB.put("expenses", { tripId: id, title: f.title.value.trim(), amount, currency, cat: f.cat.value, date: f.date.value || defDate, ...split });
+          if (f.paidBy) await DB.setSetting(`budgetPayer:${id}`, f.paidBy.value);
           await DB.setSetting(`budgetCur:${id}`, currency);
           App.toast(`Dodano ${money(amount, currency)}${!d.rates[currency] && currency !== home ? " · uzupełnij kurs " + currency : ""}`);
           App.render();
@@ -166,7 +180,8 @@
           const newHome = cur3(cfg.home.value) || "PLN";
           const rates = { ...(t.rates || {}) };
           d.currencies.forEach(c => { const v = num(cfg[`rate_${c}`].value); if (v > 0) rates[c] = v; else delete rates[c]; });
-          await DB.put("trips", { ...t, budget: { amount: num(cfg.budget.value), currency: newHome }, rates });
+          const ppl = [...new Set(cfg.people.value.split(",").map(x => x.trim().slice(0, 30)).filter(Boolean))];
+          await DB.put("trips", { ...t, budget: { amount: num(cfg.budget.value), currency: newHome }, rates, people: ppl });
           App.toast("Zapisano");
           App.render();
         });
@@ -196,6 +211,14 @@
     const e = await DB.get("expenses", id);
     if (!e) { location.replace("#/podroze"); return ""; }
     const back = `#/budzet/${e.tripId}`;
+    const trip = await DB.get("trips", e.tripId);
+    const people = (trip && trip.people) || [];
+    const forAll = !e.split || !e.split.length;
+    const whoHtml = people.length > 1 ? `
+          <label class="field"><span>Kto płacił</span><select name="paidBy">${people.concat(e.paidBy && !people.includes(e.paidBy) ? [e.paidBy] : [])
+            .map(n => `<option ${n === (e.paidBy || people[0]) ? "selected" : ""}>${esc(n)}</option>`).join("")}</select></label>
+          <fieldset class="field"><legend>Za kogo</legend><div class="bg-split">${people.map(n => `
+            <label class="pk-toggle"><input type="checkbox" name="split" value="${esc(n)}" ${forAll || e.split.includes(n) ? "checked" : ""}> ${esc(n)}</label>`).join("")}</div></fieldset>` : "";
     return {
       title: "Wydatek",
       back,
@@ -209,6 +232,7 @@
           <div class="type-chips" role="radiogroup" aria-label="Kategoria">${Object.entries(CATS).map(([k, C]) => `
             <label class="type-chip"><input type="radio" name="cat" value="${k}" ${k === e.cat ? "checked" : ""}><span><b aria-hidden="true">${C.icon}</b>${C.name}</span></label>`).join("")}</div>
           <label class="field"><span>Dzień</span><input type="date" name="date" value="${esc(e.date)}"></label>
+          ${whoHtml}
           <p class="error" id="err" hidden></p>
           <button class="btn primary wide" type="submit">Zapisz</button>
           <button class="btn danger wide" type="button" id="del">Usuń wydatek</button>
@@ -219,7 +243,15 @@
           ev.preventDefault();
           const amount = num(f.amount.value);
           if (!(amount > 0)) { const p = view.querySelector("#err"); p.textContent = "Podaj kwotę większą od zera."; p.hidden = false; return; }
-          await DB.put("expenses", { ...e, title: f.title.value.trim(), amount, currency: cur3(f.currency.value) || e.currency, cat: new FormData(f).get("cat"), date: f.date.value || e.date });
+          const fd = new FormData(f);
+          const who = {};
+          if (people.length > 1) {
+            const split = fd.getAll("split");
+            if (!split.length) { const p = view.querySelector("#err"); p.textContent = "Zaznacz, za kogo był wydatek."; p.hidden = false; return; }
+            who.paidBy = fd.get("paidBy");
+            who.split = split.length === people.length ? [] : split;
+          }
+          await DB.put("expenses", { ...e, ...who, title: f.title.value.trim(), amount, currency: cur3(f.currency.value) || e.currency, cat: fd.get("cat"), date: f.date.value || e.date });
           App.toast("Zapisano");
           App.back(back);
         });
@@ -233,5 +265,5 @@
     };
   });
 
-  App.Budget = { summary, load, CATS, money };
+  App.Budget = { summary, load, CATS, money, num };
 })();

@@ -4,3 +4,4 @@ Biblioteki dołączone do aplikacji (działają offline):
 - zxing.min.js – @zxing/library 0.21.3 (Apache-2.0) – odczyt kodów, gdy telefon nie ma BarcodeDetector
 - airports.js – lotniska z OpenFlights (ODbL) przez pakiet airport-codes – statystyki i strefy czasowe
 - world.js – zarys lądów Natural Earth 1:110m (domena publiczna) przez world-atlas (ISC) – mapa w statystykach
+- leaflet.js, leaflet.css – Leaflet 1.9.4 (BSD-2-Clause) – mapa planu dnia (etap 10); podkład mapy z OpenStreetMap wczytywany z internetu

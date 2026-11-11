@@ -27,6 +27,10 @@ testy powiadomień (t9, t11–t16) używają `chromium.launch({ channel: 'chromi
 | t15 | pogoda (Open-Meteo symulowane): prognoza, „rok temu”, brak ponownego pobierania, offline |
 | t16 | odczyt 5 przykładowych maili (`mails/`), udostępnianie tekstu do aplikacji |
 | t17 | link do APK w ustawieniach, APK i assetlinks.json serwowane |
+| t18 | strefy czasowe lotów (czas lotu, różnica czasu), zdjęcie w tle podróży |
+| t19 | import karty .pkpass (`fx/karta.pkpass`, generowana przez `gen-pkpass.js`) |
+| t20 | wyszukiwarka miejsc, mapa i trasa dnia, układanie trasy, pomysły, odkrywanie (sieć symulowana) |
+| t21 | rozliczenie w grupie, wspólna podróż plikiem (dwa „telefony”), plan jako tekst |
 
 ## Pliki pomocnicze
 - `fx/` – przykładowe kody i bilety, `gen-kody.js` – jak zostały wygenerowane (bwip-js)
