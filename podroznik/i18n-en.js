@@ -440,4 +440,9 @@ self.I18N_EN = {
   "Zdjęcie pojawi się samo (z Wikipedii), gdy miejsce jest znane – możesz też dodać własne.": "A photo appears automatically (from Wikipedia) when the place is known – you can also add your own.",
   "Wpisz najpierw nazwę miejsca": "Enter the place name first", "Nie znaleziono zdjęcia – dodaj własne": "No photo found – add your own",
   "Brak internetu albo Wikipedia nie odpowiada": "No internet or Wikipedia is not responding", "Nie udało się wczytać zdjęcia": "Could not load the photo",
+
+  /* ---------- tło ze zdjęć (backdrop.js) ---------- */
+  "Tło": "Background", "Zdjęcia": "Photos", "Bez zdjęć": "No photos", "Jednolite tło.": "Plain background.", "Teraz:": "Now:", "(Wikimedia Commons)": "(Wikimedia Commons)",
+  "Losowe zdjęcie przy każdej zmianie ekranu · pobrane {}/{}.": "A random photo on every screen change · downloaded {}/{}.",
+  "Losowe zdjęcie przy każdej zmianie ekranu · pobrane {}/{} (kolejne dochodzą przy przeglądaniu, z internetem).": "A random photo on every screen change · downloaded {}/{} (more arrive as you browse, online).",
 };
