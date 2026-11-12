@@ -1,36 +1,41 @@
 # Podróżnik – stan projektu (do kontynuacji w nowej sesji)
 
-Ostatnia aktualizacja: 12 listopada 2026 – PR #6–#9 scalone; na gałęzi: tło tylko natura i miasta (bez religii), „Nie pokazuj tego zdjęcia”. Zacznij od przeczytania tego pliku, potem `PLAN.md` i `DO-SPRAWDZENIA.md`.
+Ostatnia aktualizacja: 12 listopada 2026 – **wszystko scalone na `main` (PR #1–#10)**, nic nie czeka. Zacznij od przeczytania tego pliku, potem `PLAN.md` i `DO-SPRAWDZENIA.md`.
 
 ## Gdzie co jest
 - Repozytorium: `chiniak/chiniak.github.io`, gałąź **`claude/travel-planning-app-tl9mvf`**
-- Wszystko scalone na `main`: PR #1 (etapy 0–8), #2 (etapy 7, 9, 10), #3 i #4 (poprawki Odkrywaj),
-  #5 (GPS w Odkrywaj, mapa na właściwym celu, dodawanie punktu z mapy, Azja: mapy/nawigacja/waluty, odznaczanie pomysłów, **język angielski**).
-- Aplikacja na żywo: https://chiniak.github.io/podroznik/ (wersja „1.1 · etapy 0–10”, pamięć offline `podroznik-v21`; po PR #6: „1.2 · etapy 0–11”, `podroznik-v22`; po PR #7 `podroznik-v23`; po PR #8 `podroznik-v24`; po PR #9 `podroznik-v25`; na gałęzi `podroznik-v26`).
-- Gałąź robocza: po scaleniu PR zacząć ją od nowa od `origin/main` (git checkout -B … origin/main), nie nadpisywać historii (force push zablokowany).
-- Aplikacja https://chiniak.github.io/podroznik/ , APK https://chiniak.github.io/podroznik/Podroznik.apk
+- Gałąź robocza: po scaleniu PR zacznij ją od nowa od `origin/main` (`git checkout -B claude/travel-planning-app-tl9mvf origin/main`), nie nadpisuj historii (force push zablokowany). Nowy PR po każdej porcji zmian – właściciel scala sam.
+- Aplikacja na żywo: https://chiniak.github.io/podroznik/ – wersja „1.2 · etapy 0–11”, pamięć offline **`podroznik-v26`**. APK: https://chiniak.github.io/podroznik/Podroznik.apk (zmiany w stronie nie wymagają nowego APK).
 - `podroznik/` – aplikacja (PWA, czysty JS bez frameworka, dane w IndexedDB, offline przez service worker)
 - `podroznik-android/` – projekt APK (Trusted Web Activity, Bubblewrap), instrukcja w jego README
-- `podroznik-testy/` – testy Playwright + przykładowe dane, instrukcja w README
+- `podroznik-testy/` – testy Playwright + przykładowe dane, instrukcja w README (serwer: `python3 -m http.server 8765` w katalogu repo)
 - `.well-known/assetlinks.json` – odciski kluczy KWS i Podróżnika (aplikacje bez paska adresu)
 - Drugie repozytorium sesji: `chiniak/kws` (aplikacja KWS – nie była zmieniana)
 
-## Co jest zrobione
-Wszystkie etapy 0–10 z `PLAN.md` (✅), w tym APK, strefy czasowe, tło podróży, .pkpass i funkcje jak w Wanderlog
-(mapa i trasa dnia, pomysły, odkrywanie, rozliczenie w grupie, wspólna podróż plikiem). Szczegóły: `PLAN.md`.
-**Etap 11** (PR #6): karty dla kierowcy z adresem w lokalnym piśmie, rozmówki (zh/th/vi/lo), mapa offline. Na gałęzi: **zdjęcia miejsc** w planie i pomysłach (`photos.js`).
-Nic nie było jeszcze testowane na prawdziwym telefonie – lista: `DO-SPRAWDZENIA.md`.
+## Historia PR
+- #1–#2: etapy 0–10 · #3–#4: poprawki Odkrywaj · #5: GPS, mapa na właściwym celu, Azja (mapy/nawigacja/waluty), język angielski
+- #6: etap 11 – karty dla kierowcy (adres w lokalnym piśmie), rozmówki zh/th/vi/lo, mapa offline
+- #7: zdjęcia miejsc w planie i pomysłach (`photos.js`, Wikipedia/Commons/własne)
+- #8: tło ze zdjęć zmieniane przy każdej zmianie ekranu (`backdrop.js`)
+- #9: szybsze Odkrywaj („📍 Tutaj”: Wikipedia od razu, serwery map wyścigiem), mapa: pinezka + zapis jednym dotknięciem, 🏛️ atrakcje na mapie
+- #10: tło tylko natura i miasta – **bez zdjęć religijnych** (filtr, kasowanie starych, „🚫 Nie pokazuj tego zdjęcia”)
+
+## Właściciel – preferencje i uwagi
+- Pisze po polsku, krótko; woli małe kroki, podsumowanie po każdej zmianie, potem pytanie o PR (zwykle odpowiada „tak”).
+- Leci do **Chin, Laosu, Wietnamu i Tajlandii** – stąd mapy z napisami łacińskimi, mapa offline, Amap/geo:, NBP tabela B, karty dla kierowcy, rozmówki.
+- Apka ma być **o podróżowaniu** – w tle tylko natura i miasta, **żadnych motywów religijnych** (dostał obraz Jezusa – naprawione w PR #10).
+- Zgłoszone problemy (12.11): „📍 Tutaj” szukało bardzo długo, na mapie „nie dało się nic oznaczyć” – poprawione w PR #9, **czeka na jego ocenę** na telefonie (jeśli dalej źle – dopytać, co chce robić na mapie).
+- Chciał zdjęć miejsc (zrobione w planie i pomysłach) i tła ze zdjęć, „żeby nie było takie czarne”.
 
 ## Testy na telefonie (właściciel, 11.11)
-- Działa: APK bez paska adresu, przypomnienia, bilet na pełnym ekranie, mapa, Odkrywaj (+ „📍 Tutaj” po poprawce), pomysły, rozliczenie, wyszukiwarka miejsc.
-- Nie sprawdzone: wysyłanie podróży plikiem (brak drugiej osoby), .pkpass (brak biletu).
-- Do sprawdzenia przez właściciela (po scaleniu PR #5): mapa nie skacze na San Juan, dotknięcie mapy → punkt, Ustawienia → Język → English, Nawigacja → Organic Maps.
-- Właściciel leci do **Chin, Laosu, Wietnamu i Tajlandii** – stąd mapy z napisami łacińskimi, kafelki offline, Amap/geo:, NBP tabela B.
+- Działa: APK bez paska adresu, przypomnienia, bilet na pełnym ekranie, mapa, Odkrywaj, pomysły, rozliczenie, wyszukiwarka miejsc.
+- Nie sprawdzone: wysyłanie podróży plikiem (brak drugiej osoby), .pkpass (brak biletu), wszystko z etapu 11 i PR #7–#10.
+- Wszystko od PR #6 testowane tylko w przeglądarce z symulowaną siecią (w środowisku chmurowym nie ma dostępu do OSM/Wikipedii/CARTO).
 
 ## Co zostało
-1. **Właściciel:** scalić PR #1, zainstalować APK, przejść `DO-SPRAWDZENIA.md` i zgłosić błędy.
-2. Pomysły na dalej: więcej języków (słownik jak `i18n-en.js`), edycja na żywo przez kilka osób (wymagałaby serwera, np. Firebase), licznik w APK według strefy lotniska.
-3. Poprawki po testach na telefonie (najbardziej prawdopodobne: odczyt maili od prawdziwych przewoźników – `email.js`).
+1. **Właściciel:** sprawdzić na telefonie PR #9 (mapa, Odkrywaj) i #10 (tło), przejść `DO-SPRAWDZENIA.md` (sekcje „Etap 11”, „Zdjęcia miejsc”, „Tło ze zdjęć”, „Mapa i Odkrywaj”) i zgłosić błędy.
+2. Pomysły na dalej: więcej języków (słownik jak `i18n-en.js`), edycja na żywo przez kilka osób (wymagałaby serwera), zdjęcia miejsc też na mapie i kartach kierowcy, licznik w APK według strefy lotniska.
+3. Znane: test t5 bywa czerwony blisko północy (godziny liczone od „teraz”) – także na niezmienionym kodzie; t23 trwa ~26 s (symulowany GPS bez odpowiedzi).
 
 ## Pliki aplikacji (`podroznik/`)
 | Plik | Rola |
