@@ -118,6 +118,12 @@ Adres (po scaleniu pull requesta): https://chiniak.github.io/podroznik/
 - ⬜ Ustawienia → Tło → „Bez zdjęć” wyłącza; licznik „pobrane N/100” rośnie; w trybie samolotowym tło nadal się zmienia
 - ⬜ Aplikacja nie zwalnia przy przechodzeniu między ekranami
 
+## Mapa i Odkrywaj (poprawki)
+- ⬜ Odkrywaj → „📍 Tutaj”: ile trwa do pierwszych wyników (powinny być po kilku sekundach, potem dochodzą kolejne z „⏳ Uzupełniam…”)
+- ⬜ Mapa: dotknięcie → czerwona pinezka „＋” i nazwa miejsca; „💡 Do pomysłów” / „📅 dzień” zapisuje od razu, mapa zostaje w tym samym miejscu
+- ⬜ Mapa: 🏛️ pokazuje gwiazdki atrakcji; dotknięcie gwiazdki → zdjęcie, nazwa i dodanie; dodane robią się zielone; drugi raz 🏛️ chowa
+- ⬜ Okienka na mapie czytelne w ciemnym motywie, łatwo trafić palcem
+
 ## Znane ograniczenia (nie błędy, ale do oceny)
 - Godziny są „na zegarku” (czas lokalny z biletu) – czas lotu między strefami czasowymi może wyjść o godzinę za dużo / za mało
 - Zdjęcie podróży (pkt 6 planu) – na razie tylko kolor

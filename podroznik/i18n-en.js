@@ -445,4 +445,12 @@ self.I18N_EN = {
   "Tło": "Background", "Zdjęcia": "Photos", "Bez zdjęć": "No photos", "Jednolite tło.": "Plain background.", "Teraz:": "Now:", "(Wikimedia Commons)": "(Wikimedia Commons)",
   "Losowe zdjęcie przy każdej zmianie ekranu · pobrane {}/{}.": "A random photo on every screen change · downloaded {}/{}.",
   "Losowe zdjęcie przy każdej zmianie ekranu · pobrane {}/{} (kolejne dochodzą przy przeglądaniu, z internetem).": "A random photo on every screen change · downloaded {}/{} (more arrive as you browse, online).",
+
+  /* ---------- mapa: zaznaczanie, atrakcje; Odkrywaj szybciej ---------- */
+  "Dotknij mapy, by zaznaczyć miejsce · 🏛️ = atrakcje w okolicy.": "Tap the map to mark a place · 🏛️ = sights nearby.",
+  "Szukam nazwy…": "Looking up the name…", "Punkt na mapie": "Point on the map", "✏️ Więcej…": "✏️ More…",
+  "✓ w planie – otwórz": "✓ in plan – open", "Dodano: {}": "Added: {}", "Atrakcje w okolicy": "Sights nearby",
+  "Pokaż atrakcje w okolicy na mapie": "Show nearby sights on the map", "Szukam atrakcji w okolicy…": "Looking for sights nearby…",
+  "{} {} – dotknij, by dodać": "{} {} – tap to add", "Nic tu nie znaleziono – przesuń mapę": "Nothing found here – move the map",
+  "Serwery map nie odpowiadają – spróbuj za chwilę": "Map servers are not responding – try again shortly", "⏳ Uzupełniam z OpenStreetMap…": "⏳ Adding more from OpenStreetMap…",
 };
