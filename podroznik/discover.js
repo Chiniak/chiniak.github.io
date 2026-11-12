@@ -27,26 +27,43 @@
     turkish: "turecka", kebab: "kebab", regional: "regionalna", ice_cream: "lody", cake: "ciasta", bakery: "piekarnia", local: "lokalna" };
 
   /* ---------- Overpass (OpenStreetMap) ---------- */
-  // kilka serwerów Overpass – główny bywa przeciążony (429 / 504); każdy ma 20 s
+  // kilka serwerów Overpass – główny bywa przeciążony (429 / 504). Pytane „wyścigiem”: kolejny rusza po 2 s
+  // (albo od razu po błędzie poprzedniego), pierwsza dobra odpowiedź wygrywa, reszta jest przerywana; najwyżej 15 s.
   const OVERPASS = ["https://overpass-api.de/api/interpreter", "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
     "https://overpass.private.coffee/api/interpreter"];
   let lastErr = "";
-  async function overpass(query) {
-    const errs = [];
-    for (const url of OVERPASS) {
-      const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 20000);
-      try {
-        const r = await fetch(url, { method: "POST", body: "data=" + encodeURIComponent(query), signal: ctl.signal,
-          headers: { "Content-Type": "application/x-www-form-urlencoded" } });
-        if (!r.ok) { errs.push(String(r.status)); continue; }
-        const j = await r.json();
-        if (j.remark && /runtime error|timed out/i.test(j.remark) && !(j.elements || []).length) { errs.push("limit czasu"); continue; }
-        return j.elements || [];
-      } catch (e) { errs.push(e.name === "AbortError" ? "brak odpowiedzi" : "błąd sieci"); }
-      finally { clearTimeout(timer); }
-    }
-    lastErr = errs.join(", ");
-    throw new Error(`serwery map nie odpowiadają (${lastErr})`);
+  function overpass(query, { limit = 15000, stagger = 2000 } = {}) {
+    return new Promise((resolve, reject) => {
+      const errs = [], ctls = [];
+      let started = 0, finished = 0, done = false, timer = null;
+      const end = (ok, val) => {
+        if (done) return; done = true;
+        clearTimeout(timer); clearTimeout(all);
+        ctls.forEach(c => c.abort());
+        if (ok) resolve(val); else { lastErr = errs.join(", "); reject(new Error(`serwery map nie odpowiadają (${lastErr})`)); }
+      };
+      const start = () => {
+        if (done || started >= OVERPASS.length) return;
+        const url = OVERPASS[started++], ctl = new AbortController();
+        ctls.push(ctl);
+        clearTimeout(timer); timer = setTimeout(start, stagger);
+        fetch(url, { method: "POST", body: "data=" + encodeURIComponent(query), signal: ctl.signal,
+          headers: { "Content-Type": "application/x-www-form-urlencoded" } })
+          .then(async r => {
+            if (!r.ok) throw new Error(String(r.status));
+            const j = await r.json();
+            if (j.remark && /runtime error|timed out/i.test(j.remark) && !(j.elements || []).length) throw new Error("limit czasu");
+            end(true, j.elements || []);
+          })
+          .catch(e => {
+            if (done) return;
+            errs.push(e.name === "AbortError" ? "brak odpowiedzi" : /^\d+$|limit/.test(e.message) ? e.message : "błąd sieci");
+            if (++finished >= OVERPASS.length) end(false); else start(); // błąd – od razu następny serwer
+          });
+      };
+      const all = setTimeout(() => { errs.push("brak odpowiedzi"); end(false); }, limit);
+      start();
+    });
   }
   function toPlace(el, c) {
     const t = el.tags || {};
@@ -65,30 +82,39 @@
       cat: t.amenity ? "jedzenie" : /park|garden/.test(type) ? "natura" : "zwiedzanie",
     };
   }
-  async function attractions(c) {
-    let els;
-    try { els = await overpassAttractions(c); } catch (e) {
-      const w = await wikiNearby(c); // zapas: artykuły z Wikipedii o miejscach w pobliżu
+  // atrakcje: Wikipedia (szybka, ze zdjęciami) i OpenStreetMap (pełniejsza) równolegle;
+  // onPartial(lista) – pierwsze wyniki od razu, zanim odpowie wolniejszy serwer map
+  async function attractions(c, onPartial) {
+    const wikiP = wikiNearby(c).catch(() => []);
+    const osmP = overpassAttractions(c).then(els => wikiInfo(dedupe(els.map(e => toPlace(e, c)).filter(Boolean))
+      .sort((x, y) => y.score - x.score || x.dist - y.dist).slice(0, 40)));
+    let first = null;
+    wikiP.then(w => { if (w.length && !first && onPartial) { first = w; onPartial(w); } });
+    let osm;
+    try { osm = await osmP; } catch (e) {
+      const w = await wikiP; // zapas: artykuły z Wikipedii o miejscach w pobliżu
       if (w.length) return w;
       throw e;
     }
-    return dedupe(els.map(e => toPlace(e, c)).filter(Boolean))
-      .sort((x, y) => y.score - x.score || x.dist - y.dist).slice(0, 40);
+    // połącz: OSM + artykuły z Wikipedii, których w OSM nie ma (ze zdjęciem)
+    const w = await Promise.race([wikiP, new Promise(r => setTimeout(() => r([]), 1500))]);
+    const names = new Set(osm.map(p => norm(p.name)));
+    return osm.concat(w.filter(p => p.thumb && !names.has(norm(p.name)))).slice(0, 50);
   }
   function overpassAttractions(c) {
-    const a = `(around:3500,${c.lat},${c.lon})`;
-    return overpass(`[out:json][timeout:20];(
-      nwr["tourism"~"^(attraction|museum|viewpoint|gallery|zoo|theme_park|aquarium)$"]["name"]${a};
-      nwr["historic"~"^(monument|castle|memorial|ruins|archaeological_site|fort|palace)$"]["name"]["wikidata"]${a};
-      nwr["leisure"~"^(park|garden)$"]["name"]["wikidata"]${a};
-      nwr["amenity"="place_of_worship"]["name"]["wikipedia"]${a};
-    );out center tags 200;`);
+    const a = `(around:2500,${c.lat},${c.lon})`;
+    return overpass(`[out:json][timeout:15];(
+      nw["tourism"~"^(attraction|museum|viewpoint|gallery|zoo|theme_park|aquarium)$"]["name"]${a};
+      nw["historic"~"^(monument|castle|memorial|ruins|archaeological_site|fort|palace)$"]["name"]["wikidata"]${a};
+      nw["leisure"~"^(park|garden)$"]["name"]["wikidata"]${a};
+      nw["amenity"="place_of_worship"]["name"]["wikipedia"]${a};
+    );out center tags 150;`);
   }
   async function food(c) {
     let els;
     try {
-      els = await overpass(`[out:json][timeout:20];
-        nwr["amenity"~"^(restaurant|cafe|bar|pub|ice_cream)$"]["name"](around:1200,${c.lat},${c.lon});out center tags 200;`);
+      els = await overpass(`[out:json][timeout:15];
+        nw["amenity"~"^(restaurant|cafe|bar|pub|ice_cream)$"]["name"](around:1000,${c.lat},${c.lon});out center tags 150;`);
     } catch (e) {
       // zapas: wyszukiwarka OpenStreetMap (Nominatim) – restauracje i kawiarnie w okolicy
       const out = [];
@@ -117,7 +143,7 @@
     for (const lang of (self.I18N && I18N.lang === "en") ? ["en", "pl"] : ["pl", "en"]) {
       try {
         const r = await fetch(`https://${lang}.wikipedia.org/w/api.php?` + new URLSearchParams({
-          action: "query", format: "json", origin: "*", generator: "geosearch", ggscoord: `${c.lat}|${c.lon}`, ggsradius: "5000",
+          action: "query", format: "json", origin: "*", generator: "geosearch", ggscoord: `${c.lat}|${c.lon}`, ggsradius: "3000",
           ggslimit: "50", prop: "coordinates|pageimages|description", piprop: "thumbnail", pithumbsize: "200" }));
         if (!r.ok) continue;
         const pages = Object.values(((await r.json()).query || {}).pages || {});
@@ -211,14 +237,14 @@
             location.replace(link({ lat: pos.coords.latitude.toFixed(5), lon: pos.coords.longitude.toFixed(5), gdzie: "tutaj" })); };
           const fail = msg => { if (done) return; done = true; clearTimeout(watchdog);
             gps.disabled = false; gps.textContent = "📍 Tutaj"; App.toast(msg); };
-          const watchdog = setTimeout(() => fail("Telefon nie podał położenia – włącz lokalizację (GPS) i spróbuj jeszcze raz"), 25000);
+          const watchdog = setTimeout(() => fail("Telefon nie podał położenia – włącz lokalizację (GPS) i spróbuj jeszcze raz"), 18000);
           navigator.geolocation.getCurrentPosition(ok, err => {
             if (err.code === 1) return fail("Brak zgody na lokalizację – zezwól w ustawieniach telefonu (Chrome → Uprawnienia → Lokalizacja)");
             gps.textContent = "📍 Ustalam (GPS)…";
             navigator.geolocation.getCurrentPosition(ok,
               e2 => fail(e2.code === 1 ? "Brak zgody na lokalizację" : "Nie udało się ustalić położenia – włącz GPS albo wyjdź bliżej okna"),
-              { enableHighAccuracy: true, timeout: 20000, maximumAge: 60000 });
-          }, { enableHighAccuracy: false, timeout: 6000, maximumAge: 30 * 60000 });
+              { enableHighAccuracy: true, timeout: 13000, maximumAge: 5 * 60000 });
+          }, { enableHighAccuracy: false, timeout: 4000, maximumAge: 30 * 60000 }); // do szukania atrakcji wystarczy przybliżone
         };
 
         const render = list => {
@@ -264,8 +290,9 @@
 
         const run = async (key, fn) => {
           if (cache.has(key)) return render(cache.get(key));
+          const partial = list => { if (box.isConnected && !cache.has(key)) { render(list); box.insertAdjacentHTML("afterbegin", `<p class="muted small dc-more">⏳ Uzupełniam z OpenStreetMap…</p>`); } };
           try {
-            const list = await fn();
+            const list = await fn(partial);
             cache.set(key, list);
             if (box.isConnected) render(list);
           } catch (e) {
@@ -282,8 +309,10 @@
           return;
         }
         if (!c) return;
-        const key = `${tab}|${c.lat.toFixed(3)}|${c.lon.toFixed(3)}`;
-        run(key, async () => tab === "jedzenie" ? food(c) : wikiInfo(await attractions(c)));
+        // „Tutaj”: zaokrąglenie do ~1 km – powrót na ekran w tej samej okolicy nie szuka od nowa
+        const dp = q.gdzie === "tutaj" ? 2 : 3;
+        const key = `${tab}|${c.lat.toFixed(dp)}|${c.lon.toFixed(dp)}`;
+        run(key, async partial => tab === "jedzenie" ? food(c) : attractions(c, partial));
       },
     };
   });

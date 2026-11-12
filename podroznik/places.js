@@ -280,6 +280,11 @@
   }
 
   /* ================= EKRAN MAPY ================= */
+  // po dodaniu punktu z mapy ekran odświeża się w tym samym miejscu (bez przeskoku do wszystkich punktów)
+  let lastView = null, keepNext = false;
+  // atrakcje na mapie (przycisk 🏛️): ostatnie wyniki – po odświeżeniu ekranu pokazywane bez ponownego szukania
+  let pois = null; // { tripId, c, list }
+  const normName = s => String(s || "").trim().toLowerCase();
   const pinHtml = (label, color, cls = "") => `<div class="mp-pin ${cls}" style="--pc:${color}"><span>${esc(label)}</span></div>`;
 
   App.route(/^\/mapa\/([\w-]+)$/, async ([id], q) => {
@@ -344,7 +349,7 @@
         <form class="pl-search mp-search" id="mp-search"><input name="q" placeholder="Szukaj miejsca, np. Oceanarium" autocomplete="off" aria-label="Szukaj miejsca">
           <button class="btn" type="submit" aria-label="Szukaj">🔎</button></form>
         <div class="card mp-card"><div id="mp-map" class="mp-map" role="application" aria-label="Mapa punktów planu"></div>
-          <div class="mp-attr"><span class="mp-hint">Dotknij mapy, by dodać tam punkt.</span> ${navigator.onLine ? "" : "Offline: widać fragmenty mapy oglądane lub pobrane wcześniej. "}<span id="mp-attr-src"></span></div></div>
+          <div class="mp-attr"><span class="mp-hint">Dotknij mapy, by zaznaczyć miejsce · 🏛️ = atrakcje w okolicy.</span> ${navigator.onLine ? "" : "Offline: widać fragmenty mapy oglądane lub pobrane wcześniej. "}<span id="mp-attr-src"></span></div></div>
         <button type="button" class="plan-link" id="mp-off"><span aria-hidden="true">⬇️</span> Mapa offline <span class="muted">– zapisz ten fragment i miejsca podróży</span><b aria-hidden="true">›</b></button>
         ${missing ? `<button type="button" class="btn wide" id="mp-geo">📍 Znajdź położenie ${missing} ${plural(missing, "miejsca", "miejsc", "miejsc")} (internet)</button>` : ""}
         ${noPlace ? `<p class="muted small">${noPlace} ${plural(noPlace, "punkt nie ma", "punkty nie mają", "punktów nie ma")} wpisanego miejsca – dodaj je w punkcie, by pojawił się na mapie.</p>` : ""}
@@ -380,7 +385,10 @@
         const firstAt = bounds[0] || others[0] || (trip.geo && !trip.geo.none ? [trip.geo.lat, trip.geo.lon] : null);
         await baseLayer(map, firstAt);
         if (!map) return;
-        if (bounds.length) map.fitBounds(bounds, { padding: [30, 30], maxZoom: 15 });
+        const keep = keepNext && lastView && lastView.id === id && lastView.sel === sel;
+        keepNext = false;
+        if (keep) map.setView(lastView.center, lastView.zoom);
+        else if (bounds.length) map.fitBounds(bounds, { padding: [30, 30], maxZoom: 15 });
         else if (others.length) map.fitBounds(others, { padding: [30, 30], maxZoom: 14 });
         else {
           map.setView([52.1, 19.4], 5);
@@ -412,14 +420,91 @@
         } });
         new Locate().addTo(map);
 
-        // dotknięcie mapy → dodaj tu punkt (do wybranego dnia albo do pomysłów)
+        map.on("moveend", () => { if (map) lastView = { id, sel, center: map.getCenter(), zoom: map.getZoom() }; });
         const dayParam = sel === "pomysly" || sel === "wszystko" ? "pomysl" : sel;
+        const isDay = dayParam !== "pomysl";
+        const have = new Map(items.map(i => [normName(i.title), i]));
+
+        // zapis miejsca jednym dotknięciem: do pomysłów albo do wybranego dnia (na koniec dnia)
+        const save = async (p, toDay) => {
+          const date = toDay ? sel : "";
+          const order = date ? items.filter(i => i.date === date).length : 1e6;
+          await DB.put("planItems", { tripId: id, date, time: "", title: String(p.name || "Punkt na mapie").slice(0, 100), cat: p.cat || "zwiedzanie",
+            place: p.address ? `${p.name}, ${p.address}` : p.place || `${p.lat.toFixed(5)}, ${p.lon.toFixed(5)}`, lat: p.lat, lon: p.lon,
+            note: [p.kind, p.cuisine, p.desc].filter(Boolean).join(" · ").slice(0, 300), cost: "", currency: "PLN", order,
+            photoUrl: p.thumb || "", wikiUrl: p.wikiUrl || "" });
+          if (navigator.vibrate) navigator.vibrate(15);
+          App.toast(date ? `Dodano: ${App.fmtDay(date)}` : "Dodano do pomysłów");
+          keepNext = true;
+          App.render();
+        };
+        // okienko z przyciskami (DOM, bez linków – działa jednym dotknięciem)
+        const popupFor = (p, latlng, { local = false } = {}) => {
+          const box = L.DomUtil.create("div", "mp-pop-box");
+          const inPlan = have.get(normName(p.name));
+          box.innerHTML = `${p.thumb ? `<img class="mp-pop-img" src="${esc(p.thumb)}" alt="">` : ""}
+            <b class="mp-pop-name">${esc(p.name || "Szukam nazwy…")}</b>
+            <span class="muted small mp-pop-sub">${esc([p.kind, p.address].filter(Boolean).join(" · "))}</span>
+            <div class="mp-pop-btns">${inPlan ? `<a class="btn" href="#/punkt/${inPlan.id}">✓ w planie – otwórz</a>` : `
+              <button type="button" class="btn primary" data-act="idea">💡 Do pomysłów</button>
+              ${isDay ? `<button type="button" class="btn" data-act="day">📅 ${esc(App.fmtDay(sel))}</button>` : ""}
+              ${local ? `<a class="btn" data-act="more" href="#/plan/${id}/nowy?${new URLSearchParams({ d: dayParam, lat: latlng.lat.toFixed(6), lon: latlng.lng.toFixed(6) })}">✏️ Więcej…</a>` : ""}`}</div>`;
+          L.DomEvent.disableClickPropagation(box);
+          box.querySelectorAll("button[data-act]").forEach(b => b.onclick = () => { b.disabled = true; save(p, b.dataset.act === "day"); });
+          return box;
+        };
+
+        // dotknięcie mapy → pinezka od razu, nazwa miejsca z wyszukiwarki, zapis jednym dotknięciem
+        let temp = null;
         map.on("click", e => {
           const { lat, lng } = e.latlng;
-          const href = `#/plan/${id}/nowy?${new URLSearchParams({ d: dayParam, lat: lat.toFixed(6), lon: lng.toFixed(6) })}`;
-          L.popup({ closeButton: false, className: "mp-pop" }).setLatLng(e.latlng)
-            .setContent(`<a class="btn primary" href="${href}">➕ Dodaj tu ${dayParam === "pomysl" ? "pomysł" : "punkt"}</a>`).openOn(map);
+          if (temp) temp.remove();
+          const p = { name: "", lat, lon: lng };
+          temp = L.marker(e.latlng, { icon: L.divIcon({ html: pinHtml("＋", "#c2453a", "mp-new"), className: "mp-icon", iconSize: [30, 30], iconAnchor: [15, 15] }) }).addTo(map);
+          const pop = L.popup({ closeButton: true, className: "mp-pop", autoPanPadding: [20, 60] }).setLatLng(e.latlng).setContent(popupFor(p, e.latlng, { local: true })).openOn(map);
+          pop.on("remove", () => { if (temp) { temp.remove(); temp = null; } });
+          reverse(lat, lng).then(r => {
+            p.name = r && r.name ? r.name : "Punkt na mapie"; p.address = r && r.address && r.address !== r.name ? r.address.replace(`${r.name}, `, "") : "";
+          }).catch(() => { p.name = "Punkt na mapie"; }).then(() => {
+            if (map && map.hasLayer(pop)) pop.setContent(popupFor(p, e.latlng, { local: true }));
+          });
         });
+
+        // 🏛️ atrakcje na mapie (Wikipedia + OpenStreetMap, jak w Odkrywaj) – dotknij, by dodać
+        let poiLayer = null;
+        const showPois = list => {
+          if (poiLayer) poiLayer.remove();
+          poiLayer = L.layerGroup().addTo(map);
+          list.forEach(p => {
+            const inPlan = have.has(normName(p.name));
+            L.marker([p.lat, p.lon], { icon: L.divIcon({ html: `<div class="mp-poi${inPlan ? " on" : ""}">${p.cat === "jedzenie" ? "🍽️" : p.cat === "natura" ? "🌳" : "⭐"}</div>`, className: "mp-icon", iconSize: [26, 26], iconAnchor: [13, 13] }), title: p.name })
+              .addTo(poiLayer).on("click", ev => { L.DomEvent.stop(ev); L.popup({ className: "mp-pop", autoPanPadding: [20, 60] }).setLatLng([p.lat, p.lon]).setContent(popupFor(p)).openOn(map); });
+          });
+        };
+        const Poi = L.Control.extend({ options: { position: "topright" }, onAdd() {
+          const b = L.DomUtil.create("button", "mp-locate mp-poi-btn");
+          b.type = "button"; b.title = "Atrakcje w okolicy"; b.setAttribute("aria-label", "Pokaż atrakcje w okolicy na mapie"); b.textContent = "🏛️";
+          L.DomEvent.disableClickPropagation(b);
+          b.onclick = async () => {
+            const c = map.getCenter(), here = { lat: c.lat, lon: c.lng };
+            const fresh = pois && pois.tripId === id && km(pois.c, here) < 1.5;
+            if (fresh && poiLayer && map.hasLayer(poiLayer)) { poiLayer.remove(); poiLayer = null; pois = null; b.classList.remove("on"); return; } // drugi raz – ukryj
+            if (fresh) { showPois(pois.list); b.classList.add("on"); return; }
+            if (!navigator.onLine) { App.toast("Brak internetu"); return; }
+            b.classList.add("busy"); App.toast("Szukam atrakcji w okolicy…");
+            try {
+              const list = await App.Discover.attractions(here, part => { if (map) { showPois(part); b.classList.add("on"); } });
+              if (!map) return;
+              pois = { tripId: id, c: here, list };
+              showPois(list); b.classList.add("on");
+              App.toast(list.length ? `${list.length} ${plural(list.length, "miejsce", "miejsca", "miejsc")} – dotknij, by dodać` : "Nic tu nie znaleziono – przesuń mapę");
+            } catch (e) { App.toast("Serwery map nie odpowiadają – spróbuj za chwilę"); }
+            if (b.isConnected) b.classList.remove("busy");
+          };
+          if (pois && pois.tripId === id) setTimeout(() => { if (map) { showPois(pois.list); b.classList.add("on"); } });
+          return b;
+        } });
+        new Poi().addTo(map);
         view.querySelector("#mp-search").onsubmit = ev => {
           ev.preventDefault();
           const v = ev.target.q.value.trim();
