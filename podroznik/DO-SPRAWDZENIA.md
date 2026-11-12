@@ -114,7 +114,7 @@ Adres (po scaleniu pull requesta): https://chiniak.github.io/podroznik/
 ## Tło ze zdjęć
 - ⬜ Po otwarciu z internetem w tle pojawia się zdjęcie, a przy każdym przejściu na inny ekran zmienia się na inne
 - ⬜ Tekst jest czytelny na jasnych i ciemnych zdjęciach (motyw jasny i ciemny) – czy mgiełka nie jest za mocna / za słaba?
-- ⬜ Czy zdjęcia pasują (krajobrazy, miasta, Azja) – jeśli trafi się coś dziwnego, zapisz tytuł z Ustawienia → Tło
+- ⬜ Po aktualizacji zdjęcia w tle tylko natura i miasta (stare, w tym obraz religijny, znikają same) – jeśli trafi się coś nie tak: Ustawienia → Tło → „🚫 Nie pokazuj tego zdjęcia”
 - ⬜ Ustawienia → Tło → „Bez zdjęć” wyłącza; licznik „pobrane N/100” rośnie; w trybie samolotowym tło nadal się zmienia
 - ⬜ Aplikacja nie zwalnia przy przechodzeniu między ekranami
 

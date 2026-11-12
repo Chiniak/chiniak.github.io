@@ -260,7 +260,10 @@
           if (!box) return;
           const i = await App.Backdrop.info();
           box.innerHTML = !i.enabled ? "Jednolite tło." : `Losowe zdjęcie przy każdej zmianie ekranu · pobrane ${i.count}/${i.max}${i.count < i.max ? " (kolejne dochodzą przy przeglądaniu, z internetem)" : ""}.` +
-            (i.current ? `<br><span>Teraz:</span> <a href="${App.esc(i.current.page)}" target="_blank" rel="noopener" translate="no">${App.esc(i.current.title)}</a>${i.current.by ? ` <span translate="no">· ${App.esc(i.current.by)}</span>` : ""} <span>(Wikimedia Commons)</span>` : "");
+            (i.current ? `<br><span>Teraz:</span> <a href="${App.esc(i.current.page)}" target="_blank" rel="noopener" translate="no">${App.esc(i.current.title)}</a>${i.current.by ? ` <span translate="no">· ${App.esc(i.current.by)}</span>` : ""} <span>(Wikimedia Commons)</span>
+              <br><button type="button" class="btn" id="bg-block" style="margin-top:8px">🚫 Nie pokazuj tego zdjęcia</button>` : "");
+          const bl = box.querySelector("#bg-block");
+          if (bl) bl.onclick = async () => { bl.disabled = true; await App.Backdrop.block(); App.toast("To zdjęcie nie pojawi się więcej"); setTimeout(bgInfo, 400); };
         };
         setTimeout(bgInfo, 300);
         v.querySelectorAll("[data-bg-opt]").forEach(b => b.addEventListener("click", async () => {

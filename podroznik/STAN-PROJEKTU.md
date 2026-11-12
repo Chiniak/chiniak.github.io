@@ -1,12 +1,12 @@
 # Podróżnik – stan projektu (do kontynuacji w nowej sesji)
 
-Ostatnia aktualizacja: 12 listopada 2026 – PR #6, #7, #8 scalone; na gałęzi: szybsze Odkrywaj, zaznaczanie na mapie, atrakcje na mapie. Zacznij od przeczytania tego pliku, potem `PLAN.md` i `DO-SPRAWDZENIA.md`.
+Ostatnia aktualizacja: 12 listopada 2026 – PR #6–#9 scalone; na gałęzi: tło tylko natura i miasta (bez religii), „Nie pokazuj tego zdjęcia”. Zacznij od przeczytania tego pliku, potem `PLAN.md` i `DO-SPRAWDZENIA.md`.
 
 ## Gdzie co jest
 - Repozytorium: `chiniak/chiniak.github.io`, gałąź **`claude/travel-planning-app-tl9mvf`**
 - Wszystko scalone na `main`: PR #1 (etapy 0–8), #2 (etapy 7, 9, 10), #3 i #4 (poprawki Odkrywaj),
   #5 (GPS w Odkrywaj, mapa na właściwym celu, dodawanie punktu z mapy, Azja: mapy/nawigacja/waluty, odznaczanie pomysłów, **język angielski**).
-- Aplikacja na żywo: https://chiniak.github.io/podroznik/ (wersja „1.1 · etapy 0–10”, pamięć offline `podroznik-v21`; po PR #6: „1.2 · etapy 0–11”, `podroznik-v22`; po PR #7 `podroznik-v23`; po PR #8 `podroznik-v24`; na gałęzi `podroznik-v25`).
+- Aplikacja na żywo: https://chiniak.github.io/podroznik/ (wersja „1.1 · etapy 0–10”, pamięć offline `podroznik-v21`; po PR #6: „1.2 · etapy 0–11”, `podroznik-v22`; po PR #7 `podroznik-v23`; po PR #8 `podroznik-v24`; po PR #9 `podroznik-v25`; na gałęzi `podroznik-v26`).
 - Gałąź robocza: po scaleniu PR zacząć ją od nowa od `origin/main` (git checkout -B … origin/main), nie nadpisywać historii (force push zablokowany).
 - Aplikacja https://chiniak.github.io/podroznik/ , APK https://chiniak.github.io/podroznik/Podroznik.apk
 - `podroznik/` – aplikacja (PWA, czysty JS bez frameworka, dane w IndexedDB, offline przez service worker)
@@ -53,7 +53,7 @@ Nic nie było jeszcze testowane na prawdziwym telefonie – lista: `DO-SPRAWDZEN
 | `lib/` | pdf.js, bwip-js, ZXing, Leaflet, airports.js (OpenFlights), world.js (Natural Earth) – licencje w `lib/` |
 
 ## Zasady i pułapki (ważne przy zmianach)
-- **Po każdej zmianie plików aplikacji podbij `CACHE` w `sw.js`** (teraz `podroznik-v25`) i dopisz nowe pliki do listy `APP`.
+- **Po każdej zmianie plików aplikacji podbij `CACHE` w `sw.js`** (teraz `podroznik-v26`) i dopisz nowe pliki do listy `APP`.
 - Nowy magazyn danych = podbić `VERSION` w `db.js` i dodać do `STORES` (aktualizacja zachowuje dane – test t12).
 - Nasłuch zdarzeń podpinaj do elementów widoku, **nie do `#view`** (zostaje między ekranami → podwójne akcje).
 - Router ignoruje wolniej wczytany starszy ekran (`renderSeq` w `app.js`).
@@ -64,7 +64,7 @@ Nic nie było jeszcze testowane na prawdziwym telefonie – lista: `DO-SPRAWDZEN
 - Ustawienia: `navApp` (google/geo/amap → `App.mapsUrl`), `mapLayer` (latin/osm), `lang` (też w localStorage `podroznik-lang`).
 - Mapa offline: pamięć `mapa-offline-<id podróży>` (tylko CARTO, zapis z adresem `a.basemaps…` bez parametrów); sw.js szuka kafelka we wszystkich pamięciach (`caches.match` z kluczem `canon()`), zapytania z `?podroznik-off=1` puszcza wprost do sieci. Usuwana razem z podróżą.
 - Odkrywaj: `overpass()` pyta serwery wyścigiem (kolejny po 2 s albo po błędzie, całość ≤ 15 s); `attractions(c, onPartial)` – Wikipedia równolegle, pierwsze wyniki od razu, potem połączone z OSM. Mapa: `popupFor`/`save` w places.js (zapis bez formularza), `keepNext`/`lastView` – odświeżenie bez przeskoku widoku, `pois` – atrakcje na mapie (🏛️). `.mp-map` ma własny kontekst warstw (`isolation`), żeby nie zasłaniać komunikatów.
-- Tło ze zdjęć: `App.Backdrop.next()` wołane na końcu `render()`; lista kandydatów `bgPool` (Commons, kategoria Featured pictures, wyszukiwanie po hasłach podróżniczych, odświeżana co 30 dni), zdjęcia w pamięci `tla-zdjecia` (max 100, po jednym przy przejściu; nie przy oszczędzaniu danych). Ustawienie `bgPhotos` + `localStorage podroznik-bg`. Czytelność: `--veil` (mgiełka) i półprzezroczyste paski z rozmyciem (`html.has-bg`).
+- Tło ze zdjęć: `App.Backdrop.next()` wołane na końcu `render()`; lista kandydatów `bgPool` (Commons, kategoria Featured pictures, wyszukiwanie po hasłach podróżniczych, odświeżana co 30 dni), zdjęcia w pamięci `tla-zdjecia` (max 100, po jednym przy przejściu; nie przy oszczędzaniu danych). Ustawienie `bgPhotos` + `localStorage podroznik-bg`. **Właściciel nie chce zdjęć religijnych** (dostał obraz Jezusa) – lista `bgPool.v = 2`: hasła tylko natura/miasta, wykluczenia w zapytaniu (`EXCLUDE`) i filtr `BAD` (tytuł, opis, kategorie); zmiana wersji kasuje pobrane zdjęcia. `bgBlocked` – zdjęcia ukryte przyciskiem. Czytelność: `--veil` (mgiełka) i półprzezroczyste paski z rozmyciem (`html.has-bg`).
 - Zdjęcia miejsc: pole `photo` { data (JPEG data URL ~360 px), page, credit, auto } w punkcie planu; `photoTry` = ostatnia próba (bez trafienia – nowa za 7 dni), `photoOff` = usunięte ręcznie, `photoUrl`/`wikiUrl` z Odkrywaj. Plan dociąga brakujące w tle (`App.Photos.fill`) i wstawia miniatury bez przeładowania (`data-pid`). Zmiana nazwy/położenia kasuje zdjęcie automatyczne.
 - Test t5 bywa czerwony blisko północy (godziny liczone od „teraz”) – także na niezmienionym kodzie.
 - Karty dla kierowcy: pole `local` { lat, lon, cc, lang, name, addr } w noclegu / punkcie planu (Nominatim reverse: najpierw kraj po angielsku, potem adres w języku kraju – `LANG_OF` w phrases.js); nieaktualne, gdy zmieni się położenie. Zapytania Nominatim idą przez wspólną kolejkę `App.Places.osm`.

@@ -100,7 +100,7 @@ Rzeczy do przetestowania na prawdziwym telefonie: **[DO-SPRAWDZENIA.md](DO-SPRAW
 55. ✅ **Karty dla kierowcy** – nocleg i punkty planu z nazwą i adresem w lokalnym piśmie (tajski, laotański, chiński, wietnamski…) + „Proszę mnie tu zawieźć”, pełny ekran, działa offline (Plan → 🚕 Karty dla kierowcy; strona noclegu → „Pokaż kierowcy”).
 56. ✅ **Rozmówki** – 14 zwrotów (taksówka, jedzenie, alergia, lekarz) po chińsku, tajsku, wietnamsku i laotańsku, z wymową; dotknięcie = duże litery.
 58. ✅ **Zdjęcia miejsc** w planie i pomysłach – same z Wikipedii (albo Wikimedia Commons z okolicy), z Odkrywaj, albo własne; zapisane w telefonie, działają offline.
-59. ✅ **Tło ze zdjęć** – losowe zdjęcie (Wikimedia Commons, do 100 w telefonie) przy każdej zmianie ekranu; Ustawienia → Tło.
+59. ✅ **Tło ze zdjęć** – losowe zdjęcie natury lub miasta (Wikimedia Commons, do 100 w telefonie) przy każdej zmianie ekranu; bez religii i sztuki; „🚫 Nie pokazuj tego zdjęcia”; Ustawienia → Tło.
 60. ✅ **Mapa: zaznaczanie miejsc** – dotknięcie stawia pinezkę z nazwą, „💡 Do pomysłów” / „📅 dzień” jednym dotknięciem (mapa zostaje w miejscu); 🏛️ atrakcje w okolicy na mapie do dodania. **Odkrywaj szybciej** – Wikipedia od razu, serwery map wyścigiem, krótszy GPS.
 57. ✅ **Mapa offline** – pobranie mapy miejsc podróży (obszary wokół noclegów i punktów, przegląd całej podróży, widoczny fragment mapy) przed wyjazdem; zostaje w telefonie do usunięcia.
 
