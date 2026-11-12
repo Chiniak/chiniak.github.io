@@ -412,7 +412,7 @@ self.I18N_EN = {
   "W Laosie tuk-tuki nie mają taksometrów – cenę ustal przed jazdą.": "Tuk-tuks in Laos have no meters – agree the price before the ride.",
   "Lokalny adres pojawi się po „Przygotuj karty” (internet).": "The local address appears after “Prepare cards” (internet).",
   "W tym kraju pismo jest łacińskie – pokaż nazwę i adres powyżej.": "This country uses the Latin script – show the name and address above.",
-  "🧭 Nawiguj": "🧭 Navigate", "🚕 Pokaż kierowcy (adres w lokalnym piśmie)": "🚕 Show the driver (address in local script)",
+  "🧭 Nawiguj": "🧭 Navigate", "Otwórz": "Open", "🚕 Pokaż kierowcy (adres w lokalnym piśmie)": "🚕 Show the driver (address in local script)",
   "Gotowe · nie udało się {}": "Done · {} failed", "Karty gotowe – działają bez internetu": "Cards ready – they work offline",
   "Proszę mnie zawieźć pod ten adres": "Please take me to this address", "Dzień dobry": "Hello", "Dziękuję": "Thank you", "Przepraszam": "Excuse me / sorry",
   "Ile to kosztuje?": "How much is it?", "Za drogo": "Too expensive", "Proszę włączyć taksometr": "Please turn on the meter", "Proszę się tu zatrzymać": "Please stop here",

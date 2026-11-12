@@ -131,3 +131,10 @@ Adres (po scaleniu pull requesta): https://chiniak.github.io/podroznik/
 - Karty z Apple/Google Wallet (.pkpass) – jeszcze nie ma (pkt 16)
 - Blokada PIN chroni przed podejrzeniem, ale dane w pamięci przeglądarki nie są szyfrowane (zaszyfrowana może być kopia zapasowa)
 - Powiadomienia w tle: aplikacja internetowa nie może sama obudzić się o dokładnej godzinie – Chrome sprawdza „kilka razy na dobę”; pewny jest kalendarz (.ics) albo wersja APK
+
+
+## Zdjęcia na mapie i kartach (12.11)
+- [ ] Mapa dnia: dotknięcie pinezki punktu otwiera okienko ze zdjęciem, nazwą, dniem i godziną (zamiast od razu przechodzić do punktu)
+- [ ] W okienku „Otwórz” prowadzi do punktu, „🧭 Nawiguj” otwiera nawigację
+- [ ] Lista pod mapą ma miniatury zdjęć
+- [ ] Karty i rozmówki: miniatura zamiast ikonki 📍; na karcie dla kierowcy zdjęcie nad adresem w lokalnym piśmie

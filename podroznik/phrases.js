@@ -101,6 +101,7 @@
         ${L0.addr ? `<div class="tx-addr" lang="${L0.lang}" translate="no">${esc(L0.addr)}</div>` : ""}` : "";
     return `
       <div class="tx-body">
+        ${e.rec.photo && e.rec.photo.data ? `<img class="tx-photo" src="${e.rec.photo.data}" alt="">` : ""}
         ${localTxt || `<div class="tx-name">${esc(e.title)}</div>`}
         <div class="tx-latin">
           ${localTxt ? `<b>${esc(e.title)}</b>` : ""}
@@ -146,7 +147,7 @@
       const L0 = e.rec.local;
       const loc = L0 && L0.lang && fresh(e.rec) ? (L0.name || L0.addr) : "";
       return `<button type="button" class="tx-row" data-k="${e.key}">
-          <span class="tx-ic" aria-hidden="true">${e.icon}</span>
+          ${e.rec.photo && e.rec.photo.data ? `<img class="tx-thumb" src="${e.rec.photo.data}" alt="" loading="lazy" decoding="async">` : `<span class="tx-ic" aria-hidden="true">${e.icon}</span>`}
           <span class="tx-main"><b>${esc(e.title)}</b><span class="muted small">${esc(e.when)}${loc ? ` · <span lang="${L0.lang}" translate="no">${esc(loc)}</span>` : fresh(e.rec) ? "" : " · bez lokalnego adresu"}</span></span>
           <b class="tx-go" aria-hidden="true">›</b></button>`;
     };

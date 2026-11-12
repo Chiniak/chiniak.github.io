@@ -5,7 +5,7 @@ Ostatnia aktualizacja: 12 listopada 2026 – **wszystko scalone na `main` (PR #1
 ## Gdzie co jest
 - Repozytorium: `chiniak/chiniak.github.io`, gałąź **`claude/travel-planning-app-tl9mvf`**
 - Gałąź robocza: po scaleniu PR zacznij ją od nowa od `origin/main` (`git checkout -B claude/travel-planning-app-tl9mvf origin/main`), nie nadpisuj historii (force push zablokowany). Nowy PR po każdej porcji zmian – właściciel scala sam.
-- Aplikacja na żywo: https://chiniak.github.io/podroznik/ – wersja „1.2 · etapy 0–11”, pamięć offline **`podroznik-v26`**. APK: https://chiniak.github.io/podroznik/Podroznik.apk (zmiany w stronie nie wymagają nowego APK).
+- Aplikacja na żywo: https://chiniak.github.io/podroznik/ – wersja „1.2 · etapy 0–11”, pamięć offline **`podroznik-v27`**. APK: https://chiniak.github.io/podroznik/Podroznik.apk (zmiany w stronie nie wymagają nowego APK).
 - `podroznik/` – aplikacja (PWA, czysty JS bez frameworka, dane w IndexedDB, offline przez service worker)
 - `podroznik-android/` – projekt APK (Trusted Web Activity, Bubblewrap), instrukcja w jego README
 - `podroznik-testy/` – testy Playwright + przykładowe dane, instrukcja w README (serwer: `python3 -m http.server 8765` w katalogu repo)
@@ -19,6 +19,7 @@ Ostatnia aktualizacja: 12 listopada 2026 – **wszystko scalone na `main` (PR #1
 - #8: tło ze zdjęć zmieniane przy każdej zmianie ekranu (`backdrop.js`)
 - #9: szybsze Odkrywaj („📍 Tutaj”: Wikipedia od razu, serwery map wyścigiem), mapa: pinezka + zapis jednym dotknięciem, 🏛️ atrakcje na mapie
 - #10: tło tylko natura i miasta – **bez zdjęć religijnych** (filtr, kasowanie starych, „🚫 Nie pokazuj tego zdjęcia”)
+- (gałąź, PR do zrobienia): zdjęcia miejsc na mapie (okienko pinezki: zdjęcie, „Otwórz”, „🧭 Nawiguj”; miniatury na liście pod mapą) i na kartach dla kierowcy (miniatura na liście, zdjęcie nad lokalnym adresem); test `t31`
 
 ## Właściciel – preferencje i uwagi
 - Pisze po polsku, krótko; woli małe kroki, podsumowanie po każdej zmianie, potem pytanie o PR (zwykle odpowiada „tak”).
@@ -34,7 +35,7 @@ Ostatnia aktualizacja: 12 listopada 2026 – **wszystko scalone na `main` (PR #1
 
 ## Co zostało
 1. **Właściciel:** sprawdzić na telefonie PR #9 (mapa, Odkrywaj) i #10 (tło), przejść `DO-SPRAWDZENIA.md` (sekcje „Etap 11”, „Zdjęcia miejsc”, „Tło ze zdjęć”, „Mapa i Odkrywaj”) i zgłosić błędy.
-2. Pomysły na dalej: więcej języków (słownik jak `i18n-en.js`), edycja na żywo przez kilka osób (wymagałaby serwera), zdjęcia miejsc też na mapie i kartach kierowcy, licznik w APK według strefy lotniska.
+2. Pomysły na dalej: więcej języków (słownik jak `i18n-en.js`), edycja na żywo przez kilka osób (wymagałaby serwera), licznik w APK według strefy lotniska.
 3. Znane: test t5 bywa czerwony blisko północy (godziny liczone od „teraz”) – także na niezmienionym kodzie; t23 trwa ~26 s (symulowany GPS bez odpowiedzi).
 
 ## Pliki aplikacji (`podroznik/`)
@@ -58,7 +59,7 @@ Ostatnia aktualizacja: 12 listopada 2026 – **wszystko scalone na `main` (PR #1
 | `lib/` | pdf.js, bwip-js, ZXing, Leaflet, airports.js (OpenFlights), world.js (Natural Earth) – licencje w `lib/` |
 
 ## Zasady i pułapki (ważne przy zmianach)
-- **Po każdej zmianie plików aplikacji podbij `CACHE` w `sw.js`** (teraz `podroznik-v26`) i dopisz nowe pliki do listy `APP`.
+- **Po każdej zmianie plików aplikacji podbij `CACHE` w `sw.js`** (teraz `podroznik-v27`) i dopisz nowe pliki do listy `APP`.
 - Nowy magazyn danych = podbić `VERSION` w `db.js` i dodać do `STORES` (aktualizacja zachowuje dane – test t12).
 - Nasłuch zdarzeń podpinaj do elementów widoku, **nie do `#view`** (zostaje między ekranami → podwójne akcje).
 - Router ignoruje wolniej wczytany starszy ekran (`renderSeq` w `app.js`).

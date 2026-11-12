@@ -326,7 +326,7 @@
       pts.forEach(p => {
         const it = p.it;
         if (sel !== "pomysly" && prev && hasXY(it)) { const l = leg(prev, it); list += `<div class="mp-leg">${l.icon} ${l.txt}</div>`; }
-        list += `<a class="mp-row" href="#/punkt/${it.id}"><span class="mp-num" style="--pc:${p.color}">${p.label}</span>
+        list += `<a class="mp-row" href="#/punkt/${it.id}"><span class="mp-num" style="--pc:${p.color}">${p.label}</span>${App.Photos ? App.Photos.thumb(it, "mp-thumb") : ""}
           <span class="mp-name">${esc(it.title)}${it.time ? ` <span class="muted">· ${it.time}</span>` : ""}<span class="muted small">${hasXY(it) ? esc(it.place && !/^https?:/i.test(it.place) ? it.place : "") : it.place ? "📍 bez położenia" : "bez miejsca"}</span></span></a>`;
         if (hasXY(it)) prev = it;
       });
@@ -369,13 +369,25 @@
         if (!el.isConnected) return;
         map = L.map(el, { zoomControl: true, attributionControl: false });
         const bounds = [];
-        const add = (p, html, title, href) => {
+        // dotknięcie pinezki → okienko ze zdjęciem, „Otwórz” i „Nawiguj”
+        const infoFor = (p, title, sub, href) => {
+          const box = L.DomUtil.create("div", "mp-pop-box");
+          const img = p.photo && p.photo.data ? `<img class="mp-pop-img" src="${p.photo.data}" alt="">` : "";
+          box.innerHTML = `${img}<b class="mp-pop-name">${esc(title)}</b>
+            <span class="muted small mp-pop-sub">${esc(sub)}</span>
+            <div class="mp-pop-btns"><a class="btn primary" href="${href}">Otwórz</a>
+              <a class="btn" href="${esc(App.mapsUrl(`${(+p.lat).toFixed(6)},${(+p.lon).toFixed(6)}`))}" target="_blank" rel="noopener">🧭 Nawiguj</a></div>`;
+          L.DomEvent.disableClickPropagation(box);
+          return box;
+        };
+        const add = (p, html, title, href, sub = "") => {
           const m = L.marker([p.lat, p.lon], { icon: L.divIcon({ html, className: "mp-icon", iconSize: [30, 30], iconAnchor: [15, 15] }), title }).addTo(map);
-          if (href) m.on("click", () => { location.hash = href; });
+          if (href) m.on("click", ev => { L.DomEvent.stop(ev); L.popup({ className: "mp-pop", autoPanPadding: [20, 60] }).setLatLng([p.lat, p.lon]).setContent(infoFor(p, title, sub, href)).openOn(map); });
           bounds.push([p.lat, p.lon]);
         };
-        hotels.filter(hasXY).forEach(h => add(h, pinHtml("🏨", "#444", "mp-hotel"), h.name || "Nocleg", `#/odcinek/${h.id}`));
-        pts.filter(p => hasXY(p.it)).forEach(p => add(p.it, pinHtml(p.label, p.color), p.it.title, `#/punkt/${p.it.id}`));
+        hotels.filter(hasXY).forEach(h => add(h, pinHtml("🏨", "#444", "mp-hotel"), h.name || "Nocleg", `#/odcinek/${h.id}`, h.address || ""));
+        pts.filter(p => hasXY(p.it)).forEach(p => add(p.it, pinHtml(p.label, p.color), p.it.title, `#/punkt/${p.it.id}`,
+          [p.it.date ? App.fmtDay(p.it.date) : "pomysł", p.it.time].filter(Boolean).join(" · ")));
         // linie trasy: dla każdego dnia osobno, w kolejności planu (od noclegu)
         const lines = sel === "wszystko" ? days.map(d => [d, (hasXY(hotelFor(segs, d)) ? [hotelFor(segs, d)] : []).concat(items.filter(i => i.date === d && hasXY(i)).sort(byOrder))])
           : sel === "pomysly" ? [] : [[sel, routePts]];
