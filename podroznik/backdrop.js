@@ -5,10 +5,16 @@
    Ustawienie `bgPhotos` (domyślnie włączone; `localStorage podroznik-bg` – żeby nie mignęło przy starcie). */
 (function () {
   const CACHE = "tla-zdjecia", MAX = 100, WIDTH = 1000, POOL_AGE = 30 * 86400000;
-  const TERMS = ["landscape", "mountains", "beach", "temple", "Thailand", "Vietnam", "Laos", "China", "Japan", "lake", "waterfall",
-    "sunset", "island", "old town", "rice terraces", "desert", "harbour", "castle", "Poland", "Alps", "Norway", "Iceland", "Italy",
-    "Portugal", "Spain", "Greece", "canyon", "forest", "coast", "skyline", "bridge", "volcano", "Bangkok", "Hanoi", "Luang Prabang", "Halong"];
-  const META = /\b(diagram|map|chart|logo|coat of arms|flag|portrait|nude|insect|spider|microscop|x-ray|anatomy|skull)\b/i;
+  const POOL_V = 2; // v2: tylko natura i miasta (v1 wciągała też obrazy religijne) – starsze zdjęcia są kasowane
+  // tylko natura i widoki miast – bez świątyń, kościołów, zamków (tam trafiały obrazy i wnętrza)
+  const TERMS = ["landscape", "mountains", "mountain lake", "beach", "lake", "waterfall", "sunset landscape", "island", "rice terraces",
+    "desert", "canyon", "forest", "coast", "cliffs", "glacier", "volcano", "national park", "river valley", "sea", "fjord", "meadow",
+    "skyline", "cityscape", "city panorama", "aerial view city", "harbour", "bridge river", "night city", "street view city"];
+  // w wyszukiwaniu Commons: bez tych słów
+  const EXCLUDE = "-church -cathedral -chapel -basilica -monastery -abbey -temple -mosque -shrine -jesus -christ -madonna -virgin -saint -icon -painting -fresco -altar -religious -bible -buddha -statue -sculpture -interior -portrait";
+  // odrzucane po tytule, opisie i kategoriach (religia, sztuka, ludzie, zwierzęta z bliska, mapy i schematy)
+  const BAD = new RegExp("\\b(map|maps|chart|logo|flag|flags|wat|god|gods|art|arts|cross|crosses|icon|icons|mary|saint|saints|st\\.|angel|angels|grave|graves|tomb|tombs|bird|birds|animal|animals|people|person|insect|insects|spider|nun|nuns|monk|monks|priest|pope)\\b" +
+    "|\\b(diagram|portrait|nude|microscop|x-ray|anatomy|skull|church|cathedral|chapel|basilica|monaster|abbey|convent|temple|mosque|synagogue|shrine|pagoda|stupa|religio|christ|jesus|madonna|virgin|apostle|holy|sacred|bible|crucifix|altar|fresco|mural|painting|artwork|museum|sculpture|statue|stained glass|interior|cemetery|buddha|hindu|deity|coat of arms|kości|katedr|kaplic|święt|jezus|chrystus|matka boża|obraz|cerkiew|klasztor)", "i");
 
   let enabled = true;
   try { enabled = localStorage.getItem("podroznik-bg") !== "0"; } catch (e) { /* brak dostępu */ }
@@ -18,21 +24,26 @@
   async function query(term) {
     const r = await fetch("https://commons.wikimedia.org/w/api.php?" + new URLSearchParams({
       action: "query", format: "json", origin: "*", generator: "search", gsrnamespace: "6", gsrlimit: "25",
-      gsrsearch: `incategory:Featured_pictures_on_Wikimedia_Commons filetype:bitmap ${term}`,
-      prop: "imageinfo", iiprop: "url|size|extmetadata", iiurlwidth: String(WIDTH), iiextmetadatafilter: "Artist|LicenseShortName|ObjectName" }));
+      gsrsearch: `incategory:Featured_pictures_on_Wikimedia_Commons filemime:image/jpeg ${term} ${EXCLUDE}`,
+      prop: "imageinfo|categories", clshow: "!hidden", cllimit: "max",
+      iiprop: "url|size|extmetadata", iiurlwidth: String(WIDTH), iiextmetadatafilter: "Artist|LicenseShortName|ObjectName|ImageDescription|Categories" }));
     if (!r.ok) throw new Error(`Commons ${r.status}`);
     const j = await r.json();
     const strip = h => String(h || "").replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
     return Object.values((j.query && j.query.pages) || {}).map(p => {
       const ii = p.imageinfo && p.imageinfo[0];
-      if (!ii || !ii.thumburl || !/\.(jpe?g|png|webp|tiff?)$/i.test(p.title) || META.test(p.title) || ii.width < 1200 || ii.height < 700) return null;
+      if (!ii || !ii.thumburl || !/\.(jpe?g)$/i.test(p.title) || ii.width < 1200 || ii.height < 700) return null;
       const m = ii.extmetadata || {};
+      const text = [p.title, strip(m.ObjectName && m.ObjectName.value), strip(m.ImageDescription && m.ImageDescription.value).slice(0, 400),
+        strip(m.Categories && m.Categories.value), (p.categories || []).map(c => c.title).join(" ")].join(" ").replace(/_/g, " ");
+      if (BAD.test(text)) return null;
       return { src: ii.thumburl, page: ii.descriptionurl, title: strip(m.ObjectName && m.ObjectName.value) || p.title.replace(/^File:|\.\w+$/g, "").replace(/_/g, " "),
         by: [strip(m.Artist && m.Artist.value), strip(m.LicenseShortName && m.LicenseShortName.value)].filter(Boolean).join(", ") };
     }).filter(Boolean);
   }
   async function pool() {
-    const saved = await DB.getSetting("bgPool", null);
+    let saved = await DB.getSetting("bgPool", null);
+    if (saved && saved.v !== POOL_V) saved = null; // stara lista (z obrazami religijnymi) – od nowa
     if (saved && saved.items.length >= MAX && Date.now() - saved.at < POOL_AGE) return saved.items;
     if (!navigator.onLine) return saved ? saved.items : [];
     const seen = new Map((saved ? saved.items : []).map(x => [x.src, x]));
@@ -41,14 +52,28 @@
       if (seen.size >= MAX * 1.5) break;
       try { for (const x of await query(t)) if (!seen.has(x.src)) seen.set(x.src, x); } catch (e) { break; }
     }
-    const items = [...seen.values()];
-    await DB.setSetting("bgPool", { at: Date.now(), items });
+    const blocked = new Set(await DB.getSetting("bgBlocked", []));
+    const items = [...seen.values()].filter(x => !blocked.has(x.src));
+    await DB.setSetting("bgPool", { v: POOL_V, at: Date.now(), items });
     return items;
   }
 
   /* ---------- pobieranie po jednym ---------- */
+  // pobrane zdjęcia; przy pierwszym uruchomieniu nowej wersji listy – kasuje stare (v1) i zablokowane
+  let purged = false;
   async function cachedKeys() {
-    try { return (await (await caches.open(CACHE)).keys()).map(r => r.url); } catch (e) { return []; }
+    try {
+      if (!purged) {
+        purged = true;
+        const saved = await DB.getSetting("bgPool", null);
+        if (!saved || saved.v !== POOL_V) await caches.delete(CACHE);
+        else {
+          const blocked = new Set(await DB.getSetting("bgBlocked", [])), c = await caches.open(CACHE);
+          for (const r of await c.keys()) if (blocked.has(r.url)) await c.delete(r);
+        }
+      }
+      return (await (await caches.open(CACHE)).keys()).map(r => r.url);
+    } catch (e) { return []; }
   }
   async function downloadOne(have) {
     if (busy || !navigator.onLine || (navigator.connection && navigator.connection.saveData)) return false;
@@ -123,11 +148,22 @@
     const cur = items && current ? items.items.find(x => x.src === current) : null;
     return { enabled, count: have.length, max: MAX, current: cur };
   }
+  // „nie pokazuj tego zdjęcia” – na stałe (lista bgBlocked), od razu inne
+  async function block(src = current) {
+    if (!src) return;
+    const list = await DB.getSetting("bgBlocked", []);
+    if (!list.includes(src)) await DB.setSetting("bgBlocked", list.concat(src));
+    const saved = await DB.getSetting("bgPool", null);
+    if (saved) await DB.setSetting("bgPool", { ...saved, items: saved.items.filter(x => x.src !== src) });
+    try { await (await caches.open(CACHE)).delete(src); } catch (e) { /* brak pamięci */ }
+    current = null;
+    await next();
+  }
   async function clear() {
     await caches.delete(CACHE);
     document.documentElement.classList.remove("has-bg");
     current = null;
   }
 
-  App.Backdrop = { next, setEnabled, info, clear, get enabled() { return enabled; } };
+  App.Backdrop = { next, setEnabled, info, clear, block, BAD, get enabled() { return enabled; } };
 })();

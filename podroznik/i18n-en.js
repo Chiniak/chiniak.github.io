@@ -453,4 +453,6 @@ self.I18N_EN = {
   "Pokaż atrakcje w okolicy na mapie": "Show nearby sights on the map", "Szukam atrakcji w okolicy…": "Looking for sights nearby…",
   "{} {} – dotknij, by dodać": "{} {} – tap to add", "Nic tu nie znaleziono – przesuń mapę": "Nothing found here – move the map",
   "Serwery map nie odpowiadają – spróbuj za chwilę": "Map servers are not responding – try again shortly", "⏳ Uzupełniam z OpenStreetMap…": "⏳ Adding more from OpenStreetMap…",
+
+  "🚫 Nie pokazuj tego zdjęcia": "🚫 Don't show this photo", "To zdjęcie nie pojawi się więcej": "This photo won't appear again",
 };
