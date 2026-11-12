@@ -37,6 +37,7 @@ testy powiadomień (t9, t11–t16) używają `chromium.launch({ channel: 'chromi
 | t25 | Azja: nazwy, odznaczanie pomysłów, podkład łaciński, kafelki offline, nawigacja geo:/Amap, NBP tabela B |
 | t27 | karty dla kierowcy (lokalny adres – Nominatim symulowany), rozmówki, mapa offline: pobieranie, mapa bez internetu, usuwanie |
 | t28 | zdjęcia miejsc: Wikipedia (w pobliżu i po nazwie), Commons, z Odkrywaj, własne, usuwanie, offline (sieć symulowana) |
+| t29 | tło ze zdjęć: lista z Commons (symulowana), pobieranie, zmiana przy przejściu, ustawienia, offline, wyłączenie |
 | t26 | angielski: wszystkie ekrany, wypisuje teksty, które zostały po polsku (powinno być „OK”) |
 
 Testy ustawiają `locale: 'pl-PL'` – bez tego aplikacja (język „Auto”) przełączy się na angielski.

@@ -111,6 +111,13 @@ Adres (po scaleniu pull requesta): https://chiniak.github.io/podroznik/
 - ⬜ Punkt → „🔎 Znajdź” / „📷 Własne” (aparat albo galeria) / „Usuń” – usunięte nie wraca samo
 - ⬜ Zdjęcia widoczne w trybie samolotowym; plan nie zwalnia przy wielu punktach
 
+## Tło ze zdjęć
+- ⬜ Po otwarciu z internetem w tle pojawia się zdjęcie, a przy każdym przejściu na inny ekran zmienia się na inne
+- ⬜ Tekst jest czytelny na jasnych i ciemnych zdjęciach (motyw jasny i ciemny) – czy mgiełka nie jest za mocna / za słaba?
+- ⬜ Czy zdjęcia pasują (krajobrazy, miasta, Azja) – jeśli trafi się coś dziwnego, zapisz tytuł z Ustawienia → Tło
+- ⬜ Ustawienia → Tło → „Bez zdjęć” wyłącza; licznik „pobrane N/100” rośnie; w trybie samolotowym tło nadal się zmienia
+- ⬜ Aplikacja nie zwalnia przy przechodzeniu między ekranami
+
 ## Znane ograniczenia (nie błędy, ale do oceny)
 - Godziny są „na zegarku” (czas lokalny z biletu) – czas lotu między strefami czasowymi może wyjść o godzinę za dużo / za mało
 - Zdjęcie podróży (pkt 6 planu) – na razie tylko kolor

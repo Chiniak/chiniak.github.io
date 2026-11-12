@@ -188,6 +188,7 @@
     if (r.after) r.after(view);
     cleanup = r.cleanup || null;
     window.scrollTo(0, 0);
+    if (App.Backdrop) App.Backdrop.next(); // losowe zdjęcie w tle przy każdej zmianie ekranu
   }
   App.render = render;
 
@@ -205,6 +206,13 @@
           <h2>Motyw</h2>
           <div class="seg" role="group" aria-label="Motyw">${opt("auto", "Auto")}${opt("light", "Jasny")}${opt("dark", "Ciemny")}</div>
         </div>
+        ${App.Backdrop ? `<div class="card">
+          <h2>Tło</h2>
+          <div class="seg" role="group" aria-label="Tło">
+            <button type="button" data-bg-opt="1" aria-pressed="${App.Backdrop.enabled}">Zdjęcia</button>
+            <button type="button" data-bg-opt="0" aria-pressed="${!App.Backdrop.enabled}">Bez zdjęć</button></div>
+          <div id="bg-info" class="small muted" style="margin-top:8px"></div>
+        </div>` : ""}
         <div class="card">
           <h2>Dane w telefonie</h2>
           <div id="storage" class="muted">Sprawdzam…</div>
@@ -247,6 +255,19 @@
           v.querySelectorAll("[data-theme-opt]").forEach(x => x.setAttribute("aria-pressed", x === b));
         }));
         showStorage();
+        const bgInfo = async () => {
+          const box = v.querySelector("#bg-info");
+          if (!box) return;
+          const i = await App.Backdrop.info();
+          box.innerHTML = !i.enabled ? "Jednolite tło." : `Losowe zdjęcie przy każdej zmianie ekranu · pobrane ${i.count}/${i.max}${i.count < i.max ? " (kolejne dochodzą przy przeglądaniu, z internetem)" : ""}.` +
+            (i.current ? `<br><span>Teraz:</span> <a href="${App.esc(i.current.page)}" target="_blank" rel="noopener" translate="no">${App.esc(i.current.title)}</a>${i.current.by ? ` <span translate="no">· ${App.esc(i.current.by)}</span>` : ""} <span>(Wikimedia Commons)</span>` : "");
+        };
+        setTimeout(bgInfo, 300);
+        v.querySelectorAll("[data-bg-opt]").forEach(b => b.addEventListener("click", async () => {
+          await App.Backdrop.setEnabled(b.dataset.bgOpt === "1");
+          v.querySelectorAll("[data-bg-opt]").forEach(x => x.setAttribute("aria-pressed", x === b));
+          setTimeout(bgInfo, 300);
+        }));
         v.querySelectorAll("[data-lang-opt]").forEach(b => b.addEventListener("click", async () => {
           const val = b.dataset.langOpt;
           try { localStorage.setItem("podroznik-lang", val); } catch (e) { /* brak dostępu */ }
