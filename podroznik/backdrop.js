@@ -22,6 +22,13 @@
 
   let enabled = true;
   try { enabled = localStorage.getItem("podroznik-bg") !== "0"; } catch (e) { /* brak dostępu */ }
+  /* jak często nowe zdjęcie (zgłoszone 13.11: zmiana przy każdym ekranie – ekran za często „miga”):
+     "screen" – przy każdej zmianie ekranu, "10" – najwyżej co 10 minut, "start" – przy uruchomieniu aplikacji (domyślnie), "day" – raz dziennie.
+     localStorage: podroznik-bg-every (tryb), podroznik-bg-last ({ src, at } – ostatnio pokazane, do trybu dziennego i 10 min) */
+  const EVERY = ["screen", "10", "start", "day"];
+  const ls = (k, v) => { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } };
+  let every = EVERY.includes(ls("podroznik-bg-every")) ? ls("podroznik-bg-every") : "start";
+  const lastShown = () => { try { return JSON.parse(ls("podroznik-bg-last") || "null"); } catch (e) { return null; } };
   let layers = null, front = 0, current = null, urls = [], busy = false;
 
   /* ---------- lista kandydatów z Commons ---------- */
@@ -128,13 +135,22 @@
     layers[1 - front].classList.remove("on");
     document.documentElement.classList.add("has-bg");
     current = src;
+    ls("podroznik-bg-last", JSON.stringify({ src, at: Date.now() }));
     urls.push(url);
     while (urls.length > 2) URL.revokeObjectURL(urls.shift()); // poprzednie zdjęcie znika płynnie, starsze można zwolnić
     return true;
   }
 
-  // nowe losowe tło – wywoływane przy każdej zmianie ekranu (app.js → render)
-  async function next() {
+  // czy już czas na nowe zdjęcie (według ustawienia „jak często”)
+  function due(force) {
+    if (force || !current || every === "screen") return true;
+    const last = lastShown();
+    if (every === "10") return !last || Date.now() - last.at >= 10 * 60000;
+    if (every === "day") return !last || new Date(last.at).toDateString() !== new Date().toDateString();
+    return false; // "start" – tylko przy uruchomieniu
+  }
+  // tło – wywoływane przy każdej zmianie ekranu (app.js → render); nowe zdjęcie tylko gdy czas (due), force – od razu inne
+  async function next(force) {
     if (!enabled || !self.caches) return;
     let have = await cachedKeys();
     if (have.length < MAX) { // w tle dociągnij kolejne (na początku 3, potem po jednym)
@@ -143,7 +159,13 @@
         for (let i = 0; i < n; i++) { const src = await downloadOne(await cachedKeys()); if (!src) break; if (!current) await show(src); }
       })();
     }
-    if (!have.length) return;
+    if (!have.length || !due(force)) return;
+    // pierwsze tło po uruchomieniu w trybie dziennym / 10 min – to samo co ostatnio, jeśli jeszcze nie minął czas
+    if (!current && !force && every !== "screen" && every !== "start") {
+      const last = lastShown();
+      const keep = last && have.includes(last.src) && (every === "day" ? new Date(last.at).toDateString() === new Date().toDateString() : Date.now() - last.at < 10 * 60000);
+      if (keep) { const at = last.at; await show(last.src); ls("podroznik-bg-last", JSON.stringify({ src: last.src, at })); return; }
+    }
     const choices = have.length > 1 ? have.filter(u => u !== current) : have;
     await show(choices[Math.floor(Math.random() * choices.length)]);
   }
@@ -152,7 +174,7 @@
     enabled = on;
     try { localStorage.setItem("podroznik-bg", on ? "1" : "0"); } catch (e) { /* brak dostępu */ }
     await DB.setSetting("bgPhotos", on);
-    if (on) next();
+    if (on) next(true);
     else {
       document.documentElement.classList.remove("has-bg");
       if (layers) layers.forEach(l => l.classList.remove("on"));
@@ -175,13 +197,14 @@
     if (saved) await DB.setSetting("bgPool", { ...saved, items: saved.items.filter(x => x.src !== src) });
     try { await (await caches.open(CACHE)).delete(src); } catch (e) { /* brak pamięci */ }
     current = null;
-    await next();
+    await next(true);
   }
+  function setEvery(v) { if (EVERY.includes(v)) { every = v; ls("podroznik-bg-every", v); } }
   async function clear() {
     await caches.delete(CACHE);
     document.documentElement.classList.remove("has-bg");
     current = null;
   }
 
-  App.Backdrop = { next, setEnabled, info, clear, block, BAD, get enabled() { return enabled; } };
+  App.Backdrop = { next, setEnabled, setEvery, info, clear, block, BAD, get enabled() { return enabled; }, get every() { return every; } };
 })();

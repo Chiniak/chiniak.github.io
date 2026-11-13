@@ -1,11 +1,11 @@
 # Podróżnik – stan projektu (do kontynuacji w nowej sesji)
 
-Ostatnia aktualizacja: 13 listopada 2026 – scalone PR #1–#14; na gałęzi nic nie czeka. Zacznij od przeczytania tego pliku, potem `PLAN.md` i `DO-SPRAWDZENIA.md`.
+Ostatnia aktualizacja: 13 listopada 2026 – scalone PR #1–#14; na gałęzi czeka: rzadsza zmiana tła (PR #15 do zrobienia). Zacznij od przeczytania tego pliku, potem `PLAN.md` i `DO-SPRAWDZENIA.md`.
 
 ## Gdzie co jest
 - Repozytorium: `chiniak/chiniak.github.io`, gałąź **`claude/travel-planning-app-tl9mvf`**
 - Gałąź robocza: po scaleniu PR zacznij ją od nowa od `origin/main` (`git checkout -B claude/travel-planning-app-tl9mvf origin/main`), nie nadpisuj historii (force push zablokowany). Nowy PR po każdej porcji zmian – właściciel scala sam.
-- Aplikacja na żywo: https://chiniak.github.io/podroznik/ – wersja „1.2 · etapy 0–11”, pamięć offline **`podroznik-v35`**. APK: https://chiniak.github.io/podroznik/Podroznik.apk (zmiany w stronie nie wymagają nowego APK).
+- Aplikacja na żywo: https://chiniak.github.io/podroznik/ – wersja „1.2 · etapy 0–11”, pamięć offline **`podroznik-v36`**. APK: https://chiniak.github.io/podroznik/Podroznik.apk (zmiany w stronie nie wymagają nowego APK).
 - `podroznik/` – aplikacja (PWA, czysty JS bez frameworka, dane w IndexedDB, offline przez service worker)
 - `podroznik-android/` – projekt APK (Trusted Web Activity, Bubblewrap), instrukcja w jego README
 - `podroznik-testy/` – testy Playwright + przykładowe dane, instrukcja w README (serwer: `python3 -m http.server 8765` w katalogu repo)
@@ -32,6 +32,7 @@ Ostatnia aktualizacja: 13 listopada 2026 – scalone PR #1–#14; na gałęzi ni
 - #12 (scalony 13.11): bilety i screeny w planie + nowy odczyt maili i plików.
 - #13 (scalony 13.11): **odczyt biletów ze zdjęć (OCR)** – zgłoszone 13.11: „wrzucenie planu przez zdjęcie nie uzupełnia pustych pól” (wcześniej czytany był tylko PDF, i to tylko dzień/godzina). `ocr.js` + `lib/ocr/` (Tesseract.js 6, pol+eng, ~6 MB, wersja SIMD gdy telefon umie). `infoFromText` w plan.js: dzień, godzina, nazwa (etykieta „Wydarzenie:” albo pierwszy zwykły wiersz), miejsce (etykieta, także w następnym wierszu; nie numer miejsca siedzącego), cena (etykieta albo jedyna kwota z walutą); tylko puste pola; także dla PDF. Pliki OCR w pamięci `ocr-pliki` (sw.js, najpierw pamięć, nie kasowana przy nowej wersji); krok „🔎 Odczyt biletów ze zdjęć” w Przygotuj offline. `amount()` w email.js rozumie „1.200.000” (VND). Test `t36` (`fx/bilet-screen.png`, `gen-screen.js`).
 - #14 (scalony 13.11, **właściciel potwierdził na telefonie: odczyt zdjęcia biletu działa i uzupełnia plan**): zgłoszone 13.11 ze screenem – „po wrzuceniu zdjęcia biletu nic się nie dzieje”. Dwie przyczyny: (1) screen trafił do pola „Zdjęcie” (📷 Własne – zdjęcie miejsca), gdzie OCR nie działał; (2) karta przejazdu w **trybie ciemnym** – Tesseract prawie nic nie czytał. Teraz: `prepare()` w ocr.js – odcienie szarości, ciemne tło odwrócone, rozciągnięty kontrast, małe zdjęcia powiększone (próba z potęgą/gamma pogorszyła wynik – nie wracać); „📷 Własne” w nowym punkcie bez nazwy też czyta tekst, a gdy znajdzie datę/godzinę, przenosi obraz do 🎫 Biletów zamiast zdjęcia miejsca. `infoFromText`: układ „Departs at / Arrives at” (też Odjazd/Przyjazd) → nazwa „A → B” i godzina odjazdu; daty z błędami OCR („1208:2026”); odrzucane „śmieci” („zZh32m”, „2 h 32 m”, „Reservation number”); cena bez etykiety tylko na początku/końcu wiersza. Test `t36` (+ `fx/bilet-ciemny.png`).
+- (gałąź, PR #15 do zrobienia): **rzadsza zmiana tła** – zgłoszone 13.11: tło działa, ale zmiana przy każdym ekranie = ekran za często miga. Ustawienie „Nowe zdjęcie” w Ustawienia → Tło: przy uruchomieniu aplikacji (**domyślnie**), co 10 minut, raz dziennie, przy każdej zmianie ekranu (`App.Backdrop.setEvery`, localStorage `podroznik-bg-every`, ostatnie zdjęcie `podroznik-bg-last`). Pobieranie kolejnych zdjęć dalej przy przeglądaniu. Przenikanie 1,2 s zamiast 0,6 s. Test `t29`.
 - **Prywatność:** repozytorium jest publiczne – przykłady w `podroznik-testy/mails` mają zmyślone dane i inne trasy/daty niż prawdziwe rezerwacje właściciela. Nie wpisuj tu jego planów podróży (właściciel dostał 13.11 plik podróży zrobiony z jego Gmaila – poza repozytorium).
 
 ## Właściciel – preferencje i uwagi
@@ -47,7 +48,7 @@ Ostatnia aktualizacja: 13 listopada 2026 – scalone PR #1–#14; na gałęzi ni
 - Wszystko od PR #6 testowane tylko w przeglądarce z symulowaną siecią (w środowisku chmurowym nie ma dostępu do OSM/Wikipedii/CARTO).
 
 ## Co zostało (stan na koniec sesji 13.11 – TU ZACZNIJ)
-1. OCR biletów ze zdjęć – działa (potwierdzone 13.11). Dalej: testy z listy poniżej i pomysły z pkt 5. Właściciel scala PR sam z telefonu.
+1. **PR #15** – rzadsza zmiana tła; jeśli jeszcze nie istnieje, zapytaj właściciela. OCR biletów ze zdjęć – działa (potwierdzone 13.11). Właściciel scala PR sam z telefonu.
 2. **Testy na telefonie (właściciel, w toku):** tło po naprawie z PR #11 – czy pojawiają się zdjęcia (przy 0/100 w Ustawienia → Tło jest teraz podana przyczyna); „📥 Przygotuj offline”; potem po PR #12 – bilety w planie i odczyt maili. Lista: `DO-SPRAWDZENIA.md` (sekcje od 12.11).
 3. **Właściciel dostał w czacie plik podróży z jego Gmaila** (do wczytania: Podróże → „📥 Otwórz podróż od kogoś”) – zapytaj, czy wczytał i czy godziny się zgadzają. Szczegółów podróży nie zapisuj w repozytorium (publiczne).
 4. Jeśli odczyt jakiegoś maila wyjdzie źle – poprosić o treść (z zamazanymi danymi), dopisać przykład do `podroznik-testy/mails` ze ZMYŚLONYMI danymi i inną trasą/datą, sprawdzić `t35`.
@@ -77,7 +78,7 @@ Ostatnia aktualizacja: 13 listopada 2026 – scalone PR #1–#14; na gałęzi ni
 | `lib/` | pdf.js, bwip-js, ZXing, Leaflet, airports.js (OpenFlights), world.js (Natural Earth) – licencje w `lib/` |
 
 ## Zasady i pułapki (ważne przy zmianach)
-- **Po każdej zmianie plików aplikacji podbij `CACHE` w `sw.js`** (teraz `podroznik-v35`) i dopisz nowe pliki do listy `APP`.
+- **Po każdej zmianie plików aplikacji podbij `CACHE` w `sw.js`** (teraz `podroznik-v36`) i dopisz nowe pliki do listy `APP`.
 - Nowy magazyn danych = podbić `VERSION` w `db.js` i dodać do `STORES` (aktualizacja zachowuje dane – test t12).
 - Nasłuch zdarzeń podpinaj do elementów widoku, **nie do `#view`** (zostaje między ekranami → podwójne akcje).
 - Router ignoruje wolniej wczytany starszy ekran (`renderSeq` w `app.js`).
@@ -88,7 +89,7 @@ Ostatnia aktualizacja: 13 listopada 2026 – scalone PR #1–#14; na gałęzi ni
 - Ustawienia: `navApp` (google/geo/amap → `App.mapsUrl`), `mapLayer` (latin/osm), `lang` (też w localStorage `podroznik-lang`).
 - Mapa offline: pamięć `mapa-offline-<id podróży>` (tylko CARTO, zapis z adresem `a.basemaps…` bez parametrów); sw.js szuka kafelka we wszystkich pamięciach (`caches.match` z kluczem `canon()`), zapytania z `?podroznik-off=1` puszcza wprost do sieci. Usuwana razem z podróżą.
 - Odkrywaj: `overpass()` pyta serwery wyścigiem (kolejny po 2 s albo po błędzie, całość ≤ 15 s); `attractions(c, onPartial)` – Wikipedia równolegle, pierwsze wyniki od razu, potem połączone z OSM. Mapa: `popupFor`/`save` w places.js (zapis bez formularza), `keepNext`/`lastView` – odświeżenie bez przeskoku widoku, `pois` – atrakcje na mapie (🏛️). `.mp-map` ma własny kontekst warstw (`isolation`), żeby nie zasłaniać komunikatów.
-- Tło ze zdjęć: `App.Backdrop.next()` wołane na końcu `render()`; lista kandydatów `bgPool` (Commons, kategoria Featured pictures, wyszukiwanie po hasłach podróżniczych, odświeżana co 30 dni), zdjęcia w pamięci `tla-zdjecia` (max 100, po jednym przy przejściu; nie przy oszczędzaniu danych). Ustawienie `bgPhotos` + `localStorage podroznik-bg`. **Właściciel nie chce zdjęć religijnych** (dostał obraz Jezusa) – lista `bgPool.v = 2`: hasła tylko natura/miasta, wykluczenia w zapytaniu (`EXCLUDE`) i filtr `BAD` (tytuł, opis, kategorie); zmiana wersji kasuje pobrane zdjęcia. `bgBlocked` – zdjęcia ukryte przyciskiem. Czytelność: `--veil` (mgiełka) i półprzezroczyste paski z rozmyciem (`html.has-bg`).
+- Tło ze zdjęć: `App.Backdrop.next()` wołane na końcu `render()` (nowe zdjęcie tylko gdy `due()` – według ustawienia „jak często”); lista kandydatów `bgPool` (Commons, kategoria Featured pictures, wyszukiwanie po hasłach podróżniczych, odświeżana co 30 dni), zdjęcia w pamięci `tla-zdjecia` (max 100, po jednym przy przejściu; nie przy oszczędzaniu danych). Ustawienie `bgPhotos` + `localStorage podroznik-bg`. **Właściciel nie chce zdjęć religijnych** (dostał obraz Jezusa) – lista `bgPool.v = 2`: hasła tylko natura/miasta, wykluczenia w zapytaniu (`EXCLUDE`) i filtr `BAD` (tytuł, opis, kategorie); zmiana wersji kasuje pobrane zdjęcia. `bgBlocked` – zdjęcia ukryte przyciskiem. Czytelność: `--veil` (mgiełka) i półprzezroczyste paski z rozmyciem (`html.has-bg`).
 - Zdjęcia miejsc: pole `photo` { data (JPEG data URL ~360 px), page, credit, auto } w punkcie planu; `photoTry` = ostatnia próba (bez trafienia – nowa za 7 dni), `photoOff` = usunięte ręcznie, `photoUrl`/`wikiUrl` z Odkrywaj. Plan dociąga brakujące w tle (`App.Photos.fill`) i wstawia miniatury bez przeładowania (`data-pid`). Zmiana nazwy/położenia kasuje zdjęcie automatyczne.
 - Test t5 bywa czerwony blisko północy (godziny liczone od „teraz”) – także na niezmienionym kodzie. t3 wymaga wirtualnego aparatu (`make-cam.py`). Stare testy biorą katalog danych jako argument: `node podroznik-testy/t12.js podroznik-testy`.
 - „Ostatnia zmiana danych” liczona z pola `updated` (DB.put). Pobrane w tle dane (adresy kart, zdjęcia, kursy, mapa) zapisuj przez `putRaw`, żeby nie unieważniały kopii.

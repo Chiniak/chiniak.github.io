@@ -770,7 +770,7 @@ button.st-chip { font: inherit; font-size: 14px; cursor: pointer; }
 
 /* tło ze zdjęć (backdrop.js) – zdjęcie pod półprzezroczystą „mgiełką”, żeby tekst był czytelny */
 #bg { position: fixed; inset: 0; z-index: -1; pointer-events: none; }
-.bg-img { position: absolute; inset: 0; background: center / cover no-repeat; opacity: 0; transition: opacity .6s ease; }
+.bg-img { position: absolute; inset: 0; background: center / cover no-repeat; opacity: 0; transition: opacity 1.2s ease; } /* wolne przenikanie – bez „mignięcia” */
 .bg-img.on { opacity: 1; }
 .bg-veil { position: absolute; inset: 0; background: var(--veil); }
 :root { --veil: rgba(244, 246, 246, .58); }

@@ -185,3 +185,7 @@ Adres (po scaleniu pull requesta): https://chiniak.github.io/podroznik/
 - [ ] Jeśli coś wpisze źle – prześlij screen (dane możesz zamazać)
 - [ ] Screen w trybie ciemnym (np. karta pociągu z Gmaila/Google) – odczytuje „A → B”, dzień, godzinę odjazdu
 - [ ] Screen wrzucony przez „📷 Własne” w nowym punkcie – też czyta tekst; bilet przenosi się do „🎫 Bilety i zdjęcia”
+
+## Rzadsza zmiana tła (13.11)
+- [ ] Po scaleniu: przełączanie zakładek nie zmienia tła; nowe zdjęcie po ponownym uruchomieniu aplikacji
+- [ ] Ustawienia → Tło → „Nowe zdjęcie”: przy uruchomieniu / co 10 minut / raz dziennie / przy każdej zmianie ekranu
