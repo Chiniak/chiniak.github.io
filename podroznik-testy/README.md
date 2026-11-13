@@ -44,6 +44,7 @@ testy powiadomień (t9, t11–t16) używają `chromium.launch({ channel: 'chromi
 | t33 | kopia poza telefonem: przypomnienie przed wyjazdem tylko przy zmianach, krok w Przygotuj offline, ostrzeżenie i porady na ekranie kopii, wyłącznik |
 | t34 | bilety w planie: „Z biletu lub screena” → punkt (dzień i godzina z PDF), 🎫 w planie, pełny ekran, QR ze screena, zakładka Bilety, usunięcie z biletami |
 | t35 | odczyt rezerwacji: Booking.com, Gotogate, Trip.com (lot, pociąg w Chinach), Trainline, Rail Europe, Agoda, Airbnb, AirAsia, 12Go, HTML; pliki PDF / .ics / .eml |
+| t36 | odczyt biletu ze zdjęcia/screena (OCR): nazwa, dzień, godzina, miejsce, cena; tylko puste pola; działa offline (`fx/bilet-screen.png`, generowany przez `gen-screen.js`) – pierwszy przebieg ~10 s–1,5 min |
 | t26 | angielski: wszystkie ekrany, wypisuje teksty, które zostały po polsku (powinno być „OK”) |
 
 Testy ustawiają `locale: 'pl-PL'` – bez tego aplikacja (język „Auto”) przełączy się na angielski.

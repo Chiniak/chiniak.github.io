@@ -76,6 +76,7 @@
     else if (/\.\d{3},/.test(s)) s = s.replace(/\./g, "").replace(",", ".");        // 1.590,00
     else if (/,\d{1,2}$/.test(s)) s = s.replace(",", ".");                          // 242,89
     else if (/,\d{3}$/.test(s)) s = s.replace(/,/g, "");                            // 1,590
+    else if (/^\d{1,3}(\.\d{3})+$/.test(s) && /\.\d{3}\./.test(s)) s = s.replace(/\./g, ""); // 1.200.000 (VND)
     return String(+s || "");
   }
   function common(text) {
@@ -572,5 +573,5 @@
     };
   });
 
-  App.Email = { parse, findDates, normalize, fileText };
+  App.Email = { parse, findDates, findTimes, normalize, fileText, common, amount, CUR };
 })();
