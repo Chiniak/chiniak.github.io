@@ -362,11 +362,12 @@
      Dzień: pierwsza data w dniach podróży (albo pierwsza przyszła, albo pierwsza w ogóle), godzina tuż przy niej. */
   const LABEL_TITLE = /^(?:wydarzenie|nazwa(?: wydarzenia)?|tytuł|event(?: name)?|title|show|spektakl|koncert|concert|attraction|atrakcja|tour|wycieczka|activity|aktywność|product|produkt|bilet na|ticket for)\s*[:\-–]\s*(.{3,})$/i;
   const LABEL_PLACE = /^(?:miejsce(?: wydarzenia)?|lokalizacja|venue|location|adres|address|where|gdzie|meeting point|miejsce zbiórki|pick-?up(?: point)?|obiekt)\s*[:\-–]?\s*(.*)$/i;
-  const NOT_TITLE = /(bilet|ticket|e-?ticket|voucher|potwierdzenie|confirmation|zamówieni|order|rezerwacj|booking|faktura|invoice|paragon|receipt|https?:|www\.|@|\.(com|pl|net)\b|cena|price|total|razem|suma|kod|code|nr\b|no\.|data|date|godz|time|rząd|row|seat|sektor|sector|gate|brama|wejście|entrance|dear|szanown|dziękujemy|thank)/i;
+  const NOT_TITLE = /(bilet|ticket|e-?ticket|voucher|potwierdzenie|confirmation|zamówieni|order|rezerwacj|booking|faktura|invoice|paragon|receipt|https?:|www\.|@|\.(com|pl|net)\b|cena|price|total|razem|suma|kod|code|reservation|numer|number|nr\b|no\.|based on|correct\?|data|date|godz|time|rząd|row|seat|sektor|sector|gate|brama|wejście|entrance|dear|szanown|dziękujemy|thank)/i;
   function infoFromText(raw, trip) {
     const E = App.Email;
     if (!E || !E.findDates) return null;
-    const text = E.normalize(raw);
+    // typowe błędy OCR w datach: „12/08/2026” odczytane jako „1208:2026”, „12.08 2026”
+    const text = E.normalize(raw).replace(/\b(\d{2})[\/.:\- ]?(\d{2})[\/.:\- ](20\d{2})\b/g, (m, d, mo, y) => +d <= 31 && +mo <= 12 && +mo >= 1 ? `${d}.${mo}.${y}` : m);
     const out = {};
     const dates = E.findDates(text);
     if (dates.length) {
@@ -380,10 +381,22 @@
     }
     const lines = text.split("\n").map(l => l.replace(/[|_~«»]+/g, " ").replace(/\s+/g, " ").trim()).filter(Boolean);
     const letters = l => (l.match(/\p{L}/gu) || []).length;
+    // „śmieci” z OCR: słowa z cyframi w środku („zZh32m”), czas trwania („2 h 32 m”), krótkie urywki
+    const junk = l => /\b\p{L}*\d+\p{L}+\d*\b|\b\d+\s?h\s?\d+\s?m(in)?\b/iu.test(l) || !/\p{L}{3}/u.test(l);
+    // przejazd (karta Google, aplikacje przewoźników): „Departs at 15:08” / „Odjazd 15:08” + stacja w wierszu nad nim
+    const DEP = /^(?:departs?(?: at)?|departure|odjazd|wyjazd|odlot|abfahrt)\b/i, ARR = /^(?:arrives?(?: at)?|arrival|przyjazd|przylot|ankunft)\b/i;
+    const di = lines.findIndex(l => DEP.test(l)), ai = lines.findIndex(l => ARR.test(l));
+    const station = i => i > 0 && !junk(lines[i - 1]) && letters(lines[i - 1]) >= 3 && !DEP.test(lines[i - 1]) && !ARR.test(lines[i - 1]) && lines[i - 1].length <= 60 ? lines[i - 1] : "";
+    if (di >= 0) {
+      const t = E.findTimes(lines[di])[0];
+      if (t) out.time = t.time; // godzina odjazdu ważniejsza niż ta przy dacie
+      const a = station(di), b = ai > di ? station(ai) : "";
+      if (a || b) out.title = a && b ? `${a} → ${b}` : b ? `→ ${b}` : a;
+    }
     // nazwa: wiersz z etykietą („Wydarzenie: …”), inaczej pierwszy „zwykły” wiersz z kilku pierwszych
-    for (const l of lines) { const m = l.match(LABEL_TITLE); if (m && letters(m[1]) >= 3) { out.title = m[1].trim(); break; } }
+    if (!out.title) for (const l of lines) { const m = l.match(LABEL_TITLE); if (m && letters(m[1]) >= 3) { out.title = m[1].trim(); break; } }
     if (!out.title) out.title = (lines.slice(0, 10).find(l => l.length >= 4 && l.length <= 70 && letters(l) >= 4 && letters(l) / l.length > 0.6
-      && !NOT_TITLE.test(l) && !E.findDates(l).length && !E.findTimes(l).length && /\p{L}{3}/u.test(l)) || "");
+      && !NOT_TITLE.test(l) && !junk(l) && !DEP.test(l) && !ARR.test(l) && !E.findDates(l).length && !E.findTimes(l).length && /\p{L}{3}/u.test(l)) || "");
     // miejsce: po etykiecie (w tym samym albo następnym wierszu); nie numer miejsca siedzącego
     for (let i = 0; i < lines.length; i++) {
       const m = lines[i].match(LABEL_PLACE);
@@ -400,7 +413,11 @@
     if (c.price) { out.cost = c.price; out.currency = c.currency; }
     else {
       const CURS = "PLN|zł|EUR|€|USD|US\\$|\\$|GBP|£|CHF|CZK|Kč|CNY|RMB|¥|THB|฿|VND|₫|LAK|₭|KHR|JPY|HKD|SGD|MYR|IDR";
-      const all = [...text.matchAll(new RegExp(`(\\d[\\d .,]*\\d|\\d) ?(${CURS})(?![\\p{L}])|(${CURS}) ?(\\d[\\d .,]*\\d|\\d)`, "gu"))];
+      // tylko kwota na początku albo końcu wiersza (nie „2 £ 3” – źle odczytane „2 & 3” w nazwie stacji)
+      const re = new RegExp(`^(?:(\\d[\\d .,]*\\d|\\d) ?(${CURS})(?![\\p{L}])|(${CURS}) ?(\\d[\\d .,]*\\d|\\d))$`, "u");
+      const all = lines.flatMap(l => { const w = l.split(" "); const out = [];
+        for (let n = 1; n <= Math.min(3, w.length); n++) for (const part of [w.slice(0, n).join(" "), w.slice(-n).join(" ")]) { const m = part.match(re); if (m) out.push(m); }
+        return out; });
       const vals = [...new Set(all.map(m => `${E.amount(m[1] || m[4])}|${E.CUR[m[2] || m[3]] || (m[2] || m[3]).toUpperCase()}`))].filter(v => !v.startsWith("|"));
       if (vals.length === 1) [out.cost, out.currency] = vals[0].split("|");
     }
@@ -501,16 +518,16 @@
         // Uzupełniane tylko puste pola (to, co wpisał użytkownik, zostaje).
         const note = view.querySelector("#pl-file-note");
         let reading = false;
-        const readInfo = async list => {
-          if (it || reading) return;
+        const readInfo = async (list, quiet) => {
+          if (it || reading) return null;
           const pdf = list.find(x => /pdf/i.test(x.type) || /\.pdf$/i.test(x.name));
           const img = list.find(x => /^image\//i.test(x.type) || /\.(jpe?g|png|webp|heic|gif)$/i.test(x.name));
           const src = pdf || img;
-          if (!src) return;
-          if (!pdf && !App.Ocr) return;
+          if (!src) return null;
+          if (!pdf && !App.Ocr) return null;
           reading = true;
           const old = note ? note.textContent : "";
-          const say = m => { if (note) note.textContent = m; };
+          const say = m => { if (note) note.textContent = m; if (quiet && m) App.toast(m); };
           let txt = "";
           try {
             if (pdf && App.Tickets.pdfText) txt = await App.Tickets.pdfText(pdf);
@@ -519,12 +536,12 @@
               txt = await App.Ocr.text(img, p => say(`🔎 Czytam tekst ze zdjęcia… ${Math.round(p * 100)}%`));
             }
           } catch (e) {
-            reading = false; say(old);
-            if (img && !pdf) App.toast(navigator.onLine ? "Nie udało się odczytać tekstu ze zdjęcia – uzupełnij sam" : "Odczyt zdjęć wymaga jednorazowego pobrania (internet) – uzupełnij sam");
-            return;
+            reading = false; if (note) note.textContent = old;
+            if (img && !pdf && !quiet) App.toast(navigator.onLine ? "Nie udało się odczytać tekstu ze zdjęcia – uzupełnij sam" : "Odczyt zdjęć wymaga jednorazowego pobrania (internet) – uzupełnij sam");
+            return null;
           }
-          reading = false; say(old);
-          if (!f.isConnected) return;
+          reading = false; if (note) note.textContent = old;
+          if (!f.isConnected) return null;
           const w = infoFromText(txt, trip);
           const got = [];
           if (w) {
@@ -537,7 +554,9 @@
             if (w.place && f.place && !f.place.value.trim()) { f.place.value = w.place; got.push("miejsce"); }
             if (w.cost && !f.cost.value.trim()) { f.cost.value = w.cost.replace(".", ","); if (w.currency) f.currency.value = w.currency; got.push(`${w.cost.replace(".", ",")} ${w.currency || ""}`.trim()); }
           }
-          App.toast(got.length ? `Z biletu: ${got.join(" · ")} – sprawdź` : "Nie znalazłem na bilecie daty ani nazwy – uzupełnij sam");
+          if (got.length) App.toast(`Z biletu: ${got.join(" · ")} – sprawdź`);
+          else if (!quiet) App.toast("Nie znalazłem na bilecie daty ani nazwy – uzupełnij sam");
+          return w;
         };
         if (fileBox) {
           showNew();
@@ -568,10 +587,21 @@
           view.querySelector("#pl-ph-file").onchange = async e => {
             const file = e.target.files[0];
             if (!file) return;
+            e.target.value = "";
+            const prev = photo;
             try {
               const blob = await App.Photos.toData(URL.createObjectURL(file), 480);
               setPhoto({ data: blob, page: "", credit: "", auto: false });
-            } catch (err) { App.toast("Nie udało się wczytać zdjęcia"); }
+            } catch (err) { App.toast("Nie udało się wczytać zdjęcia"); return; }
+            // nowy punkt bez nazwy: może to screen biletu – odczyt tekstu; bilet (data/godzina) trafia do 🎫 Biletów, nie jako zdjęcie miejsca
+            if (!it && fileBox && !f.title.value.trim() && App.Ocr) {
+              const w = await readInfo([file], true);
+              if (w && (w.date || w.time) && f.isConnected) {
+                newFiles.push(file); showNew();
+                setPhoto(prev === undefined ? null : prev);
+                if (prev === undefined) photo = undefined;
+              }
+            }
           };
           phDel.onclick = () => setPhoto(null);
         }

@@ -17,4 +17,18 @@ const path = require('path');
       </div>
       <div style="margin-top:26px;width:180px;height:180px;background:repeating-linear-gradient(45deg,#000 0 6px,#fff 6px 12px)"></div>
     </div></body>`);
-  await p.screenshot({ path: path.join(__dirname, 'fx', 'bilet-screen.png') }); await b.close(); })();
+  await p.screenshot({ path: path.join(__dirname, 'fx', 'bilet-screen.png') });
+  // karta przejazdu w trybie ciemnym (jasny tekst na ciemnym tle) – jak w Gmailu / Google
+  await p.setContent(`<body style="font-family:Roboto,Arial,sans-serif;margin:0;background:#202124;color:#e8eaed;padding:24px">
+    <div style="background:#3c4043;border-radius:18px;padding:22px 22px 22px 70px;position:relative">
+      <div style="font-size:15px;color:#bdc1c6">Leeds</div>
+      <div style="font-size:26px;margin:4px 0 22px">Departs at 09:12</div>
+      <div style="font-size:15px;color:#bdc1c6">York</div>
+      <div style="font-size:26px;margin:4px 0 6px">Arrives at 09:41</div>
+      <div style="font-size:14px;color:#bdc1c6;margin-bottom:22px">29 m</div>
+      <div style="font-size:15px;color:#bdc1c6">Reservation number</div>
+      <div style="font-size:16px">QX77120, 04/09/2027 09:12</div>
+    </div>
+    <div style="font-size:13px;color:#9aa0a6;margin-top:14px">Based on this email &nbsp;&nbsp;&nbsp; Correct?</div></body>`);
+  await p.setViewportSize({ width: 412, height: 420 });
+  await p.screenshot({ path: path.join(__dirname, 'fx', 'bilet-ciemny.png') }); await b.close(); })();

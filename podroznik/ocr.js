@@ -25,17 +25,34 @@
     });
   }
 
-  // duże zdjęcie (aparat 4000 px) zmniejszone do ~2000 px – szybciej i mniej pamięci; screen bez zmian
+  /* przygotowanie zdjęcia: rozmiar ~1000–2200 px (małe powiększone, duże zmniejszone), odcienie szarości,
+     ciemny motyw (jasny tekst na ciemnym tle – np. karty Google, aplikacje przewoźników) odwrócony na czarne na białym,
+     rozciągnięty kontrast. Bez tego OCR prawie nic nie czyta ze screenów w trybie ciemnym. */
   async function prepare(blob) {
     if (!self.createImageBitmap) return blob;
     const bmp = await createImageBitmap(blob);
-    const k = Math.min(1, 2200 / Math.max(bmp.width, bmp.height));
-    if (k === 1) { bmp.close && bmp.close(); return blob; }
+    const big = Math.max(bmp.width, bmp.height);
+    const k = big > 2600 ? 2600 / big : bmp.width < 1600 ? Math.min(2, 2000 / bmp.width, 2600 / big) : 1;
     const c = document.createElement("canvas");
     c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
-    c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+    const x = c.getContext("2d", { willReadFrequently: true });
+    x.imageSmoothingQuality = "high";
+    x.drawImage(bmp, 0, 0, c.width, c.height);
     bmp.close && bmp.close();
-    return new Promise(r => c.toBlob(b => r(b || blob), "image/jpeg", 0.92));
+    const img = x.getImageData(0, 0, c.width, c.height), d = img.data;
+    const hist = new Uint32Array(256);
+    for (let i = 0; i < d.length; i += 4) { const g = (d[i] * 299 + d[i + 1] * 587 + d[i + 2] * 114) / 1000 | 0; d[i] = g; hist[g]++; }
+    const n = d.length / 4;
+    let acc = 0, lo = 0, hi = 255, sum = 0;
+    for (let g = 0; g < 256; g++) sum += g * hist[g];
+    const dark = sum / n < 110; // przeważnie ciemne tło
+    for (let g = 0; g < 256; g++) { acc += hist[g]; if (acc <= n * 0.01) lo = g; if (acc <= n * 0.99) hi = g; }
+    if (hi - lo < 40) { lo = 0; hi = 255; }
+    const map = new Uint8ClampedArray(256);
+    for (let g = 0; g < 256; g++) { let v = (g - lo) * 255 / (hi - lo); if (dark) v = 255 - v; map[g] = v; }
+    for (let i = 0; i < d.length; i += 4) { const v = map[d[i]]; d[i] = d[i + 1] = d[i + 2] = v; }
+    x.putImageData(img, 0, 0);
+    return new Promise(r => c.toBlob(b => r(b || blob), "image/png"));
   }
 
   // tekst ze zdjęcia; onProgress(0..1)

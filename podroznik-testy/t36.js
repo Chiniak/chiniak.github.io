@@ -33,6 +33,15 @@ const FX = path.join(__dirname, 'fx');
   await p.waitForFunction(() => document.querySelector('#pl-form').time.value, null, { timeout: 90000 }).catch(() => {});
   console.log('keep typed:', JSON.stringify(await form()));
 
+  // 2b. ciemny screen przejazdu wrzucony jako „📷 Własne” zdjęcie miejsca – odczyt i przeniesienie do biletów
+  await p.goto(`http://localhost:8765/podroznik/#/plan/${id}`); await p.waitForTimeout(400);
+  await p.goto(`http://localhost:8765/podroznik/#/plan/${id}/nowy?d=2027-03-14`); await p.waitForTimeout(600);
+  await p.setInputFiles('#pl-ph-file', path.join(FX, 'bilet-ciemny.png'));
+  await p.waitForFunction(() => document.querySelector('#pl-form').title.value, null, { timeout: 90000 }).catch(() => {});
+  await p.waitForTimeout(300);
+  console.log('dark via photo:', JSON.stringify(await form()), '| tickets:', await p.$$eval('#pl-files .pl-file', e => e.map(x => x.textContent.trim())),
+    '| place photo:', await p.$$eval('#pl-ph img', e => e.length));
+
   // 3. offline (bez sieci) – pliki z pamięci
   await ctx.setOffline(true);
   await p.goto(`http://localhost:8765/podroznik/#/plan/${id}`); await p.waitForTimeout(500);
