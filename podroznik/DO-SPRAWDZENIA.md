@@ -138,3 +138,11 @@ Adres (po scaleniu pull requesta): https://chiniak.github.io/podroznik/
 - [ ] W okienku „Otwórz” prowadzi do punktu, „🧭 Nawiguj” otwiera nawigację
 - [ ] Lista pod mapą ma miniatury zdjęć
 - [ ] Karty i rozmówki: miniatura zamiast ikonki 📍; na karcie dla kierowcy zdjęcie nad adresem w lokalnym piśmie
+
+## Przygotuj offline (13.11)
+- [ ] Na ekranie podróży jest „📥 Przygotuj offline” (tylko dla podróży, które się nie skończyły)
+- [ ] Dla podróży do Chin widać ostrzeżenie „Przed wjazdem do Chin”
+- [ ] „Przygotuj wszystko” przez Wi-Fi: karty, zdjęcia, kursy, pogoda i mapa dostają ✅
+- [ ] Po włączeniu trybu samolotowego: karta dla kierowcy, zdjęcia i mapa działają
+- [ ] „Ochrona danych” – w APK powinna się włączyć; jeśli nie, napisz
+- [ ] Budżet: „🏦 Pobierz kursy z NBP” działa

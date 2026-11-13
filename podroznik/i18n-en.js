@@ -455,4 +455,32 @@ self.I18N_EN = {
   "Serwery map nie odpowiadają – spróbuj za chwilę": "Map servers are not responding – try again shortly", "⏳ Uzupełniam z OpenStreetMap…": "⏳ Adding more from OpenStreetMap…",
 
   "🚫 Nie pokazuj tego zdjęcia": "🚫 Don't show this photo", "To zdjęcie nie pojawi się więcej": "This photo won't appear again",
+
+  /* ---------- Przygotuj offline (prep.js) ---------- */
+  "Przygotuj offline": "Prepare offline", "Przygotuj offline · {}": "Prepare offline · {}", "– mapa, karty, zdjęcia, kursy na zapas": "– map, cards, photos, rates in advance",
+  "🇨🇳 Przed wjazdem do Chin": "🇨🇳 Before entering China",
+  "W Chinach nie działają Google, Wikipedia i część serwerów map, a reszta bywa bardzo wolna. Zrób to w Polsce albo w hotelu z Wi-Fi przed granicą – potem karty, zdjęcia i mapa działają bez internetu. Nawigację ustaw na Amap (Ustawienia).":
+    "Google, Wikipedia and some map servers don't work in China, and the rest can be very slow. Do this at home or in a hotel with Wi-Fi before the border – then cards, photos and the map work without internet. Set navigation to Amap (Settings).",
+  "Pobierz na zapas wszystko, co potem wymaga internetu – najlepiej przez Wi-Fi przed wyjazdem. Bilety, plan i dokumenty są w telefonie zawsze.":
+    "Download in advance everything that later needs internet – preferably over Wi-Fi before you leave. Tickets, plan and documents are always on the phone.",
+  "{}/{} gotowe": "{}/{} ready", "📥 Przygotuj wszystko ({})": "📥 Prepare everything ({})", "✅ Wszystko gotowe do podróży bez internetu.": "✅ All set for travelling without internet.",
+  "🛡️ Włącz ochronę danych": "🛡️ Turn on data protection", "Zatrzymuję…": "Stopping…", "Otwórz: {}": "Open: {}",
+  "Możesz wyjść z tego ekranu – pobieranie trwa dalej, dopóki aplikacja jest otwarta. Przycisk można nacisnąć ponownie: pobierze tylko to, czego brakuje.":
+    "You can leave this screen – downloading continues while the app is open. You can press the button again: it only downloads what is missing.",
+  "Ochrona danych przed usunięciem": "Protect data from deletion", "Zdjęcia miejsc": "Place photos", "Kursy walut": "Exchange rates", "Pogoda": "Weather",
+  "włączona": "on", "telefon może usunąć pobrane mapy, gdy zabraknie miejsca": "the phone may delete downloaded maps when it runs out of space",
+  "adres": "address", "adresy": "addresses", "adresów": "addresses", "obszar": "area", "obszary": "areas", "obszarów": "areas",
+  "{}/{} {} w lokalnym piśmie": "{}/{} {} in local script", "brak miejsc z położeniem na mapie": "no places with a map location",
+  "{}/{} ze zdjęciem": "{}/{} with a photo", "{}/{} ze zdjęciem · do sprawdzenia {}": "{}/{} with a photo · {} to check", "brak punktów planu": "no plan items",
+  "brak walut obcych": "no foreign currencies", "brak kursu: {}": "no rate: {}", "brak kursu: {} – wpisz w budżecie": "no rate: {} – enter it in the budget",
+  "zapisana {}": "saved {}", "zapisana {} (zeszły rok – prognoza 16 dni przed)": "saved {} (last year – forecast 16 days before)", "nie pobrana": "not downloaded",
+  "podróż już minęła": "trip is over", "brak miejsc na mapie": "no places on the map",
+  "pobrane {}% · do pobrania ok. {} MB (najlepiej przez Wi-Fi)": "{}% downloaded · about {} MB to go (Wi-Fi recommended)", "pobrana · {} {} + przegląd": "downloaded · {} {} + overview",
+  "szukam adresu {}/{}…": "looking up address {}/{}…", "szukam zdjęć… (zostało {})": "looking for photos… ({} left)", "znaleziono {} · szukam dalej…": "found {} · still looking…",
+  "kurs {}…": "rate {}…", "pobieram…": "downloading…", "czekam…": "waiting…", "kafelki {}/{}": "tiles {}/{}", "kafelki {}/{} · błędy {}": "tiles {}/{} · errors {}",
+  "pobieranie mapy już trwa": "map download already running", "za mało miejsca w telefonie": "not enough space on the phone",
+  "Przygotowanie już trwa": "Already preparing", "Brak internetu – połącz się z Wi-Fi": "No internet – connect to Wi-Fi", "Zatrzymano – pobrane zostaje": "Stopped – downloaded data stays",
+  "Gotowe – podróż przygotowana offline ✅": "Done – trip ready offline ✅", "Gotowe częściowo – brakuje {} {}, spróbuj ponownie": "Partly done – {} {} missing, try again",
+  "rzeczy": "items", "Ochrona włączona": "Protection on",
+  "Przeglądarka nie zgodziła się – zainstaluj aplikację (APK) albo zwolnij miejsce": "The browser refused – install the app (APK) or free up space",
 };

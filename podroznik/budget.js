@@ -55,6 +55,17 @@
     return { trip, home, rates, items, spent, byCat, unknown, planned, plannedUnknown, currencies, budget: trip.budget ? num(trip.budget.amount) : 0 };
   }
 
+  // średni kurs NBP (ile PLN za 1 jednostkę) albo null; tabela A, a gdy waluty tam nie ma – tabela B (np. VND, LAK, KHR, MMK)
+  async function nbp(c) {
+    try {
+      let r = await fetch(`https://api.nbp.pl/api/exchangerates/rates/a/${encodeURIComponent(c)}/?format=json`);
+      if (r.status === 404) r = await fetch(`https://api.nbp.pl/api/exchangerates/rates/b/${encodeURIComponent(c)}/?format=json`);
+      if (!r.ok) return null;
+      const j = await r.json();
+      return +j.rates[0].mid.toPrecision(6);
+    } catch (e) { return null; } // brak internetu
+  }
+
   async function summary(tripId) {
     const d = await load(tripId);
     return d ? { spent: d.spent, budget: d.budget, home: d.home, unknown: Object.keys(d.unknown).length } : null;
@@ -186,22 +197,15 @@
           App.render();
         });
 
-        const nbp = view.querySelector("#bg-nbp");
-        if (nbp) nbp.onclick = async () => {
-          nbp.disabled = true; nbp.textContent = "Pobieram…";
+        const nbpBtn = view.querySelector("#bg-nbp");
+        if (nbpBtn) nbpBtn.onclick = async () => {
+          nbpBtn.disabled = true; nbpBtn.textContent = "Pobieram…";
           let ok = 0;
           for (const c of d.currencies) {
-            try {
-              // tabela A (główne waluty), a gdy waluty tam nie ma – tabela B (np. VND, LAK, KHR, MMK)
-              let r = await fetch(`https://api.nbp.pl/api/exchangerates/rates/a/${encodeURIComponent(c)}/?format=json`);
-              if (r.status === 404) r = await fetch(`https://api.nbp.pl/api/exchangerates/rates/b/${encodeURIComponent(c)}/?format=json`);
-              if (!r.ok) continue;
-              const j = await r.json();
-              cfg[`rate_${c}`].value = String(+j.rates[0].mid.toPrecision(6)).replace(".", ",");
-              ok++;
-            } catch (err) { /* brak internetu albo waluty spoza tabeli A */ }
+            const v = await nbp(c);
+            if (v) { cfg[`rate_${c}`].value = String(v).replace(".", ","); ok++; }
           }
-          nbp.disabled = false; nbp.textContent = "🏦 Pobierz kursy z NBP";
+          nbpBtn.disabled = false; nbpBtn.textContent = "🏦 Pobierz kursy z NBP";
           App.toast(ok ? `Pobrano ${ok} ${plural(ok, "kurs", "kursy", "kursów")} – zapisz` : "Nie udało się pobrać (brak internetu?) – wpisz ręcznie");
         };
       },
@@ -267,5 +271,5 @@
     };
   });
 
-  App.Budget = { summary, load, CATS, money, num };
+  App.Budget = { summary, load, nbp, CATS, money, num, cur3 };
 })();

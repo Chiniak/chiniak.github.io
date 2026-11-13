@@ -804,3 +804,17 @@ html.has-bg .card, html.has-bg .pl-row, html.has-bg .plan-link { box-shadow: 0 2
 .mp-pop .btn { background: #eef1f1; color: #142022; border-color: #d7dfe0; }
 .mp-pop .btn.primary { background: #0f6e6e; border-color: #0f6e6e; color: #fff; }
 .mp-pop .muted { color: #5b6b6e; }
+
+/* Przygotuj offline (prep.js) */
+.pr-warn { border-left: 4px solid #d08a17; }
+.pr-warn p { margin: 6px 0 0; }
+.pr-sum { margin: 10px 0; }
+.pr-list { padding: 0; }
+.pr-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-top: 1px solid var(--line); }
+.pr-row:first-child { border-top: 0; }
+.pr-row.na { opacity: .6; }
+.pr-mark { font-size: 20px; flex: none; width: 26px; text-align: center; }
+.pr-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; overflow-wrap: anywhere; }
+.pr-go { color: var(--accent); font-size: 24px; font-weight: 700; text-decoration: none; padding: 4px 6px; flex: none; }
+.pr-ok { font-weight: 600; text-align: center; margin: 14px 0; }
+#pr-go, #pr-stop, #pr-persist { margin-top: 12px; }

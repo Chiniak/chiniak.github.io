@@ -118,7 +118,14 @@
   const any = async () => {
     try { return (await caches.keys()).some(k => k.startsWith("mapa-offline-")); } catch (e) { return false; }
   };
-  App.Offline = { any, tilesOf, countOf };
+  // stan pobranych kafelków podróży: { tiles: wszystkie obszary (bez fragmentu z ekranu), have: Set adresów }
+  async function haveOf(tripId) {
+    try { if ((await caches.keys()).includes(cacheName(tripId))) return new Set((await (await caches.open(cacheName(tripId))).keys()).map(r => r.url)); }
+    catch (e) { /* brak pamięci podręcznej */ }
+    return new Set();
+  }
+  const busy = () => job;
+  App.Offline = { any, tilesOf, countOf, areasOf, download, haveOf, busy, tileUrl: TILE_URL, MAX_TILES, KB_PER_TILE };
 
   const mb = n => `${Math.max(1, Math.round(n * KB_PER_TILE / 1024))} MB`;
 
