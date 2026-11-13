@@ -1,0 +1,17 @@
+Hello Jan,
+Thanks for booking your travel through Rail Europe.
+Collect-at-station
+  * Edinburgh to Glasgow
+    - Collection reference: QWER12TY
+Your itinerary
+--------------
+Sat 3 Apr
+* ScotRail #SR2154
+  - Departure: 10:30 Edinburgh Waverley
+  - Arrival : 11:22 Glasgow Queen Street
+  Edinburgh to Glasgow £16.30
+Booking details
+Rail Europe order reference:
+RE-ABC123
+Total:
+£19.29

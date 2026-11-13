@@ -1,11 +1,11 @@
 # Podróżnik – stan projektu (do kontynuacji w nowej sesji)
 
-Ostatnia aktualizacja: 13 listopada 2026 – scalone PR #1–#11; na gałęzi czeka: bilety w planie (PR #12 do zrobienia). Zacznij od przeczytania tego pliku, potem `PLAN.md` i `DO-SPRAWDZENIA.md`.
+Ostatnia aktualizacja: 13 listopada 2026 – scalone PR #1–#11; na gałęzi czeka: bilety w planie + nowy odczyt maili (PR #12 do zrobienia). Zacznij od przeczytania tego pliku, potem `PLAN.md` i `DO-SPRAWDZENIA.md`.
 
 ## Gdzie co jest
 - Repozytorium: `chiniak/chiniak.github.io`, gałąź **`claude/travel-planning-app-tl9mvf`**
 - Gałąź robocza: po scaleniu PR zacznij ją od nowa od `origin/main` (`git checkout -B claude/travel-planning-app-tl9mvf origin/main`), nie nadpisuj historii (force push zablokowany). Nowy PR po każdej porcji zmian – właściciel scala sam.
-- Aplikacja na żywo: https://chiniak.github.io/podroznik/ – wersja „1.2 · etapy 0–11”, pamięć offline **`podroznik-v32`**. APK: https://chiniak.github.io/podroznik/Podroznik.apk (zmiany w stronie nie wymagają nowego APK).
+- Aplikacja na żywo: https://chiniak.github.io/podroznik/ – wersja „1.2 · etapy 0–11”, pamięć offline **`podroznik-v33`**. APK: https://chiniak.github.io/podroznik/Podroznik.apk (zmiany w stronie nie wymagają nowego APK).
 - `podroznik/` – aplikacja (PWA, czysty JS bez frameworka, dane w IndexedDB, offline przez service worker)
 - `podroznik-android/` – projekt APK (Trusted Web Activity, Bubblewrap), instrukcja w jego README
 - `podroznik-testy/` – testy Playwright + przykładowe dane, instrukcja w README (serwer: `python3 -m http.server 8765` w katalogu repo)
@@ -28,6 +28,8 @@ Ostatnia aktualizacja: 13 listopada 2026 – scalone PR #1–#11; na gałęzi cz
 
 - #11 (scalony 13.11): wszystko z sesji 12–13.11 – naprawa tła, Przygotuj offline, kopia przed wyjazdem, zdjęcia na mapie, rozmówki.
 - (gałąź, PR do zrobienia): **bilety w planie** – „📎 Z biletu lub screena” w planie (zdjęcie, screen, PDF, .pkpass → nowy punkt, kategoria Wydarzenie, dzień i godzina odczytane z tekstu PDF – `whenFromText`), sekcja „🎫 Bilety i zdjęcia” w formularzu punktu, 🎫 przy punkcie w planie (jedno dotknięcie → pełny ekran), takie bilety też w zakładce Bilety i w „Najbliższy bilet”. Plik w `files` z `segmentId: "p:<id punktu>"` (`App.Tickets.planSeg`); usunięcie punktu usuwa jego bilety. Test `t34` (fixture `fx/koncert.pdf`).
+- (gałąź, ten sam PR): **nowy odczyt rezerwacji z maili i plików** (`email.js`) – Booking.com (lot, hotel), Gotogate, Trip.com (lot, pociąg w Chinach), Trainline, Rail Europe, Agoda, Airbnb, AirAsia, 12Go. HTML → tekst (`normalize`); loty: numer + para lotnisk przed numerem (albo po nim) + godzina „przy” lotnisku (`timeNear`; kilka godzin pod rząd = zmiana rozkładu → ostatnia); przesiadki w jednym wierszu; ~70 linii azjatyckich; odrzucane fałszywe numery (VAT „FR 58 …”, „Airbus A320”, pociąg „D8661”, lot bez lotniska); pociągi z przesiadkami (`parseLegs`); hotele: adres z kilku wierszy, telefon, godziny 12 h; PNR ważniejszy niż nr zamówienia; cena przy pierwszym odcinku. Ekran „Z maila”: „📎 Z pliku” – PDF (dołączany jako bilet pierwszego odcinka), .ics, .eml. Test `t35`.
+- **Prywatność:** repozytorium jest publiczne – przykłady w `podroznik-testy/mails` mają zmyślone dane i inne trasy/daty niż prawdziwe rezerwacje właściciela. Nie wpisuj tu jego planów podróży (właściciel dostał 13.11 plik podróży zrobiony z jego Gmaila – poza repozytorium).
 
 ## Właściciel – preferencje i uwagi
 - Pisze po polsku, krótko; woli małe kroki, podsumowanie po każdej zmianie, potem pytanie o PR (zwykle odpowiada „tak”).
@@ -69,7 +71,7 @@ Ostatnia aktualizacja: 13 listopada 2026 – scalone PR #1–#11; na gałęzi cz
 | `lib/` | pdf.js, bwip-js, ZXing, Leaflet, airports.js (OpenFlights), world.js (Natural Earth) – licencje w `lib/` |
 
 ## Zasady i pułapki (ważne przy zmianach)
-- **Po każdej zmianie plików aplikacji podbij `CACHE` w `sw.js`** (teraz `podroznik-v32`) i dopisz nowe pliki do listy `APP`.
+- **Po każdej zmianie plików aplikacji podbij `CACHE` w `sw.js`** (teraz `podroznik-v33`) i dopisz nowe pliki do listy `APP`.
 - Nowy magazyn danych = podbić `VERSION` w `db.js` i dodać do `STORES` (aktualizacja zachowuje dane – test t12).
 - Nasłuch zdarzeń podpinaj do elementów widoku, **nie do `#view`** (zostaje między ekranami → podwójne akcje).
 - Router ignoruje wolniej wczytany starszy ekran (`renderSeq` w `app.js`).

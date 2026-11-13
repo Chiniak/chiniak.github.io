@@ -1,0 +1,21 @@
+Booking No. 1 234 567 890 123 456
+Flight Booking Confirmed: Kunming - Xi'an Flight Booking Confirmed
+Dear JAN KOWALSKI,
+Thank you for choosing Trip.com. Your flight(s) have been booked successfully!
+Airline Booking Reference (PNR): KZ7QWE
+Ticket Number: 999-1234567890
+Kunming - Xi'an ‪|‬ April 2, 2027
+* All departure/arrival times are in local time.
+07:00
+KMG Kunming Changshui International Airport T1
+China Eastern MU5730 ‪|‬ Economy ‪|‬ Airbus A320 ‪|‬ Snacks
+09:35
+XIY Xi'an Xianyang International Airport T3
+JAN (First name) KOWALSKI (Last name)
+Adult ticket ‪|‬ Date of birth: Jan 1, 1990 ‪|‬ Passport : AB1****23
+Baggage Allowance
+Carry-on baggage
+1 piece, max weight per piece: 5 kg per person
+Checked baggage
+20 kg per person
+We make the suggestion to arrive at Kunming Changshui International Airport at least 2h prior to departure.

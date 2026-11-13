@@ -833,3 +833,4 @@ html.has-bg .card, html.has-bg .pl-row, html.has-bg .plan-link { box-shadow: 0 2
 .pl-file.new { border: 1px dashed var(--line); background: transparent; }
 .pl-file-x { margin-left: auto; border: 0; background: none; color: inherit; font-size: 16px; padding: 4px 8px; cursor: pointer; }
 .pl-from-file { cursor: pointer; }
+.em-src { margin: -4px 0 10px; }

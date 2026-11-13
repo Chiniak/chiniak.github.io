@@ -1,0 +1,51 @@
+Hi Jan,
+The airline has modified the time of your flight.
+Kindly find below the new updated itinerary:
+WAW
+Warszawa Chopina Lotnisko
+22:30
+HKG
+Port lotniczy Hongkong
+15:40 (17 Dec)
+Date
+16 Dec 2026
+Flight
+CX1350
+Operated by
+CX - Cathay Pacific
+Airline reference
+QX4T7M
+HKG
+Port lotniczy Hongkong
+18:35
+BKK
+Bangkok Suvarnabhumi Lotnisko
+20:55
+21:00
+Date
+5 Jan 2027
+Flight
+CX615
+Operated by
+CX - Cathay Pacific
+Airline reference
+QX4T7M
+BKK
+Bangkok Suvarnabhumi Lotnisko
+02:25
+WAW
+Warszawa Chopina Lotnisko
+07:10
+Date
+6 Jan 2027
+Flight
+TG930
+Operated by
+TG - Thai Airways
+Airline reference
+QX4T7M
+Numery biletów
+KOWALSKI/JAN
+ABCDEF – 1234567890123
+Gotogate in partnership with Booking.com
+Gotogate International AB, Box 1340, 75143 Uppsala, Sweden Corp. ID no: 556538-1265 VAT no. SE5565 3812 6501
