@@ -163,3 +163,10 @@ Adres (po scaleniu pull requesta): https://chiniak.github.io/podroznik/
 ## Tło – naprawa (13.11)
 - [ ] Po scaleniu PR: zamknij i otwórz aplikację, przełącz kilka zakładek – tło ze zdjęć (natura, miasta)
 - [ ] Ustawienia → Tło: „pobrane” rośnie; jeśli dalej 0/100, przepisz komunikat pod spodem (przyczyna)
+
+## Bilety w planie (13.11)
+- [ ] Plan → „📎 Z biletu lub screena” → wybierz screen biletu albo PDF → otwiera się nowy punkt z plikiem
+- [ ] Przy PDF z datą: dzień i godzina wpisują się same (komunikat „Z biletu: …”) – sprawdź, czy dobrze
+- [ ] Po zapisaniu przy punkcie jest 🎫 – dotknięcie pokazuje bilet na pełnym ekranie; kod QR ze screena rysuje się ostro
+- [ ] Bilet jest też w zakładce Bilety
+- [ ] W istniejącym punkcie: „📎 Dodaj zdjęcie, screen lub PDF”

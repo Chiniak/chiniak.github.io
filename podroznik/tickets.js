@@ -6,6 +6,8 @@
      #/skanuj/:segId   skaner kodu aparatem lub ze zrzutu ekranu
    Bilet = rekord w magazynie "files":
      { id, tripId, segmentId, label, kind: "image" | "pdf" | "code", mime, name, blob?, code?: { text, format } }
+     segmentId = id odcinka albo „p:<id punktu planu>” – bilet / screen / potwierdzenie przypięty do punktu planu
+     (wydarzenie, spotkanie, muzeum); taki punkt udaje odcinek: planSeg() → { id: "p:…", plan: punkt, depart, arrive }.
    Kod (QR, Aztec, PDF417, kreskowy) jest zapisywany jako tekst i rysowany od nowa – ostro, w każdym rozmiarze.
    Biblioteki (w lib/, wczytywane dopiero gdy potrzebne): pdf.js, bwip-js (rysowanie), ZXing (odczyt bez BarcodeDetector). */
 (function () {
@@ -34,15 +36,27 @@
   };
   const fmtName = f => (FORMATS[f] || { name: "kod" }).name;
 
+  /* ---------- punkt planu jako „odcinek” (bilety przypięte do planu) ---------- */
+  const isPlanSeg = id => typeof id === "string" && id.startsWith("p:");
+  function planSeg(it) {
+    if (!it) return null;
+    return { id: `p:${it.id}`, tripId: it.tripId, plan: it, type: "_plan", depart: it.date ? `${it.date}T${it.time || "00:00"}` : "", arrive: it.date ? `${it.date}T23:59` : "" };
+  }
+  const segOf = async id => isPlanSeg(id) ? planSeg(await DB.get("planItems", id.slice(2))) : DB.get("segments", id);
+  const iconOf = s => s.plan ? (App.Plan ? App.Plan.catOf(s.plan).icon : "📍") : Tr().typeOf(s).icon;
+  const segHref = s => s.plan ? `#/punkt/${s.plan.id}` : `#/odcinek/${s.id}`;
+
   /* ---------- opis odcinka ---------- */
-  const segTitle = s => s.type === "nocleg" ? (s.name || "Nocleg") : `${s.from || "?"} → ${s.to || "?"}`;
+  const segTitle = s => s.plan ? s.plan.title : s.type === "nocleg" ? (s.name || "Nocleg") : `${s.from || "?"} → ${s.to || "?"}`;
   function segWhen(s) {
+    if (s.plan) return s.plan.date ? `${App.fmtDay(s.plan.date)}${s.plan.time ? ` · ${s.plan.time}` : ""}` : "pomysł – bez dnia";
     if (!s.depart) return "";
     let t = `${App.fmtDay(s.depart)} · ${App.time(s.depart)}`;
     if (s.arrive) t += ` → ${s.arrive.slice(0, 10) !== s.depart.slice(0, 10) ? App.fmtDay(s.arrive) + " " : ""}${App.time(s.arrive)}`;
     return t;
   }
   function segSeat(s) {
+    if (s.plan) return [s.plan.place && !/^https?:/i.test(s.plan.place) ? s.plan.place : ""].filter(Boolean).join("");
     const parts = [];
     if (s.number) parts.push(s.number);
     if (s.car) parts.push(`wagon ${s.car}`);
@@ -257,7 +271,7 @@
           const pk = await readPkpass(file);
           if (!pk.code) throw new Error("Karta nie ma kodu.");
           await DB.put("files", { tripId: seg.tripId, segmentId: seg.id, kind: "code", label: pk.label, code: pk.code, passFields: pk.fields });
-          const fill = fillFromPass(seg, pk.fields);
+          const fill = seg.plan ? {} : fillFromPass(seg, pk.fields);
           if (Object.keys(fill).length) { Object.assign(seg, fill); await DB.put("segments", { ...(await DB.get("segments", seg.id)), ...fill }); }
           added++; codes++;
         } catch (e) { pkErr = e.message || "Nie udało się odczytać karty .pkpass"; }
@@ -286,6 +300,8 @@
     const bySeg = {};
     files.sort(byCreated).forEach(f => (bySeg[f.segmentId] = bySeg[f.segmentId] || []).push(f));
     const segs = (await DB.all("segments")).filter(s => bySeg[s.id] && s.depart);
+    // bilety przypięte do punktów planu (z dniem)
+    for (const k of Object.keys(bySeg).filter(isPlanSeg)) { const ps = planSeg(await DB.get("planItems", k.slice(2))); if (ps && ps.depart) segs.push(ps); }
     const now = nowStr();
     return {
       upcoming: segs.filter(s => endOf(s) >= now).sort(Tr().bySegTime),
@@ -297,7 +313,7 @@
   function relTime(s) {
     // strefa lotniska wylotu znana → licznik dokładny, nawet gdy telefon jest jeszcze w innej strefie
     const min = Math.round((App.instant(s.depart, s.tzFrom) - Date.now()) / 60000);
-    if (min <= 0) return s.type === "nocleg" ? "trwa pobyt" : "w drodze";
+    if (min <= 0) return s.plan ? "dziś" : s.type === "nocleg" ? "trwa pobyt" : "w drodze";
     if (min < 60) return `za ${min} min`;
     if (min < 24 * 60) return `za ${Math.floor(min / 60)} h ${min % 60 ? (min % 60) + " min" : ""}`.trim();
     const d = App.dayDiff(App.todayStr(), s.depart);
@@ -308,7 +324,7 @@
   async function nearestCard({ skipSeg } = {}) {
     const { upcoming, bySeg } = await upcomingWithTickets();
     if (!upcoming.length || upcoming[0].id === skipSeg) return "";
-    const s = upcoming[0], T = Tr().typeOf(s);
+    const s = upcoming[0], T = { icon: iconOf(s) };
     return `
       <a class="next-ticket" href="#/bilet/${bySeg[s.id][0].id}">
         <div class="nt-ico" aria-hidden="true">${T.icon}</div>
@@ -320,7 +336,14 @@
         <div class="nt-go" aria-hidden="true">🎫</div>
       </a>`;
   }
-  App.Tickets = { nearestCard };
+  // tekst z PDF (pierwsze strony) – do odczytu daty i godziny biletu
+  async function pdfText(blob, pages = 2) {
+    const doc = await pdfDoc(blob);
+    let out = "";
+    for (let n = 1; n <= Math.min(pages, doc.numPages); n++) out += (await (await doc.getPage(n)).getTextContent()).items.map(i => i.str).join(" ") + "\n";
+    return out;
+  }
+  App.Tickets = { nearestCard, addFiles, planSeg, pdfText, kindOf };
 
   /* ================= ZAKŁADKA BILETY ================= */
   // link do dokumentów (etap 8) – z ostrzeżeniem, gdy coś wygasło albo zaraz wygaśnie
@@ -337,12 +360,12 @@
     const docs = await docsLink();
     if (!upcoming.length && !past.length) {
       return docs + App.empty("🎫", "Nie masz jeszcze biletów",
-        "Otwórz podróż, kliknij lot, pociąg albo nocleg i dodaj zdjęcie, PDF lub zeskanuj kod biletu.",
+        "Otwórz podróż, kliknij lot, pociąg albo nocleg i dodaj zdjęcie, PDF lub zeskanuj kod biletu. Bilet na wydarzenie albo spotkanie dodasz w planie: „📎 Z biletu lub screena”.",
         `<a class="btn primary" href="#/podroze">Przejdź do podróży</a>`);
     }
     const trips = Object.fromEntries((await DB.all("trips")).map(t => [t.id, t]));
     const row = s => {
-      const T = Tr().typeOf(s), n = bySeg[s.id].length;
+      const T = { icon: iconOf(s) }, n = bySeg[s.id].length;
       return `
         <div class="tk-row">
           <a class="tk-row-main" href="#/bilet/${bySeg[s.id][0].id}">
@@ -354,7 +377,7 @@
             </div>
             <span class="tk-count">🎫${n > 1 ? " " + n : ""}</span>
           </a>
-          <a class="tk-row-more" href="#/odcinek/${s.id}" aria-label="Szczegóły odcinka">›</a>
+          <a class="tk-row-more" href="${segHref(s)}" aria-label="${s.plan ? "Szczegóły punktu" : "Szczegóły odcinka"}">›</a>
         </div>`;
     };
     let html = docs + await nearestCard();
@@ -450,10 +473,10 @@
   App.route(/^\/bilet\/([\w-]+)$/, async ([id]) => {
     const f = await DB.get("files", id);
     if (!f) { location.replace("#/bilety"); return ""; }
-    const s = await DB.get("segments", f.segmentId);
+    const s = await segOf(f.segmentId);
     const all = (await DB.byIndex("files", "segmentId", f.segmentId)).sort(byCreated);
     const idx = all.findIndex(x => x.id === id);
-    const T = s ? Tr().typeOf(s) : { icon: "🎫" };
+    const T = { icon: s ? iconOf(s) : "🎫" };
     const both = !!(f.code && f.blob);
     let mode = f.code ? "kod" : "oryginal";
     let lock = null;
@@ -523,7 +546,7 @@
           ${nav}
           <div class="tv-foot">
             <button type="button" class="tv-link" id="tv-rename">Zmień nazwę</button>
-            ${s ? `<a class="tv-link" href="#/odcinek/${s.id}">Szczegóły</a>` : ""}
+            ${s ? `<a class="tv-link" href="${segHref(s)}">Szczegóły</a>` : ""}
             <button type="button" class="tv-link danger" id="tv-del">Usuń</button>
           </div>
         </div>`,
@@ -531,7 +554,7 @@
         paint(view);
         onVis();
         document.addEventListener("visibilitychange", onVis);
-        view.querySelector("#tv-close").onclick = () => App.back(s ? `#/odcinek/${s.id}` : "#/bilety");
+        view.querySelector("#tv-close").onclick = () => App.back(s ? segHref(s) : "#/bilety");
         view.querySelectorAll("[data-mode]").forEach(b => b.onclick = () => {
           mode = b.dataset.mode;
           view.querySelectorAll("[data-mode]").forEach(x => x.setAttribute("aria-pressed", x === b));
@@ -561,7 +584,7 @@
           await DB.del("files", f.id);
           App.toast("Bilet usunięty");
           const other = all[idx + 1] || all[idx - 1];
-          location.replace(other ? `#/bilet/${other.id}` : s ? `#/odcinek/${s.id}` : "#/bilety");
+          location.replace(other ? `#/bilet/${other.id}` : s ? segHref(s) : "#/bilety");
         };
       },
       cleanup() {

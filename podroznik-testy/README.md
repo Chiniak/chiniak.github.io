@@ -42,6 +42,7 @@ testy powiadomień (t9, t11–t16) używają `chromium.launch({ channel: 'chromi
 | t31 | zdjęcia miejsc: okienko pinezki (zdjęcie, Otwórz, Nawiguj, drugie dotknięcie = punkt), miniatury pod mapą, zdjęcie na karcie dla kierowcy; rozmówki w grupach |
 | t32 | „Przygotuj offline”: lista kontrolna, jeden przycisk (karty, zdjęcia, NBP, pogoda, mapa), ostrzeżenie przed Chinami, karta bez sieci |
 | t33 | kopia poza telefonem: przypomnienie przed wyjazdem tylko przy zmianach, krok w Przygotuj offline, ostrzeżenie i porady na ekranie kopii, wyłącznik |
+| t34 | bilety w planie: „Z biletu lub screena” → punkt (dzień i godzina z PDF), 🎫 w planie, pełny ekran, QR ze screena, zakładka Bilety, usunięcie z biletami |
 | t26 | angielski: wszystkie ekrany, wypisuje teksty, które zostały po polsku (powinno być „OK”) |
 
 Testy ustawiają `locale: 'pl-PL'` – bez tego aplikacja (język „Auto”) przełączy się na angielski.
