@@ -259,7 +259,13 @@
           const box = v.querySelector("#bg-info");
           if (!box) return;
           const i = await App.Backdrop.info();
-          box.innerHTML = !i.enabled ? "Jednolite tło." : `Losowe zdjęcie przy każdej zmianie ekranu · pobrane ${i.count}/${i.max}${i.count < i.max ? " (kolejne dochodzą przy przeglądaniu, z internetem)" : ""}.` +
+          // gdy brak zdjęć – dlaczego (do zgłoszenia): oszczędzanie danych, błąd Commons, pusta lista
+          const why = !i.enabled || i.count ? "" : i.saveData ? "<br><span>Telefon ma włączone oszczędzanie danych – zdjęcia nie są pobierane.</span>"
+            : !navigator.onLine ? "<br><span>Brak internetu.</span>"
+            : i.err ? `<br><span>Nie udało się pobrać listy zdjęć:</span> <span translate="no">${App.esc(i.err)}</span>`
+            : i.pool === 0 ? "<br><span>Nie znaleziono zdjęć – spróbuję ponownie za 10 min.</span>"
+            : i.pool ? `<br><span>Zdjęcia na liście:</span> ${i.pool} <span>– pobieram (przełącz kilka ekranów).</span>` : "";
+          box.innerHTML = !i.enabled ? "Jednolite tło." : `Losowe zdjęcie przy każdej zmianie ekranu · pobrane ${i.count}/${i.max}${i.count < i.max ? " (kolejne dochodzą przy przeglądaniu, z internetem)" : ""}.` + why +
             (i.current ? `<br><span>Teraz:</span> <a href="${App.esc(i.current.page)}" target="_blank" rel="noopener" translate="no">${App.esc(i.current.title)}</a>${i.current.by ? ` <span translate="no">· ${App.esc(i.current.by)}</span>` : ""} <span>(Wikimedia Commons)</span>
               <br><button type="button" class="btn" id="bg-block" style="margin-top:8px">🚫 Nie pokazuj tego zdjęcia</button>` : "");
           const bl = box.querySelector("#bg-block");

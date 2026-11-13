@@ -20,7 +20,10 @@ function png(r, g, b) {
     const pages = {};
     for (let i = 0; i < 25; i++) pages[i] = { title: i % 5 === 1 ? `File:Jesus Christ ${term} ${i}.jpg` : `File:${term} ${i}.jpg`,
       categories: i % 5 === 2 ? [{ title: 'Category:Churches in Italy' }] : [{ title: 'Category:Landscapes' }], imageinfo: [{ thumburl: `https://upload.wikimedia.org/t/${term}-${i}.jpg`, descriptionurl: `https://commons.wikimedia.org/wiki/File:${term}_${i}.jpg`,
-      width: i === 3 ? 800 : 4000, height: 2600, extmetadata: { Artist: { value: '<a href="x">Foto Graf</a>' }, LicenseShortName: { value: 'CC BY-SA 4.0' }, ObjectName: { value: `${term} ${i}` } } }] };
+      width: i === 3 ? 800 : 4000, height: 2600, extmetadata: { Artist: { value: '<a href="x">Foto Graf</a>' }, LicenseShortName: { value: 'CC BY-SA 4.0' }, ObjectName: { value: `${term} ${i}` },
+        // jak na prawdziwym Commons: ukryte kategorie techniczne ma prawie każde zdjęcie (przez nie tło było czarne)
+        Categories: { value: 'Featured pictures of landscapes|Pages with maps|Media with locations|Quality images|CC-BY-SA-4.0' },
+        ...(i % 5 === 4 ? { ImageDescription: { value: 'View of the old cathedral above the valley' } } : {}) } }] };
     pages[99] = { title: 'File:Map of Laos.png', imageinfo: [{ thumburl: 'https://upload.wikimedia.org/t/map.png', width: 4000, height: 3000 }] };
     r.fulfill({ json: { query: { pages } } });
   });
@@ -38,7 +41,7 @@ function png(r, g, b) {
   console.log('first screen: has-bg', await p.evaluate(() => document.documentElement.classList.contains('has-bg')), '| cached', await cnt(), '| api', apiCalls);
   const pool = await p.evaluate(() => DB.getSetting('bgPool').then(x => [x.items.length, x.items.some(i => /map/i.test(i.src)), x.items.some(i => /-3\.jpg/.test(i.src)), x.items[0].by]));
   console.log('pool size, map filtered out?, small filtered out?, credit:', pool);
-  console.log('religious in pool:', await p.evaluate(() => DB.getSetting('bgPool').then(x => [x.v, x.items.filter(i => /jesus|christ/i.test(i.title + i.src)).length, x.items.filter(i => / 2$/.test(i.title) || /-(2|7|12|17|22)\.jpg/.test(i.src)).length])));
+  console.log('religious in pool:', await p.evaluate(() => DB.getSetting('bgPool').then(x => [x.v, x.items.filter(i => /jesus|christ/i.test(i.title + i.src)).length, x.items.filter(i => / 2$/.test(i.title) || /-(2|7|12|17|22)\.jpg/.test(i.src)).length, x.items.filter(i => /-(4|9|14|19|24)\.jpg/.test(i.src)).length, 'pool:', x.items.length])));
   const seen = new Set();
   for (const h of ['#/bilety', '#/plan', '#/pakowanie', '#/ustawienia', '#/podroze', '#/bilety', '#/plan', '#/pakowanie', '#/podroze', '#/bilety']) {
     await p.evaluate(x => { location.hash = x; }, h); await p.waitForTimeout(900); seen.add(await bgNow());

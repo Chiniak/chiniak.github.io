@@ -5,7 +5,7 @@ Ostatnia aktualizacja: 12 listopada 2026 – **wszystko scalone na `main` (PR #1
 ## Gdzie co jest
 - Repozytorium: `chiniak/chiniak.github.io`, gałąź **`claude/travel-planning-app-tl9mvf`**
 - Gałąź robocza: po scaleniu PR zacznij ją od nowa od `origin/main` (`git checkout -B claude/travel-planning-app-tl9mvf origin/main`), nie nadpisuj historii (force push zablokowany). Nowy PR po każdej porcji zmian – właściciel scala sam.
-- Aplikacja na żywo: https://chiniak.github.io/podroznik/ – wersja „1.2 · etapy 0–11”, pamięć offline **`podroznik-v30`**. APK: https://chiniak.github.io/podroznik/Podroznik.apk (zmiany w stronie nie wymagają nowego APK).
+- Aplikacja na żywo: https://chiniak.github.io/podroznik/ – wersja „1.2 · etapy 0–11”, pamięć offline **`podroznik-v31`**. APK: https://chiniak.github.io/podroznik/Podroznik.apk (zmiany w stronie nie wymagają nowego APK).
 - `podroznik/` – aplikacja (PWA, czysty JS bez frameworka, dane w IndexedDB, offline przez service worker)
 - `podroznik-android/` – projekt APK (Trusted Web Activity, Bubblewrap), instrukcja w jego README
 - `podroznik-testy/` – testy Playwright + przykładowe dane, instrukcja w README (serwer: `python3 -m http.server 8765` w katalogu repo)
@@ -23,6 +23,8 @@ Ostatnia aktualizacja: 12 listopada 2026 – **wszystko scalone na `main` (PR #1
 - (gałąź, ten sam PR): **„📥 Przygotuj offline”** (`prep.js`, `#/przygotuj/:id`, link na ekranie podróży) – lista kontrolna i jeden przycisk: ochrona danych, karty dla kierowcy, zdjęcia, kursy NBP (waluty też z kraju: CNY/THB/VND/LAK…), pogoda, mapa offline; ostrzeżenie przed Chinami; test `t32`. Przy okazji: naprawiony przycisk NBP w budżecie, zdjęcie, którego nie da się pobrać, nie jest pobierane w kółko
 - (gałąź, ten sam PR): **kopia poza telefonem** – przypomnienie 3 dni przed wyjazdem o 18:00, gdy dane zmieniły się od ostatniej kopii (`Reminders.newestChange/backupStale`, ustawienie `backup`); krok „💾 Kopia poza telefonem” w Przygotuj offline (robi go użytkownik – Dysk Google / mail); ekran kopii: ostrzeżenie o zmianach, porady (drugi telefon, hasło), `?wroc=` do listy; test `t33`
 - (gałąź, ten sam PR): **mapa** – drugie dotknięcie tej samej pinezki od razu otwiera punkt, nazwa i zdjęcie w okienku też (okienko pinezki ma `closeOnClick: false`, inaczej Leaflet zamyka je przed obsługą dotknięcia); **rozmówki** – 26 zwrotów w grupach (`GROUPS`, 4. pole zwrotu): nowe m.in. „Nie jem mięsa”, „Bez lodu”, „Proszę napisać cenę”, „Czy mogę zapłacić kartą?”, „Pomocy!”, apteka, szpital, policja; test `t31`
+
+- (gałąź, ten sam PR): **naprawa czarnego tła** (zgłoszone z telefonu 13.11: „pobrane 0/100”) – filtr `BAD` sprawdzał też ukryte kategorie Commons („Pages with maps”, „Media with locations”), które ma prawie każde zdjęcie, więc lista była pusta. Teraz tylko tytuł, nazwa, opis i widoczne kategorie; krótsze `EXCLUDE` (limit 300 znaków zapytania); pojedynczy błąd nie przerywa szukania; pusta lista – kolejna próba po 10 min; `bgPool.v = 3`; w Ustawieniach → Tło przyczyna, gdy brak zdjęć (oszczędzanie danych / błąd Commons / pusta lista). Test t29 z realistycznymi kategoriami.
 
 ## Właściciel – preferencje i uwagi
 - Pisze po polsku, krótko; woli małe kroki, podsumowanie po każdej zmianie, potem pytanie o PR (zwykle odpowiada „tak”).
@@ -64,7 +66,7 @@ Ostatnia aktualizacja: 12 listopada 2026 – **wszystko scalone na `main` (PR #1
 | `lib/` | pdf.js, bwip-js, ZXing, Leaflet, airports.js (OpenFlights), world.js (Natural Earth) – licencje w `lib/` |
 
 ## Zasady i pułapki (ważne przy zmianach)
-- **Po każdej zmianie plików aplikacji podbij `CACHE` w `sw.js`** (teraz `podroznik-v30`) i dopisz nowe pliki do listy `APP`.
+- **Po każdej zmianie plików aplikacji podbij `CACHE` w `sw.js`** (teraz `podroznik-v31`) i dopisz nowe pliki do listy `APP`.
 - Nowy magazyn danych = podbić `VERSION` w `db.js` i dodać do `STORES` (aktualizacja zachowuje dane – test t12).
 - Nasłuch zdarzeń podpinaj do elementów widoku, **nie do `#view`** (zostaje między ekranami → podwójne akcje).
 - Router ignoruje wolniej wczytany starszy ekran (`renderSeq` w `app.js`).

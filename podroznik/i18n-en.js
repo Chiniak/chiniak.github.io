@@ -511,4 +511,8 @@ self.I18N_EN = {
   "Bez cukru, proszę": "No sugar, please", "Poproszę butelkę wody": "A bottle of water, please", "Proszę napisać cenę": "Please write down the price",
   "Czy mogę zapłacić kartą?": "Can I pay by card?", "Pomocy!": "Help!", "Gdzie jest szpital?": "Where is the hospital?", "Gdzie jest apteka?": "Where is the pharmacy?",
   "Proszę wezwać policję": "Please call the police",
+
+  "Telefon ma włączone oszczędzanie danych – zdjęcia nie są pobierane.": "Data Saver is on – photos are not downloaded.", "Brak internetu.": "No internet.",
+  "Nie udało się pobrać listy zdjęć:": "Couldn't get the photo list:", "Nie znaleziono zdjęć – spróbuję ponownie za 10 min.": "No photos found – will try again in 10 min.",
+  "Zdjęcia na liście:": "Photos on the list:", "– pobieram (przełącz kilka ekranów).": "– downloading (switch a few screens).",
 };

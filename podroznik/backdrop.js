@@ -5,14 +5,18 @@
    Ustawienie `bgPhotos` (domyślnie włączone; `localStorage podroznik-bg` – żeby nie mignęło przy starcie). */
 (function () {
   const CACHE = "tla-zdjecia", MAX = 100, WIDTH = 1000, POOL_AGE = 30 * 86400000;
-  const POOL_V = 2; // v2: tylko natura i miasta (v1 wciągała też obrazy religijne) – starsze zdjęcia są kasowane
+  // v2: tylko natura i miasta (v1 wciągała też obrazy religijne) – starsze zdjęcia są kasowane
+  // v3: filtr BAD bez ukrytych kategorii Commons (np. „Pages with maps” odrzucało prawie wszystko → czarne tło), krótsze zapytanie
+  const POOL_V = 3;
+  const RETRY = 10 * 60000; // za mało zdjęć na liście – kolejna próba najwcześniej po 10 min (nie przy każdym ekranie)
   // tylko natura i widoki miast – bez świątyń, kościołów, zamków (tam trafiały obrazy i wnętrza)
   const TERMS = ["landscape", "mountains", "mountain lake", "beach", "lake", "waterfall", "sunset landscape", "island", "rice terraces",
     "desert", "canyon", "forest", "coast", "cliffs", "glacier", "volcano", "national park", "river valley", "sea", "fjord", "meadow",
     "skyline", "cityscape", "city panorama", "aerial view city", "harbour", "bridge river", "night city", "street view city"];
-  // w wyszukiwaniu Commons: bez tych słów
-  const EXCLUDE = "-church -cathedral -chapel -basilica -monastery -abbey -temple -mosque -shrine -jesus -christ -madonna -virgin -saint -icon -painting -fresco -altar -religious -bible -buddha -statue -sculpture -interior -portrait";
-  // odrzucane po tytule, opisie i kategoriach (religia, sztuka, ludzie, zwierzęta z bliska, mapy i schematy)
+  // w wyszukiwaniu Commons: bez tych słów (zapytanie Commons może mieć najwyżej 300 znaków – resztę odsiewa BAD)
+  const EXCLUDE = "-church -cathedral -chapel -temple -mosque -monastery -shrine -jesus -christ -madonna -saint -painting -statue -interior";
+  // odrzucane po tytule, nazwie, opisie i widocznych kategoriach (religia, sztuka, ludzie, zwierzęta z bliska, mapy i schematy).
+  // NIE po ukrytych kategoriach (extmetadata Categories): „Pages with maps”, „Media with locations”… ma prawie każde zdjęcie.
   const BAD = new RegExp("\\b(map|maps|chart|logo|flag|flags|wat|god|gods|art|arts|cross|crosses|icon|icons|mary|saint|saints|st\\.|angel|angels|grave|graves|tomb|tombs|bird|birds|animal|animals|people|person|insect|insects|spider|nun|nuns|monk|monks|priest|pope)\\b" +
     "|\\b(diagram|portrait|nude|microscop|x-ray|anatomy|skull|church|cathedral|chapel|basilica|monaster|abbey|convent|temple|mosque|synagogue|shrine|pagoda|stupa|religio|christ|jesus|madonna|virgin|apostle|holy|sacred|bible|crucifix|altar|fresco|mural|painting|artwork|museum|sculpture|statue|stained glass|interior|cemetery|buddha|hindu|deity|coat of arms|kości|katedr|kaplic|święt|jezus|chrystus|matka boża|obraz|cerkiew|klasztor)", "i");
 
@@ -29,32 +33,44 @@
       iiprop: "url|size|extmetadata", iiurlwidth: String(WIDTH), iiextmetadatafilter: "Artist|LicenseShortName|ObjectName|ImageDescription|Categories" }));
     if (!r.ok) throw new Error(`Commons ${r.status}`);
     const j = await r.json();
+    if (j.error) throw new Error(`Commons: ${j.error.info || j.error.code}`);
     const strip = h => String(h || "").replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
-    return Object.values((j.query && j.query.pages) || {}).map(p => {
+    let rejected = 0;
+    const items = Object.values((j.query && j.query.pages) || {}).map(p => {
       const ii = p.imageinfo && p.imageinfo[0];
       if (!ii || !ii.thumburl || !/\.(jpe?g)$/i.test(p.title) || ii.width < 1200 || ii.height < 700) return null;
       const m = ii.extmetadata || {};
       const text = [p.title, strip(m.ObjectName && m.ObjectName.value), strip(m.ImageDescription && m.ImageDescription.value).slice(0, 400),
-        strip(m.Categories && m.Categories.value), (p.categories || []).map(c => c.title).join(" ")].join(" ").replace(/_/g, " ");
-      if (BAD.test(text)) return null;
+        (p.categories || []).map(c => c.title).join(" ")].join(" ").replace(/_/g, " ");
+      if (BAD.test(text)) { rejected++; return null; }
       return { src: ii.thumburl, page: ii.descriptionurl, title: strip(m.ObjectName && m.ObjectName.value) || p.title.replace(/^File:|\.\w+$/g, "").replace(/_/g, " "),
         by: [strip(m.Artist && m.Artist.value), strip(m.LicenseShortName && m.LicenseShortName.value)].filter(Boolean).join(", ") };
     }).filter(Boolean);
+    return { items, rejected };
   }
   async function pool() {
     let saved = await DB.getSetting("bgPool", null);
     if (saved && saved.v !== POOL_V) saved = null; // stara lista (z obrazami religijnymi) – od nowa
-    if (saved && saved.items.length >= MAX && Date.now() - saved.at < POOL_AGE) return saved.items;
+    const age = saved ? Date.now() - saved.at : Infinity;
+    // lista świeża – albo krótka, ale niedawno szukana (nie pytaj Commons przy każdym ekranie)
+    if (saved && (age < RETRY || (saved.items.length >= 20 && age < POOL_AGE))) return saved.items;
     if (!navigator.onLine) return saved ? saved.items : [];
     const seen = new Map((saved ? saved.items : []).map(x => [x.src, x]));
     const terms = TERMS.slice().sort(() => Math.random() - 0.5);
+    let fails = 0, err = "", rejected = 0, asked = 0;
     for (const t of terms) {
       if (seen.size >= MAX * 1.5) break;
-      try { for (const x of await query(t)) if (!seen.has(x.src)) seen.set(x.src, x); } catch (e) { break; }
+      try {
+        asked++;
+        const res = await query(t);
+        rejected += res.rejected;
+        for (const x of res.items) if (!seen.has(x.src)) seen.set(x.src, x);
+        fails = 0;
+      } catch (e) { err = String(e.message || e).slice(0, 120); if (++fails >= 3) break; } // pojedynczy błąd nie przerywa szukania
     }
     const blocked = new Set(await DB.getSetting("bgBlocked", []));
     const items = [...seen.values()].filter(x => !blocked.has(x.src));
-    await DB.setSetting("bgPool", { v: POOL_V, at: Date.now(), items });
+    await DB.setSetting("bgPool", { v: POOL_V, at: Date.now(), items, err: items.length ? "" : err, asked, rejected });
     return items;
   }
 
@@ -146,7 +162,9 @@
   async function info() {
     const [items, have] = await Promise.all([DB.getSetting("bgPool", null), cachedKeys()]);
     const cur = items && current ? items.items.find(x => x.src === current) : null;
-    return { enabled, count: have.length, max: MAX, current: cur };
+    const ok = items && items.v === POOL_V;
+    return { enabled, count: have.length, max: MAX, current: cur, pool: ok ? items.items.length : null, err: ok ? items.err || "" : "",
+      saveData: !!(navigator.connection && navigator.connection.saveData) };
   }
   // „nie pokazuj tego zdjęcia” – na stałe (lista bgBlocked), od razu inne
   async function block(src = current) {

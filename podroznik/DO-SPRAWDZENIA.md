@@ -159,3 +159,7 @@ Adres (po scaleniu pull requesta): https://chiniak.github.io/podroznik/
 - [ ] W okienku nazwa (ze strzałką ›) i zdjęcie też otwierają punkt
 - [ ] Rozmówki w grupach: Podstawy, Taksówka, Jedzenie i picie, Zakupy, Pomoc i zdrowie
 - [ ] Nowe zwroty po tajsku/laotańsku/wietnamsku/chińsku – jeśli ktoś miejscowy poprawi, zapisz poprawkę
+
+## Tło – naprawa (13.11)
+- [ ] Po scaleniu PR: zamknij i otwórz aplikację, przełącz kilka zakładek – tło ze zdjęć (natura, miasta)
+- [ ] Ustawienia → Tło: „pobrane” rośnie; jeśli dalej 0/100, przepisz komunikat pod spodem (przyczyna)
