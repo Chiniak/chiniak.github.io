@@ -31,6 +31,18 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR
   await p.screenshot({ path: `${dir}/t31-map.png` });
   await p.click('.mp-pop .btn.primary'); await p.waitForTimeout(600);
   console.log('open →', await p.evaluate(() => location.hash) === `#/punkt/${pid}`);
+  // drugie dotknięcie tej samej pinezki → od razu punkt; nazwa w okienku też prowadzi do punktu
+  await p.goto(`http://localhost:8765/podroznik/#/mapa/${id}?d=${T}`); await p.waitForTimeout(1500);
+  await p.click('.leaflet-marker-icon[title="Wat Pho"]'); await p.waitForTimeout(400);
+  console.log('1st tap → popup:', !!(await p.$('.mp-pop')), (await p.evaluate(() => location.hash)).startsWith('#/mapa'));
+  await p.$eval('.leaflet-marker-icon[title="Wat Pho"]', e => e.click()); await p.waitForTimeout(600);
+  console.log('2nd tap →', await p.evaluate(() => location.hash) === `#/punkt/${pid}`);
+  await p.goto(`http://localhost:8765/podroznik/#/mapa/${id}?d=${T}`); await p.waitForTimeout(1500);
+  await p.click('.leaflet-marker-icon[title="Kawiarnia"]'); await p.waitForTimeout(400);
+  await p.$eval('.leaflet-marker-icon[title="Wat Pho"]', e => e.click()); await p.waitForTimeout(400);
+  console.log('other pin → new popup, not navigation:', await p.$$eval('.mp-pop', e => e.length), 'popup(s)', await p.$eval('.mp-pop-name', e => e.textContent), (await p.evaluate(() => location.hash)).startsWith('#/mapa'));
+  await p.click('.mp-pop-link'); await p.waitForTimeout(600);
+  console.log('name link →', await p.evaluate(() => location.hash) === `#/punkt/${pid}`);
   // druga pinezka (bez zdjęcia) – okienko bez obrazka
   await p.goto(`http://localhost:8765/podroznik/#/mapa/${id}?d=${T}`); await p.waitForTimeout(1500);
   await p.click('.leaflet-marker-icon[title="Kawiarnia"]'); await p.waitForTimeout(400);
@@ -43,6 +55,14 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR
   const im = await p.$eval('.tx-full .tx-photo', e => ({ w: e.clientWidth, h: e.clientHeight })).catch(() => null);
   console.log('full card photo:', im, '| local name:', await p.$eval('.tx-full .tx-name', e => e.textContent));
   await p.screenshot({ path: `${dir}/t31-card.png` });
+  // rozmówki w grupach
+  await p.goto(`http://localhost:8765/podroznik/#/karty/${id}?j=lo`); await p.waitForTimeout(700);
+  console.log('phrase groups (lo):', await p.$$eval('.tx-group', e => e.map(x => `${x.textContent}:${x.nextElementSibling.querySelectorAll('.tx-ph').length}`).join(', ')));
+  await p.goto(`http://localhost:8765/podroznik/#/karty/${id}?j=zh`); await p.waitForTimeout(700);
+  console.log('zh phrases:', await p.$$eval('.tx-ph', e => e.length));
+  await p.click('.tx-ph[data-p="noice"]'); await p.waitForTimeout(300);
+  console.log('no ice card:', await p.$eval('.tx-full .tx-phrase', e => e.textContent), '|', await p.$eval('.tx-full .tx-pron', e => e.textContent));
+  await p.screenshot({ path: `${dir}/t31-phrases.png` });
   console.log('errors:', errs);
   await b.close();
 })();

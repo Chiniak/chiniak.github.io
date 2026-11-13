@@ -349,7 +349,7 @@
         <form class="pl-search mp-search" id="mp-search"><input name="q" placeholder="Szukaj miejsca, np. Oceanarium" autocomplete="off" aria-label="Szukaj miejsca">
           <button class="btn" type="submit" aria-label="Szukaj">🔎</button></form>
         <div class="card mp-card"><div id="mp-map" class="mp-map" role="application" aria-label="Mapa punktów planu"></div>
-          <div class="mp-attr"><span class="mp-hint">Dotknij mapy, by zaznaczyć miejsce · 🏛️ = atrakcje w okolicy.</span> ${navigator.onLine ? "" : "Offline: widać fragmenty mapy oglądane lub pobrane wcześniej. "}<span id="mp-attr-src"></span></div></div>
+          <div class="mp-attr"><span class="mp-hint">Dotknij mapy, by zaznaczyć miejsce · pinezkę dwa razy, by otworzyć punkt · 🏛️ = atrakcje w okolicy.</span> ${navigator.onLine ? "" : "Offline: widać fragmenty mapy oglądane lub pobrane wcześniej. "}<span id="mp-attr-src"></span></div></div>
         <button type="button" class="plan-link" id="mp-off"><span aria-hidden="true">⬇️</span> Mapa offline <span class="muted">– zapisz ten fragment i miejsca podróży</span><b aria-hidden="true">›</b></button>
         ${missing ? `<button type="button" class="btn wide" id="mp-geo">📍 Znajdź położenie ${missing} ${plural(missing, "miejsca", "miejsc", "miejsc")} (internet)</button>` : ""}
         ${noPlace ? `<p class="muted small">${noPlace} ${plural(noPlace, "punkt nie ma", "punkty nie mają", "punktów nie ma")} wpisanego miejsca – dodaj je w punkcie, by pojawił się na mapie.</p>` : ""}
@@ -372,17 +372,25 @@
         // dotknięcie pinezki → okienko ze zdjęciem, „Otwórz” i „Nawiguj”
         const infoFor = (p, title, sub, href) => {
           const box = L.DomUtil.create("div", "mp-pop-box");
-          const img = p.photo && p.photo.data ? `<img class="mp-pop-img" src="${p.photo.data}" alt="">` : "";
-          box.innerHTML = `${img}<b class="mp-pop-name">${esc(title)}</b>
+          const img = p.photo && p.photo.data ? `<a href="${href}" tabindex="-1"><img class="mp-pop-img" src="${p.photo.data}" alt=""></a>` : "";
+          box.innerHTML = `${img}<a class="mp-pop-name mp-pop-link" href="${href}">${esc(title)}</a>
             <span class="muted small mp-pop-sub">${esc(sub)}</span>
             <div class="mp-pop-btns"><a class="btn primary" href="${href}">Otwórz</a>
               <a class="btn" href="${esc(App.mapsUrl(`${(+p.lat).toFixed(6)},${(+p.lon).toFixed(6)}`))}" target="_blank" rel="noopener">🧭 Nawiguj</a></div>`;
           L.DomEvent.disableClickPropagation(box);
           return box;
         };
+        let openPin = null;
         const add = (p, html, title, href, sub = "") => {
           const m = L.marker([p.lat, p.lon], { icon: L.divIcon({ html, className: "mp-icon", iconSize: [30, 30], iconAnchor: [15, 15] }), title }).addTo(map);
-          if (href) m.on("click", ev => { L.DomEvent.stop(ev); L.popup({ className: "mp-pop", autoPanPadding: [20, 60] }).setLatLng([p.lat, p.lon]).setContent(infoFor(p, title, sub, href)).openOn(map); });
+          // pierwsze dotknięcie – okienko; drugie dotknięcie tej samej pinezki (okienko otwarte) – od razu do punktu
+          if (href) m.on("click", ev => {
+            L.DomEvent.stop(ev);
+            if (openPin && openPin.m === m && map.hasLayer(openPin.pop)) { location.hash = href; return; }
+            // closeOnClick: false – inaczej Leaflet zamyka okienko jeszcze przed tym dotknięciem pinezki (preclick)
+            const pop = L.popup({ className: "mp-pop", autoPanPadding: [20, 60], closeOnClick: false }).setLatLng([p.lat, p.lon]).setContent(infoFor(p, title, sub, href)).openOn(map);
+            openPin = { m, pop };
+          });
           bounds.push([p.lat, p.lon]);
         };
         hotels.filter(hasXY).forEach(h => add(h, pinHtml("🏨", "#444", "mp-hotel"), h.name || "Nocleg", `#/odcinek/${h.id}`, h.address || ""));

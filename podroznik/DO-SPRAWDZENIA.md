@@ -153,3 +153,9 @@ Adres (po scaleniu pull requesta): https://chiniak.github.io/podroznik/
 - [ ] Po dodaniu biletu/noclegu krok znowu ⬜, a na ekranie kopii jest ostrzeżenie o zmianach
 - [ ] 3 dni przed wyjazdem o 18:00 przychodzi przypomnienie o kopii (jeśli były zmiany); wyłącznik w Ustawienia → Przypomnienia
 - [ ] Drugi telefon: wczytanie kopii przez „Wybierz plik kopii” → „Dołącz”
+
+## Mapa i rozmówki (13.11)
+- [ ] Mapa: dotknięcie pinezki – okienko; drugie dotknięcie tej samej pinezki – od razu punkt
+- [ ] W okienku nazwa (ze strzałką ›) i zdjęcie też otwierają punkt
+- [ ] Rozmówki w grupach: Podstawy, Taksówka, Jedzenie i picie, Zakupy, Pomoc i zdrowie
+- [ ] Nowe zwroty po tajsku/laotańsku/wietnamsku/chińsku – jeśli ktoś miejscowy poprawi, zapisz poprawkę

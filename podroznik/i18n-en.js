@@ -447,7 +447,7 @@ self.I18N_EN = {
   "Losowe zdjęcie przy każdej zmianie ekranu · pobrane {}/{} (kolejne dochodzą przy przeglądaniu, z internetem).": "A random photo on every screen change · downloaded {}/{} (more arrive as you browse, online).",
 
   /* ---------- mapa: zaznaczanie, atrakcje; Odkrywaj szybciej ---------- */
-  "Dotknij mapy, by zaznaczyć miejsce · 🏛️ = atrakcje w okolicy.": "Tap the map to mark a place · 🏛️ = sights nearby.",
+  "Dotknij mapy, by zaznaczyć miejsce · pinezkę dwa razy, by otworzyć punkt · 🏛️ = atrakcje w okolicy.": "Tap the map to mark a place · tap a pin twice to open it · 🏛️ = sights nearby.",
   "Szukam nazwy…": "Looking up the name…", "Punkt na mapie": "Point on the map", "✏️ Więcej…": "✏️ More…",
   "✓ w planie – otwórz": "✓ in plan – open", "Dodano: {}": "Added: {}", "Atrakcje w okolicy": "Sights nearby",
   "Pokaż atrakcje w okolicy na mapie": "Show nearby sights on the map", "Szukam atrakcji w okolicy…": "Looking for sights nearby…",
@@ -504,4 +504,11 @@ self.I18N_EN = {
   "Kopia zapasowa przed wyjazdem: {}": "Backup before departure: {}",
   "Od ostatniej kopii doszły zmiany. Zapisz kopię z hasłem na Dysku Google albo wyślij mailem do siebie.": "There are changes since the last backup. Save a password-protected backup to Google Drive or email it to yourself.",
   "Zapisz kopię z hasłem na Dysku Google albo wyślij mailem do siebie – na wypadek zgubienia telefonu.": "Save a password-protected backup to Google Drive or email it to yourself – in case you lose your phone.",
+
+  /* ---------- rozmówki: grupy i nowe zwroty ---------- */
+  "Podstawy": "Basics", "Taksówka i tuk-tuk": "Taxi & tuk-tuk", "Jedzenie i picie": "Food & drink", "Zakupy": "Shopping", "Pomoc i zdrowie": "Help & health",
+  "Nie, dziękuję": "No, thank you", "Proszę mówić wolniej": "Please speak more slowly", "Nie jem mięsa": "I don't eat meat", "Bez lodu, proszę": "No ice, please",
+  "Bez cukru, proszę": "No sugar, please", "Poproszę butelkę wody": "A bottle of water, please", "Proszę napisać cenę": "Please write down the price",
+  "Czy mogę zapłacić kartą?": "Can I pay by card?", "Pomocy!": "Help!", "Gdzie jest szpital?": "Where is the hospital?", "Gdzie jest apteka?": "Where is the pharmacy?",
+  "Proszę wezwać policję": "Please call the police",
 };
