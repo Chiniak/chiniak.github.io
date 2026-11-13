@@ -131,3 +131,35 @@ Adres (po scaleniu pull requesta): https://chiniak.github.io/podroznik/
 - Karty z Apple/Google Wallet (.pkpass) – jeszcze nie ma (pkt 16)
 - Blokada PIN chroni przed podejrzeniem, ale dane w pamięci przeglądarki nie są szyfrowane (zaszyfrowana może być kopia zapasowa)
 - Powiadomienia w tle: aplikacja internetowa nie może sama obudzić się o dokładnej godzinie – Chrome sprawdza „kilka razy na dobę”; pewny jest kalendarz (.ics) albo wersja APK
+
+
+## Zdjęcia na mapie i kartach (12.11)
+- [ ] Mapa dnia: dotknięcie pinezki punktu otwiera okienko ze zdjęciem, nazwą, dniem i godziną (zamiast od razu przechodzić do punktu)
+- [ ] W okienku „Otwórz” prowadzi do punktu, „🧭 Nawiguj” otwiera nawigację
+- [ ] Lista pod mapą ma miniatury zdjęć
+- [ ] Karty i rozmówki: miniatura zamiast ikonki 📍; na karcie dla kierowcy zdjęcie nad adresem w lokalnym piśmie
+
+## Przygotuj offline (13.11)
+- [ ] Na ekranie podróży jest „📥 Przygotuj offline” (tylko dla podróży, które się nie skończyły)
+- [ ] Dla podróży do Chin widać ostrzeżenie „Przed wjazdem do Chin”
+- [ ] „Przygotuj wszystko” przez Wi-Fi: karty, zdjęcia, kursy, pogoda i mapa dostają ✅
+- [ ] Po włączeniu trybu samolotowego: karta dla kierowcy, zdjęcia i mapa działają
+- [ ] „Ochrona danych” – w APK powinna się włączyć; jeśli nie, napisz
+- [ ] Budżet: „🏦 Pobierz kursy z NBP” działa
+
+## Kopia poza telefonem (13.11)
+- [ ] „Przygotuj offline” ma krok „💾 Kopia poza telefonem” i przycisk „Zrób kopię poza telefonem”
+- [ ] Zapis kopii z hasłem na Dysk Google (menu Udostępnij) – potem krok ma ✅ „z hasłem”
+- [ ] Po dodaniu biletu/noclegu krok znowu ⬜, a na ekranie kopii jest ostrzeżenie o zmianach
+- [ ] 3 dni przed wyjazdem o 18:00 przychodzi przypomnienie o kopii (jeśli były zmiany); wyłącznik w Ustawienia → Przypomnienia
+- [ ] Drugi telefon: wczytanie kopii przez „Wybierz plik kopii” → „Dołącz”
+
+## Mapa i rozmówki (13.11)
+- [ ] Mapa: dotknięcie pinezki – okienko; drugie dotknięcie tej samej pinezki – od razu punkt
+- [ ] W okienku nazwa (ze strzałką ›) i zdjęcie też otwierają punkt
+- [ ] Rozmówki w grupach: Podstawy, Taksówka, Jedzenie i picie, Zakupy, Pomoc i zdrowie
+- [ ] Nowe zwroty po tajsku/laotańsku/wietnamsku/chińsku – jeśli ktoś miejscowy poprawi, zapisz poprawkę
+
+## Tło – naprawa (13.11)
+- [ ] Po scaleniu PR: zamknij i otwórz aplikację, przełącz kilka zakładek – tło ze zdjęć (natura, miasta)
+- [ ] Ustawienia → Tło: „pobrane” rośnie; jeśli dalej 0/100, przepisz komunikat pod spodem (przyczyna)

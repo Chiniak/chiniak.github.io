@@ -412,7 +412,7 @@ self.I18N_EN = {
   "W Laosie tuk-tuki nie mają taksometrów – cenę ustal przed jazdą.": "Tuk-tuks in Laos have no meters – agree the price before the ride.",
   "Lokalny adres pojawi się po „Przygotuj karty” (internet).": "The local address appears after “Prepare cards” (internet).",
   "W tym kraju pismo jest łacińskie – pokaż nazwę i adres powyżej.": "This country uses the Latin script – show the name and address above.",
-  "🧭 Nawiguj": "🧭 Navigate", "🚕 Pokaż kierowcy (adres w lokalnym piśmie)": "🚕 Show the driver (address in local script)",
+  "🧭 Nawiguj": "🧭 Navigate", "Otwórz": "Open", "🚕 Pokaż kierowcy (adres w lokalnym piśmie)": "🚕 Show the driver (address in local script)",
   "Gotowe · nie udało się {}": "Done · {} failed", "Karty gotowe – działają bez internetu": "Cards ready – they work offline",
   "Proszę mnie zawieźć pod ten adres": "Please take me to this address", "Dzień dobry": "Hello", "Dziękuję": "Thank you", "Przepraszam": "Excuse me / sorry",
   "Ile to kosztuje?": "How much is it?", "Za drogo": "Too expensive", "Proszę włączyć taksometr": "Please turn on the meter", "Proszę się tu zatrzymać": "Please stop here",
@@ -447,7 +447,7 @@ self.I18N_EN = {
   "Losowe zdjęcie przy każdej zmianie ekranu · pobrane {}/{} (kolejne dochodzą przy przeglądaniu, z internetem).": "A random photo on every screen change · downloaded {}/{} (more arrive as you browse, online).",
 
   /* ---------- mapa: zaznaczanie, atrakcje; Odkrywaj szybciej ---------- */
-  "Dotknij mapy, by zaznaczyć miejsce · 🏛️ = atrakcje w okolicy.": "Tap the map to mark a place · 🏛️ = sights nearby.",
+  "Dotknij mapy, by zaznaczyć miejsce · pinezkę dwa razy, by otworzyć punkt · 🏛️ = atrakcje w okolicy.": "Tap the map to mark a place · tap a pin twice to open it · 🏛️ = sights nearby.",
   "Szukam nazwy…": "Looking up the name…", "Punkt na mapie": "Point on the map", "✏️ Więcej…": "✏️ More…",
   "✓ w planie – otwórz": "✓ in plan – open", "Dodano: {}": "Added: {}", "Atrakcje w okolicy": "Sights nearby",
   "Pokaż atrakcje w okolicy na mapie": "Show nearby sights on the map", "Szukam atrakcji w okolicy…": "Looking for sights nearby…",
@@ -455,4 +455,64 @@ self.I18N_EN = {
   "Serwery map nie odpowiadają – spróbuj za chwilę": "Map servers are not responding – try again shortly", "⏳ Uzupełniam z OpenStreetMap…": "⏳ Adding more from OpenStreetMap…",
 
   "🚫 Nie pokazuj tego zdjęcia": "🚫 Don't show this photo", "To zdjęcie nie pojawi się więcej": "This photo won't appear again",
+
+  /* ---------- Przygotuj offline (prep.js) ---------- */
+  "Przygotuj offline": "Prepare offline", "Przygotuj offline · {}": "Prepare offline · {}", "– mapa, karty, zdjęcia, kursy na zapas": "– map, cards, photos, rates in advance",
+  "🇨🇳 Przed wjazdem do Chin": "🇨🇳 Before entering China",
+  "W Chinach nie działają Google, Wikipedia i część serwerów map, a reszta bywa bardzo wolna. Zrób to w Polsce albo w hotelu z Wi-Fi przed granicą – potem karty, zdjęcia i mapa działają bez internetu. Nawigację ustaw na Amap (Ustawienia).":
+    "Google, Wikipedia and some map servers don't work in China, and the rest can be very slow. Do this at home or in a hotel with Wi-Fi before the border – then cards, photos and the map work without internet. Set navigation to Amap (Settings).",
+  "Pobierz na zapas wszystko, co potem wymaga internetu – najlepiej przez Wi-Fi przed wyjazdem. Bilety, plan i dokumenty są w telefonie zawsze.":
+    "Download in advance everything that later needs internet – preferably over Wi-Fi before you leave. Tickets, plan and documents are always on the phone.",
+  "{}/{} gotowe": "{}/{} ready", "📥 Przygotuj wszystko ({})": "📥 Prepare everything ({})", "✅ Wszystko gotowe do podróży bez internetu.": "✅ All set for travelling without internet.",
+  "🛡️ Włącz ochronę danych": "🛡️ Turn on data protection", "Zatrzymuję…": "Stopping…", "Otwórz: {}": "Open: {}",
+  "Możesz wyjść z tego ekranu – pobieranie trwa dalej, dopóki aplikacja jest otwarta. Przycisk można nacisnąć ponownie: pobierze tylko to, czego brakuje.":
+    "You can leave this screen – downloading continues while the app is open. You can press the button again: it only downloads what is missing.",
+  "Ochrona danych przed usunięciem": "Protect data from deletion", "Zdjęcia miejsc": "Place photos", "Kursy walut": "Exchange rates", "Pogoda": "Weather",
+  "włączona": "on", "telefon może usunąć pobrane mapy, gdy zabraknie miejsca": "the phone may delete downloaded maps when it runs out of space",
+  "adres": "address", "adresy": "addresses", "adresów": "addresses", "obszar": "area", "obszary": "areas", "obszarów": "areas",
+  "{}/{} {} w lokalnym piśmie": "{}/{} {} in local script", "brak miejsc z położeniem na mapie": "no places with a map location",
+  "{}/{} ze zdjęciem": "{}/{} with a photo", "{}/{} ze zdjęciem · do sprawdzenia {}": "{}/{} with a photo · {} to check", "brak punktów planu": "no plan items",
+  "brak walut obcych": "no foreign currencies", "brak kursu: {}": "no rate: {}", "brak kursu: {} – wpisz w budżecie": "no rate: {} – enter it in the budget",
+  "zapisana {}": "saved {}", "zapisana {} (zeszły rok – prognoza 16 dni przed)": "saved {} (last year – forecast 16 days before)", "nie pobrana": "not downloaded",
+  "podróż już minęła": "trip is over", "brak miejsc na mapie": "no places on the map",
+  "pobrane {}% · do pobrania ok. {} MB (najlepiej przez Wi-Fi)": "{}% downloaded · about {} MB to go (Wi-Fi recommended)", "pobrana · {} {} + przegląd": "downloaded · {} {} + overview",
+  "szukam adresu {}/{}…": "looking up address {}/{}…", "szukam zdjęć… (zostało {})": "looking for photos… ({} left)", "znaleziono {} · szukam dalej…": "found {} · still looking…",
+  "kurs {}…": "rate {}…", "pobieram…": "downloading…", "czekam…": "waiting…", "kafelki {}/{}": "tiles {}/{}", "kafelki {}/{} · błędy {}": "tiles {}/{} · errors {}",
+  "pobieranie mapy już trwa": "map download already running", "za mało miejsca w telefonie": "not enough space on the phone",
+  "Przygotowanie już trwa": "Already preparing", "Brak internetu – połącz się z Wi-Fi": "No internet – connect to Wi-Fi", "Zatrzymano – pobrane zostaje": "Stopped – downloaded data stays",
+  "Gotowe – podróż przygotowana offline ✅": "Done – trip ready offline ✅", "Gotowe częściowo – brakuje {} {}, spróbuj ponownie": "Partly done – {} {} missing, try again",
+  "rzeczy": "items", "Ochrona włączona": "Protection on",
+  "Przeglądarka nie zgodziła się – zainstaluj aplikację (APK) albo zwolnij miejsce": "The browser refused – install the app (APK) or free up space",
+
+  /* ---------- kopia poza telefonem (backup.js, prep.js, reminders) ---------- */
+  "Kopia poza telefonem": "Backup off the phone", "jeszcze nie było – zapisz na Dysku Google albo wyślij mailem do siebie": "none yet – save to Google Drive or email it to yourself",
+  "ostatnia {} – od tego czasu doszły zmiany": "last {} – there are changes since then", "zrobiona {} · z hasłem": "made {} · with password", "zrobiona {} · bez hasła": "made {} · no password",
+  "💾 Zrób kopię poza telefonem": "💾 Back up off the phone",
+  "Kopię zapisz sam (Dysk Google, mail do siebie) – najlepiej na końcu, gdy wszystko jest już pobrane. Zgubisz telefon – wczytasz ją na innym.":
+    "Save the backup yourself (Google Drive, email to yourself) – best at the end, when everything is downloaded. If you lose the phone, load it on another one.",
+  "⚠️ Od ostatniej kopii doszły zmiany (podróże, bilety, plan lub dokumenty) – zrób nową.": "⚠️ There are changes since the last backup (trips, tickets, plan or documents) – make a new one.",
+  "zalecane – kopia trafi poza telefon": "recommended – the backup leaves the phone",
+  "🧳 Na wypadek zgubienia telefonu": "🧳 In case you lose your phone",
+  "Przed wyjazdem": "Before you leave", "zapisz kopię z hasłem na": "save a password-protected backup to", "Dysku Google": "Google Drive", "albo wyślij": "or send it",
+  "mailem do siebie": "by email to yourself", "– dostaniesz się do niej z każdego telefonu czy komputera.": "– you can reach it from any phone or computer.",
+  "Drugi telefon": "Second phone",
+  "(osoba, z którą jedziesz): wyślij jej plik, a ona w Podróżniku wybierze Ustawienia → Kopia zapasowa → „Wybierz plik kopii” → „Dołącz”. Bilety i plan będą też u niej.":
+    "(the person you travel with): send them the file, and in the app they choose Settings → Backup → “Choose backup file” → “Merge”. They'll have the tickets and plan too.",
+  "Hasło zapamiętaj albo zapisz poza telefonem (np. w notatce u bliskiej osoby).": "Remember the password or keep it off the phone (e.g. a note with someone close).",
+  "Po większych zmianach (nowe bilety, noclegi) zrób kopię jeszcze raz – aplikacja przypomni 3 dni przed wyjazdem.": "After bigger changes (new tickets, stays) back up again – the app reminds you 3 days before departure.",
+  "💾 Kopia zapasowa – 3 dni przed wyjazdem, jeśli są nowe zmiany": "💾 Backup – 3 days before departure, if there are new changes",
+  "Kopia zapasowa przed wyjazdem: {}": "Backup before departure: {}",
+  "Od ostatniej kopii doszły zmiany. Zapisz kopię z hasłem na Dysku Google albo wyślij mailem do siebie.": "There are changes since the last backup. Save a password-protected backup to Google Drive or email it to yourself.",
+  "Zapisz kopię z hasłem na Dysku Google albo wyślij mailem do siebie – na wypadek zgubienia telefonu.": "Save a password-protected backup to Google Drive or email it to yourself – in case you lose your phone.",
+
+  /* ---------- rozmówki: grupy i nowe zwroty ---------- */
+  "Podstawy": "Basics", "Taksówka i tuk-tuk": "Taxi & tuk-tuk", "Jedzenie i picie": "Food & drink", "Zakupy": "Shopping", "Pomoc i zdrowie": "Help & health",
+  "Nie, dziękuję": "No, thank you", "Proszę mówić wolniej": "Please speak more slowly", "Nie jem mięsa": "I don't eat meat", "Bez lodu, proszę": "No ice, please",
+  "Bez cukru, proszę": "No sugar, please", "Poproszę butelkę wody": "A bottle of water, please", "Proszę napisać cenę": "Please write down the price",
+  "Czy mogę zapłacić kartą?": "Can I pay by card?", "Pomocy!": "Help!", "Gdzie jest szpital?": "Where is the hospital?", "Gdzie jest apteka?": "Where is the pharmacy?",
+  "Proszę wezwać policję": "Please call the police",
+
+  "Telefon ma włączone oszczędzanie danych – zdjęcia nie są pobierane.": "Data Saver is on – photos are not downloaded.", "Brak internetu.": "No internet.",
+  "Nie udało się pobrać listy zdjęć:": "Couldn't get the photo list:", "Nie znaleziono zdjęć – spróbuję ponownie za 10 min.": "No photos found – will try again in 10 min.",
+  "Zdjęcia na liście:": "Photos on the list:", "– pobieram (przełącz kilka ekranów).": "– downloading (switch a few screens).",
 };

@@ -1,36 +1,48 @@
 # Podróżnik – stan projektu (do kontynuacji w nowej sesji)
 
-Ostatnia aktualizacja: 12 listopada 2026 – PR #6–#9 scalone; na gałęzi: tło tylko natura i miasta (bez religii), „Nie pokazuj tego zdjęcia”. Zacznij od przeczytania tego pliku, potem `PLAN.md` i `DO-SPRAWDZENIA.md`.
+Ostatnia aktualizacja: 12 listopada 2026 – **wszystko scalone na `main` (PR #1–#10)**, nic nie czeka. Zacznij od przeczytania tego pliku, potem `PLAN.md` i `DO-SPRAWDZENIA.md`.
 
 ## Gdzie co jest
 - Repozytorium: `chiniak/chiniak.github.io`, gałąź **`claude/travel-planning-app-tl9mvf`**
-- Wszystko scalone na `main`: PR #1 (etapy 0–8), #2 (etapy 7, 9, 10), #3 i #4 (poprawki Odkrywaj),
-  #5 (GPS w Odkrywaj, mapa na właściwym celu, dodawanie punktu z mapy, Azja: mapy/nawigacja/waluty, odznaczanie pomysłów, **język angielski**).
-- Aplikacja na żywo: https://chiniak.github.io/podroznik/ (wersja „1.1 · etapy 0–10”, pamięć offline `podroznik-v21`; po PR #6: „1.2 · etapy 0–11”, `podroznik-v22`; po PR #7 `podroznik-v23`; po PR #8 `podroznik-v24`; po PR #9 `podroznik-v25`; na gałęzi `podroznik-v26`).
-- Gałąź robocza: po scaleniu PR zacząć ją od nowa od `origin/main` (git checkout -B … origin/main), nie nadpisywać historii (force push zablokowany).
-- Aplikacja https://chiniak.github.io/podroznik/ , APK https://chiniak.github.io/podroznik/Podroznik.apk
+- Gałąź robocza: po scaleniu PR zacznij ją od nowa od `origin/main` (`git checkout -B claude/travel-planning-app-tl9mvf origin/main`), nie nadpisuj historii (force push zablokowany). Nowy PR po każdej porcji zmian – właściciel scala sam.
+- Aplikacja na żywo: https://chiniak.github.io/podroznik/ – wersja „1.2 · etapy 0–11”, pamięć offline **`podroznik-v31`**. APK: https://chiniak.github.io/podroznik/Podroznik.apk (zmiany w stronie nie wymagają nowego APK).
 - `podroznik/` – aplikacja (PWA, czysty JS bez frameworka, dane w IndexedDB, offline przez service worker)
 - `podroznik-android/` – projekt APK (Trusted Web Activity, Bubblewrap), instrukcja w jego README
-- `podroznik-testy/` – testy Playwright + przykładowe dane, instrukcja w README
+- `podroznik-testy/` – testy Playwright + przykładowe dane, instrukcja w README (serwer: `python3 -m http.server 8765` w katalogu repo)
 - `.well-known/assetlinks.json` – odciski kluczy KWS i Podróżnika (aplikacje bez paska adresu)
 - Drugie repozytorium sesji: `chiniak/kws` (aplikacja KWS – nie była zmieniana)
 
-## Co jest zrobione
-Wszystkie etapy 0–10 z `PLAN.md` (✅), w tym APK, strefy czasowe, tło podróży, .pkpass i funkcje jak w Wanderlog
-(mapa i trasa dnia, pomysły, odkrywanie, rozliczenie w grupie, wspólna podróż plikiem). Szczegóły: `PLAN.md`.
-**Etap 11** (PR #6): karty dla kierowcy z adresem w lokalnym piśmie, rozmówki (zh/th/vi/lo), mapa offline. Na gałęzi: **zdjęcia miejsc** w planie i pomysłach (`photos.js`).
-Nic nie było jeszcze testowane na prawdziwym telefonie – lista: `DO-SPRAWDZENIA.md`.
+## Historia PR
+- #1–#2: etapy 0–10 · #3–#4: poprawki Odkrywaj · #5: GPS, mapa na właściwym celu, Azja (mapy/nawigacja/waluty), język angielski
+- #6: etap 11 – karty dla kierowcy (adres w lokalnym piśmie), rozmówki zh/th/vi/lo, mapa offline
+- #7: zdjęcia miejsc w planie i pomysłach (`photos.js`, Wikipedia/Commons/własne)
+- #8: tło ze zdjęć zmieniane przy każdej zmianie ekranu (`backdrop.js`)
+- #9: szybsze Odkrywaj („📍 Tutaj”: Wikipedia od razu, serwery map wyścigiem), mapa: pinezka + zapis jednym dotknięciem, 🏛️ atrakcje na mapie
+- #10: tło tylko natura i miasta – **bez zdjęć religijnych** (filtr, kasowanie starych, „🚫 Nie pokazuj tego zdjęcia”)
+- (gałąź, PR do zrobienia): zdjęcia miejsc na mapie (okienko pinezki: zdjęcie, „Otwórz”, „🧭 Nawiguj”; miniatury na liście pod mapą) i na kartach dla kierowcy (miniatura na liście, zdjęcie nad lokalnym adresem); test `t31`
+- (gałąź, ten sam PR): **„📥 Przygotuj offline”** (`prep.js`, `#/przygotuj/:id`, link na ekranie podróży) – lista kontrolna i jeden przycisk: ochrona danych, karty dla kierowcy, zdjęcia, kursy NBP (waluty też z kraju: CNY/THB/VND/LAK…), pogoda, mapa offline; ostrzeżenie przed Chinami; test `t32`. Przy okazji: naprawiony przycisk NBP w budżecie, zdjęcie, którego nie da się pobrać, nie jest pobierane w kółko
+- (gałąź, ten sam PR): **kopia poza telefonem** – przypomnienie 3 dni przed wyjazdem o 18:00, gdy dane zmieniły się od ostatniej kopii (`Reminders.newestChange/backupStale`, ustawienie `backup`); krok „💾 Kopia poza telefonem” w Przygotuj offline (robi go użytkownik – Dysk Google / mail); ekran kopii: ostrzeżenie o zmianach, porady (drugi telefon, hasło), `?wroc=` do listy; test `t33`
+- (gałąź, ten sam PR): **mapa** – drugie dotknięcie tej samej pinezki od razu otwiera punkt, nazwa i zdjęcie w okienku też (okienko pinezki ma `closeOnClick: false`, inaczej Leaflet zamyka je przed obsługą dotknięcia); **rozmówki** – 26 zwrotów w grupach (`GROUPS`, 4. pole zwrotu): nowe m.in. „Nie jem mięsa”, „Bez lodu”, „Proszę napisać cenę”, „Czy mogę zapłacić kartą?”, „Pomocy!”, apteka, szpital, policja; test `t31`
+
+- (gałąź, ten sam PR): **naprawa czarnego tła** (zgłoszone z telefonu 13.11: „pobrane 0/100”) – filtr `BAD` sprawdzał też ukryte kategorie Commons („Pages with maps”, „Media with locations”), które ma prawie każde zdjęcie, więc lista była pusta. Teraz tylko tytuł, nazwa, opis i widoczne kategorie; krótsze `EXCLUDE` (limit 300 znaków zapytania); pojedynczy błąd nie przerywa szukania; pusta lista – kolejna próba po 10 min; `bgPool.v = 3`; w Ustawieniach → Tło przyczyna, gdy brak zdjęć (oszczędzanie danych / błąd Commons / pusta lista). Test t29 z realistycznymi kategoriami.
+
+## Właściciel – preferencje i uwagi
+- Pisze po polsku, krótko; woli małe kroki, podsumowanie po każdej zmianie, potem pytanie o PR (zwykle odpowiada „tak”).
+- Leci do **Chin, Laosu, Wietnamu i Tajlandii** – stąd mapy z napisami łacińskimi, mapa offline, Amap/geo:, NBP tabela B, karty dla kierowcy, rozmówki.
+- Apka ma być **o podróżowaniu** – w tle tylko natura i miasta, **żadnych motywów religijnych** (dostał obraz Jezusa – naprawione w PR #10).
+- Zgłoszone problemy (12.11): „📍 Tutaj” szukało bardzo długo, na mapie „nie dało się nic oznaczyć” – poprawione w PR #9, **czeka na jego ocenę** na telefonie (jeśli dalej źle – dopytać, co chce robić na mapie).
+- Chciał zdjęć miejsc (zrobione w planie i pomysłach) i tła ze zdjęć, „żeby nie było takie czarne”.
 
 ## Testy na telefonie (właściciel, 11.11)
-- Działa: APK bez paska adresu, przypomnienia, bilet na pełnym ekranie, mapa, Odkrywaj (+ „📍 Tutaj” po poprawce), pomysły, rozliczenie, wyszukiwarka miejsc.
-- Nie sprawdzone: wysyłanie podróży plikiem (brak drugiej osoby), .pkpass (brak biletu).
-- Do sprawdzenia przez właściciela (po scaleniu PR #5): mapa nie skacze na San Juan, dotknięcie mapy → punkt, Ustawienia → Język → English, Nawigacja → Organic Maps.
-- Właściciel leci do **Chin, Laosu, Wietnamu i Tajlandii** – stąd mapy z napisami łacińskimi, kafelki offline, Amap/geo:, NBP tabela B.
+- Działa: APK bez paska adresu, przypomnienia, bilet na pełnym ekranie, mapa, Odkrywaj, pomysły, rozliczenie, wyszukiwarka miejsc.
+- Nie sprawdzone: wysyłanie podróży plikiem (brak drugiej osoby), .pkpass (brak biletu), wszystko z etapu 11 i PR #7–#10.
+- Wszystko od PR #6 testowane tylko w przeglądarce z symulowaną siecią (w środowisku chmurowym nie ma dostępu do OSM/Wikipedii/CARTO).
 
 ## Co zostało
-1. **Właściciel:** scalić PR #1, zainstalować APK, przejść `DO-SPRAWDZENIA.md` i zgłosić błędy.
-2. Pomysły na dalej: więcej języków (słownik jak `i18n-en.js`), edycja na żywo przez kilka osób (wymagałaby serwera, np. Firebase), licznik w APK według strefy lotniska.
-3. Poprawki po testach na telefonie (najbardziej prawdopodobne: odczyt maili od prawdziwych przewoźników – `email.js`).
+1. **Właściciel:** sprawdzić na telefonie PR #9 (mapa, Odkrywaj) i #10 (tło), przejść `DO-SPRAWDZENIA.md` (sekcje „Etap 11”, „Zdjęcia miejsc”, „Tło ze zdjęć”, „Mapa i Odkrywaj”) i zgłosić błędy.
+2. Następne z listy właściciela (13.11): punkt 3 – sprawdzenie na telefonie; punkt 4 zrobiony (13.11).
+3. Pomysły na dalej: więcej języków (słownik jak `i18n-en.js`), edycja na żywo przez kilka osób (wymagałaby serwera), licznik w APK według strefy lotniska.
+4. Znane: test t5 bywa czerwony blisko północy (godziny liczone od „teraz”) – także na niezmienionym kodzie; t23 trwa ~26 s (symulowany GPS bez odpowiedzi).
 
 ## Pliki aplikacji (`podroznik/`)
 | Plik | Rola |
@@ -48,12 +60,13 @@ Nic nie było jeszcze testowane na prawdziwym telefonie – lista: `DO-SPRAWDZEN
 | `docs.js`, `budget.js`, `stats.js`, `weather.js`, `email.js` | etap 8: dokumenty, budżet, statystyki i mapa, pogoda, odczyt maili |
 | `places.js`, `discover.js`, `split.js`, `share.js` | etap 10: mapa i trasa dnia, odkrywanie, rozliczenie w grupie, wspólna podróż |
 | `phrases.js`, `offline.js` | etap 11: karty dla kierowcy + rozmówki; mapa offline |
+| `prep.js` | „Przygotuj offline” – wszystko na zapas jednym przyciskiem (korzysta z App.Offline, App.Phrases, App.Photos, App.Budget.nbp, App.Weather) |
 | `i18n.js`, `i18n-en.js` | języki: „tłumacz ekranu” (MutationObserver) + słownik PL→EN; `I18N.locale` do dat i liczb |
 | `sw.js` | offline + powiadomienia w tle (periodicsync) + kliknięcie powiadomienia |
 | `lib/` | pdf.js, bwip-js, ZXing, Leaflet, airports.js (OpenFlights), world.js (Natural Earth) – licencje w `lib/` |
 
 ## Zasady i pułapki (ważne przy zmianach)
-- **Po każdej zmianie plików aplikacji podbij `CACHE` w `sw.js`** (teraz `podroznik-v26`) i dopisz nowe pliki do listy `APP`.
+- **Po każdej zmianie plików aplikacji podbij `CACHE` w `sw.js`** (teraz `podroznik-v31`) i dopisz nowe pliki do listy `APP`.
 - Nowy magazyn danych = podbić `VERSION` w `db.js` i dodać do `STORES` (aktualizacja zachowuje dane – test t12).
 - Nasłuch zdarzeń podpinaj do elementów widoku, **nie do `#view`** (zostaje między ekranami → podwójne akcje).
 - Router ignoruje wolniej wczytany starszy ekran (`renderSeq` w `app.js`).
@@ -66,7 +79,8 @@ Nic nie było jeszcze testowane na prawdziwym telefonie – lista: `DO-SPRAWDZEN
 - Odkrywaj: `overpass()` pyta serwery wyścigiem (kolejny po 2 s albo po błędzie, całość ≤ 15 s); `attractions(c, onPartial)` – Wikipedia równolegle, pierwsze wyniki od razu, potem połączone z OSM. Mapa: `popupFor`/`save` w places.js (zapis bez formularza), `keepNext`/`lastView` – odświeżenie bez przeskoku widoku, `pois` – atrakcje na mapie (🏛️). `.mp-map` ma własny kontekst warstw (`isolation`), żeby nie zasłaniać komunikatów.
 - Tło ze zdjęć: `App.Backdrop.next()` wołane na końcu `render()`; lista kandydatów `bgPool` (Commons, kategoria Featured pictures, wyszukiwanie po hasłach podróżniczych, odświeżana co 30 dni), zdjęcia w pamięci `tla-zdjecia` (max 100, po jednym przy przejściu; nie przy oszczędzaniu danych). Ustawienie `bgPhotos` + `localStorage podroznik-bg`. **Właściciel nie chce zdjęć religijnych** (dostał obraz Jezusa) – lista `bgPool.v = 2`: hasła tylko natura/miasta, wykluczenia w zapytaniu (`EXCLUDE`) i filtr `BAD` (tytuł, opis, kategorie); zmiana wersji kasuje pobrane zdjęcia. `bgBlocked` – zdjęcia ukryte przyciskiem. Czytelność: `--veil` (mgiełka) i półprzezroczyste paski z rozmyciem (`html.has-bg`).
 - Zdjęcia miejsc: pole `photo` { data (JPEG data URL ~360 px), page, credit, auto } w punkcie planu; `photoTry` = ostatnia próba (bez trafienia – nowa za 7 dni), `photoOff` = usunięte ręcznie, `photoUrl`/`wikiUrl` z Odkrywaj. Plan dociąga brakujące w tle (`App.Photos.fill`) i wstawia miniatury bez przeładowania (`data-pid`). Zmiana nazwy/położenia kasuje zdjęcie automatyczne.
-- Test t5 bywa czerwony blisko północy (godziny liczone od „teraz”) – także na niezmienionym kodzie.
+- Test t5 bywa czerwony blisko północy (godziny liczone od „teraz”) – także na niezmienionym kodzie. t3 wymaga wirtualnego aparatu (`make-cam.py`). Stare testy biorą katalog danych jako argument: `node podroznik-testy/t12.js podroznik-testy`.
+- „Ostatnia zmiana danych” liczona z pola `updated` (DB.put). Pobrane w tle dane (adresy kart, zdjęcia, kursy, mapa) zapisuj przez `putRaw`, żeby nie unieważniały kopii.
 - Karty dla kierowcy: pole `local` { lat, lon, cc, lang, name, addr } w noclegu / punkcie planu (Nominatim reverse: najpierw kraj po angielsku, potem adres w języku kraju – `LANG_OF` w phrases.js); nieaktualne, gdy zmieni się położenie. Zapytania Nominatim idą przez wspólną kolejkę `App.Places.osm`.
 - Kafelki mapy w pamięci `mapa-kafelki` (sw.js, do 4000) – nie zaczyna się od „podroznik-”, więc nie jest kasowana przy nowej wersji.
 - Godziny zapisywane jako czas lokalny miejsca: `"RRRR-MM-DDTGG:MM"`.

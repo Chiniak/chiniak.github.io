@@ -336,6 +336,7 @@
         ${t.note ? `<p class="note">${esc(t.note)}</p>` : ""}
       </div>
       <a class="plan-link" href="#/plan/${t.id}"><span aria-hidden="true">🗓️</span> Plan dnia po dniu <span class="muted">– zwiedzanie, jedzenie, mapa</span><b aria-hidden="true">›</b></a>
+      ${t.end >= todayStr() ? `<a class="plan-link" href="#/przygotuj/${t.id}"><span aria-hidden="true">📥</span> Przygotuj offline <span class="muted">– mapa, karty, zdjęcia, kursy na zapas</span><b aria-hidden="true">›</b></a>` : ""}
       <a class="plan-link" href="#/pakowanie/${t.id}"><span aria-hidden="true">🧳</span> Pakowanie <span class="muted">– ${packTxt}</span><b aria-hidden="true">›</b></a>
       ${bg ? `<a class="plan-link${bg.budget && bg.spent > bg.budget ? " warn" : ""}" href="#/budzet/${t.id}"><span aria-hidden="true">💰</span> Budżet <span class="muted">– ${bgTxt}</span><b aria-hidden="true">›</b></a>` : ""}
       <a class="plan-link" href="#/udostepnij/${t.id}"><span aria-hidden="true">👥</span> Udostępnij <span class="muted">– wspólna podróż, plan jako tekst</span><b aria-hidden="true">›</b></a>

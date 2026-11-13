@@ -84,7 +84,13 @@
     const cur = await DB.get("planItems", it.id);
     if (!cur) return null;
     if (!hit) { await DB.putRaw("planItems", { ...cur, photoTry: Date.now() }); return null; }
-    const photo = { data: await toData(hit.src), page: hit.page, credit: hit.credit, auto: true };
+    let data;
+    try { data = await toData(hit.src); }
+    catch (e) { // obrazka nie da się pobrać / odczytać – następna próba za 7 dni (bez sieci: przy następnym otwarciu)
+      if (navigator.onLine) await DB.putRaw("planItems", { ...cur, photoTry: Date.now() });
+      throw e;
+    }
+    const photo = { data, page: hit.page, credit: hit.credit, auto: true };
     await DB.putRaw("planItems", { ...cur, photo, photoTry: Date.now() });
     return photo;
   }

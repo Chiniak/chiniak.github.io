@@ -22,24 +22,37 @@
     vi: { name: "Tiếng Việt", pl: "wietnamski", flag: "🇻🇳" },
     lo: { name: "ລາວ", pl: "laotański", flag: "🇱🇦" },
   };
-  // [klucz, tekst polski, { język: [zapis lokalny, wymowa] }]
+  // [klucz, tekst polski, { język: [zapis lokalny, wymowa] }, grupa]
+  const GROUPS = [["basic", "Podstawy"], ["taxi", "Taksówka i tuk-tuk"], ["food", "Jedzenie i picie"], ["shop", "Zakupy"], ["help", "Pomoc i zdrowie"]];
   const PHRASES = [
     ["take", "Proszę mnie zawieźć pod ten adres", {
       zh: ["请带我去这个地址", "qǐng dài wǒ qù zhège dìzhǐ"], th: ["กรุณาไปที่อยู่นี้", "ka-ru-naa pai thii-yuu nii"],
-      vi: ["Làm ơn đưa tôi đến địa chỉ này", ""], lo: ["ກະລຸນາໄປບ່ອນນີ້", "ka-lu-naa pai bòn nii"] }],
-    ["hello", "Dzień dobry", { zh: ["你好", "nǐ hǎo"], th: ["สวัสดีครับ / ค่ะ", "sa-wat-dii khrap (m.) / kha (k.)"], vi: ["Xin chào", ""], lo: ["ສະບາຍດີ", "sa-baai-dii"] }],
-    ["thanks", "Dziękuję", { zh: ["谢谢", "xièxie"], th: ["ขอบคุณครับ / ค่ะ", "khop-khun khrap / kha"], vi: ["Cảm ơn", ""], lo: ["ຂອບໃຈ", "khop jai"] }],
-    ["sorry", "Przepraszam", { zh: ["不好意思", "bù hǎoyìsi"], th: ["ขอโทษครับ / ค่ะ", "khor-thoot khrap / kha"], vi: ["Xin lỗi", ""], lo: ["ຂໍໂທດ", "khor thoot"] }],
-    ["price", "Ile to kosztuje?", { zh: ["多少钱？", "duōshao qián?"], th: ["เท่าไหร่", "thao-rai?"], vi: ["Bao nhiêu tiền?", ""], lo: ["ລາຄາເທົ່າໃດ", "laa-khaa thao-dai?"] }],
-    ["expensive", "Za drogo", { zh: ["太贵了", "tài guì le"], th: ["แพงเกินไป", "phaeng koen pai"], vi: ["Đắt quá", ""], lo: ["ແພງໂພດ", "phaeng phoot"] }],
-    ["meter", "Proszę włączyć taksometr", { zh: ["请打表", "qǐng dǎ biǎo"], th: ["เปิดมิเตอร์ด้วยครับ / ค่ะ", "poet mi-toe duay khrap / kha"], vi: ["Làm ơn bật đồng hồ tính tiền", ""] }],
-    ["stop", "Proszę się tu zatrzymać", { zh: ["请在这里停车", "qǐng zài zhèlǐ tíngchē"], th: ["จอดตรงนี้ครับ / ค่ะ", "jot trong nii khrap / kha"], vi: ["Dừng ở đây", ""], lo: ["ຈອດຢູ່ນີ້", "jot yuu nii"] }],
-    ["bill", "Proszę o rachunek", { zh: ["买单", "mǎidān"], th: ["เช็คบิลครับ / ค่ะ", "chek bin khrap / kha"], vi: ["Tính tiền", ""], lo: ["ເກັບເງິນແດ່", "kep ngoen dae"] }],
-    ["notspicy", "Nie ostre, proszę", { zh: ["不要辣", "bú yào là"], th: ["ไม่เผ็ด", "mai phet"], vi: ["Không cay", ""], lo: ["ບໍ່ເຜັດ", "bor phet"] }],
-    ["peanuts", "Mam alergię na orzeszki ziemne", { zh: ["我对花生过敏", "wǒ duì huāshēng guòmǐn"], th: ["แพ้ถั่วลิสง", "phae thua-li-song"], vi: ["Tôi bị dị ứng đậu phộng (lạc)", ""], lo: ["ແພ້ຖົ່ວດິນ", "phae thua-din"] }],
-    ["toilet", "Gdzie jest toaleta?", { zh: ["厕所在哪里？", "cèsuǒ zài nǎlǐ?"], th: ["ห้องน้ำอยู่ที่ไหน", "hong-naam yuu thii-nai?"], vi: ["Nhà vệ sinh ở đâu?", ""], lo: ["ຫ້ອງນ້ຳຢູ່ໃສ", "hong-naam yuu sai?"] }],
-    ["dontknow", "Nie rozumiem", { zh: ["我听不懂", "wǒ tīng bu dǒng"], th: ["ไม่เข้าใจ", "mai khao-jai"], vi: ["Tôi không hiểu", ""], lo: ["ບໍ່ເຂົ້າໃຈ", "bor khao-jai"] }],
-    ["doctor", "Potrzebuję lekarza", { zh: ["我需要医生", "wǒ xūyào yīshēng"], th: ["ต้องการหมอ", "tong-kaan mor"], vi: ["Tôi cần bác sĩ", ""], lo: ["ຕ້ອງການໝໍ", "tong-kaan mor"] }],
+      vi: ["Làm ơn đưa tôi đến địa chỉ này", ""], lo: ["ກະລຸນາໄປບ່ອນນີ້", "ka-lu-naa pai bòn nii"] }, "taxi"],
+    ["hello", "Dzień dobry", { zh: ["你好", "nǐ hǎo"], th: ["สวัสดีครับ / ค่ะ", "sa-wat-dii khrap (m.) / kha (k.)"], vi: ["Xin chào", ""], lo: ["ສະບາຍດີ", "sa-baai-dii"] }, "basic"],
+    ["thanks", "Dziękuję", { zh: ["谢谢", "xièxie"], th: ["ขอบคุณครับ / ค่ะ", "khop-khun khrap / kha"], vi: ["Cảm ơn", ""], lo: ["ຂອບໃຈ", "khop jai"] }, "basic"],
+    ["nothanks", "Nie, dziękuję", { zh: ["不用了，谢谢", "bú yòng le, xièxie"], th: ["ไม่เอาครับ / ค่ะ ขอบคุณ", "mai ao khrap / kha, khop-khun"], vi: ["Không, cảm ơn", ""], lo: ["ບໍ່ເອົາ ຂອບໃຈ", "bor ao, khop jai"] }, "basic"],
+    ["sorry", "Przepraszam", { zh: ["不好意思", "bù hǎoyìsi"], th: ["ขอโทษครับ / ค่ะ", "khor-thoot khrap / kha"], vi: ["Xin lỗi", ""], lo: ["ຂໍໂທດ", "khor thoot"] }, "basic"],
+    ["dontknow", "Nie rozumiem", { zh: ["我听不懂", "wǒ tīng bu dǒng"], th: ["ไม่เข้าใจ", "mai khao-jai"], vi: ["Tôi không hiểu", ""], lo: ["ບໍ່ເຂົ້າໃຈ", "bor khao-jai"] }, "basic"],
+    ["slower", "Proszę mówić wolniej", { zh: ["请说慢一点", "qǐng shuō màn yìdiǎn"], th: ["พูดช้า ๆ หน่อยครับ / ค่ะ", "phuut chaa-chaa noi khrap / kha"], vi: ["Làm ơn nói chậm lại", ""], lo: ["ເວົ້າຊ້າໆແດ່", "vao saa-saa dae"] }, "basic"],
+    ["toilet", "Gdzie jest toaleta?", { zh: ["厕所在哪里？", "cèsuǒ zài nǎlǐ?"], th: ["ห้องน้ำอยู่ที่ไหน", "hong-naam yuu thii-nai?"], vi: ["Nhà vệ sinh ở đâu?", ""], lo: ["ຫ້ອງນ້ຳຢູ່ໃສ", "hong-naam yuu sai?"] }, "basic"],
+    ["meter", "Proszę włączyć taksometr", { zh: ["请打表", "qǐng dǎ biǎo"], th: ["เปิดมิเตอร์ด้วยครับ / ค่ะ", "poet mi-toe duay khrap / kha"], vi: ["Làm ơn bật đồng hồ tính tiền", ""] }, "taxi"],
+    ["stop", "Proszę się tu zatrzymać", { zh: ["请在这里停车", "qǐng zài zhèlǐ tíngchē"], th: ["จอดตรงนี้ครับ / ค่ะ", "jot trong nii khrap / kha"], vi: ["Dừng ở đây", ""], lo: ["ຈອດຢູ່ນີ້", "jot yuu nii"] }, "taxi"],
+    ["bill", "Proszę o rachunek", { zh: ["买单", "mǎidān"], th: ["เช็คบิลครับ / ค่ะ", "chek bin khrap / kha"], vi: ["Tính tiền", ""], lo: ["ເກັບເງິນແດ່", "kep ngoen dae"] }, "food"],
+    ["notspicy", "Nie ostre, proszę", { zh: ["不要辣", "bú yào là"], th: ["ไม่เผ็ด", "mai phet"], vi: ["Không cay", ""], lo: ["ບໍ່ເຜັດ", "bor phet"] }, "food"],
+    ["nomeat", "Nie jem mięsa", { zh: ["我不吃肉", "wǒ bù chī ròu"], th: ["ไม่กินเนื้อสัตว์", "mai kin nuea-sat"], vi: ["Tôi không ăn thịt", ""], lo: ["ບໍ່ກິນຊີ້ນ", "bor kin sin"] }, "food"],
+    ["noice", "Bez lodu, proszę", { zh: ["不要冰", "bú yào bīng"], th: ["ไม่ใส่น้ำแข็ง", "mai sai nam-khaeng"], vi: ["Không đá", ""], lo: ["ບໍ່ໃສ່ນ້ຳກ້ອນ", "bor sai nam-kon"] }, "food"],
+    ["nosugar", "Bez cukru, proszę", { zh: ["不要糖", "bú yào táng"], th: ["ไม่ใส่น้ำตาล", "mai sai nam-taan"], vi: ["Không đường", ""], lo: ["ບໍ່ໃສ່ນ້ຳຕານ", "bor sai nam-taan"] }, "food"],
+    ["water", "Poproszę butelkę wody", { zh: ["请给我一瓶水", "qǐng gěi wǒ yì píng shuǐ"], th: ["ขอน้ำเปล่าขวดหนึ่ง", "khor nam-plao khuat nueng"], vi: ["Cho tôi một chai nước", ""], lo: ["ຂໍນ້ຳຂວດໜຶ່ງ", "khor nam khuat nueng"] }, "food"],
+    ["peanuts", "Mam alergię na orzeszki ziemne", { zh: ["我对花生过敏", "wǒ duì huāshēng guòmǐn"], th: ["แพ้ถั่วลิสง", "phae thua-li-song"], vi: ["Tôi bị dị ứng đậu phộng (lạc)", ""], lo: ["ແພ້ຖົ່ວດິນ", "phae thua-din"] }, "food"],
+    ["price", "Ile to kosztuje?", { zh: ["多少钱？", "duōshao qián?"], th: ["เท่าไหร่", "thao-rai?"], vi: ["Bao nhiêu tiền?", ""], lo: ["ລາຄາເທົ່າໃດ", "laa-khaa thao-dai?"] }, "shop"],
+    ["expensive", "Za drogo", { zh: ["太贵了", "tài guì le"], th: ["แพงเกินไป", "phaeng koen pai"], vi: ["Đắt quá", ""], lo: ["ແພງໂພດ", "phaeng phoot"] }, "shop"],
+    ["writeprice", "Proszę napisać cenę", { zh: ["请把价格写下来", "qǐng bǎ jiàgé xiě xiàlái"], th: ["ช่วยเขียนราคาให้หน่อย", "chuay khian raa-khaa hai noi"], vi: ["Làm ơn viết giá ra", ""], lo: ["ຊ່ວຍຂຽນລາຄາໃຫ້ແດ່", "suay khian laa-khaa hai dae"] }, "shop"],
+    ["card", "Czy mogę zapłacić kartą?", { zh: ["可以刷卡吗？", "kěyǐ shuā kǎ ma?"], th: ["จ่ายด้วยบัตรได้ไหม", "jaai duay bat dai mai?"], vi: ["Tôi trả bằng thẻ được không?", ""], lo: ["ຈ່າຍດ້ວຍບັດໄດ້ບໍ່", "jaai duay bat dai bor?"] }, "shop"],
+    ["help", "Pomocy!", { zh: ["救命！", "jiùmìng!"], th: ["ช่วยด้วย", "chuay duay!"], vi: ["Cứu tôi với!", ""], lo: ["ຊ່ວຍແດ່", "suay dae!"] }, "help"],
+    ["doctor", "Potrzebuję lekarza", { zh: ["我需要医生", "wǒ xūyào yīshēng"], th: ["ต้องการหมอ", "tong-kaan mor"], vi: ["Tôi cần bác sĩ", ""], lo: ["ຕ້ອງການໝໍ", "tong-kaan mor"] }, "help"],
+    ["hospital", "Gdzie jest szpital?", { zh: ["医院在哪里？", "yīyuàn zài nǎlǐ?"], th: ["โรงพยาบาลอยู่ที่ไหน", "rong-pha-yaa-baan yuu thii-nai?"], vi: ["Bệnh viện ở đâu?", ""], lo: ["ໂຮງໝໍຢູ່ໃສ", "hong-mor yuu sai?"] }, "help"],
+    ["pharmacy", "Gdzie jest apteka?", { zh: ["药店在哪里？", "yàodiàn zài nǎlǐ?"], th: ["ร้านขายยาอยู่ที่ไหน", "raan khaai yaa yuu thii-nai?"], vi: ["Nhà thuốc ở đâu?", ""], lo: ["ຮ້ານຂາຍຢາຢູ່ໃສ", "haan khaai yaa yuu sai?"] }, "help"],
+    ["police", "Proszę wezwać policję", { zh: ["请叫警察", "qǐng jiào jǐngchá"], th: ["ช่วยเรียกตำรวจ", "chuay riak tam-ruat"], vi: ["Làm ơn gọi cảnh sát", ""], lo: ["ຊ່ວຍເອີ້ນຕຳຫຼວດ", "suay oen tam-luat"] }, "help"],
   ];
   const takeMe = lang => { const p = PHRASES[0][2][lang]; return p ? p[0] : ""; };
 
@@ -101,6 +114,7 @@
         ${L0.addr ? `<div class="tx-addr" lang="${L0.lang}" translate="no">${esc(L0.addr)}</div>` : ""}` : "";
     return `
       <div class="tx-body">
+        ${e.rec.photo && e.rec.photo.data ? `<img class="tx-photo" src="${e.rec.photo.data}" alt="">` : ""}
         ${localTxt || `<div class="tx-name">${esc(e.title)}</div>`}
         <div class="tx-latin">
           ${localTxt ? `<b>${esc(e.title)}</b>` : ""}
@@ -146,7 +160,7 @@
       const L0 = e.rec.local;
       const loc = L0 && L0.lang && fresh(e.rec) ? (L0.name || L0.addr) : "";
       return `<button type="button" class="tx-row" data-k="${e.key}">
-          <span class="tx-ic" aria-hidden="true">${e.icon}</span>
+          ${e.rec.photo && e.rec.photo.data ? `<img class="tx-thumb" src="${e.rec.photo.data}" alt="" loading="lazy" decoding="async">` : `<span class="tx-ic" aria-hidden="true">${e.icon}</span>`}
           <span class="tx-main"><b>${esc(e.title)}</b><span class="muted small">${esc(e.when)}${loc ? ` · <span lang="${L0.lang}" translate="no">${esc(loc)}</span>` : fresh(e.rec) ? "" : " · bez lokalnego adresu"}</span></span>
           <b class="tx-go" aria-hidden="true">›</b></button>`;
     };
@@ -168,12 +182,14 @@
 
         <h3 class="section">Rozmówki</h3>
         <div class="st-chips">${order.map(l => `<a class="st-chip${l === lang ? " on" : ""}" href="#/karty/${id}?j=${l}" ${l === lang ? 'aria-current="true"' : ""}>${LANGS[l].flag} <span translate="no">${LANGS[l].name}</span></a>`).join("")}</div>
-        <div class="card tx-list">
-          ${PHRASES.filter(p => p[2][lang]).map(p => `<button type="button" class="tx-row tx-ph" data-p="${p[0]}">
+        ${GROUPS.map(([gk, gname]) => {
+          const ps = PHRASES.filter(p => p[3] === gk && p[2][lang]);
+          return ps.length ? `<h4 class="tx-group">${gname}</h4><div class="card tx-list">
+          ${ps.map(p => `<button type="button" class="tx-row tx-ph" data-p="${p[0]}">
             <span class="tx-main"><span class="tx-loc" lang="${lang}" translate="no">${esc(p[2][lang][0])}</span>
               <span class="muted small"><span>${esc(p[1])}</span>${p[2][lang][1] ? ` · <i translate="no">${esc(p[2][lang][1])}</i>` : ""}</span></span>
-            <b class="tx-go" aria-hidden="true">›</b></button>`).join("")}
-        </div>
+            <b class="tx-go" aria-hidden="true">›</b></button>`).join("")}</div>` : "";
+        }).join("")}
         <p class="muted small"><span>Dotknij zwrotu, by pokazać go dużymi literami. Wymowa jest uproszczona.</span>
           ${lang === "th" ? `<span>Po tajsku mężczyzna kończy zdanie „khrap”, kobieta „kha”.</span>` : ""}
           ${lang === "lo" ? `<span>W Laosie tuk-tuki nie mają taksometrów – cenę ustal przed jazdą.</span>` : ""}</p>`,
@@ -210,5 +226,5 @@
     };
   });
 
-  App.Phrases = { PHRASES, LANGS, localize, localAddress };
+  App.Phrases = { PHRASES, GROUPS, LANGS, localize, localAddress };
 })();
