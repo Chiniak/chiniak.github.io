@@ -146,3 +146,10 @@ Adres (po scaleniu pull requesta): https://chiniak.github.io/podroznik/
 - [ ] Po włączeniu trybu samolotowego: karta dla kierowcy, zdjęcia i mapa działają
 - [ ] „Ochrona danych” – w APK powinna się włączyć; jeśli nie, napisz
 - [ ] Budżet: „🏦 Pobierz kursy z NBP” działa
+
+## Kopia poza telefonem (13.11)
+- [ ] „Przygotuj offline” ma krok „💾 Kopia poza telefonem” i przycisk „Zrób kopię poza telefonem”
+- [ ] Zapis kopii z hasłem na Dysk Google (menu Udostępnij) – potem krok ma ✅ „z hasłem”
+- [ ] Po dodaniu biletu/noclegu krok znowu ⬜, a na ekranie kopii jest ostrzeżenie o zmianach
+- [ ] 3 dni przed wyjazdem o 18:00 przychodzi przypomnienie o kopii (jeśli były zmiany); wyłącznik w Ustawienia → Przypomnienia
+- [ ] Drugi telefon: wczytanie kopii przez „Wybierz plik kopii” → „Dołącz”

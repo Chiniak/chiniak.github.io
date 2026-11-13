@@ -817,4 +817,6 @@ html.has-bg .card, html.has-bg .pl-row, html.has-bg .plan-link { box-shadow: 0 2
 .pr-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; overflow-wrap: anywhere; }
 .pr-go { color: var(--accent); font-size: 24px; font-weight: 700; text-decoration: none; padding: 4px 6px; flex: none; }
 .pr-ok { font-weight: 600; text-align: center; margin: 14px 0; }
-#pr-go, #pr-stop, #pr-persist { margin-top: 12px; }
+#pr-go, #pr-stop, #pr-persist, .pr-backup { margin-top: 12px; }
+.bk-warn { margin: 8px 0 4px; padding: 8px 10px; border-radius: 10px; background: rgba(208,138,23,.14); font-size: 14px; }
+.bk-tips ol { margin: 6px 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }

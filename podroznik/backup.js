@@ -127,8 +127,19 @@
     .join(" · ") || "brak danych";
 
   /* ================= EKRAN KOPII ================= */
-  App.route(/^\/ustawienia\/kopia$/, async () => {
+  // czy od ostatniej kopii coś się zmieniło (reminders-core.js)
+  async function stale() {
+    const R = self.Reminders, last = await DB.getSetting("lastBackup", null);
+    if (!R || !R.backupStale) return !last;
+    const data = {};
+    for (const k of ["trips", "segments", "files", "planItems", "docs", "expenses"]) data[k] = await DB.all(k);
+    return R.backupStale(data, last);
+  }
+
+  App.route(/^\/ustawienia\/kopia$/, async (m, q) => {
+    const back = q && /^\/przygotuj\/[\w-]+$/.test(q.wroc || "") ? `#${q.wroc}` : "#/ustawienia";
     const last = await DB.getSetting("lastBackup", null);
+    const changed = last ? await stale() : false;
     const counts = {};
     for (const [k] of COUNT_LABELS) counts[k] = await DB.count(k);
     const age = last ? Math.floor((Date.now() - new Date(last.at)) / 86400000) : null;
@@ -139,16 +150,17 @@
 
     return {
       title: "Kopia zapasowa",
-      back: "#/ustawienia",
+      back,
       html: `
         <div class="card">
           <h2>💾 Zrób kopię</h2>
+          ${changed ? `<p class="bk-warn">⚠️ Od ostatniej kopii doszły zmiany (podróże, bilety, plan lub dokumenty) – zrób nową.</p>` : ""}
           <div class="row"><span class="muted">W aplikacji</span><b>${countsText(counts)}</b></div>
           <div class="row"><span class="muted">Ostatnia kopia</span><b class="${!last || age > 30 ? "warn-txt" : ""}">${lastTxt}</b></div>
           ${last ? `<div class="row"><span class="muted">Rozmiar</span><b>${mb(last.bytes || 0)}${last.encrypted ? " · zaszyfrowana" : ""}</b></div>` : ""}
           <form id="bk-export" class="form" style="margin-top:12px">
             <label class="field"><span>Hasło do pliku (opcjonalnie)</span>
-              <input type="password" name="pw" autocomplete="new-password" placeholder="bez hasła plik da się odczytać"></label>
+              <input type="password" name="pw" autocomplete="new-password" placeholder="zalecane – kopia trafi poza telefon"></label>
             <label class="field" id="pw2-box" hidden><span>Powtórz hasło</span><input type="password" name="pw2" autocomplete="new-password"></label>
             <p class="error" id="bk-err" hidden></p>
             <button class="btn primary wide" type="submit">💾 Zapisz kopię (z biletami)</button>
@@ -156,6 +168,16 @@
           <p class="small muted">Jeden plik z podróżami, biletami (zdjęcia, PDF, kody), planem, pakowaniem i ustawieniami.
             Na telefonie otworzy się menu „Udostępnij” – wybierz np. <b>Dysk Google</b>, mail do siebie albo „Zapisz w Plikach”.
             Plik bez hasła zawiera Twoje bilety i dane rezerwacji – trzymaj go w bezpiecznym miejscu. <b>Hasła nie da się odzyskać.</b></p>
+        </div>
+
+        <div class="card bk-tips">
+          <h2>🧳 Na wypadek zgubienia telefonu</h2>
+          <ol class="small">
+            <li><b>Przed wyjazdem</b> zapisz kopię z hasłem na <b>Dysku Google</b> albo wyślij <b>mailem do siebie</b> – dostaniesz się do niej z każdego telefonu czy komputera.</li>
+            <li><b>Drugi telefon</b> (osoba, z którą jedziesz): wyślij jej plik, a ona w Podróżniku wybierze Ustawienia → Kopia zapasowa → „Wybierz plik kopii” → „Dołącz”. Bilety i plan będą też u niej.</li>
+            <li>Hasło zapamiętaj albo zapisz poza telefonem (np. w notatce u bliskiej osoby).</li>
+            <li>Po większych zmianach (nowe bilety, noclegi) zrób kopię jeszcze raz – aplikacja przypomni 3 dni przed wyjazdem.</li>
+          </ol>
         </div>
 
         <div class="card">
@@ -225,5 +247,5 @@
     };
   });
 
-  App.Backup = { exportBackup, readBackup, restore, snapshot, encrypt, decrypt, blobToDataUrl, dataUrlToBlob, deliver };
+  App.Backup = { stale, exportBackup, readBackup, restore, snapshot, encrypt, decrypt, blobToDataUrl, dataUrlToBlob, deliver };
 })();

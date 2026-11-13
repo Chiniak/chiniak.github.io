@@ -44,12 +44,13 @@
     packDays: 2,   // przypomnienie o pakowaniu N dni przed wyjazdem o 18:00 (0 = wył.)
     todos: true,   // zadania „przed wyjazdem” z terminem – o 9:00 w dniu terminu
     plan: 0,       // punkty planu z godziną – minut przed (0 = wył.)
+    backup: true,  // kopia zapasowa poza telefonem – 3 dni przed wyjazdem o 18:00, jeśli od ostatniej kopii coś się zmieniło
   };
 
   function config(saved) {
     const c = JSON.parse(JSON.stringify(DEFAULTS));
     if (!saved) return c;
-    for (const k of ["enabled", "packDays", "todos", "plan"]) if (k in saved) c[k] = saved[k];
+    for (const k of ["enabled", "packDays", "todos", "plan", "backup"]) if (k in saved) c[k] = saved[k];
     if (saved.types) for (const t in c.types) Object.assign(c.types[t], saved.types[t] || {});
     return c;
   }
@@ -109,6 +110,14 @@
       }
     }
 
+    // kopia zapasowa przed wyjazdem (zgubiony / skradziony telefon) – tylko gdy dane zmieniły się od ostatniej kopii
+    if (cfg.backup && data.files && backupStale(data, data.lastBackup)) for (const t of data.trips) {
+      const d = parse(t.start); d.setDate(d.getDate() - 3);
+      out.push({ id: `backup:${t.id}`, tripId: t.id, href: "/ustawienia/kopia", at: `${fmtLocal(d).slice(0, 10)}T18:00`,
+        eventAt: firstDepart[t.id] || `${t.start}T12:00`, title: `Kopia zapasowa przed wyjazdem: ${t.name}`,
+        body: data.lastBackup ? "Od ostatniej kopii doszły zmiany. Zapisz kopię z hasłem na Dysku Google albo wyślij mailem do siebie." : "Zapisz kopię z hasłem na Dysku Google albo wyślij mailem do siebie – na wypadek zgubienia telefonu." });
+    }
+
     if (cfg.plan > 0) for (const i of data.planItems) {
       if (!i.time || !i.date || !trips[i.tripId]) continue;
       const ev = `${i.date}T${i.time}`;
@@ -133,6 +142,19 @@
     return out.sort((a, b) => a.at.localeCompare(b.at));
   }
 
+  // najnowsza zmiana danych (ISO) – podróże, odcinki, bilety, plan, dokumenty, wydatki (pakowanie pomijamy – zmienia się ciągle)
+  function newestChange(data) {
+    let max = "";
+    for (const k of ["trips", "segments", "files", "planItems", "docs", "expenses"])
+      for (const r of data[k] || []) { const u = r.updated || r.created || ""; if (u > max) max = u; }
+    return max;
+  }
+  // czy trzeba nowej kopii: nie było żadnej albo dane zmieniły się po niej
+  function backupStale(data, last) {
+    const n = newestChange(data);
+    return !!n && (!last || !last.at || last.at < n);
+  }
+
   // przypomnienia aktywne teraz; z kilku dla tego samego odcinka zostaje najnowsze (np. „za 1 h” zamiast „jutro”)
   function active(list, now = nowStr()) {
     const due = list.filter(r => r.at <= now && now < r.eventAt), best = {};
@@ -145,10 +167,11 @@
   }
 
   async function load() {
-    const [trips, segments, packItems, planItems, docs, saved] = await Promise.all([
-      DB.all("trips"), DB.all("segments"), DB.all("packItems"), DB.all("planItems"), DB.all("docs"), DB.getSetting("reminders", null)]);
+    const [trips, segments, packItems, planItems, docs, files, expenses, saved, lastBackup] = await Promise.all([
+      DB.all("trips"), DB.all("segments"), DB.all("packItems"), DB.all("planItems"), DB.all("docs"), DB.all("files"), DB.all("expenses"),
+      DB.getSetting("reminders", null), DB.getSetting("lastBackup", null)]);
     const cfg = config(saved);
-    return { cfg, list: cfg.enabled ? compute({ trips, segments, packItems, planItems, docs }, cfg) : [] };
+    return { cfg, list: cfg.enabled ? compute({ trips, segments, packItems, planItems, docs, files, expenses, lastBackup }, cfg) : [] };
   }
 
   // pokazuje przypomnienia, których czas właśnie minął (i jeszcze nie były pokazane); zwraca wszystkie aktywne
@@ -169,5 +192,5 @@
     return due;
   }
 
-  root.Reminders = { DEFAULTS, TYPES, config, compute, active, load, check, addMin, nowStr, dur, parse, minutesBetween };
+  root.Reminders = { newestChange, backupStale, DEFAULTS, TYPES, config, compute, active, load, check, addMin, nowStr, dur, parse, minutesBetween };
 })(self);

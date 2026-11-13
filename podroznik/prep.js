@@ -87,6 +87,14 @@
     }
     steps.push({ key: "map", icon: "🗺️", name: "Mapa offline", href: `#/mapa-offline/${id}`, ...map });
 
+    // 7. kopia zapasowa poza telefonem (zgubiony / skradziony telefon) – na końcu, gdy wszystko już pobrane; robi ją użytkownik (Dysk Google / mail)
+    const last = await DB.getSetting("lastBackup", null);
+    const stale = App.Backup ? await App.Backup.stale() : !last;
+    const when = last ? App.fmtDay(last.at.slice(0, 10)) : "";
+    steps.push({ key: "backup", icon: "💾", name: "Kopia poza telefonem", href: `#/ustawienia/kopia?wroc=/przygotuj/${id}`, manual: true, done: !stale,
+      txt: !last ? "jeszcze nie było – zapisz na Dysku Google albo wyślij mailem do siebie" : stale ? `ostatnia ${when} – od tego czasu doszły zmiany`
+        : `zrobiona ${when}${last.encrypted ? " · z hasłem" : " · bez hasła"}` });
+
     const china = ccs.has("cn") || /chin|china/i.test(`${trip.destination || ""} ${trip.name || ""}`);
     return { trip, g, steps, china };
   }
@@ -150,7 +158,7 @@
     if (!c) { location.replace("#/podroze"); return ""; }
     const { trip, steps, china } = c;
     // do zrobienia przyciskiem: ochrona danych jest prośbą (przeglądarka może odmówić), kursy spoza NBP – ręcznie w budżecie
-    const todo = steps.filter(s => s.done === false && s.key !== "persist" && !(s.key === "rates" && s.home !== "PLN"));
+    const todo = steps.filter(s => s.done === false && s.key !== "persist" && !s.manual && !(s.key === "rates" && s.home !== "PLN"));
     const askPersist = steps.find(s => s.key === "persist" && s.done === false);
     const ready = steps.filter(s => s.done === true).length, total = steps.filter(s => s.done !== null).length;
     const busy = running && running.id === id;
@@ -174,6 +182,8 @@
           : todo.length ? `<button type="button" class="btn primary wide" id="pr-go">📥 Przygotuj wszystko (${todo.length})</button>`
           : `<p class="pr-ok">✅ Wszystko gotowe do podróży bez internetu.</p>${askPersist ? `<button type="button" class="btn wide" id="pr-persist">🛡️ Włącz ochronę danych</button>` : ""}`}
         <div class="card pr-list">${rows}</div>
+        ${steps.find(s => s.key === "backup" && !s.done) ? `<a class="btn wide pr-backup" href="#/ustawienia/kopia?wroc=/przygotuj/${id}">💾 Zrób kopię poza telefonem</a>
+          <p class="muted small">Kopię zapisz sam (Dysk Google, mail do siebie) – najlepiej na końcu, gdy wszystko jest już pobrane. Zgubisz telefon – wczytasz ją na innym.</p>` : ""}
         <p class="muted small">Możesz wyjść z tego ekranu – pobieranie trwa dalej, dopóki aplikacja jest otwarta. Przycisk można nacisnąć ponownie: pobierze tylko to, czego brakuje.</p>`,
       after(view) {
         const stop = view.querySelector("#pr-stop");
@@ -207,7 +217,7 @@
           const stopped = running.stopped;
           running = null;
           const after = await check(id);
-          const left = after ? after.steps.filter(s => s.done === false && s.key !== "persist" && !(s.key === "rates" && s.home !== "PLN")).length : 0;
+          const left = after ? after.steps.filter(s => s.done === false && s.key !== "persist" && !s.manual && !(s.key === "rates" && s.home !== "PLN")).length : 0;
           App.toast(stopped ? "Zatrzymano – pobrane zostaje" : !left ? "Gotowe – podróż przygotowana offline ✅" : `Gotowe częściowo – brakuje ${left} ${plural(left, "rzeczy", "rzeczy", "rzeczy")}, spróbuj ponownie`);
           if (location.hash === `#/przygotuj/${id}`) App.render();
         };

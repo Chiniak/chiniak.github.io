@@ -483,4 +483,25 @@ self.I18N_EN = {
   "Gotowe – podróż przygotowana offline ✅": "Done – trip ready offline ✅", "Gotowe częściowo – brakuje {} {}, spróbuj ponownie": "Partly done – {} {} missing, try again",
   "rzeczy": "items", "Ochrona włączona": "Protection on",
   "Przeglądarka nie zgodziła się – zainstaluj aplikację (APK) albo zwolnij miejsce": "The browser refused – install the app (APK) or free up space",
+
+  /* ---------- kopia poza telefonem (backup.js, prep.js, reminders) ---------- */
+  "Kopia poza telefonem": "Backup off the phone", "jeszcze nie było – zapisz na Dysku Google albo wyślij mailem do siebie": "none yet – save to Google Drive or email it to yourself",
+  "ostatnia {} – od tego czasu doszły zmiany": "last {} – there are changes since then", "zrobiona {} · z hasłem": "made {} · with password", "zrobiona {} · bez hasła": "made {} · no password",
+  "💾 Zrób kopię poza telefonem": "💾 Back up off the phone",
+  "Kopię zapisz sam (Dysk Google, mail do siebie) – najlepiej na końcu, gdy wszystko jest już pobrane. Zgubisz telefon – wczytasz ją na innym.":
+    "Save the backup yourself (Google Drive, email to yourself) – best at the end, when everything is downloaded. If you lose the phone, load it on another one.",
+  "⚠️ Od ostatniej kopii doszły zmiany (podróże, bilety, plan lub dokumenty) – zrób nową.": "⚠️ There are changes since the last backup (trips, tickets, plan or documents) – make a new one.",
+  "zalecane – kopia trafi poza telefon": "recommended – the backup leaves the phone",
+  "🧳 Na wypadek zgubienia telefonu": "🧳 In case you lose your phone",
+  "Przed wyjazdem": "Before you leave", "zapisz kopię z hasłem na": "save a password-protected backup to", "Dysku Google": "Google Drive", "albo wyślij": "or send it",
+  "mailem do siebie": "by email to yourself", "– dostaniesz się do niej z każdego telefonu czy komputera.": "– you can reach it from any phone or computer.",
+  "Drugi telefon": "Second phone",
+  "(osoba, z którą jedziesz): wyślij jej plik, a ona w Podróżniku wybierze Ustawienia → Kopia zapasowa → „Wybierz plik kopii” → „Dołącz”. Bilety i plan będą też u niej.":
+    "(the person you travel with): send them the file, and in the app they choose Settings → Backup → “Choose backup file” → “Merge”. They'll have the tickets and plan too.",
+  "Hasło zapamiętaj albo zapisz poza telefonem (np. w notatce u bliskiej osoby).": "Remember the password or keep it off the phone (e.g. a note with someone close).",
+  "Po większych zmianach (nowe bilety, noclegi) zrób kopię jeszcze raz – aplikacja przypomni 3 dni przed wyjazdem.": "After bigger changes (new tickets, stays) back up again – the app reminds you 3 days before departure.",
+  "💾 Kopia zapasowa – 3 dni przed wyjazdem, jeśli są nowe zmiany": "💾 Backup – 3 days before departure, if there are new changes",
+  "Kopia zapasowa przed wyjazdem: {}": "Backup before departure: {}",
+  "Od ostatniej kopii doszły zmiany. Zapisz kopię z hasłem na Dysku Google albo wyślij mailem do siebie.": "There are changes since the last backup. Save a password-protected backup to Google Drive or email it to yourself.",
+  "Zapisz kopię z hasłem na Dysku Google albo wyślij mailem do siebie – na wypadek zgubienia telefonu.": "Save a password-protected backup to Google Drive or email it to yourself – in case you lose your phone.",
 };
