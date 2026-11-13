@@ -183,3 +183,5 @@ Adres (po scaleniu pull requesta): https://chiniak.github.io/podroznik/
 - [ ] Wpisana wcześniej nazwa zostaje (uzupełniane są tylko puste pola)
 - [ ] „📥 Przygotuj offline” ma krok „🔎 Odczyt biletów ze zdjęć” – po pobraniu ✅
 - [ ] Jeśli coś wpisze źle – prześlij screen (dane możesz zamazać)
+- [ ] Screen w trybie ciemnym (np. karta pociągu z Gmaila/Google) – odczytuje „A → B”, dzień, godzinę odjazdu
+- [ ] Screen wrzucony przez „📷 Własne” w nowym punkcie – też czyta tekst; bilet przenosi się do „🎫 Bilety i zdjęcia”
