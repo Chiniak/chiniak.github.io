@@ -4,10 +4,10 @@
 // baza i wyliczanie przypomnień – do sprawdzania w tle (Periodic Background Sync)
 importScripts("i18n-en.js", "i18n.js", "db.js", "reminders-core.js");
 
-const CACHE = "podroznik-v33";
+const CACHE = "podroznik-v34";
 const APP = [
   "./", "./index.html", "./style.css", "./i18n-en.js", "./i18n.js", "./db.js", "./app.js", "./trips.js", "./manifest.webmanifest",
-  "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png", "./tickets.js", "./plan.js", "./pack.js", "./reminders-core.js", "./reminders.js", "./backup.js", "./lock.js", "./docs.js", "./budget.js", "./stats.js", "./weather.js", "./email.js", "./places.js", "./discover.js", "./split.js", "./share.js", "./offline.js", "./phrases.js", "./photos.js", "./backdrop.js", "./prep.js",
+  "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png", "./tickets.js", "./plan.js", "./pack.js", "./reminders-core.js", "./reminders.js", "./backup.js", "./lock.js", "./docs.js", "./budget.js", "./stats.js", "./weather.js", "./email.js", "./places.js", "./discover.js", "./split.js", "./share.js", "./offline.js", "./phrases.js", "./photos.js", "./backdrop.js", "./prep.js", "./ocr.js",
   // biblioteki do biletów – od razu w pamięci, żeby działały offline także za pierwszym razem
   "./lib/pdf.min.js", "./lib/pdf.worker.min.js", "./lib/bwip-js.min.js", "./lib/zxing.min.js", "./lib/airports.js", "./lib/world.js", "./lib/leaflet.js", "./lib/leaflet.css", "./lib/images/layers.png", "./lib/images/layers-2x.png",
 ];
@@ -53,6 +53,18 @@ async function tileFetch(req) {
   return res;
 }
 
+/* odczyt tekstu ze zdjęć (ocr.js): ~6 MB, które się nie zmieniają – najpierw pamięć „ocr-pliki”
+   (nie kasowana przy nowej wersji, nie zaczyna się od „podroznik-”), sieć tylko za pierwszym razem */
+async function ocrFetch(req) {
+  const c = await caches.open("ocr-pliki");
+  const key = req.url.split("?")[0];
+  const hit = await c.match(key);
+  if (hit) return hit;
+  const res = await fetch(key);
+  if (res.ok) await c.put(key, res.clone());
+  return res;
+}
+
 self.addEventListener("fetch", e => {
   const req = e.request;
   if (req.method !== "GET") return;
@@ -61,6 +73,7 @@ self.addEventListener("fetch", e => {
   if (TILE_HOSTS.test(url.hostname)) { e.respondWith(tileFetch(req).catch(() => Response.error())); return; }
   if (url.origin !== location.origin || !url.pathname.startsWith(new URL("./", self.registration.scope).pathname)) return;
   if (url.pathname.endsWith(".apk")) return; // plik APK pobierany wprost, bez zapisu w pamięci offline
+  if (url.pathname.includes("/lib/ocr/")) { e.respondWith(ocrFetch(req)); return; }
   e.respondWith(
     fetch(req, { cache: "no-cache" })
       .then(res => {

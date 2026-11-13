@@ -1,11 +1,11 @@
 # Podróżnik – stan projektu (do kontynuacji w nowej sesji)
 
-Ostatnia aktualizacja: 13 listopada 2026 – scalone PR #1–#11; na gałęzi czeka: bilety w planie + nowy odczyt maili (PR #12 do zrobienia). Zacznij od przeczytania tego pliku, potem `PLAN.md` i `DO-SPRAWDZENIA.md`.
+Ostatnia aktualizacja: 13 listopada 2026 – scalone PR #1–#12; na gałęzi czeka: odczyt biletów ze zdjęć (OCR) – PR #13 do zrobienia. Zacznij od przeczytania tego pliku, potem `PLAN.md` i `DO-SPRAWDZENIA.md`.
 
 ## Gdzie co jest
 - Repozytorium: `chiniak/chiniak.github.io`, gałąź **`claude/travel-planning-app-tl9mvf`**
 - Gałąź robocza: po scaleniu PR zacznij ją od nowa od `origin/main` (`git checkout -B claude/travel-planning-app-tl9mvf origin/main`), nie nadpisuj historii (force push zablokowany). Nowy PR po każdej porcji zmian – właściciel scala sam.
-- Aplikacja na żywo: https://chiniak.github.io/podroznik/ – wersja „1.2 · etapy 0–11”, pamięć offline **`podroznik-v33`**. APK: https://chiniak.github.io/podroznik/Podroznik.apk (zmiany w stronie nie wymagają nowego APK).
+- Aplikacja na żywo: https://chiniak.github.io/podroznik/ – wersja „1.2 · etapy 0–11”, pamięć offline **`podroznik-v34`**. APK: https://chiniak.github.io/podroznik/Podroznik.apk (zmiany w stronie nie wymagają nowego APK).
 - `podroznik/` – aplikacja (PWA, czysty JS bez frameworka, dane w IndexedDB, offline przez service worker)
 - `podroznik-android/` – projekt APK (Trusted Web Activity, Bubblewrap), instrukcja w jego README
 - `podroznik-testy/` – testy Playwright + przykładowe dane, instrukcja w README (serwer: `python3 -m http.server 8765` w katalogu repo)
@@ -29,6 +29,8 @@ Ostatnia aktualizacja: 13 listopada 2026 – scalone PR #1–#11; na gałęzi cz
 - #11 (scalony 13.11): wszystko z sesji 12–13.11 – naprawa tła, Przygotuj offline, kopia przed wyjazdem, zdjęcia na mapie, rozmówki.
 - (gałąź, PR do zrobienia): **bilety w planie** – „📎 Z biletu lub screena” w planie (zdjęcie, screen, PDF, .pkpass → nowy punkt, kategoria Wydarzenie, dzień i godzina odczytane z tekstu PDF – `whenFromText`), sekcja „🎫 Bilety i zdjęcia” w formularzu punktu, 🎫 przy punkcie w planie (jedno dotknięcie → pełny ekran), takie bilety też w zakładce Bilety i w „Najbliższy bilet”. Plik w `files` z `segmentId: "p:<id punktu>"` (`App.Tickets.planSeg`); usunięcie punktu usuwa jego bilety. Test `t34` (fixture `fx/koncert.pdf`).
 - (gałąź, ten sam PR): **nowy odczyt rezerwacji z maili i plików** (`email.js`) – Booking.com (lot, hotel), Gotogate, Trip.com (lot, pociąg w Chinach), Trainline, Rail Europe, Agoda, Airbnb, AirAsia, 12Go. HTML → tekst (`normalize`); loty: numer + para lotnisk przed numerem (albo po nim) + godzina „przy” lotnisku (`timeNear`; kilka godzin pod rząd = zmiana rozkładu → ostatnia); przesiadki w jednym wierszu; ~70 linii azjatyckich; odrzucane fałszywe numery (VAT „FR 58 …”, „Airbus A320”, pociąg „D8661”, lot bez lotniska); pociągi z przesiadkami (`parseLegs`); hotele: adres z kilku wierszy, telefon, godziny 12 h; PNR ważniejszy niż nr zamówienia; cena przy pierwszym odcinku. Ekran „Z maila”: „📎 Z pliku” – PDF (dołączany jako bilet pierwszego odcinka), .ics, .eml. Test `t35`.
+- #12 (scalony 13.11): bilety i screeny w planie + nowy odczyt maili i plików.
+- (gałąź, PR #13 do zrobienia): **odczyt biletów ze zdjęć (OCR)** – zgłoszone 13.11: „wrzucenie planu przez zdjęcie nie uzupełnia pustych pól” (wcześniej czytany był tylko PDF, i to tylko dzień/godzina). `ocr.js` + `lib/ocr/` (Tesseract.js 6, pol+eng, ~6 MB, wersja SIMD gdy telefon umie). `infoFromText` w plan.js: dzień, godzina, nazwa (etykieta „Wydarzenie:” albo pierwszy zwykły wiersz), miejsce (etykieta, także w następnym wierszu; nie numer miejsca siedzącego), cena (etykieta albo jedyna kwota z walutą); tylko puste pola; także dla PDF. Pliki OCR w pamięci `ocr-pliki` (sw.js, najpierw pamięć, nie kasowana przy nowej wersji); krok „🔎 Odczyt biletów ze zdjęć” w Przygotuj offline. `amount()` w email.js rozumie „1.200.000” (VND). Test `t36` (`fx/bilet-screen.png`, `gen-screen.js`).
 - **Prywatność:** repozytorium jest publiczne – przykłady w `podroznik-testy/mails` mają zmyślone dane i inne trasy/daty niż prawdziwe rezerwacje właściciela. Nie wpisuj tu jego planów podróży (właściciel dostał 13.11 plik podróży zrobiony z jego Gmaila – poza repozytorium).
 
 ## Właściciel – preferencje i uwagi
@@ -44,7 +46,7 @@ Ostatnia aktualizacja: 13 listopada 2026 – scalone PR #1–#11; na gałęzi cz
 - Wszystko od PR #6 testowane tylko w przeglądarce z symulowaną siecią (w środowisku chmurowym nie ma dostępu do OSM/Wikipedii/CARTO).
 
 ## Co zostało (stan na koniec sesji 13.11 – TU ZACZNIJ)
-1. **Najpierw zapytaj właściciela, czy zrobić PR #12** (gałąź jest wypchnięta, PR jeszcze nie istnieje): bilety i screeny w planie („📎 Z biletu lub screena”) + nowy odczyt maili i plików („📎 Z pliku”). Pytanie padło, odpowiedzi jeszcze nie było. Właściciel scala PR sam z telefonu (aplikacja GitHub; PR #11 scalił bez problemu).
+1. **PR #13** – odczyt biletów ze zdjęć (OCR); jeśli jeszcze nie istnieje, zapytaj właściciela. Właściciel scala PR sam z telefonu.
 2. **Testy na telefonie (właściciel, w toku):** tło po naprawie z PR #11 – czy pojawiają się zdjęcia (przy 0/100 w Ustawienia → Tło jest teraz podana przyczyna); „📥 Przygotuj offline”; potem po PR #12 – bilety w planie i odczyt maili. Lista: `DO-SPRAWDZENIA.md` (sekcje od 12.11).
 3. **Właściciel dostał w czacie plik podróży z jego Gmaila** (do wczytania: Podróże → „📥 Otwórz podróż od kogoś”) – zapytaj, czy wczytał i czy godziny się zgadzają. Szczegółów podróży nie zapisuj w repozytorium (publiczne).
 4. Jeśli odczyt jakiegoś maila wyjdzie źle – poprosić o treść (z zamazanymi danymi), dopisać przykład do `podroznik-testy/mails` ze ZMYŚLONYMI danymi i inną trasą/datą, sprawdzić `t35`.
@@ -67,13 +69,14 @@ Ostatnia aktualizacja: 13 listopada 2026 – scalone PR #1–#11; na gałęzi cz
 | `docs.js`, `budget.js`, `stats.js`, `weather.js`, `email.js` | etap 8: dokumenty, budżet, statystyki i mapa, pogoda, odczyt maili |
 | `places.js`, `discover.js`, `split.js`, `share.js` | etap 10: mapa i trasa dnia, odkrywanie, rozliczenie w grupie, wspólna podróż |
 | `phrases.js`, `offline.js` | etap 11: karty dla kierowcy + rozmówki; mapa offline |
+| `ocr.js` | odczyt tekstu ze zdjęć biletów (Tesseract.js w `lib/ocr/`, pliki w pamięci `ocr-pliki`) |
 | `prep.js` | „Przygotuj offline” – wszystko na zapas jednym przyciskiem (korzysta z App.Offline, App.Phrases, App.Photos, App.Budget.nbp, App.Weather) |
 | `i18n.js`, `i18n-en.js` | języki: „tłumacz ekranu” (MutationObserver) + słownik PL→EN; `I18N.locale` do dat i liczb |
 | `sw.js` | offline + powiadomienia w tle (periodicsync) + kliknięcie powiadomienia |
 | `lib/` | pdf.js, bwip-js, ZXing, Leaflet, airports.js (OpenFlights), world.js (Natural Earth) – licencje w `lib/` |
 
 ## Zasady i pułapki (ważne przy zmianach)
-- **Po każdej zmianie plików aplikacji podbij `CACHE` w `sw.js`** (teraz `podroznik-v33`) i dopisz nowe pliki do listy `APP`.
+- **Po każdej zmianie plików aplikacji podbij `CACHE` w `sw.js`** (teraz `podroznik-v34`) i dopisz nowe pliki do listy `APP`.
 - Nowy magazyn danych = podbić `VERSION` w `db.js` i dodać do `STORES` (aktualizacja zachowuje dane – test t12).
 - Nasłuch zdarzeń podpinaj do elementów widoku, **nie do `#view`** (zostaje między ekranami → podwójne akcje).
 - Router ignoruje wolniej wczytany starszy ekran (`renderSeq` w `app.js`).

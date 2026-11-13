@@ -2,7 +2,7 @@
    wszystko, co potem wymaga internetu. Ważne zwłaszcza przed Chinami (Google, Wikipedia i część map tam nie działa).
    Trasa: #/przygotuj/:tripId
    Kroki (po kolei): ochrona danych przed usunięciem → karty dla kierowcy (lokalne adresy) → zdjęcia miejsc →
-   kursy walut (NBP) → pogoda → mapa offline (największa, na końcu). Każdy krok można powtórzyć – pobiera tylko brakujące. */
+   kursy walut (NBP) → pogoda → mapa offline → odczyt biletów ze zdjęć (największa, na końcu). Każdy krok można powtórzyć – pobiera tylko brakujące. */
 (function () {
   const { esc, plural } = App;
   const hasXY = p => p && p.lat != null && p.lon != null && isFinite(p.lat) && isFinite(p.lon);
@@ -87,6 +87,13 @@
     }
     steps.push({ key: "map", icon: "🗺️", name: "Mapa offline", href: `#/mapa-offline/${id}`, ...map });
 
+    // 6b. odczyt biletów ze zdjęć (ocr.js) – ~6 MB, raz na zawsze (wspólne dla wszystkich podróży)
+    if (App.Ocr) {
+      const ok = await App.Ocr.cached().catch(() => false);
+      steps.push({ key: "ocr", icon: "🔎", name: "Odczyt biletów ze zdjęć", done: ok,
+        txt: ok ? "gotowy – działa bez internetu" : "do pobrania ok. 6 MB – nazwa, dzień i godzina ze screena biletu" });
+    }
+
     // 7. kopia zapasowa poza telefonem (zgubiony / skradziony telefon) – na końcu, gdy wszystko już pobrane; robi ją użytkownik (Dysk Google / mail)
     const last = await DB.getSetting("lastBackup", null);
     const stale = App.Backup ? await App.Backup.stale() : !last;
@@ -139,6 +146,10 @@
       say("pobieram…");
       const wx = await App.Weather.get(await DB.get("trips", g.trip.id));
       await wx.refresh();
+    },
+    async ocr(st, g, say) {
+      say("pobieram ok. 6 MB…");
+      await App.Ocr.prefetch();
     },
     async map(st, g, say) {
       if (!st.todo || !st.todo.length) return;

@@ -176,3 +176,10 @@ Adres (po scaleniu pull requesta): https://chiniak.github.io/podroznik/
 - [ ] Gmail → mail z rezerwacją → zaznacz tekst → Udostępnij → Podróżnik (albo skopiuj i wklej w „Z maila”)
 - [ ] „📎 Z pliku”: PDF biletu pobrany z Gmaila – odcinek + PDF dołączony jako bilet
 - [ ] Jeśli coś odczyta źle – prześlij treść maila (dane możesz zamazać)
+
+## Odczyt biletów ze zdjęć (13.11)
+- [ ] Plan → „📎 Z biletu lub screena” → screen biletu: pod plikiem „🔎 Czytam tekst ze zdjęcia… %”, potem same wpisują się nazwa, dzień, godzina, miejsce, cena (komunikat „Z biletu: … – sprawdź”)
+- [ ] Za pierwszym razem pobiera ok. 6 MB (najlepiej Wi-Fi) – potem działa bez internetu
+- [ ] Wpisana wcześniej nazwa zostaje (uzupełniane są tylko puste pola)
+- [ ] „📥 Przygotuj offline” ma krok „🔎 Odczyt biletów ze zdjęć” – po pobraniu ✅
+- [ ] Jeśli coś wpisze źle – prześlij screen (dane możesz zamazać)
