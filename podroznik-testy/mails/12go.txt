@@ -1,0 +1,10 @@
+12Go – Your booking is confirmed
+Booking ID: 12345678
+Bus · Nakhonchai Air (NCA) · VIP 24 seats
+From: Bangkok Mo Chit Bus Terminal
+To: Chiang Mai Arcade Bus Terminal
+Departure: 14 Dec 2026, 20:00
+Arrival: 15 Dec 2026, 06:30
+Seat: 7
+Passenger: Jan Kowalski
+Total price: THB 950

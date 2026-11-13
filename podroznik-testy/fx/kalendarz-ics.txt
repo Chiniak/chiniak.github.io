@@ -1,0 +1,12 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Example//Rail//EN
+BEGIN:VEVENT
+SUMMARY:Train: Manchester Piccadilly to London Euston
+DTSTART;TZID=Europe/London:20261218T091500
+DTEND;TZID=Europe/London:20261218T112000
+LOCATION:Manchester Piccadilly
+DESCRIPTION:Avanti West Coast\n09:15 Manchester Piccadilly\n11:20 London Eus
+ ton\nTicket collection reference: ABCD123E
+END:VEVENT
+END:VCALENDAR

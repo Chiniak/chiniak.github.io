@@ -1,0 +1,19 @@
+Booking.com
+   Potwierdzenie: 1234567890
+   PIN: 0000 (Poufne)
+Dziękujemy, Jan! Rezerwacja w mieście Hanoi została potwierdzona.
+   Skontaktuj się ze swoim gospodarzem, by dowiedzieć się, gdzie odebrać klucze. Wystarczy tylko zadzwonić pod numer +84 24 1234 5678.
+Jak dostać się do obiektu:
+   Klucze znajdują się w recepcji na miejscu.
+Bamboo Lake Hotel Hanoi
+   Zapłacisz podczas pobytu w obiekcie Bamboo Lake Hotel Hanoi
+Szczegóły rezerwacji
+   Zameldowanie czwartek, 24 grudnia 2026 (od 14:00)
+   Wymeldowanie niedziela, 27 grudnia 2026 (do 12:00)
+   Twoja rezerwacja 3 noce, Pokój dwuosobowy
+   Lokalizacja
+    12 Hang Be Street, Hoan Kiem District,
+    100000 Hanoi, Wietnam
+   Telefon +84 24 1234 5678
+   Całkowity koszt
+   VND 2 450 000

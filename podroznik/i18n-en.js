@@ -515,4 +515,26 @@ self.I18N_EN = {
   "Telefon ma włączone oszczędzanie danych – zdjęcia nie są pobierane.": "Data Saver is on – photos are not downloaded.", "Brak internetu.": "No internet.",
   "Nie udało się pobrać listy zdjęć:": "Couldn't get the photo list:", "Nie znaleziono zdjęć – spróbuję ponownie za 10 min.": "No photos found – will try again in 10 min.",
   "Zdjęcia na liście:": "Photos on the list:", "– pobieram (przełącz kilka ekranów).": "– downloading (switch a few screens).",
+
+  /* ---------- bilety w planie ---------- */
+  "Z biletu lub screena": "From a ticket or screenshot", "– zdjęcie, screen, PDF → punkt planu": "– photo, screenshot, PDF → plan item",
+  "🎫 Bilety i zdjęcia – bilet, screen potwierdzenia, zaproszenie": "🎫 Tickets & photos – ticket, booking screenshot, invitation",
+  "📎 Dodaj zdjęcie, screen lub PDF": "📎 Add a photo, screenshot or PDF",
+  "Dotknij biletu, by pokazać go na pełnym ekranie (np. przy wejściu).": "Tap a ticket to show it full screen (e.g. at the entrance).",
+  "Bilet pokaże się na pełnym ekranie, a kod (QR, kreskowy) aplikacja odczyta sama.": "The ticket shows full screen and the app reads the code (QR, barcode) by itself.",
+  "Z biletu: {}": "From the ticket: {}", "Z biletu: {} · {}": "From the ticket: {} · {}", "Usuń plik": "Remove file", "Bilet: {}": "Ticket: {}",
+  "Usunąć „{}” z planu? Razem z biletem.": "Delete “{}” from the plan? Together with the ticket.", "Usunąć „{}” z planu? Razem z biletami ({}).": "Delete “{}” from the plan? Together with the tickets ({}).",
+  "pomysł – bez dnia": "idea – no day", "Szczegóły punktu": "Item details", "dziś": "today",
+  "Otwórz podróż, kliknij lot, pociąg albo nocleg i dodaj zdjęcie, PDF lub zeskanuj kod biletu. Bilet na wydarzenie albo spotkanie dodasz w planie: „📎 Z biletu lub screena”.":
+    "Open a trip, tap a flight, train or stay and add a photo, PDF or scan the ticket code. Add a ticket for an event or meeting in the plan: “📎 From a ticket or screenshot”.",
+
+  /* ---------- odczyt z maila i plików ---------- */
+  "– potwierdzenie, PDF albo .ics z rezerwacji": "– confirmation, PDF or .ics from a booking", "– potwierdzenie lotu, pociągu, hotelu, PDF, .ics": "– flight, train, hotel confirmation, PDF, .ics",
+  "Skopiuj treść maila z potwierdzeniem (lot, pociąg, autobus, prom, hotel) i wklej poniżej – albo wczytaj plik: PDF z biletem, zaproszenie do kalendarza (.ics) lub zapisany mail (.eml). Odczyt dzieje się w telefonie – nic nie jest nigdzie wysyłane.":
+    "Copy the confirmation email (flight, train, bus, ferry, hotel) and paste it below – or load a file: a ticket PDF, a calendar invitation (.ics) or a saved email (.eml). Reading happens on the phone – nothing is sent anywhere.",
+  "Rozpoznaje m.in.: Booking.com, Trip.com, Agoda, Airbnb, Gotogate, 12Go, Trainline, Rail Europe, AirAsia, VietJet, linie chińskie i europejskie, PKP, FlixBus.":
+    "Recognises e.g.: Booking.com, Trip.com, Agoda, Airbnb, Gotogate, 12Go, Trainline, Rail Europe, AirAsia, VietJet, Chinese and European airlines, PKP, FlixBus.",
+  "📎 Z pliku": "📎 From a file", "Czytam plik…": "Reading the file…", "Najpierw wklej treść maila albo wczytaj plik": "Paste the email first or load a file",
+  "W pliku nie ma tekstu (to może być skan albo zdjęcie). Dodaj bilet w odcinku jako plik, a dane wpisz ręcznie.": "The file has no text (it may be a scan or a photo). Add the ticket to a segment as a file and type the details in.",
+  "Nie udało się odczytać pliku: {}": "Couldn't read the file: {}",
 };

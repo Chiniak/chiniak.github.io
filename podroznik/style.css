@@ -823,3 +823,14 @@ html.has-bg .card, html.has-bg .pl-row, html.has-bg .plan-link { box-shadow: 0 2
 .bk-warn { margin: 8px 0 4px; padding: 8px 10px; border-radius: 10px; background: rgba(208,138,23,.14); font-size: 14px; }
 .bk-tips ol { margin: 6px 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
 .tx-group { margin: 14px 2px 6px; font-size: 14px; font-weight: 600; color: var(--muted); }
+
+/* bilety przy punktach planu */
+.pl-tk { flex: none; font-size: 20px; text-decoration: none; position: relative; }
+.pl-tk small { position: absolute; right: 2px; bottom: 2px; font-size: 10px; font-weight: 700; color: var(--accent); }
+.pl-files { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+.pl-files:empty { display: none; }
+.pl-file { display: flex; align-items: center; gap: 6px; padding: 10px 12px; border-radius: 10px; background: var(--surface-2); color: inherit; text-decoration: none; font-size: 15px; overflow-wrap: anywhere; }
+.pl-file.new { border: 1px dashed var(--line); background: transparent; }
+.pl-file-x { margin-left: auto; border: 0; background: none; color: inherit; font-size: 16px; padding: 4px 8px; cursor: pointer; }
+.pl-from-file { cursor: pointer; }
+.em-src { margin: -4px 0 10px; }

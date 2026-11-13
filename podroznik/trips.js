@@ -134,7 +134,7 @@
         <summary><h3 class="section">Archiwum <span class="muted">(${past.length})</span></h3></summary>
         ${past.map(card).join("")}
       </details>`;
-    html += `<a class="plan-link st-link" href="#/wklej"><span aria-hidden="true">📧</span> Dodaj z maila <span class="muted">– wklej potwierdzenie rezerwacji</span><b aria-hidden="true">›</b></a>`;
+    html += `<a class="plan-link st-link" href="#/wklej"><span aria-hidden="true">📧</span> Dodaj z maila <span class="muted">– potwierdzenie, PDF albo .ics z rezerwacji</span><b aria-hidden="true">›</b></a>`;
     html += `<a class="plan-link" href="#/udostepnij" style="margin-top:8px"><span aria-hidden="true">📥</span> Otwórz podróż od kogoś <span class="muted">– plik z Podróżnika</span><b aria-hidden="true">›</b></a>`;
     html += `<a class="plan-link" href="#/statystyki" style="margin-top:8px"><span aria-hidden="true">📊</span> Statystyki <span class="muted">– kilometry, kraje, mapa</span><b aria-hidden="true">›</b></a>`;
     const cov = await covers();
@@ -352,7 +352,7 @@
       html: head + (wx && wx.data ? App.Weather.strip(wx.data, t) : "") +
         (timeline || App.empty("🗺️", "Pusta oś czasu", "Dodaj pierwszy lot, pociąg, autobus albo nocleg – wybierz poniżej.")) +
         `<h3 class="section">Dodaj</h3><div class="type-grid">${typeButtons}</div>
-         <a class="plan-link" href="#/wklej?trip=${id}" style="margin-top:10px"><span aria-hidden="true">📧</span> Z maila <span class="muted">– wklej potwierdzenie lotu, pociągu, hotelu</span><b aria-hidden="true">›</b></a>`,
+         <a class="plan-link" href="#/wklej?trip=${id}" style="margin-top:10px"><span aria-hidden="true">📧</span> Z maila <span class="muted">– potwierdzenie lotu, pociągu, hotelu, PDF, .ics</span><b aria-hidden="true">›</b></a>`,
       cleanup() { if (unpaint) unpaint(); },
       after(view) {
         unpaint = paintCovers(view, cov);

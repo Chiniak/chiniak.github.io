@@ -1,11 +1,11 @@
 # Podróżnik – stan projektu (do kontynuacji w nowej sesji)
 
-Ostatnia aktualizacja: 12 listopada 2026 – **wszystko scalone na `main` (PR #1–#10)**, nic nie czeka. Zacznij od przeczytania tego pliku, potem `PLAN.md` i `DO-SPRAWDZENIA.md`.
+Ostatnia aktualizacja: 13 listopada 2026 – scalone PR #1–#11; na gałęzi czeka: bilety w planie + nowy odczyt maili (PR #12 do zrobienia). Zacznij od przeczytania tego pliku, potem `PLAN.md` i `DO-SPRAWDZENIA.md`.
 
 ## Gdzie co jest
 - Repozytorium: `chiniak/chiniak.github.io`, gałąź **`claude/travel-planning-app-tl9mvf`**
 - Gałąź robocza: po scaleniu PR zacznij ją od nowa od `origin/main` (`git checkout -B claude/travel-planning-app-tl9mvf origin/main`), nie nadpisuj historii (force push zablokowany). Nowy PR po każdej porcji zmian – właściciel scala sam.
-- Aplikacja na żywo: https://chiniak.github.io/podroznik/ – wersja „1.2 · etapy 0–11”, pamięć offline **`podroznik-v31`**. APK: https://chiniak.github.io/podroznik/Podroznik.apk (zmiany w stronie nie wymagają nowego APK).
+- Aplikacja na żywo: https://chiniak.github.io/podroznik/ – wersja „1.2 · etapy 0–11”, pamięć offline **`podroznik-v33`**. APK: https://chiniak.github.io/podroznik/Podroznik.apk (zmiany w stronie nie wymagają nowego APK).
 - `podroznik/` – aplikacja (PWA, czysty JS bez frameworka, dane w IndexedDB, offline przez service worker)
 - `podroznik-android/` – projekt APK (Trusted Web Activity, Bubblewrap), instrukcja w jego README
 - `podroznik-testy/` – testy Playwright + przykładowe dane, instrukcja w README (serwer: `python3 -m http.server 8765` w katalogu repo)
@@ -26,6 +26,11 @@ Ostatnia aktualizacja: 12 listopada 2026 – **wszystko scalone na `main` (PR #1
 
 - (gałąź, ten sam PR): **naprawa czarnego tła** (zgłoszone z telefonu 13.11: „pobrane 0/100”) – filtr `BAD` sprawdzał też ukryte kategorie Commons („Pages with maps”, „Media with locations”), które ma prawie każde zdjęcie, więc lista była pusta. Teraz tylko tytuł, nazwa, opis i widoczne kategorie; krótsze `EXCLUDE` (limit 300 znaków zapytania); pojedynczy błąd nie przerywa szukania; pusta lista – kolejna próba po 10 min; `bgPool.v = 3`; w Ustawieniach → Tło przyczyna, gdy brak zdjęć (oszczędzanie danych / błąd Commons / pusta lista). Test t29 z realistycznymi kategoriami.
 
+- #11 (scalony 13.11): wszystko z sesji 12–13.11 – naprawa tła, Przygotuj offline, kopia przed wyjazdem, zdjęcia na mapie, rozmówki.
+- (gałąź, PR do zrobienia): **bilety w planie** – „📎 Z biletu lub screena” w planie (zdjęcie, screen, PDF, .pkpass → nowy punkt, kategoria Wydarzenie, dzień i godzina odczytane z tekstu PDF – `whenFromText`), sekcja „🎫 Bilety i zdjęcia” w formularzu punktu, 🎫 przy punkcie w planie (jedno dotknięcie → pełny ekran), takie bilety też w zakładce Bilety i w „Najbliższy bilet”. Plik w `files` z `segmentId: "p:<id punktu>"` (`App.Tickets.planSeg`); usunięcie punktu usuwa jego bilety. Test `t34` (fixture `fx/koncert.pdf`).
+- (gałąź, ten sam PR): **nowy odczyt rezerwacji z maili i plików** (`email.js`) – Booking.com (lot, hotel), Gotogate, Trip.com (lot, pociąg w Chinach), Trainline, Rail Europe, Agoda, Airbnb, AirAsia, 12Go. HTML → tekst (`normalize`); loty: numer + para lotnisk przed numerem (albo po nim) + godzina „przy” lotnisku (`timeNear`; kilka godzin pod rząd = zmiana rozkładu → ostatnia); przesiadki w jednym wierszu; ~70 linii azjatyckich; odrzucane fałszywe numery (VAT „FR 58 …”, „Airbus A320”, pociąg „D8661”, lot bez lotniska); pociągi z przesiadkami (`parseLegs`); hotele: adres z kilku wierszy, telefon, godziny 12 h; PNR ważniejszy niż nr zamówienia; cena przy pierwszym odcinku. Ekran „Z maila”: „📎 Z pliku” – PDF (dołączany jako bilet pierwszego odcinka), .ics, .eml. Test `t35`.
+- **Prywatność:** repozytorium jest publiczne – przykłady w `podroznik-testy/mails` mają zmyślone dane i inne trasy/daty niż prawdziwe rezerwacje właściciela. Nie wpisuj tu jego planów podróży (właściciel dostał 13.11 plik podróży zrobiony z jego Gmaila – poza repozytorium).
+
 ## Właściciel – preferencje i uwagi
 - Pisze po polsku, krótko; woli małe kroki, podsumowanie po każdej zmianie, potem pytanie o PR (zwykle odpowiada „tak”).
 - Leci do **Chin, Laosu, Wietnamu i Tajlandii** – stąd mapy z napisami łacińskimi, mapa offline, Amap/geo:, NBP tabela B, karty dla kierowcy, rozmówki.
@@ -38,11 +43,13 @@ Ostatnia aktualizacja: 12 listopada 2026 – **wszystko scalone na `main` (PR #1
 - Nie sprawdzone: wysyłanie podróży plikiem (brak drugiej osoby), .pkpass (brak biletu), wszystko z etapu 11 i PR #7–#10.
 - Wszystko od PR #6 testowane tylko w przeglądarce z symulowaną siecią (w środowisku chmurowym nie ma dostępu do OSM/Wikipedii/CARTO).
 
-## Co zostało
-1. **Właściciel:** sprawdzić na telefonie PR #9 (mapa, Odkrywaj) i #10 (tło), przejść `DO-SPRAWDZENIA.md` (sekcje „Etap 11”, „Zdjęcia miejsc”, „Tło ze zdjęć”, „Mapa i Odkrywaj”) i zgłosić błędy.
-2. Następne z listy właściciela (13.11): punkt 3 – sprawdzenie na telefonie; punkt 4 zrobiony (13.11).
-3. Pomysły na dalej: więcej języków (słownik jak `i18n-en.js`), edycja na żywo przez kilka osób (wymagałaby serwera), licznik w APK według strefy lotniska.
-4. Znane: test t5 bywa czerwony blisko północy (godziny liczone od „teraz”) – także na niezmienionym kodzie; t23 trwa ~26 s (symulowany GPS bez odpowiedzi).
+## Co zostało (stan na koniec sesji 13.11 – TU ZACZNIJ)
+1. **Najpierw zapytaj właściciela, czy zrobić PR #12** (gałąź jest wypchnięta, PR jeszcze nie istnieje): bilety i screeny w planie („📎 Z biletu lub screena”) + nowy odczyt maili i plików („📎 Z pliku”). Pytanie padło, odpowiedzi jeszcze nie było. Właściciel scala PR sam z telefonu (aplikacja GitHub; PR #11 scalił bez problemu).
+2. **Testy na telefonie (właściciel, w toku):** tło po naprawie z PR #11 – czy pojawiają się zdjęcia (przy 0/100 w Ustawienia → Tło jest teraz podana przyczyna); „📥 Przygotuj offline”; potem po PR #12 – bilety w planie i odczyt maili. Lista: `DO-SPRAWDZENIA.md` (sekcje od 12.11).
+3. **Właściciel dostał w czacie plik podróży z jego Gmaila** (do wczytania: Podróże → „📥 Otwórz podróż od kogoś”) – zapytaj, czy wczytał i czy godziny się zgadzają. Szczegółów podróży nie zapisuj w repozytorium (publiczne).
+4. Jeśli odczyt jakiegoś maila wyjdzie źle – poprosić o treść (z zamazanymi danymi), dopisać przykład do `podroznik-testy/mails` ze ZMYŚLONYMI danymi i inną trasą/datą, sprawdzić `t35`.
+5. Pomysły na dalej: więcej języków (słownik jak `i18n-en.js`), edycja na żywo przez kilka osób (wymagałaby serwera), licznik w APK według strefy lotniska, udostępnianie plików (PDF/.ics) wprost do aplikacji (share_target z plikami).
+6. Znane: test t5 bywa czerwony blisko północy (godziny liczone od „teraz”) – także na niezmienionym kodzie; t3 wymaga wirtualnego aparatu; t23 trwa ~26 s. Pełna seria testów trwa > 10 min – uruchamiaj w tle albo porcjami.
 
 ## Pliki aplikacji (`podroznik/`)
 | Plik | Rola |
@@ -66,7 +73,7 @@ Ostatnia aktualizacja: 12 listopada 2026 – **wszystko scalone na `main` (PR #1
 | `lib/` | pdf.js, bwip-js, ZXing, Leaflet, airports.js (OpenFlights), world.js (Natural Earth) – licencje w `lib/` |
 
 ## Zasady i pułapki (ważne przy zmianach)
-- **Po każdej zmianie plików aplikacji podbij `CACHE` w `sw.js`** (teraz `podroznik-v31`) i dopisz nowe pliki do listy `APP`.
+- **Po każdej zmianie plików aplikacji podbij `CACHE` w `sw.js`** (teraz `podroznik-v33`) i dopisz nowe pliki do listy `APP`.
 - Nowy magazyn danych = podbić `VERSION` w `db.js` i dodać do `STORES` (aktualizacja zachowuje dane – test t12).
 - Nasłuch zdarzeń podpinaj do elementów widoku, **nie do `#view`** (zostaje między ekranami → podwójne akcje).
 - Router ignoruje wolniej wczytany starszy ekran (`renderSeq` w `app.js`).

@@ -154,8 +154,13 @@
     if (!trip) { location.replace("#/plan"); return ""; }
     DB.setSetting("planTrip", id);
     const wx = App.Weather ? await App.Weather.get(trip) : null;
-    const [segs, items] = await Promise.all([DB.byIndex("segments", "tripId", id), DB.byIndex("planItems", "tripId", id)]);
+    const [segs, items, tripFiles] = await Promise.all([DB.byIndex("segments", "tripId", id), DB.byIndex("planItems", "tripId", id), DB.byIndex("files", "tripId", id)]);
     const events = segEvents(segs);
+    // bilety / screeny przypięte do punktów planu (tickets.js, segmentId „p:<id>”) – pierwszy otwiera się jednym dotknięciem
+    const ticketOf = {};
+    tripFiles.filter(f => String(f.segmentId).startsWith("p:")).sort((a, b) => (a.created || "").localeCompare(b.created || ""))
+      .forEach(f => { const k = f.segmentId.slice(2); (ticketOf[k] = ticketOf[k] || []).push(f); });
+    const tkBtn = it => ticketOf[it.id] ? `<a class="icon-btn pl-tk" href="#/bilet/${ticketOf[it.id][0].id}" aria-label="Bilet: ${esc(it.title)}">🎫${ticketOf[it.id].length > 1 ? `<small>${ticketOf[it.id].length}</small>` : ""}</a>` : "";
     const today = App.todayStr();
     const ongoing = trip.start <= today && today <= trip.end;
 
@@ -186,6 +191,8 @@
         <a class="plan-link" href="#/mapa/${id}"><span aria-hidden="true">🗺️</span> Mapa i trasa <span class="muted">– punkty dnia, odległości</span><b aria-hidden="true">›</b></a>
         <a class="plan-link" href="#/odkrywaj/${id}"><span aria-hidden="true">🔭</span> Odkrywaj <span class="muted">– atrakcje i jedzenie w okolicy</span><b aria-hidden="true">›</b></a>
         <a class="plan-link" href="#/karty/${id}"><span aria-hidden="true">🚕</span> Karty dla kierowcy <span class="muted">– adresy w lokalnym piśmie, rozmówki</span><b aria-hidden="true">›</b></a>
+        ${App.Tickets && App.Tickets.addFiles ? `<label class="plan-link pl-from-file"><span aria-hidden="true">📎</span> Z biletu lub screena <span class="muted">– zdjęcie, screen, PDF → punkt planu</span><b aria-hidden="true">›</b>
+          <input type="file" id="pl-from-file" accept="image/*,application/pdf,.pkpass" multiple hidden></label>` : ""}
       </div>`;
     const ideas = items.filter(i => !i.date).sort(byOrder);
     const dayOpts = days.map(d => `<option value="${d}">${App.fmtDay(d)}</option>`).join("");
@@ -198,6 +205,7 @@
               <div class="pl-title"><span aria-hidden="true">${catOf(it).icon}</span> ${esc(it.title)}</div>
               ${it.place ? `<div class="pl-sub">${esc(/^https?:/i.test(it.place) ? "📍 link do mapy" : it.place)}</div>` : ""}
             </a>
+            ${tkBtn(it)}
             <label class="pl-move"><span class="sr">Przenieś do dnia</span>
               <select data-move="${it.id}"><option value="">+ dzień</option>${dayOpts}</select></label>
           </div>`).join("")}
@@ -238,6 +246,7 @@
             ${it.place || num(it.cost) ? `<div class="pl-sub">${[esc(it.place && !/^https?:/i.test(it.place) ? it.place : it.place ? "📍 link do mapy" : ""), num(it.cost) ? money(num(it.cost), it.currency || "PLN") : ""].filter(Boolean).join(" · ")}</div>` : ""}
             ${it.note ? `<div class="pl-note">${esc(it.note)}</div>` : ""}
           </a>
+          ${tkBtn(it)}
           ${navLink(it.place)}
           <button type="button" class="pl-handle" aria-label="Przeciągnij, by zmienić kolejność">${handleIcon}</button>
         </div>`).join("");
@@ -280,6 +289,14 @@
           }, 60000);
         }
         view.querySelectorAll(".pl-handle").forEach(h => enableDrag(h));
+        const ff = view.querySelector("#pl-from-file");
+        if (ff) ff.onchange = () => {
+          const files = [...ff.files];
+          ff.value = "";
+          if (!files.length) return;
+          pending = files; // formularz nowego punktu je przejmie (i spróbuje odczytać dzień i godzinę z PDF)
+          location.hash = `#/plan/${id}/nowy?d=${ongoing ? today : trip.start}&plik=1`;
+        };
         // zdjęcia miejsc: dociągane w tle (Wikipedia) i wstawiane bez przeładowania ekranu
         if (App.Photos) App.Photos.fill(items, (it, ph) => { if (view.isConnected) App.Photos.paint(view, it, ph); });
         view.querySelectorAll("[data-move]").forEach(sel2 => sel2.onchange = async () => {
@@ -339,6 +356,18 @@
   }
 
   /* ================= FORMULARZ PUNKTU ================= */
+  let pending = []; // pliki wybrane w planie („Z biletu lub screena”) – czekają na formularz nowego punktu
+
+  // dzień i godzina z tekstu biletu (PDF): pierwsza data w dniach podróży (albo pierwsza w ogóle) i godzina tuż po niej
+  function whenFromText(text, trip) {
+    if (!App.Email || !App.Email.findDates) return null;
+    const dates = App.Email.findDates(text);
+    if (!dates.length) return null;
+    const d = dates.find(x => x.date >= trip.start && x.date <= trip.end) || dates.find(x => x.date >= App.todayStr()) || dates[0];
+    const times = [...text.matchAll(/\b([01]?\d|2[0-3])[:.]([0-5]\d)\b/g)].map(m => ({ time: `${String(m[1]).padStart(2, "0")}:${m[2]}`, index: m.index }));
+    const t = times.find(x => x.index >= d.end && x.index - d.end < 120) || times.find(x => x.index < d.index && d.index - x.index < 60);
+    return { date: d.date, time: t ? t.time : "" };
+  }
   // nowy punkt z godziną trafia chronologicznie między punkty z godziną; potem numeracja 0..n
   async function placeInDay(rec) {
     const day = (await DB.byIndex("planItems", "tripId", rec.tripId)).filter(i => i.date === rec.date && i.id !== rec.id).sort(byOrder);
@@ -373,6 +402,13 @@
     const dateOpts = `<option value="" ${!v.date ? "selected" : ""}>💡 Pomysł – bez dnia</option>` +
       dayList.map(d => `<option value="${d}" ${d === v.date ? "selected" : ""}>${App.fmtDay(d)}${d < trip.start || d > trip.end ? " (poza podróżą)" : ""}</option>`).join("");
 
+    const files = it ? (await DB.byIndex("files", "segmentId", `p:${it.id}`)).sort((a, b) => (a.created || "").localeCompare(b.created || "")) : [];
+    // pliki z „Z biletu lub screena” (plan) – tylko dla nowego punktu otwartego z tego przycisku
+    // (pending czyści dopiero zapis – ekran może się wyrenderować dwa razy)
+    let newFiles = !it && q.plik ? pending.slice() : [];
+    if (!it && q.plik && !newFiles.length) { location.replace(`#/plan/${trip.id}`); return ""; } // np. odświeżona strona – plików już nie ma
+    if (newFiles.length) v.cat = "wydarzenie";
+
     const cats = Object.entries(CATS).map(([k, C]) => `
       <label class="type-chip"><input type="radio" name="cat" value="${k}" ${k === (v.cat || "inne") ? "checked" : ""}>
         <span><b aria-hidden="true">${C.icon}</b>${C.name}</span></label>`).join("");
@@ -389,6 +425,10 @@
             <label class="field"><span>Dzień</span><select name="date">${dateOpts}</select></label>
             <label class="field"><span>Godzina (opcjonalnie)</span><input type="time" name="time" value="${esc(v.time)}"></label>
           </div>
+          ${App.Tickets && App.Tickets.addFiles ? `<div class="field"><span>🎫 Bilety i zdjęcia – bilet, screen potwierdzenia, zaproszenie</span>
+            <div class="pl-files" id="pl-files">${files.map(x => `<a class="pl-file" href="#/bilet/${x.id}">${x.kind === "code" ? "🔳" : x.kind === "pdf" ? "📄" : "🖼️"} ${esc(x.label || "Bilet")}${x.code ? " · kod" : ""}</a>`).join("")}</div>
+            <label class="btn wide">📎 Dodaj zdjęcie, screen lub PDF<input type="file" id="pl-file" accept="image/*,application/pdf,.pkpass" multiple hidden></label>
+            <p class="muted small" id="pl-file-note">${files.length ? "Dotknij biletu, by pokazać go na pełnym ekranie (np. przy wejściu)." : "Bilet pokaże się na pełnym ekranie, a kod (QR, kreskowy) aplikacja odczyta sama."}</p></div>` : ""}
           ${App.Places ? App.Places.searchBox(v) : `<label class="field"><span>Miejsce – adres, nazwa lub link do mapy</span>
             <input name="place" maxlength="500" value="${esc(v.place)}"></label>`}
           <div class="grid2 price">
@@ -410,7 +450,37 @@
         </form>`,
       after(view) {
         const f = view.querySelector("#pl-form");
-        if (!it && !fromMap) f.title.focus();
+        if (!it && !fromMap && !newFiles.length) f.title.focus();
+        // bilety / screeny: zapisywane razem z punktem (tickets.js → addFiles)
+        const fileBox = view.querySelector("#pl-files");
+        const showNew = () => {
+          if (!fileBox) return;
+          fileBox.querySelectorAll(".pl-file.new").forEach(x => x.remove());
+          fileBox.insertAdjacentHTML("beforeend", newFiles.map((x, i) => `<span class="pl-file new">${/pdf/i.test(x.type) || /\.pdf$/i.test(x.name) ? "📄" : "🖼️"} ${esc(x.name || "plik")} <button type="button" class="pl-file-x" data-i="${i}" aria-label="Usuń plik">✕</button></span>`).join(""));
+          fileBox.querySelectorAll(".pl-file-x").forEach(b => b.onclick = () => { newFiles.splice(+b.dataset.i, 1); showNew(); });
+        };
+        // dzień i godzina z PDF (tylko nowy punkt, gdy godzina jeszcze pusta)
+        const readWhen = async list => {
+          if (it || f.time.value) return;
+          const pdf = list.find(x => /pdf/i.test(x.type) || /\.pdf$/i.test(x.name));
+          if (!pdf || !App.Tickets.pdfText) return;
+          try {
+            const w = whenFromText(await App.Tickets.pdfText(pdf), trip);
+            if (!w || !f.isConnected) return;
+            if (![...f.date.options].some(o => o.value === w.date)) f.date.insertAdjacentHTML("beforeend", `<option value="${w.date}">${App.fmtDay(w.date)}${w.date < trip.start || w.date > trip.end ? " (poza podróżą)" : ""}</option>`);
+            f.date.value = w.date;
+            if (w.time) f.time.value = w.time;
+            App.toast(`Z biletu: ${App.fmtDay(w.date)}${w.time ? ` · ${w.time}` : ""} – sprawdź`);
+          } catch (e) { /* PDF bez tekstu (skan) – dzień i godzinę wpisz sam */ }
+        };
+        if (fileBox) {
+          showNew();
+          if (newFiles.length) readWhen(newFiles);
+          view.querySelector("#pl-file").onchange = e => {
+            const add = [...e.target.files]; e.target.value = "";
+            newFiles = newFiles.concat(add); showNew(); readWhen(add);
+          };
+        }
         // zdjęcie: undefined = bez zmian, null = usunięte, obiekt = nowe
         let photo;
         const phBox = view.querySelector("#pl-ph"), phDel = view.querySelector("#pl-ph-del");
@@ -466,6 +536,8 @@
           const moved = !it || it.date !== d.date || it.time !== d.time;
           const rec = await DB.put("planItems", { ...(it || {}), ...d, ...xy, tripId: trip.id, order: it ? it.order : 1e6 });
           if (moved) await placeInDay(rec);
+          if (newFiles.length) await App.Tickets.addFiles(App.Tickets.planSeg(rec), newFiles);
+          pending = [];
           if (!d.date) App.toast(it ? "Zapisano pomysł" : "Dodano do pomysłów");
           else if (d.date < trip.start || d.date > trip.end) App.toast("Zapisano · ten dzień jest poza datami podróży");
           else App.toast(it ? "Zapisano zmiany" : "Dodano do planu");
@@ -473,8 +545,9 @@
         });
         const del = view.querySelector("#del");
         if (del) del.onclick = async () => {
-          if (!confirm(`Usunąć „${it.title}” z planu?`)) return;
+          if (!confirm(`Usunąć „${it.title}” z planu?${files.length ? ` Razem z ${files.length === 1 ? "biletem" : `biletami (${files.length})`}.` : ""}`)) return;
           await DB.del("planItems", it.id);
+          for (const x of files) await DB.del("files", x.id); // jego bilety i screeny
           App.toast("Usunięto");
           App.back(`#/plan/${trip.id}`);
         };

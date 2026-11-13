@@ -1,0 +1,9 @@
+Booking confirmation - Agoda
+Booking ID: 987654321
+Dear Jan Kowalski, your booking is confirmed.
+Property: Riverside Boutique Hotel Luang Prabang
+Address: 12 Kingkitsarath Road, Ban Xiengmouane, Luang Prabang, Laos
+Check-in: Thursday, December 17, 2026 (from 14:00)
+Check-out: Sunday, December 20, 2026 (until 12:00)
+Room type: Deluxe Double Room
+Total charge: USD 96.00
