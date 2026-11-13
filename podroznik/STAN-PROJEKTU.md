@@ -43,11 +43,13 @@ Ostatnia aktualizacja: 13 listopada 2026 – scalone PR #1–#11; na gałęzi cz
 - Nie sprawdzone: wysyłanie podróży plikiem (brak drugiej osoby), .pkpass (brak biletu), wszystko z etapu 11 i PR #7–#10.
 - Wszystko od PR #6 testowane tylko w przeglądarce z symulowaną siecią (w środowisku chmurowym nie ma dostępu do OSM/Wikipedii/CARTO).
 
-## Co zostało
-1. **Właściciel:** sprawdzić na telefonie PR #9 (mapa, Odkrywaj) i #10 (tło), przejść `DO-SPRAWDZENIA.md` (sekcje „Etap 11”, „Zdjęcia miejsc”, „Tło ze zdjęć”, „Mapa i Odkrywaj”) i zgłosić błędy.
-2. Następne z listy właściciela (13.11): punkt 3 – sprawdzenie na telefonie; punkt 4 zrobiony (13.11).
-3. Pomysły na dalej: więcej języków (słownik jak `i18n-en.js`), edycja na żywo przez kilka osób (wymagałaby serwera), licznik w APK według strefy lotniska.
-4. Znane: test t5 bywa czerwony blisko północy (godziny liczone od „teraz”) – także na niezmienionym kodzie; t23 trwa ~26 s (symulowany GPS bez odpowiedzi).
+## Co zostało (stan na koniec sesji 13.11 – TU ZACZNIJ)
+1. **Najpierw zapytaj właściciela, czy zrobić PR #12** (gałąź jest wypchnięta, PR jeszcze nie istnieje): bilety i screeny w planie („📎 Z biletu lub screena”) + nowy odczyt maili i plików („📎 Z pliku”). Pytanie padło, odpowiedzi jeszcze nie było. Właściciel scala PR sam z telefonu (aplikacja GitHub; PR #11 scalił bez problemu).
+2. **Testy na telefonie (właściciel, w toku):** tło po naprawie z PR #11 – czy pojawiają się zdjęcia (przy 0/100 w Ustawienia → Tło jest teraz podana przyczyna); „📥 Przygotuj offline”; potem po PR #12 – bilety w planie i odczyt maili. Lista: `DO-SPRAWDZENIA.md` (sekcje od 12.11).
+3. **Właściciel dostał w czacie plik podróży z jego Gmaila** (do wczytania: Podróże → „📥 Otwórz podróż od kogoś”) – zapytaj, czy wczytał i czy godziny się zgadzają. Szczegółów podróży nie zapisuj w repozytorium (publiczne).
+4. Jeśli odczyt jakiegoś maila wyjdzie źle – poprosić o treść (z zamazanymi danymi), dopisać przykład do `podroznik-testy/mails` ze ZMYŚLONYMI danymi i inną trasą/datą, sprawdzić `t35`.
+5. Pomysły na dalej: więcej języków (słownik jak `i18n-en.js`), edycja na żywo przez kilka osób (wymagałaby serwera), licznik w APK według strefy lotniska, udostępnianie plików (PDF/.ics) wprost do aplikacji (share_target z plikami).
+6. Znane: test t5 bywa czerwony blisko północy (godziny liczone od „teraz”) – także na niezmienionym kodzie; t3 wymaga wirtualnego aparatu; t23 trwa ~26 s. Pełna seria testów trwa > 10 min – uruchamiaj w tle albo porcjami.
 
 ## Pliki aplikacji (`podroznik/`)
 | Plik | Rola |
