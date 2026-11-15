@@ -42,6 +42,19 @@ function png(r, g, b) {
   const pool = await p.evaluate(() => DB.getSetting('bgPool').then(x => [x.items.length, x.items.some(i => /map/i.test(i.src)), x.items.some(i => /-3\.jpg/.test(i.src)), x.items[0].by]));
   console.log('pool size, map filtered out?, small filtered out?, credit:', pool);
   console.log('religious in pool:', await p.evaluate(() => DB.getSetting('bgPool').then(x => [x.v, x.items.filter(i => /jesus|christ/i.test(i.title + i.src)).length, x.items.filter(i => / 2$/.test(i.title) || /-(2|7|12|17|22)\.jpg/.test(i.src)).length, x.items.filter(i => /-(4|9|14|19|24)\.jpg/.test(i.src)).length, 'pool:', x.items.length])));
+  // domyślnie „przy uruchomieniu”: przejścia nie zmieniają tła (zgłoszone 13.11 – za często migało)
+  const still = new Set();
+  for (const h of ['#/bilety', '#/plan', '#/pakowanie', '#/podroze']) { await p.evaluate(x => { location.hash = x; }, h); await p.waitForTimeout(900); still.add(await bgNow()); }
+  console.log('mode:', await p.evaluate(() => App.Backdrop.every), '| distinct over 4 screens (expect 1):', still.size);
+  await p.reload(); await p.waitForTimeout(1500);
+  console.log('after restart new photo:', !still.has(await bgNow()));
+  // raz dziennie: po ponownym uruchomieniu to samo zdjęcie
+  await p.evaluate(() => App.Backdrop.setEvery('day')); const dayBg = await bgNow();
+  await p.reload(); await p.waitForTimeout(1500);
+  await p.evaluate(() => { location.hash = '#/bilety'; }); await p.waitForTimeout(900);
+  console.log('day mode: same after restart and screen change:', (await bgNow()) !== null, await p.evaluate(() => JSON.parse(localStorage.getItem('podroznik-bg-last')).src) === await p.evaluate(() => App.Backdrop.info().then(i => i.current ? i.current.src : null)) || 'n/a');
+  // przy każdym ekranie (stare zachowanie)
+  await p.evaluate(() => App.Backdrop.setEvery('screen'));
   const seen = new Set();
   for (const h of ['#/bilety', '#/plan', '#/pakowanie', '#/ustawienia', '#/podroze', '#/bilety', '#/plan', '#/pakowanie', '#/podroze', '#/bilety']) {
     await p.evaluate(x => { location.hash = x; }, h); await p.waitForTimeout(900); seen.add(await bgNow());
@@ -50,6 +63,7 @@ function png(r, g, b) {
   await p.screenshot({ path: `${dir}/t29-dark.png` });
   await p.goto('http://localhost:8765/podroznik/#/ustawienia'); await p.waitForTimeout(1200);
   console.log('settings:', (await p.textContent('#bg-info')).replace(/\s+/g, ' '));
+  console.log('every select:', await p.$eval('#bg-every', e => e.value), await p.$$eval('#bg-every option', o => o.map(x => x.textContent)));
   await p.screenshot({ path: `${dir}/t29-settings.png` });
   // „nie pokazuj tego zdjęcia”
   const cur = await p.evaluate(() => App.Backdrop.info().then(i => i.current && i.current.src));

@@ -443,8 +443,10 @@ self.I18N_EN = {
 
   /* ---------- tło ze zdjęć (backdrop.js) ---------- */
   "Tło": "Background", "Zdjęcia": "Photos", "Bez zdjęć": "No photos", "Jednolite tło.": "Plain background.", "Teraz:": "Now:", "(Wikimedia Commons)": "(Wikimedia Commons)",
-  "Losowe zdjęcie przy każdej zmianie ekranu · pobrane {}/{}.": "A random photo on every screen change · downloaded {}/{}.",
-  "Losowe zdjęcie przy każdej zmianie ekranu · pobrane {}/{} (kolejne dochodzą przy przeglądaniu, z internetem).": "A random photo on every screen change · downloaded {}/{} (more arrive as you browse, online).",
+  "Pobrane zdjęcia: {}/{}.": "Downloaded photos: {}/{}.",
+  "Pobrane zdjęcia: {}/{} (kolejne dochodzą przy przeglądaniu, z internetem).": "Downloaded photos: {}/{} (more arrive as you browse, online).",
+  "Nowe zdjęcie": "New photo", "Przy uruchomieniu aplikacji": "When the app starts", "Co 10 minut": "Every 10 minutes", "Raz dziennie": "Once a day",
+  "Przy każdej zmianie ekranu": "On every screen change",
 
   /* ---------- mapa: zaznaczanie, atrakcje; Odkrywaj szybciej ---------- */
   "Dotknij mapy, by zaznaczyć miejsce · pinezkę dwa razy, by otworzyć punkt · 🏛️ = atrakcje w okolicy.": "Tap the map to mark a place · tap a pin twice to open it · 🏛️ = sights nearby.",

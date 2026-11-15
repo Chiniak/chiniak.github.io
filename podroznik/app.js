@@ -211,6 +211,9 @@
           <div class="seg" role="group" aria-label="Tło">
             <button type="button" data-bg-opt="1" aria-pressed="${App.Backdrop.enabled}">Zdjęcia</button>
             <button type="button" data-bg-opt="0" aria-pressed="${!App.Backdrop.enabled}">Bez zdjęć</button></div>
+          <label class="field" id="bg-every-box" style="margin-top:10px"${App.Backdrop.enabled ? "" : " hidden"}><span>Nowe zdjęcie</span>
+            <select id="bg-every">${[["start", "Przy uruchomieniu aplikacji"], ["10", "Co 10 minut"], ["day", "Raz dziennie"], ["screen", "Przy każdej zmianie ekranu"]]
+              .map(([k, t]) => `<option value="${k}" ${App.Backdrop.every === k ? "selected" : ""}>${t}</option>`).join("")}</select></label>
           <div id="bg-info" class="small muted" style="margin-top:8px"></div>
         </div>` : ""}
         <div class="card">
@@ -265,16 +268,19 @@
             : i.err ? `<br><span>Nie udało się pobrać listy zdjęć:</span> <span translate="no">${App.esc(i.err)}</span>`
             : i.pool === 0 ? "<br><span>Nie znaleziono zdjęć – spróbuję ponownie za 10 min.</span>"
             : i.pool ? `<br><span>Zdjęcia na liście:</span> ${i.pool} <span>– pobieram (przełącz kilka ekranów).</span>` : "";
-          box.innerHTML = !i.enabled ? "Jednolite tło." : `Losowe zdjęcie przy każdej zmianie ekranu · pobrane ${i.count}/${i.max}${i.count < i.max ? " (kolejne dochodzą przy przeglądaniu, z internetem)" : ""}.` + why +
+          box.innerHTML = !i.enabled ? "Jednolite tło." : `Pobrane zdjęcia: ${i.count}/${i.max}${i.count < i.max ? " (kolejne dochodzą przy przeglądaniu, z internetem)" : ""}.` + why +
             (i.current ? `<br><span>Teraz:</span> <a href="${App.esc(i.current.page)}" target="_blank" rel="noopener" translate="no">${App.esc(i.current.title)}</a>${i.current.by ? ` <span translate="no">· ${App.esc(i.current.by)}</span>` : ""} <span>(Wikimedia Commons)</span>
               <br><button type="button" class="btn" id="bg-block" style="margin-top:8px">🚫 Nie pokazuj tego zdjęcia</button>` : "");
           const bl = box.querySelector("#bg-block");
+          const ev = v.querySelector("#bg-every");
+          if (ev) ev.onchange = () => { App.Backdrop.setEvery(ev.value); App.toast("Zapisano"); };
           if (bl) bl.onclick = async () => { bl.disabled = true; await App.Backdrop.block(); App.toast("To zdjęcie nie pojawi się więcej"); setTimeout(bgInfo, 400); };
         };
         setTimeout(bgInfo, 300);
         v.querySelectorAll("[data-bg-opt]").forEach(b => b.addEventListener("click", async () => {
           await App.Backdrop.setEnabled(b.dataset.bgOpt === "1");
           v.querySelectorAll("[data-bg-opt]").forEach(x => x.setAttribute("aria-pressed", x === b));
+          const eb = v.querySelector("#bg-every-box"); if (eb) eb.hidden = b.dataset.bgOpt !== "1";
           setTimeout(bgInfo, 300);
         }));
         v.querySelectorAll("[data-lang-opt]").forEach(b => b.addEventListener("click", async () => {
