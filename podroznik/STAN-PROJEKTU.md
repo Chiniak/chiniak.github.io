@@ -1,13 +1,14 @@
 # Podróżnik – stan projektu (do kontynuacji w nowej sesji)
 
-Ostatnia aktualizacja: 15 listopada 2026 – scalone PR #1–#14; **PR #15 (rzadsza zmiana tła) utworzony, czeka na scalenie przez właściciela**. Zacznij od przeczytania tego pliku, potem `PLAN.md` i `DO-SPRAWDZENIA.md`.
+Ostatnia aktualizacja: 15 listopada 2026 – scalone PR #1–#15; **przejście na prawdziwą aplikację (Capacitor, `podroznik-app/`) – krok 1 zrobiony**. Zacznij od przeczytania tego pliku, potem `PLAN.md` i `DO-SPRAWDZENIA.md`.
 
 ## Gdzie co jest
 - Repozytorium: `chiniak/chiniak.github.io`, gałąź **`claude/travel-planning-app-tl9mvf`**
 - Gałąź robocza: po scaleniu PR zacznij ją od nowa od `origin/main` (`git checkout -B claude/travel-planning-app-tl9mvf origin/main`), nie nadpisuj historii (force push zablokowany). Nowy PR po każdej porcji zmian – właściciel scala sam.
-- Aplikacja na żywo: https://chiniak.github.io/podroznik/ – wersja „1.2 · etapy 0–11”, pamięć offline **`podroznik-v36`**. APK: https://chiniak.github.io/podroznik/Podroznik.apk (zmiany w stronie nie wymagają nowego APK).
+- Aplikacja na żywo: https://chiniak.github.io/podroznik/ – wersja „1.2 · etapy 0–11”, pamięć offline **`podroznik-v37`**. APK: https://chiniak.github.io/podroznik/Podroznik.apk (zmiany w stronie nie wymagają nowego APK).
 - `podroznik/` – aplikacja (PWA, czysty JS bez frameworka, dane w IndexedDB, offline przez service worker)
-- `podroznik-android/` – projekt APK (Trusted Web Activity, Bubblewrap), instrukcja w jego README
+- `podroznik-app/` – **nowa aplikacja na Androida (Capacitor)**: cały kod w APK + funkcje telefonu; instrukcja i plan kroków w jego README
+- `podroznik-android/` – stary projekt APK (Trusted Web Activity, Bubblewrap) – do zastąpienia przez `podroznik-app/`
 - `podroznik-testy/` – testy Playwright + przykładowe dane, instrukcja w README (serwer: `python3 -m http.server 8765` w katalogu repo)
 - `.well-known/assetlinks.json` – odciski kluczy KWS i Podróżnika (aplikacje bez paska adresu)
 - Drugie repozytorium sesji: `chiniak/kws` (aplikacja KWS – nie była zmieniana)
@@ -32,7 +33,8 @@ Ostatnia aktualizacja: 15 listopada 2026 – scalone PR #1–#14; **PR #15 (rzad
 - #12 (scalony 13.11): bilety i screeny w planie + nowy odczyt maili i plików.
 - #13 (scalony 13.11): **odczyt biletów ze zdjęć (OCR)** – zgłoszone 13.11: „wrzucenie planu przez zdjęcie nie uzupełnia pustych pól” (wcześniej czytany był tylko PDF, i to tylko dzień/godzina). `ocr.js` + `lib/ocr/` (Tesseract.js 6, pol+eng, ~6 MB, wersja SIMD gdy telefon umie). `infoFromText` w plan.js: dzień, godzina, nazwa (etykieta „Wydarzenie:” albo pierwszy zwykły wiersz), miejsce (etykieta, także w następnym wierszu; nie numer miejsca siedzącego), cena (etykieta albo jedyna kwota z walutą); tylko puste pola; także dla PDF. Pliki OCR w pamięci `ocr-pliki` (sw.js, najpierw pamięć, nie kasowana przy nowej wersji); krok „🔎 Odczyt biletów ze zdjęć” w Przygotuj offline. `amount()` w email.js rozumie „1.200.000” (VND). Test `t36` (`fx/bilet-screen.png`, `gen-screen.js`).
 - #14 (scalony 13.11, **właściciel potwierdził na telefonie: odczyt zdjęcia biletu działa i uzupełnia plan**): zgłoszone 13.11 ze screenem – „po wrzuceniu zdjęcia biletu nic się nie dzieje”. Dwie przyczyny: (1) screen trafił do pola „Zdjęcie” (📷 Własne – zdjęcie miejsca), gdzie OCR nie działał; (2) karta przejazdu w **trybie ciemnym** – Tesseract prawie nic nie czytał. Teraz: `prepare()` w ocr.js – odcienie szarości, ciemne tło odwrócone, rozciągnięty kontrast, małe zdjęcia powiększone (próba z potęgą/gamma pogorszyła wynik – nie wracać); „📷 Własne” w nowym punkcie bez nazwy też czyta tekst, a gdy znajdzie datę/godzinę, przenosi obraz do 🎫 Biletów zamiast zdjęcia miejsca. `infoFromText`: układ „Departs at / Arrives at” (też Odjazd/Przyjazd) → nazwa „A → B” i godzina odjazdu; daty z błędami OCR („1208:2026”); odrzucane „śmieci” („zZh32m”, „2 h 32 m”, „Reservation number”); cena bez etykiety tylko na początku/końcu wiersza. Test `t36` (+ `fx/bilet-ciemny.png`).
-- #15 (utworzony 15.11, czeka na scalenie): **rzadsza zmiana tła** – zgłoszone 13.11: tło działa, ale zmiana przy każdym ekranie = ekran za często miga. Ustawienie „Nowe zdjęcie” w Ustawienia → Tło: przy uruchomieniu aplikacji (**domyślnie**), co 10 minut, raz dziennie, przy każdej zmianie ekranu (`App.Backdrop.setEvery`, localStorage `podroznik-bg-every`, ostatnie zdjęcie `podroznik-bg-last`). Pobieranie kolejnych zdjęć dalej przy przeglądaniu. Przenikanie 1,2 s zamiast 0,6 s. Test `t29`.
+- #15 (scalony 15.11): **rzadsza zmiana tła** – zgłoszone 13.11: tło działa, ale zmiana przy każdym ekranie = ekran za często miga. Ustawienie „Nowe zdjęcie” w Ustawienia → Tło: przy uruchomieniu aplikacji (**domyślnie**), co 10 minut, raz dziennie, przy każdej zmianie ekranu (`App.Backdrop.setEvery`, localStorage `podroznik-bg-every`, ostatnie zdjęcie `podroznik-bg-last`). Pobieranie kolejnych zdjęć dalej przy przeglądaniu. Przenikanie 1,2 s zamiast 0,6 s. Test `t29`.
+- (gałąź, PR do zrobienia) **prawdziwa aplikacja – krok 1** (właściciel 15.11: „zróbmy to jako prawdziwą aplikację, a nie html”; wybrany Capacitor, bo zostaje cały kod i testy): `podroznik-app/` (Capacitor 8.6.0, kod kopiowany z `podroznik/` skryptem), `native.js` – w aplikacji `navigator.share`/`canShare` z plikami przez wtyczki Filesystem + Share, linki `blob:` (skan PDF) → „Udostępnij”; uprawnienia aparatu i położenia; ikona i ekran startowy; wersja testowa `io.github.chiniak.podroznik.test` (jawny klucz testowy), docelowa `io.github.chiniak.podroznik` versionCode 2 (zastąpi TWA – wymaga klucza właściciela). Test `t37`. APK testowe wysłane właścicielowi w czacie (14 MB – nie w repozytorium).
 - **Prywatność:** repozytorium jest publiczne – przykłady w `podroznik-testy/mails` mają zmyślone dane i inne trasy/daty niż prawdziwe rezerwacje właściciela. Nie wpisuj tu jego planów podróży (właściciel dostał 13.11 plik podróży zrobiony z jego Gmaila – poza repozytorium).
 
 ## Właściciel – preferencje i uwagi
@@ -47,13 +49,15 @@ Ostatnia aktualizacja: 15 listopada 2026 – scalone PR #1–#14; **PR #15 (rzad
 - Nie sprawdzone: wysyłanie podróży plikiem (brak drugiej osoby), .pkpass (brak biletu), wszystko z etapu 11 i PR #7–#10.
 - Wszystko od PR #6 testowane tylko w przeglądarce z symulowaną siecią (w środowisku chmurowym nie ma dostępu do OSM/Wikipedii/CARTO).
 
-## Co zostało (stan na koniec sesji 13.11 – TU ZACZNIJ)
-1. **PR #15** (https://github.com/Chiniak/chiniak.github.io/pull/15) – rzadsza zmiana tła. Zapytaj, czy scalił; jeśli tak: `git checkout -B claude/travel-planning-app-tl9mvf origin/main`, a potem poproś o sprawdzenie na telefonie (zakładki nie zmieniają tła, nowe zdjęcie po ponownym uruchomieniu, Ustawienia → Tło → „Nowe zdjęcie”). OCR biletów ze zdjęć – działa (potwierdzone 13.11).
-   Ostatnio omówione z właścicielem jako kolejne do sprawdzenia: „📥 Przygotuj offline”, odczyt maili („📎 Z pliku”), plik podróży z jego Gmaila. Pomysły do zaproponowania: udostępnianie PDF/.ics z Gmaila wprost do aplikacji (share_target z plikami), OCR chińskich/tajskich napisów (dodatkowe dane językowe), więcej języków aplikacji. Właściciel scala PR sam z telefonu.
-2. **Testy na telefonie (właściciel, w toku):** tło po naprawie z PR #11 – czy pojawiają się zdjęcia (przy 0/100 w Ustawienia → Tło jest teraz podana przyczyna); „📥 Przygotuj offline”; potem po PR #12 – bilety w planie i odczyt maili. Lista: `DO-SPRAWDZENIA.md` (sekcje od 12.11).
-3. **Właściciel dostał w czacie plik podróży z jego Gmaila** (do wczytania: Podróże → „📥 Otwórz podróż od kogoś”) – zapytaj, czy wczytał i czy godziny się zgadzają. Szczegółów podróży nie zapisuj w repozytorium (publiczne).
+## Co zostało (stan na koniec sesji 15.11 – TU ZACZNIJ)
+1. **Prawdziwa aplikacja (Capacitor)** – plan w `podroznik-app/README.md`. Krok 1 gotowy (PR do zrobienia/scalenia). Poproś właściciela o sprawdzenie APK testowego na telefonie: instalacja obok starej, przeniesienie danych kopią (stara: Zapisz → nowa: Wybierz plik kopii → Przywróć), bilety, skaner, mapa, „📍 Tutaj”, Odkrywaj, kopia/.ics przez „Udostępnij”, tło ze zdjęć, przycisk Wstecz.
+   Następne kroki: (2) powiadomienia przez `@capacitor/local-notifications` (zaplanowane w systemie, w `reminders.js` gałąź dla `PodroznikNative.isNative`; teraz w aplikacji ekran przypomnień pokazuje „niedostępne”) + jasność ekranu przy bilecie (wtyczka/kod natywny w MainActivity); (3) intent-filter SEND/VIEW dla PDF/.ics/obrazów → otwarcie w aplikacji (odpowiednik share_target); (4) widżet, ML Kit OCR, natywny odcisk palca.
+   Budowanie w chmurze: SDK do `/opt/android-sdk` (cmdline-tools z dl.google.com), lustro Maven w `~/.gradle/init.d` (README aplikacji). Brak KVM – emulatora nie ma, test natywny tylko na telefonie właściciela; logikę JS testuje `t37` z udawanym Capacitorem.
+   Wersja docelowa (aktualizacja starego Podróżnika) wymaga pliku `podroznik-klucz-podpisu.zip` od właściciela.
+2. **Testy na telefonie (właściciel, w toku):** tło (PR #15 – zmiana przy uruchomieniu), „📥 Przygotuj offline”, bilety w planie, odczyt maili. Lista: `DO-SPRAWDZENIA.md`.
+3. **Plik podróży z Gmaila** (dostał 13.11) – zapytaj, czy wczytał i czy godziny się zgadzają. Szczegółów podróży nie zapisuj w repozytorium (publiczne).
 4. Jeśli odczyt jakiegoś maila wyjdzie źle – poprosić o treść (z zamazanymi danymi), dopisać przykład do `podroznik-testy/mails` ze ZMYŚLONYMI danymi i inną trasą/datą, sprawdzić `t35`.
-5. Pomysły na dalej: więcej języków (słownik jak `i18n-en.js`), edycja na żywo przez kilka osób (wymagałaby serwera), licznik w APK według strefy lotniska, udostępnianie plików (PDF/.ics) wprost do aplikacji (share_target z plikami).
+5. Pomysły na dalej (przedstawione 15.11): tryb „W podróży” (jeden ekran na dziś), przelicznik walut offline, dziennik podróży, przypomnienia o wizach; więcej języków, OCR chińskich/tajskich napisów.
 6. Znane: test t5 bywa czerwony blisko północy (godziny liczone od „teraz”) – także na niezmienionym kodzie; t3 wymaga wirtualnego aparatu; t23 trwa ~26 s. Pełna seria testów trwa > 10 min – uruchamiaj w tle albo porcjami.
 
 ## Pliki aplikacji (`podroznik/`)
@@ -72,6 +76,7 @@ Ostatnia aktualizacja: 15 listopada 2026 – scalone PR #1–#14; **PR #15 (rzad
 | `docs.js`, `budget.js`, `stats.js`, `weather.js`, `email.js` | etap 8: dokumenty, budżet, statystyki i mapa, pogoda, odczyt maili |
 | `places.js`, `discover.js`, `split.js`, `share.js` | etap 10: mapa i trasa dnia, odkrywanie, rozliczenie w grupie, wspólna podróż |
 | `phrases.js`, `offline.js` | etap 11: karty dla kierowcy + rozmówki; mapa offline |
+| `native.js` | most do aplikacji Capacitor (`PodroznikNative.isNative`, klasa `native-app` na `<html>`); w przeglądarce nic nie robi |
 | `ocr.js` | odczyt tekstu ze zdjęć biletów (Tesseract.js w `lib/ocr/`, pliki w pamięci `ocr-pliki`) |
 | `prep.js` | „Przygotuj offline” – wszystko na zapas jednym przyciskiem (korzysta z App.Offline, App.Phrases, App.Photos, App.Budget.nbp, App.Weather) |
 | `i18n.js`, `i18n-en.js` | języki: „tłumacz ekranu” (MutationObserver) + słownik PL→EN; `I18N.locale` do dat i liczb |
@@ -79,7 +84,7 @@ Ostatnia aktualizacja: 15 listopada 2026 – scalone PR #1–#14; **PR #15 (rzad
 | `lib/` | pdf.js, bwip-js, ZXing, Leaflet, airports.js (OpenFlights), world.js (Natural Earth) – licencje w `lib/` |
 
 ## Zasady i pułapki (ważne przy zmianach)
-- **Po każdej zmianie plików aplikacji podbij `CACHE` w `sw.js`** (teraz `podroznik-v36`) i dopisz nowe pliki do listy `APP`.
+- **Po każdej zmianie plików aplikacji podbij `CACHE` w `sw.js`** (teraz `podroznik-v37`) i dopisz nowe pliki do listy `APP`.
 - Nowy magazyn danych = podbić `VERSION` w `db.js` i dodać do `STORES` (aktualizacja zachowuje dane – test t12).
 - Nasłuch zdarzeń podpinaj do elementów widoku, **nie do `#view`** (zostaje między ekranami → podwójne akcje).
 - Router ignoruje wolniej wczytany starszy ekran (`renderSeq` w `app.js`).
