@@ -9,9 +9,87 @@
   const { esc, plural } = App;
   const R = Reminders;
 
+  /* ---------- aplikacja na Androida: powiadomienia zaplanowane w telefonie (@capacitor/local-notifications) ----------
+     Najbliższe przypomnienia (do LIMIT, 60 dni) są planowane w systemie – przychodzą o czasie przy zamkniętej aplikacji
+     i po restarcie telefonu. Plan odświeżany przy starcie, po zmianach (każdy ekran, z opóźnieniem) i przy chowaniu aplikacji.
+     Klucze zaplanowanych („id@at”) w localStorage – tick() nie pokazuje ich drugi raz. */
+  const LN = () => window.PodroznikNative && PodroznikNative.isNative && window.Capacitor && Capacitor.Plugins.LocalNotifications;
+  const CHANNEL = "przypomnienia", LIMIT = 60, KEYS = "podroznik-ln-keys", SIG = "podroznik-ln-sig";
+  const lsGet = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch (e) { return d; } };
+  const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* brak miejsca */ } };
+  const numId = key => { let h = 7; for (const c of key) h = (h * 31 + c.charCodeAt(0)) | 0; return (h & 0x3fffffff) || 1; };
+  const tr = t => self.I18N ? I18N.tr(t) : t;
+  const nPerm = { display: "prompt", exact: "granted" };
+  async function nativePerms() {
+    const P = LN();
+    try { nPerm.display = (await P.checkPermissions()).display; } catch (e) { nPerm.display = "denied"; }
+    try { nPerm.exact = (await P.checkExactNotificationSetting()).exact_alarm || "granted"; } catch (e) { nPerm.exact = "granted"; }
+    return nPerm;
+  }
+  let channelReady = null;
+  const channel = () => channelReady || (channelReady = LN().createChannel({ id: CHANNEL, name: tr("Przypomnienia o podróży"), description: tr("Odjazdy, odprawa, pakowanie, plan dnia"),
+    importance: 4, visibility: 1, vibration: true }).catch(e => console.warn("kanał:", e)));
+  const toNative = (r, at) => ({ id: numId(`${r.id}@${r.at}`), title: tr(r.title), body: tr(r.body), largeBody: tr(r.body), channelId: CHANNEL,
+    smallIcon: "ic_stat_podroznik", iconColor: "#0F6E6E", extra: { href: r.href || "/podroze" },
+    schedule: { at, allowWhileIdle: true }, isExactNotification: nPerm.exact === "granted" });
+
+  let syncTimer = null, syncing = null;
+  async function syncNative() {
+    const P = LN();
+    if (!P) return null;
+    if (syncing) return syncing;
+    syncing = (async () => {
+      await nativePerms();
+      if (nPerm.display !== "granted") return { scheduled: 0, perm: nPerm.display };
+      const { list } = await R.load();
+      const now = R.nowStr(), until = R.addMin(now, 60 * 24 * 60);
+      const next = list.filter(r => r.at > now && r.at <= until).sort((a, b) => a.at.localeCompare(b.at)).slice(0, LIMIT);
+      const sig = JSON.stringify([nPerm.exact, self.I18N ? I18N.lang : "pl", next.map(r => [r.id, r.at, r.title, r.body, r.href])]);
+      const pending = await P.getPending().catch(() => ({ notifications: [] }));
+      // bez zmian i wszystko dalej zaplanowane (po aktualizacji aplikacji / wymuszonym zatrzymaniu system kasuje alarmy)
+      const have = new Set((pending.notifications || []).map(n => +n.id)), soon = R.addMin(now, 2);
+      if (sig === lsGet(SIG, "") && next.filter(r => r.at > soon).every(r => have.has(numId(`${r.id}@${r.at}`)))) return { scheduled: next.length, same: true };
+      await channel();
+      if (pending.notifications && pending.notifications.length) await P.cancel({ notifications: pending.notifications.map(n => ({ id: n.id })) }).catch(() => {});
+      if (next.length) await P.schedule({ notifications: next.map(r => toNative(r, new Date(r.at))) });
+      lsSet(KEYS, next.map(r => `${r.id}@${r.at}`));
+      lsSet(SIG, sig);
+      return { scheduled: next.length };
+    })();
+    try { return await syncing; } catch (e) { console.warn("powiadomienia:", e); return { error: e.message || String(e) }; } finally { syncing = null; }
+  }
+  const syncSoon = (ms = 3000) => { if (!LN()) return; clearTimeout(syncTimer); syncTimer = setTimeout(syncNative, ms); };
+
+  async function startNative() {
+    const P = LN();
+    P.addListener("localNotificationActionPerformed", e => {
+      const href = e && e.notification && e.notification.extra && e.notification.extra.href;
+      if (href) location.hash = `#${href}`;
+    });
+    await nativePerms();
+    // pierwsze uruchomienie: pytamy o zgodę, gdy są przypomnienia do zaplanowania (raz – potem w Ustawieniach)
+    if (nPerm.display === "prompt" && !lsGet("podroznik-ln-asked", false)) {
+      const { list } = await R.load();
+      if (list.some(r => r.at > R.nowStr())) {
+        lsSet("podroznik-ln-asked", true);
+        try { nPerm.display = (await P.requestPermissions()).display; } catch (e) { /* odmowa */ }
+      }
+    }
+    syncNative();
+    document.addEventListener("visibilitychange", () => { if (document.hidden) syncNative(); });
+  }
+
   /* ---------- pokazywanie powiadomień ---------- */
-  const canNotify = () => "Notification" in window && Notification.permission === "granted";
+  const canNotify = () => LN() ? nPerm.display === "granted" : "Notification" in window && Notification.permission === "granted";
   async function showNotification(r) {
+    const P = LN();
+    if (P) {
+      // zaplanowane w telefonie – system już je pokazał (albo pokaże), nie dublujemy
+      if (r.id !== "test" && lsGet(KEYS, []).includes(`${r.id}@${r.at}`)) return true;
+      if (nPerm.display !== "granted") return false;
+      try { await channel(); await P.schedule({ notifications: [toNative(r, new Date(Date.now() + 1500))] }); return true; }
+      catch (e) { console.warn("Powiadomienie:", e); return false; }
+    }
     if (!canNotify() || !("serviceWorker" in navigator)) return false;
     try {
       const reg = await navigator.serviceWorker.ready;
@@ -39,10 +117,11 @@
   }
 
   function start() {
-    tick();
+    if (LN()) startNative().catch(e => console.warn(e)).then(() => tick());
+    else tick();
     setInterval(() => { if (!document.hidden) tick(); }, 60000);
     document.addEventListener("visibilitychange", () => { if (!document.hidden) tick(); });
-    if ("serviceWorker" in navigator) registerBackground();
+    if ("serviceWorker" in navigator && !LN()) registerBackground();
   }
   document.addEventListener("DOMContentLoaded", start);
 
@@ -228,6 +307,12 @@
   const sw = (name, on, label) => `<label class="sw"><input type="checkbox" name="${name}" ${on ? "checked" : ""}><span class="sw-ui" aria-hidden="true"></span><span>${label}</span></label>`;
 
   async function permText() {
+    if (LN()) {
+      await nativePerms();
+      if (nPerm.display === "granted") return ["włączone ✅", nPerm.exact === "granted" ? "" : "Telefon może je opóźniać o kilka minut – włącz „Dokładne godziny” poniżej."];
+      if (nPerm.display === "denied") return ["zablokowane ❌", "Włącz je w ustawieniach telefonu: Aplikacje → Podróżnik → Powiadomienia."];
+      return ["nie włączone", ""];
+    }
     if (!("Notification" in window)) return ["niedostępne", "Ta przeglądarka nie obsługuje powiadomień."];
     if (Notification.permission === "granted") return ["włączone ✅", ""];
     if (Notification.permission === "denied") return ["zablokowane ❌", "Odblokuj w Chrome: ⋮ → Ustawienia → Ustawienia witryn → Powiadomienia (albo ikona kłódki przy adresie)."];
@@ -237,7 +322,9 @@
   App.route(/^\/ustawienia\/przypomnienia$/, async () => {
     const { cfg, list } = await R.load();
     const [perm, permHelp] = await permText();
-    const bg = "serviceWorker" in navigator ? await registerBackground() : "brak";
+    const native = !!LN();
+    const sync = native ? await syncNative() : null;
+    const bg = native ? "" : "serviceWorker" in navigator ? await registerBackground() : "brak";
     const now = R.nowStr();
     const upcoming = list.filter(r => r.at > now).slice(0, 8);
     const trips = (await DB.all("trips")).filter(t => t.end >= App.todayStr());
@@ -263,16 +350,20 @@
         <div class="card">
           <h2>Powiadomienia</h2>
           <div class="row"><span class="muted">Na tym telefonie</span><b>${perm}</b></div>
-          <div class="row"><span class="muted">Sprawdzanie w tle</span><b>${bg === "włączone" ? "włączone ✅" : "niedostępne"}</b></div>
+          ${native ? `<div class="row"><span class="muted">Zaplanowane w telefonie</span><b>${sync && sync.scheduled != null ? sync.scheduled : 0}</b></div>
+          <div class="row"><span class="muted">Dokładne godziny</span><b>${nPerm.exact === "granted" ? "tak ✅" : "nie"}</b></div>`
+          : `<div class="row"><span class="muted">Sprawdzanie w tle</span><b>${bg === "włączone" ? "włączone ✅" : "niedostępne"}</b></div>`}
           ${permHelp ? `<p class="small muted">${permHelp}</p>` : ""}
           <div class="rm-btns">
-            ${"Notification" in window && Notification.permission === "default" ? `<button type="button" class="btn primary" id="rm-perm">🔔 Włącz powiadomienia</button>` : ""}
+            ${(native ? nPerm.display === "prompt" : "Notification" in window && Notification.permission === "default") ? `<button type="button" class="btn primary" id="rm-perm">🔔 Włącz powiadomienia</button>` : ""}
+            ${native && nPerm.display === "granted" && nPerm.exact !== "granted" ? `<button type="button" class="btn primary" id="rm-exact">⏰ Dokładne godziny</button>` : ""}
             ${canNotify() ? `<button type="button" class="btn" id="rm-test">Wyślij próbne</button>` : ""}
           </div>
-          <p class="rm-note">Aplikacja internetowa nie zawsze może obudzić się sama o czasie.
+          ${native ? `<p class="rm-note">Przypomnienia są zaplanowane w telefonie – przyjdą o czasie także przy zamkniętej aplikacji i po ponownym uruchomieniu telefonu.
+            Najbliższe ${LIMIT} na 60 dni; plan odświeża się sam po każdej zmianie.</p>` : `<p class="rm-note">Aplikacja internetowa nie zawsze może obudzić się sama o czasie.
             Pewne są przypomnienia, gdy aplikacja jest otwarta albo gdy ją otworzysz (zaległe pokażą się od razu).
             ${bg === "włączone" ? "Chrome sprawdza je też w tle, ale sam decyduje jak często (zwykle kilka razy na dobę)." : "Sprawdzanie w tle Chrome włącza dopiero dla aplikacji dodanej do ekranu głównego i często używanej."}
-            <b>Na 100% zadziała eksport do kalendarza</b> (niżej) – wtedy przypomni aplikacja Kalendarz.</p>
+            <b>Na 100% zadziała eksport do kalendarza</b> (niżej) – wtedy przypomni aplikacja Kalendarz.</p>`}
         </div>
 
         <form id="rm-form">
@@ -322,13 +413,26 @@
           });
           await DB.setSetting("reminders", next);
           App.toast("Zapisano");
+          syncSoon(500);
         });
         const perm = view.querySelector("#rm-perm");
         if (perm) perm.onclick = async () => {
+          if (LN()) {
+            lsSet("podroznik-ln-asked", true);
+            let d = "denied";
+            try { d = (await LN().requestPermissions()).display; } catch (e) { /* odmowa */ }
+            App.toast(d === "granted" ? "Powiadomienia włączone" : "Nie włączono powiadomień");
+            await syncNative(); App.render(); return;
+          }
           const r = await Notification.requestPermission();
           App.toast(r === "granted" ? "Powiadomienia włączone" : "Nie włączono powiadomień");
           if (r === "granted") { registerBackground(); tick(); }
           App.render();
+        };
+        const exact = view.querySelector("#rm-exact");
+        if (exact) exact.onclick = async () => {
+          try { await LN().changeExactNotificationSetting(); } catch (e) { /* ekran ustawień telefonu */ }
+          lsSet(SIG, ""); await syncNative(); App.render();
         };
         const test = view.querySelector("#rm-test");
         if (test) test.onclick = async () => {
@@ -340,5 +444,8 @@
     };
   });
 
-  App.Reminders = { homeCards, exportTrips, gcalUrl, buildIcs, tick };
+  // po zmianach danych (zapis → przejście na inny ekran) plan powiadomień w telefonie odświeża się sam
+  window.addEventListener("hashchange", () => syncSoon());
+
+  App.Reminders = { homeCards, exportTrips, gcalUrl, buildIcs, tick, syncNative, notifyOn: () => canNotify() };
 })();

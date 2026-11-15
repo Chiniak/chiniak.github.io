@@ -7,8 +7,8 @@ android {
         applicationId "io.github.chiniak.podroznik"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 5
-        versionName "2.1.2"
+        versionCode 6
+        versionName "2.2.0"
         resValue "string", "app_name", "Podróżnik"
         resValue "string", "title_activity_main", "Podróżnik"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"

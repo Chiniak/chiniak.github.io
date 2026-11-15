@@ -48,6 +48,7 @@ testy powiadomień (t9, t11–t16) używają `chromium.launch({ channel: 'chromi
 | t26 | angielski: wszystkie ekrany, wypisuje teksty, które zostały po polsku (powinno być „OK”) |
 | t38 | „📬 Z Gmaila”: logowanie (udawana wtyczka GoogleAuth), Gmail API symulowane, odczyt lotów/hoteli/pociągów/wycieczki/restauracji/koncertu z PDF, grupowanie według podróży, dodawanie, pomijanie, bez powtórek, karta na ekranie głównym, odłączenie |
 | t39 | Gmail: limit zapytań Google (429 „quota”) – zapytania po kolei, czekanie i dalsze czytanie, przy uporczywym limicie zapis przeczytanych bez pętli |
+| t40 | aplikacja: przypomnienia zaplanowane w telefonie (udawana wtyczka LocalNotifications) – zgoda, czasy, bez dublowania, odświeżenie po zmianie, odtworzenie po skasowaniu, dotknięcie, Ustawienia |
 | t37 | aplikacja na Androida (`native.js`, udawany Capacitor): kopia, .ics i skan PDF przez natywne „Udostępnij”, anulowanie bez błędu; w przeglądarce bez zmian |
 
 Testy ustawiają `locale: 'pl-PL'` – bez tego aplikacja (język „Auto”) przełączy się na angielski.
