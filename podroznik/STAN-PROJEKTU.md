@@ -20,8 +20,8 @@ Ostatnia aktualizacja: 15 listopada 2026 (wieczór) – scalone PR #1–#20. **T
   do `i18n-en.js` (t26), `node podroznik-app/scripts/copy-web.js`. Po scaleniu: `git checkout -B claude/travel-planning-app-tl9mvf origin/main`.
 - Właściciel prosi o scalanie sam w czacie („scalaj”) – wtedy scal PR przez GitHub (merge), potem gałąź od nowa od main.
 - APK testowe: `cd podroznik-app && npm run apk` (SDK w /opt/android-sdk już jest), wynik `android/app/build/outputs/apk/debug/app-debug.apk`,
-  wysyłać przez SendUserFile (display: attach), nie commitować. Ostatnie wysłane: **2.3.0 (versionCode 7)** – etapy 1–2 + zdjęcia celu.
-  Przy następnym APK podbij versionCode/versionName w `podroznik-app/android/app/build.gradle`. Etapy 3–4 jeszcze nie były w APK.
+  wysyłać przez SendUserFile (display: attach), nie commitować. Ostatnie wysłane: **2.4.0 (versionCode 8)** – etapy 1–4 + zdjęcia celu.
+  Przy następnym APK podbij versionCode/versionName w `podroznik-app/android/app/build.gradle`. Etapy 3–4 są w APK 2.4.0 (czeka na ocenę właściciela).
 - Właściciel gra czasem w Tibię – prosił, żeby **nie otwierać mu żadnych okien** (bez podglądów/artefaktów otwieranych automatycznie; pliki tylko jako załącznik).
 - Czeka na ocenę właściciela na telefonie: APK 2.3.0 (wygląd, ekran Podróże, zdjęcia celu – czy filtr nie przepuszcza świątyń).
 
