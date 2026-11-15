@@ -19,7 +19,7 @@ const SP = process.argv[2];
   await p.click('text=Wybierz z szablonu'); await p.waitForTimeout(300);
   await p.click('[data-tpl=b-podstawa]'); await p.waitForTimeout(800);
   console.log('toast1:', await p.textContent('#toast'));
-  await p.click('text=📋 Szablony'); await p.waitForTimeout(300);
+  await p.click('#pk-tpl'); await p.waitForTimeout(300);
   await p.click('[data-tpl=b-lot]'); await p.waitForTimeout(800);
   console.log('toast2:', await p.textContent('#toast'));
   // quick add twice, focus stays
@@ -38,9 +38,9 @@ const SP = process.argv[2];
   await p.evaluate(()=>scrollTo(0,0)); await shot('k-list');
   await shot('k-list-full', true);
   // hide done
-  await p.check('#pk-hide'); await p.waitForTimeout(200);
+  await p.click('.pk-toggle'); await p.waitForTimeout(200);
   console.log('rows visible after hide:', await p.locator('.pk-row').count(), '| hidden note:', await p.textContent('.pk-hidden'));
-  await p.uncheck('#pk-hide');
+  await p.click('.pk-toggle'); await p.waitForTimeout(200);
   // todo tab with due date
   await p.click('[data-l=todo]'); await p.waitForTimeout(400);
   const yest = await p.evaluate(()=>App.addDays(App.todayStr(),-1));
@@ -57,7 +57,7 @@ const SP = process.argv[2];
   await p.click('#pk-save'); await p.waitForTimeout(300);
   await p.click('#pk-reset'); await p.waitForTimeout(400);
   console.log('after reset:', (await p.textContent('.pk-prog-top')).replace(/\s+/g,' ').trim());
-  await p.click('text=📋 Szablony'); await p.waitForTimeout(300); await shot('k-templates');
+  await p.click('#pk-tpl'); await p.waitForTimeout(300); await shot('k-templates');
   console.log('own template:', await p.textContent('.tpl >> nth=0'));
   // trip page link
   await p.goto(B+'#/podroze/'+tid); await p.waitForTimeout(400);

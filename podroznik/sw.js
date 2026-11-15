@@ -4,10 +4,10 @@
 // baza i wyliczanie przypomnień – do sprawdzania w tle (Periodic Background Sync)
 importScripts("i18n-en.js", "i18n.js", "db.js", "reminders-core.js");
 
-const CACHE = "podroznik-v46";
+const CACHE = "podroznik-v48";
 const APP = [
   "./", "./index.html", "./style.css", "./i18n-en.js", "./i18n.js", "./native.js", "./db.js", "./app.js", "./trips.js", "./manifest.webmanifest",
-  "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png", "./tickets.js", "./plan.js", "./pack.js", "./reminders-core.js", "./reminders.js", "./backup.js", "./lock.js", "./docs.js", "./budget.js", "./stats.js", "./weather.js", "./email.js", "./places.js", "./discover.js", "./split.js", "./share.js", "./offline.js", "./phrases.js", "./photos.js", "./backdrop.js", "./prep.js", "./ocr.js", "./gmail.js", "./icons.js", "./covers.js",
+  "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png", "./tickets.js", "./plan.js", "./pack.js", "./reminders-core.js", "./reminders.js", "./backup.js", "./lock.js", "./docs.js", "./budget.js", "./stats.js", "./weather.js", "./email.js", "./places.js", "./discover.js", "./split.js", "./share.js", "./offline.js", "./phrases.js", "./photos.js", "./backdrop.js", "./prep.js", "./ocr.js", "./gmail.js", "./icons.js", "./covers.js", "./settings.js",
   // czcionki (lib/fonts) – wygląd bez internetu
   "./lib/fonts/plus-jakarta-sans-latin-wght-normal.woff2", "./lib/fonts/plus-jakarta-sans-latin-ext-wght-normal.woff2", "./lib/fonts/plus-jakarta-sans-vietnamese-wght-normal.woff2",
   "./lib/fonts/newsreader-latin-500-normal.woff2", "./lib/fonts/newsreader-latin-ext-500-normal.woff2", "./lib/fonts/newsreader-vietnamese-500-normal.woff2",

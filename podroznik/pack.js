@@ -112,41 +112,74 @@
     let hideDone = await DB.getSetting("packHideDone", false);
     const today = App.todayStr();
 
-    const switcher = trips.length > 1 ? `
-      <label class="pl-switch"><span class="sr">Podróż</span>
-        <select id="pk-trip">${App.Plan.tripOptions(trips, id)}</select>
-      </label>` : "";
+    const left = App.dayDiff(today, trip.start);
+    const when = left > 1 ? `wyjazd za ${left} dni` : left === 1 ? "wyjazd jutro" : left === 0 ? "wyjazd dziś" : trip.end >= today ? "podróż trwa" : "podróż zakończona";
+    const head = `
+      <header class="pl-head">
+        <div class="pl-head-name">
+          <h2>${esc(trip.name)}</h2>
+          ${trips.length > 1 ? `<span class="pl-head-chev" aria-hidden="true">${App.icon("chev")}</span>
+            <label class="pl-switch"><span class="sr">Podróż</span><select id="pk-trip">${App.Plan.tripOptions(trips, id)}</select></label>` : ""}
+        </div>
+        <p class="pl-info">${App.fmtRange(trip.start, trip.end)} · ${when}</p>
+      </header>`;
 
-    const tabs = `
-      <div class="seg pk-tabs" role="tablist">
-        <button type="button" role="tab" data-l="pack" aria-pressed="${mode === "pack"}">🧳 Rzeczy</button>
-        <button type="button" role="tab" data-l="todo" aria-pressed="${mode === "todo"}">✅ Przed wyjazdem</button>
-      </div>`;
+    const counts = () => {
+      const pack = items.filter(i => i.list !== "todo"), todo = items.filter(i => i.list === "todo");
+      return { pack, todo, done: pack.filter(i => i.status === "done").length, buy: pack.filter(i => i.status === "buy").length, tDone: todo.filter(i => i.status === "done").length };
+    };
+    const tabs = () => { const c = counts(); return `
+        <button type="button" role="tab" data-l="pack" aria-pressed="${mode === "pack"}"><span>Rzeczy</span> <small>${c.done}/${c.pack.length}</small></button>
+        <button type="button" role="tab" data-l="todo" aria-pressed="${mode === "todo"}"><span>Przed wyjazdem</span> <small>${c.tDone}/${c.todo.length}</small></button>`; };
 
     const catOptions = Object.entries(CATS).map(([k, C]) => `<option value="${k}">${C.icon} ${C.name}</option>`).join("");
     const addBar = `
       <form class="pk-add" id="pk-add" autocomplete="off">
         <input name="name" maxlength="80" placeholder="${mode === "todo" ? "Dodaj zadanie, np. odprawa online" : "Dodaj rzecz, np. ładowarka"}" aria-label="Nazwa">
         ${mode === "pack" ? `<select name="cat" aria-label="Kategoria">${catOptions}</select>` : `<input type="date" name="due" aria-label="Termin (opcjonalnie)" title="Termin (opcjonalnie)">`}
-        <button class="btn primary" type="submit" aria-label="Dodaj">${App.Trips.plusIcon}</button>
+        <button class="btn primary" type="submit" aria-label="Dodaj">${App.icon("plus")}</button>
       </form>`;
 
+    // pierścień postępu: spakowane rzeczy (albo zrobione zadania na drugiej zakładce)
     function progress() {
-      const pack = items.filter(i => i.list !== "todo"), todo = items.filter(i => i.list === "todo");
-      const done = pack.filter(i => i.status === "done").length, buy = pack.filter(i => i.status === "buy").length;
-      const tDone = todo.filter(i => i.status === "done").length;
-      const pct = pack.length ? Math.round(done / pack.length * 100) : 0;
-      const left = App.dayDiff(today, trip.start);
-      const when = left > 1 ? `wyjazd za ${left} dni` : left === 1 ? "wyjazd jutro" : left === 0 ? "wyjazd dziś" : trip.end >= today ? "podróż trwa" : "podróż zakończona";
+      const c = counts();
+      const [n, all] = mode === "todo" ? [c.tDone, c.todo.length] : [c.done, c.pack.length];
+      if (!all) return ""; // pusta lista – sam stan pusty niżej
+      const pct = Math.round(n / all * 100);
+      const R = 26, L = 2 * Math.PI * R;
+      const late = c.todo.filter(i => i.status !== "done" && i.due && i.due < today).length;
+      const title = !all ? (mode === "todo" ? "Brak zadań" : "Lista jest pusta")
+        : n === all ? (mode === "todo" ? "Wszystko zrobione" : "Wszystko spakowane")
+        : mode === "todo" ? `Zostało ${all - n} ${plural(all - n, "zadanie", "zadania", "zadań")}` : `Zostało ${all - n} ${plural(all - n, "rzecz", "rzeczy", "rzeczy")}`;
+      const chips = [
+        `<span class="pk-prog-top">${mode === "todo" ? "Zrobione" : "Spakowane"} ${n}/${all}</span>`,
+        c.buy && mode === "pack" ? `<span class="chip warn">${App.icon("cart")} do kupienia: ${c.buy}</span>` : "",
+        late && mode === "todo" ? `<span class="chip err">po terminie: ${late}</span>` : "",
+      ].filter(Boolean).join("");
       return `
-        <div class="pk-progress">
-          <div class="pk-prog-top"><b>Spakowane ${done}/${pack.length}</b><span>${when}</span></div>
-          <div class="bar"><i style="width:${pct}%"></i></div>
-          <div class="pk-prog-sub">${[
-            buy ? `🛒 do kupienia: ${buy}` : "",
-            todo.length ? `✅ zadania: ${tDone}/${todo.length}` : "",
-          ].filter(Boolean).join(" · ") || (pack.length ? (done === pack.length ? "Wszystko spakowane 🎉" : "") : "Lista jest pusta")}</div>
+        <div class="pk-progress${all && n === all ? " is-full" : ""}">
+          <svg class="pk-ring" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="${R}"/><circle class="on" cx="32" cy="32" r="${R}" stroke-dasharray="${L.toFixed(1)}" stroke-dashoffset="${(L * (1 - pct / 100)).toFixed(1)}"/></svg>
+          <span class="pk-pct">${all && n === all ? App.icon("check") : `${pct}<small>%</small>`}</span>
+          <div class="pk-prog-main">
+            <b>${title}</b>
+            <div class="pk-prog-sub">${chips}</div>
+          </div>
         </div>`;
+    }
+
+    // na zakładce „Rzeczy”: najbliższe niezrobione zadanie przed wyjazdem
+    function nextTask() {
+      if (mode !== "pack") return "";
+      const open = items.filter(i => i.list === "todo" && i.status !== "done")
+        .sort((a, b) => (a.due ? 0 : 1) - (b.due ? 0 : 1) || (a.due || "").localeCompare(b.due || "") || byOrder(a, b));
+      if (!open.length) return "";
+      const t = open[0], late = t.due && t.due < today;
+      return `
+        <a class="pk-next${late ? " late" : ""}" href="#/pakowanie/${id}?l=todo">
+          <span class="li-ico" aria-hidden="true">${App.icon(late ? "alert" : "clock")}</span>
+          <span class="li-main"><small>Przed wyjazdem${open.length > 1 ? ` · jeszcze ${open.length}` : ""}</small><b>${esc(t.name)}</b>${t.due ? `<small class="pk-next-due">${late ? "po terminie · " : "do "}${App.fmtDay(t.due)}</small>` : ""}</span>
+          ${App.icon("chev")}
+        </a>`;
     }
 
     function row(i) {
@@ -155,37 +188,42 @@
       return `
         <div class="pk-row${done ? " is-done" : ""}${buy ? " is-buy" : ""}" data-id="${i.id}">
           <button type="button" class="pk-check" data-act="check" aria-pressed="${done}" aria-label="${done ? "Odznacz" : mode === "todo" ? "Zrobione" : "Spakowane"}: ${esc(i.name)}">${checkIcon}</button>
-          <a class="pk-name" href="#/rzecz/${i.id}">${esc(i.name)}${i.qty ? ` <span class="muted">×${esc(i.qty)}</span>` : ""}${dueTxt}</a>
-          ${mode === "pack" ? `<button type="button" class="pk-buy" data-act="buy" aria-pressed="${buy}" aria-label="Do kupienia: ${esc(i.name)}" title="Do kupienia">🛒</button>` : ""}
+          <a class="pk-name" href="#/rzecz/${i.id}">${esc(i.name)}${i.qty ? ` <span class="pk-qty">×${esc(i.qty)}</span>` : ""}${dueTxt}</a>
+          ${mode === "pack" ? `<button type="button" class="pk-buy" data-act="buy" aria-pressed="${buy}" aria-label="Do kupienia: ${esc(i.name)}" title="Do kupienia">${App.icon("cart")}</button>` : ""}
         </div>`;
     }
+
+    // nagłówek grupy: ikona, nazwa, licznik i (dla kategorii) mały pasek postępu
+    const groupHead = (ico, name, count, full, pct) => `
+      <h3 class="pk-cat">${ico ? `<span class="pk-cat-ico" aria-hidden="true">${ico}</span>` : ""}<span class="pk-cat-name">${name}</span>
+        <span class="pk-count${full ? " full" : ""}">${count}</span>
+        ${pct == null ? "" : `<i class="pk-mini" aria-hidden="true"><i style="width:${pct}%"></i></i>`}</h3>`;
 
     function listHtml() {
       const mine = items.filter(i => (i.list === "todo") === (mode === "todo"));
       if (!mine.length) return `
         <div class="pk-empty">
+          <div class="wl-empty-art" aria-hidden="true">${App.icon(mode === "todo" ? "check" : "pack")}</div>
           <p>${mode === "todo" ? "Brak zadań przed wyjazdem." : "Lista rzeczy jest pusta."}</p>
-          <a class="btn primary" href="#/pakowanie/${id}/szablony">📋 Wybierz z szablonu</a>
+          <a class="btn primary" href="#/pakowanie/${id}/szablony">${App.icon("list")} Wybierz z szablonu</a>
         </div>`;
       const visible = hideDone ? mine.filter(i => i.status !== "done") : mine;
       const hidden = mine.length - visible.length;
       let html = "";
       if (mode === "todo") {
-        // najpierw z terminem (najbliższy na górze), potem bez terminu, zrobione na końcu
+        // najpierw z terminem (najbliższy na górze), potem bez terminu; zrobione osobno na końcu
         const sorted = visible.slice().sort((a, b) =>
-          (a.status === "done") - (b.status === "done") || (a.due ? 0 : 1) - (b.due ? 0 : 1) || (a.due || "").localeCompare(b.due || "") || byOrder(a, b));
-        html = `<div class="pk-group">${sorted.map(row).join("")}</div>`;
+          (a.due ? 0 : 1) - (b.due ? 0 : 1) || (a.due || "").localeCompare(b.due || "") || byOrder(a, b));
+        const open = sorted.filter(i => i.status !== "done"), done = sorted.filter(i => i.status === "done");
+        if (open.length) html += `<div class="pk-group">${groupHead("", "Do zrobienia", open.length, false)}${open.map(row).join("")}</div>`;
+        if (done.length) html += `<div class="pk-group">${groupHead("", "Zrobione", done.length, true)}${done.map(row).join("")}</div>`;
       } else {
         for (const [k, C] of Object.entries(CATS)) {
           const inCat = mine.filter(i => (CATS[i.cat] ? i.cat : "inne") === k);
           const shown = visible.filter(i => (CATS[i.cat] ? i.cat : "inne") === k);
           if (!shown.length) continue;
           const d = inCat.filter(i => i.status === "done").length;
-          html += `
-            <div class="pk-group">
-              <h3 class="pk-cat"><span aria-hidden="true">${C.icon}</span> ${C.name} <span class="muted">${d}/${inCat.length}</span></h3>
-              ${shown.map(row).join("")}
-            </div>`;
+          html += `<div class="pk-group">${groupHead(C.icon, C.name, `${d}/${inCat.length}`, d === inCat.length, Math.round(d / inCat.length * 100))}${shown.map(row).join("")}</div>`;
         }
       }
       if (hidden) html += `<p class="muted small pk-hidden">Ukryto ${hidden} ${mode === "todo" ? "zrobionych" : "spakowanych"}.</p>`;
@@ -194,25 +232,27 @@
     }
 
     const tools = `
-      <div class="pk-tools">
-        <label class="pk-toggle"><input type="checkbox" id="pk-hide" ${hideDone ? "checked" : ""}> Ukryj ${mode === "todo" ? "zrobione" : "spakowane"}</label>
-        <a class="tv-link" href="#/pakowanie/${id}/szablony">📋 Szablony</a>
-      </div>
-      <div class="pk-actions">
-        <button type="button" class="btn" id="pk-save">⭐ Zapisz jako szablon</button>
-        <button type="button" class="btn" id="pk-reset">↺ Odznacz wszystko</button>
+      <label class="sw pk-toggle"${items.some(i => (i.list === "todo") === (mode === "todo")) ? "" : " hidden"}><input type="checkbox" id="pk-hide" ${hideDone ? "checked" : ""}><span class="sw-ui" aria-hidden="true"></span><span>Ukryj ${mode === "todo" ? "zrobione" : "spakowane"}</span></label>
+      <div class="list pk-tools">
+        <a class="li" id="pk-tpl" href="#/pakowanie/${id}/szablony"><span class="li-ico" aria-hidden="true">${App.icon("list")}</span><span class="li-main"><b>Szablony</b><small>gotowe listy i Twoje własne</small></span>${App.icon("chev")}</a>
+        <button type="button" class="li" id="pk-save"><span class="li-ico" aria-hidden="true">${App.icon("star")}</span><span class="li-main"><b>Zapisz jako szablon</b><small>na kolejne wyjazdy</small></span></button>
+        <button type="button" class="li" id="pk-reset"><span class="li-ico" aria-hidden="true">${App.icon("undo")}</span><span class="li-main"><b>Odznacz wszystko</b><small>np. przed pakowaniem na powrót</small></span></button>
       </div>`;
 
     return {
-      title: `Pakowanie · ${trip.name}`,
+      title: "Pakowanie",
       action: `<a class="icon-btn" href="#/podroze/${id}" aria-label="Podróż">${App.Plan.routeIcon}</a>`,
-      html: `${switcher}<div id="pk-progress">${progress()}</div>${tabs}${addBar}<div id="pk-list">${listHtml()}</div>${tools}`,
+      html: `${head}<div id="pk-progress">${progress()}</div>
+        <div class="seg pk-tabs" role="tablist" id="pk-tabs">${tabs()}</div>
+        <div id="pk-next">${nextTask()}</div>${addBar}<div id="pk-list">${listHtml()}</div>${tools}`,
       after(view) {
         const $ = s => view.querySelector(s);
-        const draw = () => { $("#pk-progress").innerHTML = progress(); $("#pk-list").innerHTML = listHtml(); };
+        const draw = () => { $("#pk-progress").innerHTML = progress(); $("#pk-list").innerHTML = listHtml(); $("#pk-tabs").innerHTML = tabs(); $("#pk-next").innerHTML = nextTask(); bindTabs();
+          $(".pk-toggle").hidden = !items.some(i => (i.list === "todo") === (mode === "todo")); };
         const sel = $("#pk-trip");
         if (sel) sel.onchange = () => location.replace(`#/pakowanie/${sel.value}${mode === "todo" ? "?l=todo" : ""}`);
-        view.querySelectorAll("[data-l]").forEach(b => b.onclick = () => location.replace(`#/pakowanie/${id}${b.dataset.l === "todo" ? "?l=todo" : ""}`));
+        const bindTabs = () => view.querySelectorAll("[data-l]").forEach(b => b.onclick = () => location.replace(`#/pakowanie/${id}${b.dataset.l === "todo" ? "?l=todo" : ""}`));
+        bindTabs();
 
         // szybkie dodawanie – pole zostaje aktywne, można wpisywać jedno po drugim
         const form = $("#pk-add");
@@ -280,18 +320,18 @@
             <span class="tpl-txt"><b>${esc(t.name)}</b>
               <span class="muted small">${p} ${plural(p, "rzecz", "rzeczy", "rzeczy")}${td ? ` · ${td} ${plural(td, "zadanie", "zadania", "zadań")}` : ""}</span></span>
           </button>
-          ${mine ? `<button type="button" class="tpl-del" data-del="${t.id}" aria-label="Usuń szablon ${esc(t.name)}">✕</button>` : ""}
+          ${mine ? `<button type="button" class="tpl-del" data-del="${t.id}" aria-label="Usuń szablon ${esc(t.name)}">${App.icon("trash")}</button>` : ""}
         </div>`;
     };
     return {
       title: "Szablony",
       back: `#/pakowanie/${id}`,
       html: `<div id="tpl-list">
-        <p class="muted small">Dotknij szablonu, by dodać jego rzeczy do listy „${esc(trip.name)}”. Możesz łączyć kilka – rzeczy, które już są, zostaną pominięte.</p>
-        ${own.length ? `<h3 class="section">Twoje szablony</h3>${own.map(t => card(t, true)).join("")}` : ""}
+        <p class="muted small tpl-intro">Dotknij szablonu, by dodać jego rzeczy do listy „${esc(trip.name)}”. Możesz łączyć kilka – rzeczy, które już są, zostaną pominięte.</p>
+        ${own.length ? `<h3 class="section">Twoje szablony</h3><div class="list tpl-box">${own.map(t => card(t, true)).join("")}</div>` : ""}
         <h3 class="section">Gotowe szablony</h3>
-        ${BUILTIN.map(t => card(t, false)).join("")}
-        <p class="muted small">Własny szablon zrobisz z dowolnej listy: „⭐ Zapisz jako szablon” pod listą pakowania.</p></div>`,
+        <div class="list tpl-box">${BUILTIN.map(t => card(t, false)).join("")}</div>
+        <p class="muted small tpl-outro">Własny szablon zrobisz z dowolnej listy: „Zapisz jako szablon” pod listą pakowania.</p></div>`,
       after(view) {
         // nasłuch na elemencie tego widoku (nie na #view, który zostaje między ekranami)
         view.querySelector("#tpl-list").addEventListener("click", async e => {
