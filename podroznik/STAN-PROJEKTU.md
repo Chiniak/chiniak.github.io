@@ -1,6 +1,6 @@
 # Podróżnik – stan projektu (do kontynuacji w nowej sesji)
 
-Ostatnia aktualizacja: 15 listopada 2026 (noc) – scalone PR #1–#23. **TRWA REDESIGN „Premium Light” (9 etapów) – zrobione etapy 1–6, 7a (PR #23, scalony) i 7b (mapa, Odkrywaj, karty, rozmówki, mapa offline, Przygotuj offline + wersja 2.5.0 w „O aplikacji” – PR #24), NASTĘPNY: 7c (budżet, rozliczenie, dokumenty).** Zasady wyglądu, tokeny, decyzje właściciela i opis zrobionych ekranów: **`DESIGN.md` – przeczytaj przed każdą zmianą wyglądu.** Zacznij od tego pliku (sekcja „REDESIGN – TU ZACZNIJ” niżej), potem `DESIGN.md`, `PLAN.md` i `DO-SPRAWDZENIA.md`.
+Ostatnia aktualizacja: 15 listopada 2026 (noc) – scalone PR #1–#24. **APK testowe 2.5.0 (versionCode 9, etapy 5–7b) wysłane 15.11 – czeka na ocenę właściciela.** **TRWA REDESIGN „Premium Light” (9 etapów) – zrobione etapy 1–6, 7a (PR #23, scalony) i 7b (mapa, Odkrywaj, karty, rozmówki, mapa offline, Przygotuj offline + wersja 2.5.0 w „O aplikacji” – PR #24, scalony), NASTĘPNY: 7c (budżet, rozliczenie, dokumenty).** Zasady wyglądu, tokeny, decyzje właściciela i opis zrobionych ekranów: **`DESIGN.md` – przeczytaj przed każdą zmianą wyglądu.** Zacznij od tego pliku (sekcja „REDESIGN – TU ZACZNIJ” niżej), potem `DESIGN.md`, `PLAN.md` i `DO-SPRAWDZENIA.md`.
 
 ## REDESIGN „Premium Light” – TU ZACZNIJ
 - Właściciel 15.11 przysłał pełną specyfikację redesignu (premium, jasny minimalizm, styl magazynu podróżniczego) i zatwierdził
@@ -21,13 +21,13 @@ Ostatnia aktualizacja: 15 listopada 2026 (noc) – scalone PR #1–#23. **TRWA R
 - Właściciel prosi o scalanie sam w czacie („scalaj”) – wtedy scal PR przez GitHub (merge), potem gałąź od nowa od main.
 - APK testowe: `cd podroznik-app && npm run apk` (SDK w /opt/android-sdk już jest), wynik `android/app/build/outputs/apk/debug/app-debug.apk`,
   wysyłać przez SendUserFile (display: attach), nie commitować. Ostatnie wysłane: **2.4.0 (versionCode 8)** – etapy 1–4 + zdjęcia celu.
-  Następne APK: 2.5.0 / versionCode 9 już ustawione w `build.gradle` (i `App.VERSION`) – przy kolejnym podbij oba. Etapy 3–4 są w APK 2.4.0 (czeka na ocenę właściciela).
+  Ostatnie wysłane APK: **2.5.0 / versionCode 9** (etapy 5–7b). Przy następnym podbij versionCode/versionName w `build.gradle` **i** `App.VERSION` w app.js (np. 2.6.0 / 10). Etapy 3–4 są w APK 2.4.0 (czeka na ocenę właściciela).
 - Właściciel gra czasem w Tibię – prosił, żeby **nie otwierać mu żadnych okien** (bez podglądów/artefaktów otwieranych automatycznie; pliki tylko jako załącznik).
-- **Na start następnej sesji:** jeśli właściciel napisze „scalaj” – scal PR #24 (etap 7b), potem `git checkout -B claude/travel-planning-app-tl9mvf origin/main`.
+- **Na start następnej sesji:** zacznij etap 7c (PR #24 scalony, gałąź już od main). Po scaleniu kolejnego PR: `git checkout -B claude/travel-planning-app-tl9mvf origin/main`.
   Etap 7 podzielony na PR: 7a ✔ szczegóły podróży + formularze; 7b ✔ mapa, Odkrywaj,
   karty dla kierowcy, rozmówki, offline; **następny 7c**: budżet, rozliczenie, dokumenty; 7d: kopia, PIN, Gmail, przypomnienia, okna/toasty).
   Wersja w „O aplikacji” = `App.VERSION` w app.js (właściciel 15.11 wybrał numer APK; teraz **2.5.0**, w build.gradle już versionCode 9 / 2.5.0 – podbijaj oba razem).
-  Otwarte pytanie do właściciela: czy zbudować APK 2.5.0 z etapami 5–7a.
+  APK 2.5.0 zbudowane i wysłane 15.11 (prośba właściciela).
   Serwer testowy: `python3 -m http.server 8765` w tle z długim limitem czasu (domyślny wygasa po 30 min).
 - Czeka na ocenę właściciela na telefonie: APK 2.4.0 (etapy 1–4: Podróże, Bilety, Plan; zdjęcia celu – czy filtr nie przepuszcza świątyń).
 
