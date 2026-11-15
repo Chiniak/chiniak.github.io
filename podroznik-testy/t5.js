@@ -41,6 +41,7 @@ const SP = process.argv[2];
   console.log('today card:', (await p.textContent('.today-card')).replace(/\s+/g,' ').trim());
   await shot('p-plan');
   // drag "Kupić prezent" to top
+  await p.evaluate(()=>document.querySelector('#pl-today').scrollIntoView()); await p.waitForTimeout(200);
   const h = p.locator('#pl-today .pl-user:has-text("Kupić prezent") .pl-handle');
   const hb = await h.boundingBox(); const first = await p.locator('#pl-today .pl-row').first().boundingBox();
   await p.mouse.move(hb.x+20, hb.y+20); await p.mouse.down();
