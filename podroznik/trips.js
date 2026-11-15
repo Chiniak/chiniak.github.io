@@ -98,7 +98,7 @@
         title: "Podróżnik",
         html: App.empty("🧳", "Nie masz jeszcze podróży",
           "Dodaj pierwszy wyjazd, a potem jego loty, pociągi, autobusy i noclegi.",
-          `<a class="btn primary" href="#/podroze/nowa">${plusIcon} Dodaj podróż</a><p style="margin-top:14px"><a href="#/udostepnij">📥 Otwórz podróż od kogoś</a></p>`),
+          `<a class="btn primary" href="#/podroze/nowa">${plusIcon} Dodaj podróż</a>${App.Gmail && App.Gmail.available() ? `<p style="margin-top:14px"><a class="btn" href="#/gmail">📬 Znajdź rezerwacje w Gmailu</a></p>` : ""}<p style="margin-top:14px"><a href="#/udostepnij">📥 Otwórz podróż od kogoś</a></p>`),
       };
     }
 
@@ -125,7 +125,8 @@
     const future = trips.filter(t => status(t) === "future").sort((a, b) => a.start.localeCompare(b.start));
     const past = trips.filter(t => status(t) === "past").sort((a, b) => b.start.localeCompare(a.start));
 
-    let html = home.html + nearest;
+    const gmail = App.Gmail ? await App.Gmail.homeCard() : "";
+    let html = home.html + gmail + nearest;
     if (now.length) html += `<h3 class="section">Trwające</h3>${now.map(card).join("")}`;
     html += `<h3 class="section">Nadchodzące</h3>` +
       (future.length ? future.map(card).join("") : `<p class="muted small">Brak zaplanowanych wyjazdów.</p>`);
@@ -134,7 +135,8 @@
         <summary><h3 class="section">Archiwum <span class="muted">(${past.length})</span></h3></summary>
         ${past.map(card).join("")}
       </details>`;
-    html += `<a class="plan-link st-link" href="#/wklej"><span aria-hidden="true">📧</span> Dodaj z maila <span class="muted">– potwierdzenie, PDF albo .ics z rezerwacji</span><b aria-hidden="true">›</b></a>`;
+    if (App.Gmail && App.Gmail.available() && !gmail) html += `<a class="plan-link st-link" href="#/gmail"><span aria-hidden="true">📬</span> Z Gmaila <span class="muted">– rezerwacje i aktywności znalezione w poczcie</span><b aria-hidden="true">›</b></a>`;
+    html += `<a class="plan-link${App.Gmail && App.Gmail.available() && !gmail ? "" : " st-link"}" href="#/wklej"${App.Gmail && App.Gmail.available() && !gmail ? ' style="margin-top:8px"' : ""}><span aria-hidden="true">📧</span> Dodaj z maila <span class="muted">– potwierdzenie, PDF albo .ics z rezerwacji</span><b aria-hidden="true">›</b></a>`;
     html += `<a class="plan-link" href="#/udostepnij" style="margin-top:8px"><span aria-hidden="true">📥</span> Otwórz podróż od kogoś <span class="muted">– plik z Podróżnika</span><b aria-hidden="true">›</b></a>`;
     html += `<a class="plan-link" href="#/statystyki" style="margin-top:8px"><span aria-hidden="true">📊</span> Statystyki <span class="muted">– kilometry, kraje, mapa</span><b aria-hidden="true">›</b></a>`;
     const cov = await covers();
