@@ -57,10 +57,11 @@
     const curs = new Set(bd ? bd.currencies : []);
     ccs.forEach(cc => CUR_OF[cc] && curs.add(CUR_OF[cc]));
     CUR_WORDS.forEach(([re, c]) => re.test(`${trip.destination || ""} ${trip.name || ""}`) && curs.add(c));
+    if (App.Money) { const m = await App.Money.load(id); if (m) m.curs.forEach(c => curs.add(c)); } // waluty krajów podróży (waluty.js)
     curs.delete(home);
     const rates = trip.rates || {};
     const noRate = [...curs].filter(c => !(rates[c] > 0));
-    steps.push({ key: "rates", icon: "💱", name: "Kursy walut", href: `#/budzet/${id}`, curs: [...curs], noRate, home,
+    steps.push({ key: "rates", icon: "💱", name: "Kursy walut", href: `#/waluty/${id}`, curs: [...curs], noRate, home,
       done: curs.size ? noRate.length === 0 : null,
       txt: !curs.size ? "brak walut obcych" : noRate.length ? `brak kursu: ${noRate.join(", ")}${home !== "PLN" ? " – wpisz w budżecie" : ""}`
         : [...curs].map(c => `1 ${c} = ${String(rates[c]).replace(".", ",")} ${home}`).join(" · ") });
@@ -139,8 +140,9 @@
       if (st.home !== "PLN" || !st.noRate.length) return;
       const trip = await DB.get("trips", g.trip.id);
       const rates = { ...(trip.rates || {}) };
-      for (const c of st.noRate) { say(`kurs ${c}…`); const v = await App.Budget.nbp(c); if (v) rates[c] = v; }
-      await DB.putRaw("trips", { ...(await DB.get("trips", g.trip.id)), rates });
+      const cur = await DB.get("trips", g.trip.id), info = { ...(cur.ratesInfo || {}) };
+      for (const c of st.noRate) { say(`kurs ${c}…`); const v = await App.Budget.nbp(c); if (v) { rates[c] = v; info[c] = { at: App.todayStr(), src: "NBP" }; } }
+      await DB.putRaw("trips", { ...(await DB.get("trips", g.trip.id)), rates, ratesInfo: info });
     },
     async weather(st, g, say) {
       say("pobieram…");

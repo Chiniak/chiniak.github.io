@@ -185,6 +185,8 @@
         ${tool(`#/mapa/${id}?d=${day}`, "map", "Mapa dnia")}
         ${tool(`#/odkrywaj/${id}`, "compass", "W pobliżu")}
         ${tool(`#/karty/${id}`, "chat", "Rozmówki")}
+        ${tool(`#/waluty/${id}`, "currency", "Waluty")}
+        ${tool(`#/budzet/${id}`, "wallet", "Budżet")}
         ${tool("#/dokumenty", "passport", "Dokumenty")}
       </div>`;
 

@@ -190,6 +190,11 @@ Adres (po scaleniu pull requesta): https://chiniak.github.io/podroznik/
 - [ ] Po scaleniu: przełączanie zakładek nie zmienia tła; nowe zdjęcie po ponownym uruchomieniu aplikacji
 - [ ] Ustawienia → Tło → „Nowe zdjęcie”: przy uruchomieniu / co 10 minut / raz dziennie / przy każdej zmianie ekranu
 
+## Przelicznik walut (APK 2.9.0)
+- ⬜ Waluty podróży rozpoznane (np. VND, THB, USD w Kambodży); „Pobierz aktualne kursy NBP” z internetem
+- ⬜ Bez internetu (tryb samolotowy): przeliczanie działa, ściąga banknotów, liczenie „120000+35000”
+- ⬜ Kurs z kantoru wpisany ręcznie; „Dodaj jako wydatek” trafia do budżetu
+
 ## Wizy i zezwolenia (APK 2.8.0)
 - ⬜ Podróż poza UE: sekcja „Wjazd i wizy” w szczegółach podróży – czy kraje rozpoznane dobrze (loty, cel, noclegi), czy opisy się zgadzają
 - ⬜ „Mam”, krzyżyk „Nie jadę”, „+ Dodaj kraj”; wiza dodana w Dokumentach (rodzaj „Wiza”, kraj) = „mam”

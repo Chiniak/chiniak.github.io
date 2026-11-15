@@ -705,4 +705,30 @@ self.I18N_EN = {
   "Zasady wjazdu są czasowe albo niepewne – sprawdź na stronie MSZ przed wyjazdem.": "Entry rules are temporary or uncertain – check the MFA website before you go.",
   "Wizę dostaniesz po przylocie – przygotuj zdjęcie paszportowe i gotówkę (zwykle USD) albo złóż e-wizę wcześniej. Podróż „{}”.": "You get the visa on arrival – bring a passport photo and cash (usually USD), or apply for an e-visa in advance. Trip “{}”.",
   "„{}”: wniosek tylko na oficjalnej stronie (pośrednicy biorą kilka razy więcej). Zaznacz „Mam” w podróży, gdy gotowe.": "“{}”: apply only on the official website (agents charge several times more). Tick “Got it” in the trip when done.",
+
+  /* ---------- przelicznik walut (waluty.js) ---------- */
+  "Waluty": "Currencies", "Przelicznik walut": "Currency converter", "Dodaj podróż – przelicznik dobierze waluty krajów, do których jedziesz, i zapamięta kursy na drogę.":
+    "Add a trip – the converter picks the currencies of the countries you visit and keeps the rates for the road.",
+  "brak kursu: {}": "no rate: {}", "Kwota": "Amount", "Z waluty": "From currency", "Na walutę": "To currency", "Zamień waluty": "Swap currencies",
+  "Dodaj jako wydatek": "Add as an expense", "Ściąga: {} → {}": "Cheat sheet: {} → {}", "Kursy na drogę": "Rates for the road", "online": "online",
+  "offline – zapisane kursy": "offline – saved rates", "Nie rozpoznano walut podróży – dodaj niżej.": "No trip currencies recognised – add one below.",
+  "Pobierz aktualne kursy NBP": "Get current NBP rates", "Kursy NBP – potrzebny internet": "NBP rates – internet needed", "+ Dodaj walutę": "+ Add a currency", "Dodaj walutę": "Add a currency",
+  "Kursy zapisują się w podróży i działają bez internetu. NBP podaje kurs średni – w kantorze i przy płatności kartą wychodzi zwykle kilka procent gorzej.":
+    "Rates are saved with the trip and work offline. NBP gives the mid-market rate – exchange offices and card payments are usually a few percent worse.",
+  "wpisany ręcznie": "entered manually", "kurs z budżetu": "rate from the budget", "brak kursu – wpisz albo pobierz": "no rate – enter or download",
+  "Kurs {}": "Rate {}", "kurs": "rate", "Brak kursu {} – wpisz go niżej albo pobierz z NBP.": "No {} rate – enter it below or download from NBP.",
+  "Brak kursu {} – wpisz go niżej.": "No {} rate – enter it below.", "Dodano wydatek: {}": "Expense added: {}", "Zapisano kurs": "Rate saved", "Usunięto kurs": "Rate removed",
+  "Pobrano {} z NBP": "Downloaded {} from NBP", "Nie udało się pobrać (brak internetu?)": "Could not download (no internet?)",
+  "działa offline, kursy na drogę": "works offline, rates for the road", "offline, ściąga kwot, kursy na drogę": "offline, cheat sheet, rates for the road",
+  "kurs": "rate", "kursy": "rates", "kursów": "rates",
+
+  /* ---------- ustawienia uporządkowane (settings.js) ---------- */
+  "Tło ze zdjęć": "Photo background", "natura i miasta z Wikimedia Commons": "nature and cities from Wikimedia Commons",
+  "przy uruchomieniu": "at start", "co 10 minut": "every 10 minutes", "raz dziennie": "once a day", "przy każdym ekranie": "on every screen",
+  "Nawigacja": "Navigation", "Inna aplikacja": "Another app", "Amap (Chiny)": "Amap (China)", "np. Organic Maps – mapy offline": "e.g. Organic Maps – offline maps",
+  "高德 – w Chinach Google nie działa": "高德 – Google doesn't work in China", "Start w trakcie podróży": "Start screen during a trip",
+  "Dane i bezpieczeństwo": "Data & security", "Aplikacja": "App", "otwiera się po podaniu PIN-u": "opens with your PIN", "zabezpiecz bilety i dokumenty": "protect tickets and documents",
+  "pobierz APK": "download the APK", "{} MB w telefonie": "{} MB on the phone", "działa offline": "works offline", "offline po ponownym otwarciu": "offline after reopening",
+  "Brak internetu – zdjęcia pobiorą się później.": "No internet – photos will download later.", "Pobieram zdjęcia – przełącz kilka ekranów.": "Downloading photos – switch a few screens.",
+  "{} podróż": "{} trip", "{} podróże": "{} trips", "{} podróży": "{} trips",
 };

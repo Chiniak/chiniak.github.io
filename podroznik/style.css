@@ -1260,10 +1260,6 @@ button.li { width: 100%; border: 0; border-top: 1px solid var(--line); backgroun
 .tpl-del .ic { width: 20px; height: 20px; }
 
 /* ---------- Ustawienia (redesign etap 6) ---------- */
-.set-head { display: flex; align-items: center; gap: 14px; margin: 2px 2px 6px; }
-.set-logo { flex: none; width: 52px; height: 52px; border-radius: 16px; box-shadow: var(--shadow); }
-.set-head h2 { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: var(--fs-2xl); line-height: 1.1; }
-.set-head p { margin: 2px 0 0; color: var(--muted); font-size: var(--fs-sm); }
 .set-group .section { margin-top: 26px; }
 .set-group .li { min-height: 60px; }
 .set-group .li-ico { background: var(--accent-soft); color: var(--accent); }
@@ -1281,8 +1277,6 @@ button.li { width: 100%; border: 0; border-top: 1px solid var(--line); backgroun
 .set-info:empty { display: none; }
 .set-btn { margin-top: 10px; min-height: 40px; font-size: var(--fs-sm); }
 .set-btn .ic { width: 18px; height: 18px; }
-.set-kv { display: flex; justify-content: space-between; gap: 12px; padding-top: 8px; font-size: var(--fs-sm); color: var(--muted); }
-.set-kv b { color: var(--text); font-weight: 600; text-align: right; }
 .set-body .bar { margin-top: 2px; }
 .set-val { flex: 0 1 auto; max-width: 55%; font-weight: 600; font-size: var(--fs-sm); color: var(--muted); text-align: right; }
 .set-note { margin: 8px 4px 0; font-size: var(--fs-sm); color: var(--muted); line-height: 1.5; }
@@ -1752,3 +1746,52 @@ button.li { font-weight: 400; }
 .vz-src .ic { flex: none; width: 16px; height: 16px; margin-top: 1px; }
 .vz-src a { color: var(--accent); }
 .vz-none { margin: 0; }
+.dz-tools { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+/* ---------- przelicznik walut (waluty.js) ---------- */
+.cv-card { padding: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-feature); box-shadow: var(--shadow); }
+.cv-top { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.cv-top .chip:first-child { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.cv-line { display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 14px; border-radius: var(--r-ctl); background: var(--bg); border: 1px solid var(--line); }
+.cv-line:focus-within { outline: 2px solid var(--accent); outline-offset: -1px; }
+.cv-amt, .cv-res { flex: 1; min-width: 0; font-family: var(--font-display); font-weight: 500; font-size: var(--fs-3xl); line-height: 1.2; color: var(--text); }
+.cv-amt { border: 0; background: transparent; padding: 0; outline: none; }
+.cv-res { overflow-wrap: anywhere; }
+.cv-out { background: var(--accent-soft); border-color: transparent; }
+.cv-out .cv-res { color: var(--accent); }
+.cv-line select { flex: none; min-height: 44px; padding: 0 8px; border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; font-weight: 600; }
+.cv-mid { display: flex; align-items: center; justify-content: space-between; min-height: 44px; padding: 2px 4px; }
+.cv-calc { font-size: var(--fs-sm); color: var(--muted); }
+.cv-swap { margin: 0; background: var(--surface-2); }
+.cv-swap .ic { transform: rotate(90deg); }
+.cv-rate { margin: 10px 2px 0; font-size: var(--fs-sm); color: var(--muted); }
+.cv-bad { color: var(--warn); font-weight: 600; }
+.cv-exp { margin-top: 12px; }
+.cv-chips { margin-top: 12px; }
+.cv-chips .st-chip { min-height: 40px; }
+.cv-cheat { display: grid; grid-template-columns: 1fr 1fr; }
+.cv-cheat[hidden] { display: none; }
+.cv-cheat-row { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-height: 0; padding: 10px 14px; border: 0; border-top: 1px solid var(--line); background: none; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.cv-cheat-row:nth-child(-n+2) { border-top: 0; }
+.cv-cheat-row:nth-child(even) { border-left: 1px solid var(--line); }
+.cv-cheat-row b { font-weight: 600; font-variant-numeric: tabular-nums; }
+.cv-cheat-row span { font-size: var(--fs-sm); color: var(--muted); font-variant-numeric: tabular-nums; }
+.cv-code { width: auto; min-width: 44px; padding: 0 6px; font-size: var(--fs-cap); font-weight: 600; letter-spacing: .04em; background: var(--accent-soft); color: var(--accent); }
+.cv-edit input { width: 96px; min-height: 40px; padding: 0 10px; border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--bg); color: var(--text); font: inherit; font-size: var(--fs-sm); text-align: right; }
+.cv-tools { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.cv-none { padding: 14px; margin: 0; }
+.cv-chips .st-chip { font: inherit; font-size: var(--fs-sm); font-weight: 600; cursor: pointer; }
+.cv-amt.long, .cv-res.long { font-size: var(--fs-xl); }
+/* ustawienia uporządkowane (15.11): wiersz = tytuł + lista wyboru albo przełącznik po prawej */
+.set-group:first-child .section { margin-top: 4px; }
+.set-group .li.set-row { min-height: 56px; cursor: pointer; }
+.set-sel { flex: none; max-width: 46%; min-height: 40px; padding: 0 28px 0 10px; border-radius: var(--r-sm); border: 1px solid var(--line);
+  background: var(--surface-2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235F6C68' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M7 10l5 5 5-5'/%3E%3C/svg%3E") no-repeat right 6px center / 16px;
+  -webkit-appearance: none; appearance: none; color: var(--text); font: inherit; font-size: var(--fs-sm); font-weight: 600; text-overflow: ellipsis; }
+.set-sel:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.set-bg { flex-wrap: wrap; row-gap: 8px; }
+.set-bg .sw { flex: none; }
+.set-bg .set-body { padding-bottom: 4px; }
+.set-inline { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: var(--fs-sm); color: var(--muted); }
+.set-link { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; padding: 0; border: 0; background: none; color: var(--accent); font: inherit; font-weight: 600; cursor: pointer; }
+.set-link .ic { width: 16px; height: 16px; }
+@media (max-width: 380px) { .set-bg .set-body { padding-left: 0; } }
