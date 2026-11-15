@@ -44,6 +44,7 @@
   }
 
   /* ---------- zdarzenia z odcinków (transport i noclegi) ---------- */
+  const ic = (type, cls) => App.icon ? App.icon.type(type, cls) : "";
   function segEvents(segs) {
     const ev = [];
     for (const s of segs) {
@@ -51,11 +52,11 @@
       const T = Tr().typeOf(s);
       if (s.type === "nocleg") {
         const where = s.address || s.name;
-        ev.push({ at: s.depart, icon: T.icon, title: `Zameldowanie: ${s.name || "nocleg"}`, sub: s.address || "", href: `#/odcinek/${s.id}`, nav: where });
-        if (s.arrive) ev.push({ at: s.arrive, icon: "🔑", title: `Wymeldowanie: ${s.name || "nocleg"}`, sub: "", href: `#/odcinek/${s.id}`, nav: "" });
+        ev.push({ at: s.depart, icon: T.icon, ico: ic(s.type), title: `Zameldowanie: ${s.name || "nocleg"}`, sub: s.address || "", href: `#/odcinek/${s.id}`, nav: where });
+        if (s.arrive) ev.push({ at: s.arrive, icon: "🔑", ico: ic("nocleg"), title: `Wymeldowanie: ${s.name || "nocleg"}`, sub: "", href: `#/odcinek/${s.id}`, nav: "" });
       } else {
         const bits = [T.name, s.number, s.arrive ? `przyjazd ${App.time(s.arrive)}${s.arrive.slice(0, 10) !== s.depart.slice(0, 10) ? " (+1)" : ""}` : ""].filter(Boolean);
-        ev.push({ at: s.depart, end: s.arrive, icon: T.icon, title: `${s.from || "?"} → ${s.to || "?"}`, sub: bits.join(" · "), href: `#/odcinek/${s.id}`, nav: s.from, seg: s });
+        ev.push({ at: s.depart, end: s.arrive, icon: T.icon, ico: ic(s.type), title: `${s.from || "?"} → ${s.to || "?"}`, sub: bits.join(" · "), href: `#/odcinek/${s.id}`, nav: s.from, seg: s });
       }
     }
     return ev.sort((a, b) => a.at.localeCompare(b.at));
@@ -77,9 +78,9 @@
   /* ---------- karta „Dziś” ---------- */
   function todayCard(trip, events, items) {
     const now = nowStr(), today = App.todayStr();
-    const all = events.map(e => ({ at: e.at, end: e.end, icon: e.icon, title: e.title, sub: e.sub, nav: e.nav, href: e.href }))
+    const all = events.map(e => ({ at: e.at, end: e.end, icon: e.ico || e.icon, title: e.title, sub: e.sub, nav: e.nav, href: e.href }))
       .concat(items.filter(i => i.time).map(i => ({
-        at: `${i.date}T${i.time}`, icon: catOf(i).icon, title: i.title, sub: i.place || "", nav: i.place, href: `#/punkt/${i.id}`,
+        at: `${i.date}T${i.time}`, icon: catOf(i).icon, title: i.title, sub: i.place && !/^https?:/i.test(i.place) ? i.place : "", nav: i.place, href: `#/punkt/${i.id}`,
       })))
       .sort((a, b) => a.at.localeCompare(b.at));
 
@@ -88,11 +89,11 @@
     const todayLeft = all.filter(e => e.at > now && e.at.slice(0, 10) === today).length;
     const untimed = items.filter(i => i.date === today && !i.time).length;
 
-    const block = (label, e, extra) => `
+    const block = (label, e, extra, live) => `
       <div class="td-row">
         <div class="td-ico" aria-hidden="true">${e.icon}</div>
         <a class="td-main" href="${e.href}">
-          <div class="td-label">${label}</div>
+          <div class="td-label">${live ? `<i class="live" aria-hidden="true"></i>` : ""}${label}</div>
           <div class="td-title">${esc(e.title)}</div>
           <div class="td-sub">${extra}</div>
         </a>
@@ -100,7 +101,7 @@
       </div>`;
 
     let html = "";
-    if (current) html += block("Teraz · w drodze", current, `przyjazd ${App.time(current.end)} · ${inTime(App.minutes(now, current.end))}`);
+    if (current) html += block("Teraz · w drodze", current, `przyjazd ${App.time(current.end)} · ${inTime(App.minutes(now, current.end))}`, true);
     if (next) {
       const when = next.at.slice(0, 10) === today ? App.time(next.at) : `${App.fmtDay(next.at)} ${App.time(next.at)}`;
       html += block("Dalej", next, `${when} · ${inTime(App.minutes(now, next.at))}${next.sub ? " · " + esc(next.sub) : ""}`);
@@ -109,10 +110,10 @@
     const summary = [
       todayLeft ? `${todayLeft} ${plural(todayLeft, "punkt", "punkty", "punktów")} z godziną jeszcze dziś` : "",
       untimed ? `${untimed} bez godziny` : "",
-    ].filter(Boolean).join(" · ");
+    ].filter(Boolean).map(x => `<span>${x}</span>`).join(" · ");
     return `
       <section class="today-card" aria-label="Dziś">
-        <div class="td-head"><b>Dziś</b> · ${App.fmtDayLong(today)} · dzień ${App.dayDiff(trip.start, today) + 1}</div>
+        <div class="td-head"><span class="chip accent">Dziś</span><span>${App.fmtDayLong(today)}</span></div>
         ${html}
         ${summary ? `<div class="td-foot">${summary}</div>` : ""}
       </section>`;
@@ -160,60 +161,73 @@
     const ticketOf = {};
     tripFiles.filter(f => String(f.segmentId).startsWith("p:")).sort((a, b) => (a.created || "").localeCompare(b.created || ""))
       .forEach(f => { const k = f.segmentId.slice(2); (ticketOf[k] = ticketOf[k] || []).push(f); });
-    const tkBtn = it => ticketOf[it.id] ? `<a class="icon-btn pl-tk" href="#/bilet/${ticketOf[it.id][0].id}" aria-label="Bilet: ${esc(it.title)}">🎫${ticketOf[it.id].length > 1 ? `<small>${ticketOf[it.id].length}</small>` : ""}</a>` : "";
+    const tkBtn = it => ticketOf[it.id] ? `<a class="icon-btn pl-tk" href="#/bilet/${ticketOf[it.id][0].id}" aria-label="Bilet: ${esc(it.title)}">${App.icon("ticket")}${ticketOf[it.id].length > 1 ? `<small>${ticketOf[it.id].length}</small>` : ""}</a>` : "";
     const today = App.todayStr();
     const ongoing = trip.start <= today && today <= trip.end;
-
-    // przełącznik podróży
-    const switcher = trips.length > 1 ? `
-      <label class="pl-switch"><span class="sr">Podróż</span>
-        <select id="pl-trip">${tripOptions(trips, id)}</select>
-      </label>` : "";
 
     // dni: od początku do końca podróży + dni spoza zakresu, na których coś jest
     const days = [];
     for (let d = trip.start; d <= trip.end; d = App.addDays(d, 1)) days.push(d);
     const extra = new Set(items.map(i => i.date).filter(Boolean).concat(events.map(e => e.at.slice(0, 10))).filter(d => d < trip.start || d > trip.end));
     const allDays = [...new Set([...extra].filter(d => d < trip.start).sort().concat(days, [...extra].filter(d => d > trip.end).sort()))];
-
     const total = days.length;
-    let html = switcher;
-    if (ongoing) html += todayCard(trip, events, items);
+    const ideas = items.filter(i => !i.date).sort(byOrder);
+
+    // nagłówek: podróż (dotknięcie nazwy = przełącznik), zakres dat, postęp
+    const n0 = App.dayDiff(trip.start, today) + 1;
+    let info;
+    if (ongoing) info = `${App.fmtRange(trip.start, trip.end)} · ${`dzień ${n0} z ${total}`}`;
     else if (trip.start > today) {
       const n = App.dayDiff(today, trip.start);
-      html += `<p class="pl-info">Do wyjazdu ${n === 1 ? "1 dzień" : `${n} ${plural(n, "dzień", "dni", "dni")}`} · ${App.fmtRange(trip.start, trip.end)}</p>`;
-    }
+      info = `Do wyjazdu ${n === 1 ? "1 dzień" : `${n} ${plural(n, "dzień", "dni", "dni")}`} · ${App.fmtRange(trip.start, trip.end)}`;
+    } else info = App.fmtRange(trip.start, trip.end);
+    let html = `
+      <header class="pl-head">
+        <div class="pl-head-name">
+          <h2>${esc(trip.name)}</h2>
+          ${trips.length > 1 ? `<span class="pl-head-chev" aria-hidden="true">${App.icon("chev")}</span>
+            <label class="pl-switch"><span class="sr">Podróż</span><select id="pl-trip">${tripOptions(trips, id)}</select></label>` : ""}
+        </div>
+        <p class="pl-info">${info}</p>
+        ${ongoing ? `<div class="bar" aria-hidden="true"><i style="width:${Math.round(n0 / total * 100)}%"></i></div>` : ""}
+      </header>`;
 
-    // etap 10: mapa, odkrywanie i pomysły (punkty bez dnia)
-    const P = App.Places;
-    const PH = it => App.Photos ? App.Photos.thumb(it) : ""; // zdjęcie miejsca (photos.js)
+    // pasek dni: dotknięcie przewija do dnia
+    const wd = d => App.parseDay(d).toLocaleDateString(self.I18N ? I18N.locale : "pl-PL", { weekday: "short" }).replace(".", "");
+    const busy = new Set(items.map(i => i.date).filter(Boolean).concat(events.map(e => e.at.slice(0, 10))));
+    html += `<nav class="pl-days" aria-label="Dni podróży">${allDays.map(d => `
+        <button type="button" class="pl-dchip${d === today ? " is-today" : ""}${d < trip.start || d > trip.end ? " is-out" : ""}" data-go="${d}" aria-label="${App.fmtDay(d)}">
+          <small>${wd(d)}</small><b>${+d.slice(8)}</b><i class="${busy.has(d) ? "on" : ""}" aria-hidden="true"></i></button>`).join("")}
+        <button type="button" class="pl-dchip pl-dchip-ideas" data-go="ideas" aria-label="Pomysły – bez dnia"><small>💡</small><b>${ideas.length}</b><i aria-hidden="true"></i></button>
+      </nav>`;
+
+    if (ongoing) html += todayCard(trip, events, items);
+
+    // szybki dostęp (etap 10–11 + bilety w planie)
+    const tool = (href, ico, name, sub) => `<a class="plan-link pl-tool" href="${href}" title="${sub}"><i aria-hidden="true">${App.icon(ico)}</i><span>${name}</span></a>`;
     html += `<div class="pl-tools">
-        <a class="plan-link" href="#/mapa/${id}"><span aria-hidden="true">🗺️</span> Mapa i trasa <span class="muted">– punkty dnia, odległości</span><b aria-hidden="true">›</b></a>
-        <a class="plan-link" href="#/odkrywaj/${id}"><span aria-hidden="true">🔭</span> Odkrywaj <span class="muted">– atrakcje i jedzenie w okolicy</span><b aria-hidden="true">›</b></a>
-        <a class="plan-link" href="#/karty/${id}"><span aria-hidden="true">🚕</span> Karty dla kierowcy <span class="muted">– adresy w lokalnym piśmie, rozmówki</span><b aria-hidden="true">›</b></a>
-        ${App.Tickets && App.Tickets.addFiles ? `<label class="plan-link pl-from-file"><span aria-hidden="true">📎</span> Z biletu lub screena <span class="muted">– zdjęcie, screen, PDF → punkt planu</span><b aria-hidden="true">›</b>
+        ${tool(`#/mapa/${id}`, "map", "Mapa i trasa", "punkty dnia, odległości")}
+        ${tool(`#/odkrywaj/${id}`, "compass", "Odkrywaj", "atrakcje i jedzenie w okolicy")}
+        ${tool(`#/karty/${id}`, "taxi", "Dla kierowcy", "adresy w lokalnym piśmie, rozmówki")}
+        ${App.Tickets && App.Tickets.addFiles ? `<label class="plan-link pl-tool pl-from-file" title="zdjęcie, screen, PDF → punkt planu"><i aria-hidden="true">${App.icon("clip")}</i><span>Z biletu</span>
           <input type="file" id="pl-from-file" accept="image/*,application/pdf,.pkpass" multiple hidden></label>` : ""}
       </div>`;
-    const ideas = items.filter(i => !i.date).sort(byOrder);
-    const dayOpts = days.map(d => `<option value="${d}">${App.fmtDay(d)}</option>`).join("");
-    html += `
-      <details class="archive pl-ideas"${ideas.length && ideas.length <= 6 ? " open" : ""}>
-        <summary><h3 class="section">💡 Pomysły – bez dnia <span class="muted">(${ideas.length})</span></h3></summary>
-        ${ideas.map(it => `
-          <div class="pl-row pl-idea">
-            <a class="pl-main${it.photo ? " has-ph" : ""}" data-pid="${it.id}" href="#/punkt/${it.id}">${PH(it)}
-              <div class="pl-title"><span aria-hidden="true">${catOf(it).icon}</span> ${esc(it.title)}</div>
-              ${it.place ? `<div class="pl-sub">${esc(/^https?:/i.test(it.place) ? "📍 link do mapy" : it.place)}</div>` : ""}
-            </a>
-            ${tkBtn(it)}
-            <label class="pl-move"><span class="sr">Przenieś do dnia</span>
-              <select data-move="${it.id}"><option value="">+ dzień</option>${dayOpts}</select></label>
-          </div>`).join("")}
-        <a class="pl-empty" href="#/plan/${id}/nowy?d=pomysl">+ Dodaj pomysł</a>
-      </details>`;
+
+    // karta punktu: zdjęcie, kategoria, nazwa, adres, koszt, notatka
+    const P = App.Places;
+    const PH = it => App.Photos ? App.Photos.thumb(it) : ""; // zdjęcie miejsca (photos.js)
+    const placeTxt = it => it.place ? (/^https?:/i.test(it.place) ? "link do mapy" : it.place) : "";
+    const itemMain = it => `
+      <a class="pl-main${it.photo ? " has-ph" : ""}" data-pid="${it.id}" href="#/punkt/${it.id}">${PH(it)}
+        <div class="pl-cat"><span aria-hidden="true">${catOf(it).icon}</span> <span>${catOf(it).name}</span></div>
+        <div class="pl-title">${esc(it.title)}</div>
+        ${placeTxt(it) ? `<div class="pl-sub">${App.icon("pin")}<span>${esc(placeTxt(it))}</span></div>` : ""}
+        ${num(it.cost) ? `<div class="pl-price">${money(num(it.cost), it.currency || "PLN")}</div>` : ""}
+        ${it.note ? `<div class="pl-note">${esc(it.note)}</div>` : ""}
+      </a>`;
 
     const costs = {};
-    let pastHtml = "", pastN = 0;
+    let daysHtml = "", pastHtml = "", pastN = 0;
     for (const day of allDays) {
       const dayItems = items.filter(i => i.date === day).sort(byOrder);
       const dayEvents = events.filter(e => e.at.slice(0, 10) === day);
@@ -228,53 +242,87 @@
         if (!P || !P.hasXY(it)) return "";
         const l = prevXY ? P.leg(prevXY, it) : null;
         prevXY = it;
-        return l ? `<div class="pl-leg" aria-label="Dojście">${l.icon} ${l.txt}</div>` : "";
+        return l ? `<div class="pl-leg" aria-label="Dojście"><span>${l.icon} ${l.txt}</span></div>` : "";
       };
       const rows = mergeDay(dayItems, dayEvents).map(({ it, ev }) => ev ? (prevXY = null, `
         <div class="pl-row pl-seg">
           <div class="pl-time">${App.time(ev.at)}</div>
-          <a class="pl-main" href="${ev.href}">
-            <div class="pl-title"><span aria-hidden="true">${ev.icon}</span> ${esc(ev.title)}</div>
-            ${ev.sub ? `<div class="pl-sub">${esc(ev.sub)}</div>` : ""}
-          </a>
-          ${navLink(ev.nav)}
+          <div class="pl-card">
+            <a class="pl-main" href="${ev.href}">
+              <div class="pl-title">${esc(ev.title)}</div>
+              ${ev.sub ? `<div class="pl-sub">${esc(ev.sub)}</div>` : ""}
+            </a>
+            ${navLink(ev.nav)}
+          </div>
+          <span class="pl-dot" aria-hidden="true">${ev.ico || ev.icon}</span>
         </div>`) : `${legHtml(it)}
-        <div class="pl-row pl-user" data-id="${it.id}">
+        <div class="pl-row pl-user${it.time ? "" : " no-time"}" data-id="${it.id}">
           <div class="pl-time">${it.time || "–"}</div>
-          <a class="pl-main${it.photo ? " has-ph" : ""}" data-pid="${it.id}" href="#/punkt/${it.id}">${PH(it)}
-            <div class="pl-title"><span aria-hidden="true">${catOf(it).icon}</span> ${esc(it.title)}</div>
-            ${it.place || num(it.cost) ? `<div class="pl-sub">${[esc(it.place && !/^https?:/i.test(it.place) ? it.place : it.place ? "📍 link do mapy" : ""), num(it.cost) ? money(num(it.cost), it.currency || "PLN") : ""].filter(Boolean).join(" · ")}</div>` : ""}
-            ${it.note ? `<div class="pl-note">${esc(it.note)}</div>` : ""}
-          </a>
-          ${tkBtn(it)}
-          ${navLink(it.place)}
-          <button type="button" class="pl-handle" aria-label="Przeciągnij, by zmienić kolejność">${handleIcon}</button>
+          <div class="pl-card">
+            ${itemMain(it)}
+            <div class="pl-acts">
+              ${tkBtn(it)}
+              ${navLink(it.place)}
+              <button type="button" class="pl-handle" aria-label="Przeciągnij, by zmienić kolejność">${handleIcon}</button>
+            </div>
+          </div>
+          <span class="pl-dot" aria-hidden="true"></span>
         </div>`).join("");
 
       const sec = `
-        <section class="pl-day${day === today ? " is-today" : ""}" data-date="${day}" ${day === today ? 'id="pl-today"' : ""}>
+        <section class="pl-day${day === today ? " is-today" : ""}" data-date="${day}" id="${day === today ? "pl-today" : `pl-d-${day}`}">
           <div class="pl-day-head">
-            <h3>${App.fmtDayLong(day)} <span class="muted">· ${tag}${day === today ? " · dziś" : ""}</span>${wx ? App.Weather.dayBadge(wx.data, day) : ""}</h3>
-            ${dayItems.length ? `<a class="icon-btn pl-dmap" href="#/mapa/${id}?d=${day}" aria-label="Mapa dnia: ${App.fmtDay(day)}">${mapIcon}</a>` : ""}
-            <a class="icon-btn pl-add" href="#/plan/${id}/nowy?d=${day}" aria-label="Dodaj punkt: ${App.fmtDay(day)}">${Tr().plusIcon}</a>
+            <div class="pl-day-t">
+              <div class="pl-day-n"><span>${tag}</span>${day === today ? ` <span class="chip accent">dziś</span>` : ""}${wx ? App.Weather.dayBadge(wx.data, day) : ""}</div>
+              <h3>${App.fmtDayLong(day)}</h3>
+            </div>
+            ${dayItems.length ? `<a class="icon-btn pl-dmap" href="#/mapa/${id}?d=${day}" aria-label="Mapa dnia: ${App.fmtDay(day)}">${App.icon("map")}</a>` : ""}
+            <a class="icon-btn pl-add" href="#/plan/${id}/nowy?d=${day}" aria-label="Dodaj punkt: ${App.fmtDay(day)}">${App.icon("plus")}</a>
           </div>
           <div class="pl-list">${rows || `<a class="pl-empty" href="#/plan/${id}/nowy?d=${day}">+ Dodaj punkt planu</a>`}</div>
           ${costTxt ? `<div class="pl-cost">Koszty dnia: ${costTxt}</div>` : ""}
         </section>`;
-      // w trakcie podróży miniony dni chowamy, żeby dzisiejszy plan był od razu pod kartą „Dziś”
+      // w trakcie podróży minione dni chowamy, żeby dzisiejszy plan był od razu pod kartą „Dziś”
       if (ongoing && day < today) { pastHtml += sec; pastN++; continue; }
       if (pastHtml) {
-        html += `<details class="archive pl-past"><summary><h3 class="section">Poprzednie dni <span class="muted">(${pastN})</span></h3></summary>${pastHtml}</details>`;
+        daysHtml += `<details class="pl-past"><summary>${App.icon("clock")}<span>Poprzednie dni</span> <span class="chip">${pastN}</span>${App.icon("chev", "pl-sum-chev")}</summary>${pastHtml}</details>`;
         pastHtml = "";
       }
-      html += sec;
+      daysHtml += sec;
     }
+    html += `<div class="pl-timeline">${daysHtml}</div>`;
+
+    // pomysły (punkty bez dnia) – osobno, pod planem dni
+    const dayOpts = days.map(d => `<option value="${d}">${App.fmtDay(d)}</option>`).join("");
+    html += `
+      <details class="pl-ideas" id="pl-ideas"${ideas.length && ideas.length <= 6 ? " open" : ""}>
+        <summary>
+          <span class="pl-ideas-ico" aria-hidden="true">💡</span>
+          <span class="pl-ideas-t"><b>Pomysły – bez dnia</b><small>Przenieś do dnia, gdy zdecydujesz</small></span>
+          <span class="chip">${ideas.length}</span>${App.icon("chev", "pl-sum-chev")}
+        </summary>
+        <div class="pl-ideas-list">
+        ${ideas.map(it => `
+          <div class="pl-row pl-idea">
+            <div class="pl-card">
+              ${itemMain(it)}
+              <div class="pl-acts">
+                ${tkBtn(it)}
+                <label class="pl-move"><span class="sr">Przenieś do dnia</span>
+                  <select data-move="${it.id}"><option value="">+ dzień</option>${dayOpts}</select></label>
+              </div>
+            </div>
+          </div>`).join("")}
+        <a class="pl-empty" href="#/plan/${id}/nowy?d=pomysl">+ Dodaj pomysł</a>
+        </div>
+      </details>`;
+
     const sum = Object.entries(costs).map(([c, v]) => money(v, c)).join(" + ");
-    if (sum) html += `<p class="pl-info">Koszty planu razem: <b>${sum}</b> <span class="muted">(bez transportu i noclegów)</span></p>`;
+    if (sum) html += `<p class="pl-total">Koszty planu razem: <b>${sum}</b> <span class="muted">(bez transportu i noclegów)</span></p>`;
 
     let timer = null;
     return {
-      title: `Plan · ${trip.name}`,
+      title: "Plan",
       action: `<a class="icon-btn" href="#/podroze/${id}" aria-label="Podróż: oś czasu, transport i noclegi">${routeIcon}</a>`,
       html,
       after(view) {
@@ -289,6 +337,16 @@
           }, 60000);
         }
         view.querySelectorAll(".pl-handle").forEach(h => enableDrag(h));
+        // pasek dni → przewiń do dnia (dzień z „Poprzednich dni” najpierw rozwija listę)
+        view.querySelectorAll("[data-go]").forEach(b => b.onclick = () => {
+          const el = b.dataset.go === "ideas" ? view.querySelector("#pl-ideas") : view.querySelector(`.pl-day[data-date="${b.dataset.go}"]`);
+          if (!el) return;
+          const det = el.closest("details") || (el.tagName === "DETAILS" ? el : null);
+          if (det) det.open = true;
+          el.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+        });
+        const strip = view.querySelector(".pl-days"), cur = strip && strip.querySelector(".is-today");
+        if (cur) strip.scrollLeft = Math.max(0, cur.offsetLeft - strip.clientWidth / 2 + cur.offsetWidth / 2);
         const ff = view.querySelector("#pl-from-file");
         if (ff) ff.onchange = () => {
           const files = [...ff.files];

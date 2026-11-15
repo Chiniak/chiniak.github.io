@@ -48,7 +48,7 @@ Uwaga: teksty z emoji są kluczami tłumaczeń w `i18n-en.js` – zmieniając te
 Ruch: krótkie przejścia 0.12–0.25 s; `prefers-reduced-motion` wyłącza animacje.
 
 ## Etapy redesignu
-1. Design system ✔ (ten dokument) · 2. Podróże ✔ · 3. Bilety ✔ · 4. Plan · 5. Pakowanie · 6. Ustawienia · 7. ekrany dodatkowe · 8. szlif (animacje, dostępność, tablet, style z JS) · 9. testy całości.
+1. Design system ✔ (ten dokument) · 2. Podróże ✔ · 3. Bilety ✔ · 4. Plan ✔ · 5. Pakowanie · 6. Ustawienia · 7. ekrany dodatkowe · 8. szlif (animacje, dostępność, tablet, style z JS) · 9. testy całości.
 Makieta zatwierdzona przez właściciela: ekran Podróże – nagłówek z powitaniem, karta bieżącej podróży ze zdjęciem i odliczaniem,
 pasek postępu (spakowane / punkty planu / budżet), najbliższy bilet jako odcinek z QR, zadanie przed wyjazdem, nadchodzące
 podróże w poziomym rzędzie, szybkie akcje (Nowa podróż, Z Gmaila, Otwórz wspólną). Decyzje: ciemny turkus do tekstu,
@@ -78,3 +78,23 @@ dwa kroje, zdjęcia bez motywów religijnych, tło ze zdjęć – nowi użytkown
   zameldowanie / wymeldowanie / noce), fakty w `dl.jr-facts`, akcje jako wiersze listy (Nawiguj = `.map-link`, kierowca,
   kalendarz, podróż), kafelki biletów i dodawanie bez zmian.
 - Pełny ekran `#/bilet/:id` – zawsze biały (skaner na bramce), stałe kolory zamiast tokenów; ikony zamiast emoji.
+
+## Plan (etap 4, `plan.js` – trasa `#/plan/:id`)
+- Tytuł paska „Plan”; nagłówek `.pl-head`: nazwa podróży (Newsreader) – przy kilku podróżach dotknięcie nazwy otwiera
+  przełącznik (`#pl-trip`, niewidoczny `select` na nazwie + `.pl-head-chev`); `.pl-info` = zakres dat · „dzień X z Y”
+  albo „Do wyjazdu N dni · zakres”; w trakcie podróży cienki pasek postępu (`.bar`).
+- `.pl-days` – poziomy pasek dni (`.pl-dchip`: skrót dnia tygodnia, numer, kropka = coś zaplanowane; dziś turkusowy,
+  dni spoza podróży z przerywaną ramką, na końcu 💡 z liczbą pomysłów). Dotknięcie przewija do dnia (`data-go`),
+  dzień z „Poprzednich dni” najpierw rozwija listę. Pasek startuje przewinięty na dziś.
+- Karta „Dziś” (`.today-card`) – biała karta z cieniem: chip „Dziś”, „Teraz · w drodze” (pulsująca kropka) i „Dalej”,
+  ikony SVG odcinków (`ico` w `segEvents`), podsumowanie w stopce.
+- Szybki dostęp `.pl-tools` – 4 kafelki (`.plan-link.pl-tool`): Mapa i trasa, Odkrywaj, Dla kierowcy, Z biletu
+  (`.pl-from-file` + `#pl-from-file`); opis w `title`.
+- Dzień: `.pl-day-head` – etykieta „DZIEŃ N” (+ chip „dziś”, pogoda) nad datą w Newsreader; mapa dnia i „+” jako ikony.
+- Oś czasu `.pl-list` (`--rail`): godzina po lewej, linia z kropką (punkt – kółko w turkusie, bez godziny – szare,
+  dziś wypełnione; odcinek – kółko z ikoną rodzaju), po prawej `.pl-card`. Karta punktu: zdjęcie 60 px, kategoria
+  (emoji + nazwa), nazwa, adres z ikoną pinezki, koszt, notatka w szarym polu; po prawej `.pl-acts` (bilet – ikona,
+  nawigacja, uchwyt ≡). Odcinki: szara karta bez ramki. Dojścia `.pl-leg` między kartami. Przeciąganie bez zmian (t5, t6).
+- „Poprzednie dni” i „Pomysły – bez dnia” jako zwijane `details` z własnym `summary` (chip z liczbą, strzałka).
+  Pomysły pod planem dni, wyraźnie oddzielone: szary panel `--r-feature`, karty bez ramki, „+ dzień” do przeniesienia.
+- Koszty: dnia `.pl-cost`, razem `.pl-total`.

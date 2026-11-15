@@ -5,6 +5,7 @@ const { chromium, devices } = require('playwright');
   const tid = await p.evaluate(async()=>{ const T=App.todayStr(); const t=await DB.put('trips',{name:'X',start:T,end:T});
     for (const [i,n] of ['A','B','C','D'].entries()) await DB.put('planItems',{tripId:t.id,date:T,time:'',title:n,order:i}); return t.id; });
   await p.goto('http://localhost:8765/podroznik/#/plan/'+tid); await p.waitForTimeout(500);
+  await p.evaluate(()=>document.querySelector('.pl-day').scrollIntoView()); await p.waitForTimeout(200); // nagłówek planu jest wyższy – wiersze pod dolnym paskiem
   const cdp = await ctx.newCDPSession(p);
   const h = await p.locator('.pl-user:has-text("D") .pl-handle').boundingBox(); const top = await p.locator('.pl-user').first().boundingBox();
   const x=h.x+20; let y=h.y+20;
