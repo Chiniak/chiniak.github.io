@@ -602,4 +602,16 @@ self.I18N_EN = {
   "Google ogranicza tempo – czekam {} s i czytam dalej ({}/{})": "Google is limiting the pace – waiting {} s, then reading on ({}/{})",
   "Przeczytano {} maili, reszta ({}) przy następnym sprawdzeniu": "Read {} e-mails, the rest ({}) at the next check",
   "Google chwilowo ogranicza liczbę zapytań do Gmaila – reszta maili przy następnym sprawdzeniu": "Google is temporarily limiting Gmail requests – the remaining e-mails at the next check",
+  /* redesign etap 7a: szczegóły podróży i formularze */
+  "Trasa i noclegi": "Route and stays", "Dzień {}": "Day {}", "Przed podróżą": "Before the trip", "Po podróży": "After the trip",
+  "mapa, karty, zdjęcia, kursy na zapas": "map, cards, photos, rates in advance", "wspólna podróż, plan jako tekst": "shared trip, plan as text",
+  "zwiedzanie, jedzenie, mapa": "sightseeing, food, map", "plik .ics z przypomnieniami": "an .ics file with reminders",
+  "potwierdzenie lotu, pociągu, hotelu, PDF, .ics": "flight, train or hotel confirmation, PDF, .ics",
+  "ponad budżet": "over budget", "zadania {}/{}": "tasks {}/{}", "z {}": "of {}", "pomysły": "ideas", "pomysłów": "ideas",
+  "Termin": "Dates", "Okładka": "Cover", "Bez zdjęcia okładka ma kolor podróży.": "Without a photo the cover uses the trip colour.",
+  "np. wiza, ubezpieczenie, kontakt do hotelu": "e.g. visa, insurance, hotel contact",
+  "Trasa": "Route", "Obiekt": "Property", "Czas": "Time", "Cena i notatka": "Price and note", "Czas podróży: {}": "Travel time: {}",
+  "Dane odczytane z maila – sprawdź godziny i miejsca przed zapisaniem.": "Data read from the e-mail – check the times and places before saving.",
+  "Kiedy": "When", "Gdzie": "Where", "Bilety i zdjęcia": "Tickets and photos", "Bilet, screen potwierdzenia, zaproszenie": "Ticket, booking screenshot, invitation",
+  "Dodaj zdjęcie, screen lub PDF": "Add a photo, screenshot or PDF", "Znajdź": "Find", "Własne": "My own", "Koszt i notatka": "Cost and note",
 };

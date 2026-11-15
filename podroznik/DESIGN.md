@@ -48,7 +48,7 @@ Uwaga: teksty z emoji są kluczami tłumaczeń w `i18n-en.js` – zmieniając te
 Ruch: krótkie przejścia 0.12–0.25 s; `prefers-reduced-motion` wyłącza animacje.
 
 ## Etapy redesignu
-1. Design system ✔ (ten dokument) · 2. Podróże ✔ · 3. Bilety ✔ · 4. Plan ✔ · 5. Pakowanie ✔ · 6. Ustawienia ✔ · 7. ekrany dodatkowe · 8. szlif (animacje, dostępność, tablet, style z JS) · 9. testy całości.
+1. Design system ✔ (ten dokument) · 2. Podróże ✔ · 3. Bilety ✔ · 4. Plan ✔ · 5. Pakowanie ✔ · 6. Ustawienia ✔ · 7. ekrany dodatkowe (7a ✔ szczegóły podróży + formularze) · 8. szlif (animacje, dostępność, tablet, style z JS) · 9. testy całości.
 Makieta zatwierdzona przez właściciela: ekran Podróże – nagłówek z powitaniem, karta bieżącej podróży ze zdjęciem i odliczaniem,
 pasek postępu (spakowane / punkty planu / budżet), najbliższy bilet jako odcinek z QR, zadanie przed wyjazdem, nadchodzące
 podróże w poziomym rzędzie, szybkie akcje (Nowa podróż, Z Gmaila, Otwórz wspólną). Decyzje: ciemny turkus do tekstu,
@@ -122,3 +122,19 @@ dwa kroje, zdjęcia bez motywów religijnych, tło ze zdjęć – nowi użytkown
 - Wiersz-link: `.li` z `.li-ico` (turkusowe tło), tytuł, opis, chip stanu (`ok` / `warn`), strzałka. Wiersz z kontrolką `.set-ctl`:
   przełącznik `.seg` lub lista pod tytułem (`.set-body`, wcięcie 48 px, na ≤ 380 px bez wcięcia). `.seg` z dwoma przyciskami = dwie kolumny.
 - Ostrzeżenia: brak kopii / stara kopia → chip „zrób kopię” i ikona w kolorze ostrzeżenia; powiadomienia wyłączone → chip „wył.”.
+
+## Szczegóły podróży i formularze (etap 7a)
+- `#/podroze/:id` (`trips.js`): tytuł paska „Podróż”, okładka `.trip-head.hm-hero.td-hero` jak karta na ekranie głównym
+  (zdjęcie albo kolor podróży; chip stanu `.glass`, cel wersalikami, nazwa w Newsreader, zakres · dzień X z Y, w trakcie biały pasek postępu);
+  notatka `.td-note` (szare pole z ikoną info); `.hm-stats.td-stats` – W planie (+ pomysły), Spakowane (+ zadania), Wydatki
+  (`.over` = ponad budżet, czerwony); narzędzia jako `.list.td-tools` (Plan, Przygotuj offline, Udostępnij, Do kalendarza `#ics-trip`).
+- Oś czasu: sekcja „Trasa i noclegi” z licznikiem, dni `.td-day` z nagłówkiem jak w Planie (`.pl-day-head`, „DZIEŃ N”, data `h3.tl-day`
+  w Newsreader), karty `.tl-card`: ikona SVG rodzaju w turkusowym kwadracie, `.tl-kind` (rodzaj wersalikami · przewoźnik · numer,
+  bilety jako chip z ikoną `ticket`), trasa/nazwa dużą czcionką, godziny, adres noclegu z pinezką, chipy (bez przewoźnika i numeru –
+  `chips(s, true)`). Wymeldowanie: przerywana karta z ikoną `key` (nowa ikona).
+- „Dodaj do podróży”: kafelki `.type-btn` z ikoną SVG w kwadracie `--accent-soft`, pod nimi wiersz listy „Z maila”.
+- Formularze (podróż, odcinek, punkt planu, rzecz/zadanie): grupy `.fsec` z etykietą sekcji `.section`, podpowiedzi `.f-hint`
+  (liczba dni podróży, czas przejazdu / liczba nocy – dla lotu brak, bo strefy), przyciski w `.f-actions` (usuń = ikona kosza).
+  Okładka w formularzu podróży = podgląd karty na żywo (`.cover-pick.hm-hero`: nazwa, cel i kolor zmieniają się przy pisaniu),
+  przyciski zdjęcia jako `.glass.cp-btn`. Rodzaje odcinka z ikonami SVG zamiast emoji; tytuł formularza bez emoji.
+  Paski `.type-chips` przewijają się same do zaznaczonego elementu (`App.render`). Z maila: nad polami ostrzeżenie „sprawdź”.

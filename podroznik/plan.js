@@ -532,34 +532,44 @@
       html: `
         <form id="pl-form" class="form" novalidate>
           <div class="type-chips" role="radiogroup" aria-label="Rodzaj">${cats}</div>
-          <label class="field"><span>Co</span>
-            <input name="title" required maxlength="100" placeholder="np. Oceanarium, kolacja w Time Out Market" value="${esc(v.title)}"></label>
-          <div class="grid2">
-            <label class="field"><span>Dzień</span><select name="date">${dateOpts}</select></label>
-            <label class="field"><span>Godzina (opcjonalnie)</span><input type="time" name="time" value="${esc(v.time)}"></label>
+          <div class="fsec">
+            <label class="field"><span>Co</span>
+              <input name="title" required maxlength="100" placeholder="np. Oceanarium, kolacja w Time Out Market" value="${esc(v.title)}"></label>
           </div>
-          ${App.Tickets && App.Tickets.addFiles ? `<div class="field"><span>🎫 Bilety i zdjęcia – bilet, screen potwierdzenia, zaproszenie</span>
-            <div class="pl-files" id="pl-files">${files.map(x => `<a class="pl-file" href="#/bilet/${x.id}">${x.kind === "code" ? "🔳" : x.kind === "pdf" ? "📄" : "🖼️"} ${esc(x.label || "Bilet")}${x.code ? " · kod" : ""}</a>`).join("")}</div>
-            <label class="btn wide">📎 Dodaj zdjęcie, screen lub PDF<input type="file" id="pl-file" accept="image/*,application/pdf,.pkpass" multiple hidden></label>
-            <p class="muted small" id="pl-file-note">${files.length ? "Dotknij biletu, by pokazać go na pełnym ekranie (np. przy wejściu)." : "Bilet pokaże się na pełnym ekranie, a kod (QR, kreskowy) aplikacja odczyta sama."}</p></div>` : ""}
-          ${App.Places ? App.Places.searchBox(v) : `<label class="field"><span>Miejsce – adres, nazwa lub link do mapy</span>
-            <input name="place" maxlength="500" value="${esc(v.place)}"></label>`}
-          <div class="grid2 price">
-            <label class="field"><span>Koszt</span><input name="cost" inputmode="decimal" placeholder="np. 25" value="${esc(v.cost)}"></label>
-            <label class="field"><span>Waluta</span><input name="currency" maxlength="5" autocapitalize="characters" value="${esc(v.currency || "PLN")}"></label>
+          <div class="fsec"><h3 class="section">Kiedy</h3>
+            <div class="grid2">
+              <label class="field"><span>Dzień</span><select name="date">${dateOpts}</select></label>
+              <label class="field"><span>Godzina (opcjonalnie)</span><input type="time" name="time" value="${esc(v.time)}"></label>
+            </div>
           </div>
-          <label class="field"><span>Notatka</span>
-            <textarea name="note" rows="3" placeholder="np. bilety kupić online, zamknięte w poniedziałki">${esc(v.note)}</textarea></label>
-          ${App.Photos ? `<div class="field"><span>Zdjęcie</span>
+          <div class="fsec"><h3 class="section">Gdzie</h3>
+            ${App.Places ? App.Places.searchBox(v) : `<label class="field"><span>Miejsce – adres, nazwa lub link do mapy</span>
+              <input name="place" maxlength="500" value="${esc(v.place)}"></label>`}
+          </div>
+          ${App.Tickets && App.Tickets.addFiles ? `<div class="fsec"><h3 class="section">Bilety i zdjęcia</h3><div class="field"><span>Bilet, screen potwierdzenia, zaproszenie</span>
+            <div class="pl-files" id="pl-files">${files.map(x => `<a class="pl-file" href="#/bilet/${x.id}">${App.icon(x.kind === "code" ? "qr" : x.kind === "pdf" ? "doc" : "image", "sm")} ${esc(x.label || "Bilet")}${x.code ? " · kod" : ""}</a>`).join("")}</div>
+            <label class="btn wide">${App.icon("clip", "sm")} Dodaj zdjęcie, screen lub PDF<input type="file" id="pl-file" accept="image/*,application/pdf,.pkpass" multiple hidden></label>
+            <p class="f-hint" id="pl-file-note">${files.length ? "Dotknij biletu, by pokazać go na pełnym ekranie (np. przy wejściu)." : "Bilet pokaże się na pełnym ekranie, a kod (QR, kreskowy) aplikacja odczyta sama."}</p></div></div>` : ""}
+          <div class="fsec"><h3 class="section">Koszt i notatka</h3>
+            <div class="grid2 price">
+              <label class="field"><span>Koszt</span><input name="cost" inputmode="decimal" placeholder="np. 25" value="${esc(v.cost)}"></label>
+              <label class="field"><span>Waluta</span><input name="currency" maxlength="5" autocapitalize="characters" value="${esc(v.currency || "PLN")}"></label>
+            </div>
+            <label class="field"><span>Notatka</span>
+              <textarea name="note" rows="3" placeholder="np. bilety kupić online, zamknięte w poniedziałki">${esc(v.note)}</textarea></label>
+          </div>
+          ${App.Photos ? `<div class="fsec"><h3 class="section">Zdjęcie</h3><div class="field"><span class="sr">Zdjęcie</span>
             <div class="pl-ph-box" id="pl-ph">${photoBox(v.photo)}</div>
             <div class="pl-ph-btns">
-              <button type="button" class="btn" id="pl-ph-find">🔎 Znajdź</button>
-              <label class="btn">📷 Własne<input type="file" id="pl-ph-file" accept="image/*" hidden></label>
-              <button type="button" class="btn" id="pl-ph-del"${v.photo ? "" : " hidden"}>Usuń</button>
-            </div></div>` : ""}
+              <button type="button" class="btn" id="pl-ph-find">${App.icon("search", "sm")} Znajdź</button>
+              <label class="btn">${App.icon("camera", "sm")} Własne<input type="file" id="pl-ph-file" accept="image/*" hidden></label>
+              <button type="button" class="btn" id="pl-ph-del"${v.photo ? "" : " hidden"}>${App.icon("trash", "sm")} Usuń</button>
+            </div></div></div>` : ""}
           <p class="error" id="err" hidden></p>
-          <button class="btn primary wide" type="submit">${it ? "Zapisz zmiany" : "Dodaj do planu"}</button>
-          ${it ? `<button class="btn danger wide" type="button" id="del">Usuń punkt</button>` : ""}
+          <div class="f-actions">
+            <button class="btn primary wide" type="submit">${it ? "Zapisz zmiany" : "Dodaj do planu"}</button>
+            ${it ? `<button class="btn danger wide" type="button" id="del">${App.icon("trash", "sm")} Usuń punkt</button>` : ""}
+          </div>
         </form>`,
       after(view) {
         const f = view.querySelector("#pl-form");
@@ -569,7 +579,7 @@
         const showNew = () => {
           if (!fileBox) return;
           fileBox.querySelectorAll(".pl-file.new").forEach(x => x.remove());
-          fileBox.insertAdjacentHTML("beforeend", newFiles.map((x, i) => `<span class="pl-file new">${/pdf/i.test(x.type) || /\.pdf$/i.test(x.name) ? "📄" : "🖼️"} ${esc(x.name || "plik")} <button type="button" class="pl-file-x" data-i="${i}" aria-label="Usuń plik">✕</button></span>`).join(""));
+          fileBox.insertAdjacentHTML("beforeend", newFiles.map((x, i) => `<span class="pl-file new">${App.icon(/pdf/i.test(x.type) || /\.pdf$/i.test(x.name) ? "doc" : "image", "sm")} ${esc(x.name || "plik")} <button type="button" class="pl-file-x" data-i="${i}" aria-label="Usuń plik">✕</button></span>`).join(""));
           fileBox.querySelectorAll(".pl-file-x").forEach(b => b.onclick = () => { newFiles.splice(+b.dataset.i, 1); showNew(); });
         };
         // pola z biletu (tylko nowy punkt): PDF – tekst z pliku, zdjęcie/screen – odczyt tekstu (OCR, ocr.js).

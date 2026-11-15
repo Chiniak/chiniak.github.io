@@ -370,16 +370,22 @@
       back,
       html: `
         <form id="pk-form" class="form" novalidate>
-          <label class="field"><span>Nazwa</span><input name="name" required maxlength="80" value="${esc(it.name)}"></label>
-          ${isTodo
-            ? `<label class="field"><span>Termin (opcjonalnie)</span><input type="date" name="due" value="${esc(it.due || "")}"></label>`
-            : `<div class="type-chips" role="radiogroup" aria-label="Kategoria">${cats}</div>
-               <label class="field"><span>Ilość (opcjonalnie)</span><input name="qty" maxlength="10" inputmode="numeric" placeholder="np. 3" value="${esc(it.qty || "")}"></label>`}
-          <fieldset class="field"><legend>Stan</legend><div class="pk-sts">${statusSeg}</div></fieldset>
-          <label class="field"><span>Notatka</span><textarea name="note" rows="2" placeholder="opcjonalnie">${esc(it.note || "")}</textarea></label>
+          <div class="fsec">
+            <label class="field"><span>Nazwa</span><input name="name" required maxlength="80" value="${esc(it.name)}"></label>
+            ${isTodo
+              ? `<label class="field"><span>Termin (opcjonalnie)</span><input type="date" name="due" value="${esc(it.due || "")}"></label>`
+              : `<label class="field"><span>Ilość (opcjonalnie)</span><input name="qty" maxlength="10" inputmode="numeric" placeholder="np. 3" value="${esc(it.qty || "")}"></label>`}
+          </div>
+          ${isTodo ? "" : `<div class="fsec"><h3 class="section">Kategoria</h3><div class="type-chips" role="radiogroup" aria-label="Kategoria">${cats}</div></div>`}
+          <div class="fsec"><h3 class="section">Stan</h3>
+            <fieldset class="field"><legend class="sr">Stan</legend><div class="pk-sts">${statusSeg}</div></fieldset></div>
+          <div class="fsec"><h3 class="section">Notatka</h3>
+            <label class="field"><span class="sr">Notatka</span><textarea name="note" rows="2" placeholder="opcjonalnie">${esc(it.note || "")}</textarea></label></div>
           <p class="error" id="err" hidden></p>
-          <button class="btn primary wide" type="submit">Zapisz</button>
-          <button class="btn danger wide" type="button" id="del">Usuń</button>
+          <div class="f-actions">
+            <button class="btn primary wide" type="submit">Zapisz</button>
+            <button class="btn danger wide" type="button" id="del">${App.icon("trash", "sm")} Usuń</button>
+          </div>
         </form>`,
       after(view) {
         const f = view.querySelector("#pk-form");

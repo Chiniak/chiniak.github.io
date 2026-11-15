@@ -45,7 +45,7 @@ const dir = process.argv[2] || 'podroznik-testy';
   await p2.goto('http://localhost:8765/podroznik/#/podroze'); await p2.waitForTimeout(500);
   await p2.click('a[href="#/udostepnij"]'); await p2.waitForTimeout(300);
   await p2.setInputFiles('#sh-in', path); await p2.waitForTimeout(800);
-  console.log('phone2 after import:', await p2.textContent('#title'), '|', await p2.textContent('#toast'));
+  console.log('phone2 after import:', await p2.textContent('.td-hero h2'), '|', await p2.textContent('#toast'));
   // telefon 2 dodaje punkt i odsyła; telefon 1 scala
   await p2.evaluate(async i => { await DB.put('planItems', { tripId: i, date: '2027-06-03', title: 'Muzeum Kinematografii', cat: 'zwiedzanie', order: 0 }); }, id);
   const pkg = await p2.evaluate(i => App.Share.buildPackage(i, { withFiles: false }), id);
