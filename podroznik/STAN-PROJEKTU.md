@@ -1,6 +1,6 @@
 # Podróżnik – stan projektu (do kontynuacji w nowej sesji)
 
-Ostatnia aktualizacja: 15 listopada 2026 (koniec sesji) – scalone PR #1–#16; **PR #17 (powiadomienia w aplikacji, APK 2.2.0) czeka na scalenie**. Aplikacja na Androida (Capacitor, `podroznik-app/`) + „📬 Z Gmaila” działają na telefonie właściciela (2.1.2 potwierdzone). Zacznij od przeczytania tego pliku, potem `PLAN.md` i `DO-SPRAWDZENIA.md`.
+Ostatnia aktualizacja: 15 listopada 2026 (koniec sesji) – scalone PR #1–#17 (powiadomienia w aplikacji, APK 2.2.0). Aplikacja na Androida (Capacitor, `podroznik-app/`) + „📬 Z Gmaila” działają na telefonie właściciela (2.1.2 potwierdzone). Zacznij od przeczytania tego pliku, potem `PLAN.md` i `DO-SPRAWDZENIA.md`.
 
 ## Gdzie co jest
 - Repozytorium: `chiniak/chiniak.github.io`, gałąź **`claude/travel-planning-app-tl9mvf`**
@@ -56,7 +56,7 @@ Ostatnia aktualizacja: 15 listopada 2026 (koniec sesji) – scalone PR #1–#16;
 
 ## Co zostało (stan na koniec sesji 15.11 – TU ZACZNIJ)
 1. **Kolejność ustalona z właścicielem: 1 PR → 2 powiadomienia → 3 wersja docelowa.** 1 i 2 zrobione:
-   - PR #16 scalony; **PR #17** (powiadomienia, https://github.com/Chiniak/chiniak.github.io/pull/17) – zapytaj, czy scalił (jeśli tak: `git checkout -B claude/travel-planning-app-tl9mvf origin/main`).
+   - PR #16 i #17 scalone (#17 scalony 15.11 na prośbę właściciela). Gałąź robocza: `git checkout -B claude/travel-planning-app-tl9mvf origin/main`.
    - Właściciel dostał **APK testowe 2.2.0** (`io.github.chiniak.podroznik.test`, versionCode 6) – zapytaj, czy działa „Wyślij próbne” i „⏰ Dokładne godziny” (Ustawienia → Przypomnienia) i czy przypomnienia przychodzą przy zamkniętej aplikacji. Na telefonie potwierdzone wcześniej: instalacja 2.1.x, logowanie Google, Gmail („działa elegancko”).
    - **TERAZ: krok 3 – wersja docelowa** (pakiet `io.github.chiniak.podroznik`, zastąpi stary TWA jako aktualizacja). **Czekamy, aż właściciel wyśle w czacie `podroznik-klucz-podpisu.zip`** (keystore + HASLO.txt). Potem:
      a) `podroznik-app`: `signingConfigs.release` czytający keystore i hasło spoza repozytorium (np. zmienne środowiskowe / `keystore.properties` w .gitignore), `./gradlew assembleRelease`, sprawdzić `apksigner verify --print-certs` – SHA-256 musi się zgadzać z `.well-known/assetlinks.json`. **Klucza i hasła NIE commitować** (repo publiczne).
