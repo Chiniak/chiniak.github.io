@@ -106,6 +106,10 @@ const MOCK = () => {
   await p.goto('http://localhost:8765/podroznik/#/ustawienia'); await p.waitForTimeout(600);
   console.log('settings:', await p.$eval('a[href^="#/gmail"]', e => e.textContent.replace(/\s+/g, ' ').trim()));
 
+  // kopia zapasowa nie zawiera konta Google ani tematów maili (plik kopii bywa wysyłany drugiej osobie)
+  const snap = await p.evaluate(async () => JSON.stringify(await App.Backup.snapshot()));
+  console.log('backup has gmail:', /gmailSeen|anna\.test@gmail|Baan Suan Thai is confirmed|"key":"gmail"/.test(snap), '| backup has trips:', /Tajlandia/.test(snap));
+
   // wersja angielska ekranu
   await p.evaluate(() => { localStorage.setItem('podroznik-lang', 'en'); }); await p.reload(); await p.waitForTimeout(600);
   await p.goto('http://localhost:8765/podroznik/#/gmail'); await p.waitForTimeout(800);

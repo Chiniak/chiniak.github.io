@@ -6,7 +6,8 @@
    Do kopii NIE trafiają: blokada PIN (lock) i stan na tym telefonie (pokazane przypomnienia, ostatnio otwarte podróże). */
 (function () {
   const { esc, plural } = App;
-  const LOCAL_SETTINGS = new Set(["lock", "lang", "remShown", "remDismissed", "planTrip", "packTrip", "lastBackup"]);
+  // zostają tylko w tym telefonie: blokada, język, konto Google i odczytane maile (adres, tematy i nadawcy nie trafiają do pliku kopii)
+  const LOCAL_SETTINGS = new Set(["lock", "lang", "remShown", "remDismissed", "planTrip", "packTrip", "lastBackup", "gmail", "gmailSeen"]);
   const COUNT_LABELS = [["trips", "podróże", "podróż", "podróży"], ["segments", "odcinki", "odcinek", "odcinków"], ["files", "bilety", "bilet", "biletów"],
     ["planItems", "punkty planu", "punkt planu", "punktów planu"], ["packItems", "rzeczy i zadania", "rzecz/zadanie", "rzeczy i zadań"],
     ["docs", "dokumenty", "dokument", "dokumentów"], ["expenses", "wydatki", "wydatek", "wydatków"]];
