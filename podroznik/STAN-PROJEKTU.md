@@ -1,6 +1,6 @@
 # Podróżnik – stan projektu (do kontynuacji w nowej sesji)
 
-Ostatnia aktualizacja: 15 listopada 2026 – scalone PR #1–#15; **przejście na prawdziwą aplikację (Capacitor, `podroznik-app/`) – krok 1 zrobiony; „📬 Z Gmaila” (logowanie Google, propozycje z maili) – wersja 2.1**. Zacznij od przeczytania tego pliku, potem `PLAN.md` i `DO-SPRAWDZENIA.md`.
+Ostatnia aktualizacja: 15 listopada 2026 (koniec sesji) – scalone PR #1–#16; **PR #17 (powiadomienia w aplikacji, APK 2.2.0) czeka na scalenie**. Aplikacja na Androida (Capacitor, `podroznik-app/`) + „📬 Z Gmaila” działają na telefonie właściciela (2.1.2 potwierdzone). Zacznij od przeczytania tego pliku, potem `PLAN.md` i `DO-SPRAWDZENIA.md`.
 
 ## Gdzie co jest
 - Repozytorium: `chiniak/chiniak.github.io`, gałąź **`claude/travel-planning-app-tl9mvf`**
@@ -55,11 +55,18 @@ Ostatnia aktualizacja: 15 listopada 2026 – scalone PR #1–#15; **przejście n
 - Wszystko od PR #6 testowane tylko w przeglądarce z symulowaną siecią (w środowisku chmurowym nie ma dostępu do OSM/Wikipedii/CARTO).
 
 ## Co zostało (stan na koniec sesji 15.11 – TU ZACZNIJ)
-1. **Prawdziwa aplikacja (Capacitor)** – plan w `podroznik-app/README.md`. Krok 1 gotowy (PR do zrobienia/scalenia). Poproś właściciela o sprawdzenie APK testowego na telefonie: instalacja obok starej, przeniesienie danych kopią (stara: Zapisz → nowa: Wybierz plik kopii → Przywróć), bilety, skaner, mapa, „📍 Tutaj”, Odkrywaj, kopia/.ics przez „Udostępnij”, tło ze zdjęć, przycisk Wstecz.
-   **Gmail:** zapytaj, czy skonfigurował Google Cloud (kroki w README aplikacji) i czy logowanie działa; potem czy propozycje są trafne – źle odczytane maile dopisać (zmyślone dane) do `podroznik-testy/mails` i `t38`/`t35`.
-   Następne kroki: ~~(2) powiadomienia~~ (zrobione w 2.2.0) przez `@capacitor/local-notifications` (zaplanowane w systemie, w `reminders.js` gałąź dla `PodroznikNative.isNative`; teraz w aplikacji ekran przypomnień pokazuje „niedostępne”) + jasność ekranu przy bilecie (wtyczka/kod natywny w MainActivity); (3) intent-filter SEND/VIEW dla PDF/.ics/obrazów → otwarcie w aplikacji (odpowiednik share_target); (4) widżet, ML Kit OCR, natywny odcisk palca.
-   Budowanie w chmurze: SDK do `/opt/android-sdk` (cmdline-tools z dl.google.com), lustro Maven w `~/.gradle/init.d` (README aplikacji). Brak KVM – emulatora nie ma, test natywny tylko na telefonie właściciela; logikę JS testuje `t37` z udawanym Capacitorem.
-   Wersja docelowa (aktualizacja starego Podróżnika) wymaga pliku `podroznik-klucz-podpisu.zip` od właściciela.
+1. **Kolejność ustalona z właścicielem: 1 PR → 2 powiadomienia → 3 wersja docelowa.** 1 i 2 zrobione:
+   - PR #16 scalony; **PR #17** (powiadomienia, https://github.com/Chiniak/chiniak.github.io/pull/17) – zapytaj, czy scalił (jeśli tak: `git checkout -B claude/travel-planning-app-tl9mvf origin/main`).
+   - Właściciel dostał **APK testowe 2.2.0** (`io.github.chiniak.podroznik.test`, versionCode 6) – zapytaj, czy działa „Wyślij próbne” i „⏰ Dokładne godziny” (Ustawienia → Przypomnienia) i czy przypomnienia przychodzą przy zamkniętej aplikacji. Na telefonie potwierdzone wcześniej: instalacja 2.1.x, logowanie Google, Gmail („działa elegancko”).
+   - **TERAZ: krok 3 – wersja docelowa** (pakiet `io.github.chiniak.podroznik`, zastąpi stary TWA jako aktualizacja). **Czekamy, aż właściciel wyśle w czacie `podroznik-klucz-podpisu.zip`** (keystore + HASLO.txt). Potem:
+     a) `podroznik-app`: `signingConfigs.release` czytający keystore i hasło spoza repozytorium (np. zmienne środowiskowe / `keystore.properties` w .gitignore), `./gradlew assembleRelease`, sprawdzić `apksigner verify --print-certs` – SHA-256 musi się zgadzać z `.well-known/assetlinks.json`. **Klucza i hasła NIE commitować** (repo publiczne).
+     b) Odczytać SHA-1 prawdziwego klucza (`keytool -list -v`) i poprowadzić właściciela: Google Cloud → Google Auth Platform → Klienci → nowy klient **Android**, pakiet `io.github.chiniak.podroznik` + ten SHA-1 (bez tego Gmail w wersji docelowej da błąd 10).
+     c) Dane: wersja docelowa startuje pusta (stara TWA ma dane w Chrome, testowa we własnym WebView) – właściciel robi kopię w **Podróżnik (test)** → po instalacji docelowej przywraca; konto Gmail łączy ponownie (celowo nie ma go w kopii).
+     d) APK docelowe: wersja 2.2.x, versionCode > 1 (TWA miał 1). Rozważyć podmianę `podroznik/Podroznik.apk` (link „Aplikacja na Androida” w Ustawieniach, teraz 430 KB TWA) – ~18 MB w repo, zapytać właściciela; ewentualnie wysłać tylko w czacie.
+     e) Po przejściu: link do APK w Ustawieniach i tekst „pobierz APK (430 KB)” zaktualizować; usunąć w Google Cloud klienta „test”, jeśli testowa przestanie być potrzebna (jej klucz jest jawny w repo).
+   - Dalej (plan w `podroznik-app/README.md`): „Udostępnij → Podróżnik” dla plików (PDF/.ics/zdjęcia), jasność na maks przy bilecie, widżet, ML Kit OCR, natywny odcisk palca (w WebView działa tylko PIN). Strona WWW: logowanie Google wymaga klienta „Web” (`WEB_CLIENT_ID` w gmail.js).
+   - Budowanie w chmurze: SDK do `/opt/android-sdk` (cmdline-tools `commandlinetools-linux-9862592_latest.zip` z dl.google.com, `platforms;android-36`, `build-tools;35.0.0`, `platform-tools`), `podroznik-app/android/local.properties` z `sdk.dir`, lustro Maven `~/.gradle/init.d/maven-mirror.gradle` (google() + `maven-central.storage-download.googleapis.com`; repo.maven.apache.org / repo1 dają 404/429) – szczegóły w README aplikacji. `npm install` w `podroznik-app`, potem `npm run apk`. Brak KVM – emulatora nie ma; logikę natywną w JS testują t37–t40 z udawanym Capacitorem. Po każdej zmianie w `podroznik/` przebudować APK i podbić versionCode/versionName.
+   - APK wysyłaj właścicielowi przez SendUserFile (nie commitować testowych APK do repo).
 2. **Testy na telefonie (właściciel, w toku):** tło (PR #15 – zmiana przy uruchomieniu), „📥 Przygotuj offline”, bilety w planie, odczyt maili. Lista: `DO-SPRAWDZENIA.md`.
 3. **Plik podróży z Gmaila** (dostał 13.11) – zapytaj, czy wczytał i czy godziny się zgadzają. Szczegółów podróży nie zapisuj w repozytorium (publiczne).
 4. Jeśli odczyt jakiegoś maila wyjdzie źle – poprosić o treść (z zamazanymi danymi), dopisać przykład do `podroznik-testy/mails` ze ZMYŚLONYMI danymi i inną trasą/datą, sprawdzić `t35`.
