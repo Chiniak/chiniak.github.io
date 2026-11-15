@@ -64,3 +64,7 @@ dwa kroje, zdjęcia bez motywów religijnych, tło ze zdjęć – nowi użytkown
 - Przypomnienia (`App.Reminders.homeCards({ countdown: false })` – bez starego licznika) i karta Gmaila pod biletem.
 - `.hm-scroll` pozostałe trwające/nadchodzące (karty 4:3), `.hm-quick` szybkie akcje, archiwum jako `.list`.
 - Kolory podróży (`App.Trips.COLORS`) dopasowane do palety; stare zapisane kolory działają dalej.
+- **Zdjęcia celu** (`covers.js`, `App.Covers`): podróż bez własnej okładki dostaje zdjęcie celu – artykuł Wikipedii (pl, en),
+  zapas: wyróżnione/dobre zdjęcia Commons. Filtr `App.Backdrop.BAD` + kolaże, mapy, flagi; tylko poziome JPEG ≥ 900 px.
+  Zapis w podróży (`coverAuto`, `putRaw`), autor pod nagłówkiem szczegółów (`.cover-credit`), „Usuń zdjęcie celu” w formularzu
+  (`coverOff` = cel, dla którego usunięto). Własna okładka ma pierwszeństwo. Test t41.

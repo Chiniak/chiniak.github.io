@@ -67,16 +67,33 @@
   /* ---------- zdjęcie w tle podróży (etap 9) ----------
      rekord w magazynie "files": { tripId, segmentId: "cover", kind: "cover", blob } – kopia zapasowa obejmuje go sama */
   async function covers(tripId) {
-    const all = await DB.byIndex("files", "segmentId", "cover");
-    return Object.fromEntries(all.filter(f => !tripId || f.tripId === tripId).map(f => [f.tripId, f]));
+    const [all, trips] = await Promise.all([DB.byIndex("files", "segmentId", "cover"),
+      tripId ? DB.get("trips", tripId).then(t => (t ? [t] : [])) : DB.all("trips")]);
+    const map = Object.fromEntries(all.filter(f => !tripId || f.tripId === tripId).map(f => [f.tripId, f]));
+    // bez własnej okładki: automatyczne zdjęcie celu (covers.js)
+    if (App.Covers) for (const t of trips) if (!map[t.id]) { const c = App.Covers.of(t); if (c) map[t.id] = { auto: true, data: c.data, credit: c.credit }; }
+    return map;
+  }
+  // własne okładki (do pomijania przy szukaniu zdjęć celu)
+  const ownCovers = map => new Set(Object.entries(map).filter(([, f]) => !f.auto).map(([id]) => id));
+  // wstaw zdjęcie celu, które właśnie się pobrało, bez przeładowania ekranu
+  function paintAuto(root, tripId, data) {
+    root.querySelectorAll(`[data-cover="${tripId}"]`).forEach(el => {
+      if (el.classList.contains("has-photo")) return;
+      el.style.setProperty("--photo", `url("${data}")`);
+      el.classList.add("has-photo");
+    });
   }
   // ustawia tło elementom [data-cover="id podróży"]; zwraca funkcję sprzątającą
   function paintCovers(root, map) {
     const urls = [];
     root.querySelectorAll("[data-cover]").forEach(el => {
       const f = map[el.dataset.cover];
-      if (!f || !(f.blob instanceof Blob)) return;
-      const u = URL.createObjectURL(f.blob); urls.push(u);
+      if (!f) return;
+      let u = null;
+      if (f.data) u = f.data;
+      else if (f.blob instanceof Blob) { u = URL.createObjectURL(f.blob); urls.push(u); }
+      else return;
       el.style.setProperty("--photo", `url("${u}")`);
       el.classList.add("has-photo");
     });
@@ -255,6 +272,7 @@
       title: "Podróżnik", brand: true, action: statsAction, html,
       after(v) {
         unpaint = paintCovers(v, cov);
+        if (App.Covers) App.Covers.fill([...now, ...future], ownCovers(cov), (t, c) => paintAuto(v, t.id, c.data));
         if (home.after) home.after(v);
         const el = v.querySelector("#cd-time");
         if (el) timer = setInterval(() => { el.innerHTML = cdHtml(countdown(el.dataset.at, el.dataset.tz || undefined)); }, 15000);
@@ -268,8 +286,9 @@
     const t = id ? await DB.get("trips", id) : null;
     if (id && !t) { location.replace("#/podroze"); return ""; }
     const v = t || { name: "", destination: "", start: "", end: "", color: COLORS[0], note: "" };
-    const cover = t ? (await covers(t.id))[t.id] : null;
-    let newCover = null, dropCover = false, unpaint = null, previewUrl = null;
+    const shown = t ? (await covers(t.id))[t.id] : null;
+    const cover = shown && !shown.auto ? shown : null, auto = shown && shown.auto ? shown : null; // własna okładka / zdjęcie celu
+    let newCover = null, dropCover = false, dropAuto = false, unpaint = null, previewUrl = null;
     const swatches = COLORS.map(c => `
       <label class="swatch" style="--c:${c}">
         <input type="radio" name="color" value="${c}" ${c === v.color ? "checked" : ""}><span aria-label="kolor ${c}"></span>
@@ -293,7 +312,9 @@
             <div class="cover-pick" id="cover-box" data-cover="${t ? t.id : ""}">
               <label class="btn">🖼️ ${cover ? "Zmień zdjęcie" : "Wybierz zdjęcie"}<input type="file" id="cover" accept="image/*" hidden></label>
               ${cover ? `<button type="button" class="btn" id="cover-del">Usuń</button>` : ""}
-            </div></div>
+              ${auto ? `<button type="button" class="btn" id="cover-auto-del">Usuń zdjęcie celu</button>` : ""}
+            </div>
+            ${auto ? `<small class="muted" id="cover-auto-txt">Zdjęcie celu dobrane automatycznie · ${esc(auto.credit)}</small>` : ""}</div>
           <label class="field"><span>Notatka</span>
             <textarea name="note" rows="3" placeholder="opcjonalnie">${esc(v.note)}</textarea></label>
           <p class="error" id="err" hidden></p>
@@ -308,7 +329,9 @@
         });
         if (!t) f.name.focus();
         const box = view.querySelector("#cover-box");
-        if (cover) unpaint = paintCovers(view, { [t.id]: cover });
+        if (shown) unpaint = paintCovers(view, { [t.id]: shown });
+        const adel = view.querySelector("#cover-auto-del");
+        if (adel) adel.onclick = () => { dropAuto = true; if (!newCover) box.classList.remove("has-photo"); adel.hidden = true; view.querySelector("#cover-auto-txt").hidden = true; };
         view.querySelector("#cover").addEventListener("change", async e => {
           const file = e.target.files[0];
           if (!file) return;
@@ -331,6 +354,7 @@
           if (d.end < d.start) return err("Data końca nie może być przed datą początku.");
           const rec = await DB.put("trips", { ...(t || {}), ...d, name: d.name.trim(), destination: d.destination.trim() });
           if ((newCover || dropCover) && cover) await DB.del("files", cover.id);
+          if (dropAuto && App.Covers) await App.Covers.remove(rec.id);
           if (newCover) await DB.put("files", { tripId: rec.id, segmentId: "cover", kind: "cover", mime: "image/jpeg", name: "tlo.jpg", label: "Tło podróży", blob: newCover });
           App.toast(t ? "Zapisano zmiany" : "Podróż utworzona");
           if (t) App.back(`#/podroze/${rec.id}`); else location.replace(`#/podroze/${rec.id}`);
@@ -452,6 +476,7 @@
         <span class="pill pill-${status(t)}">${statusText(t)}</span>
         ${t.note ? `<p class="note">${esc(t.note)}</p>` : ""}
       </div>
+      ${cov[id] && cov[id].auto ? `<p class="cover-credit">Zdjęcie: ${esc(cov[id].credit)}</p>` : ""}
       <a class="plan-link" href="#/plan/${t.id}"><span aria-hidden="true">🗓️</span> Plan dnia po dniu <span class="muted">– zwiedzanie, jedzenie, mapa</span><b aria-hidden="true">›</b></a>
       ${t.end >= todayStr() ? `<a class="plan-link" href="#/przygotuj/${t.id}"><span aria-hidden="true">📥</span> Przygotuj offline <span class="muted">– mapa, karty, zdjęcia, kursy na zapas</span><b aria-hidden="true">›</b></a>` : ""}
       <a class="plan-link" href="#/pakowanie/${t.id}"><span aria-hidden="true">🧳</span> Pakowanie <span class="muted">– ${packTxt}</span><b aria-hidden="true">›</b></a>
@@ -473,6 +498,7 @@
       cleanup() { if (unpaint) unpaint(); },
       after(view) {
         unpaint = paintCovers(view, cov);
+        if (App.Covers && !cov[id]) App.Covers.fill([t], new Set(), (x, c) => paintAuto(view, x.id, c.data));
         // pogoda: pokazane zapisane dane, świeże pobierane w tle (jeśli są starsze niż 3 h)
         if (wx) wx.refresh().then(changed => { if (changed) App.render(); }).catch(() => {});
         const b = view.querySelector("#ics-trip");
