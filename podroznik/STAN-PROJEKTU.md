@@ -5,7 +5,7 @@ Ostatnia aktualizacja: 15 listopada 2026 (koniec sesji) – scalone PR #1–#17 
 ## Gdzie co jest
 - Repozytorium: `chiniak/chiniak.github.io`, gałąź **`claude/travel-planning-app-tl9mvf`**
 - Gałąź robocza: po scaleniu PR zacznij ją od nowa od `origin/main` (`git checkout -B claude/travel-planning-app-tl9mvf origin/main`), nie nadpisuj historii (force push zablokowany). Nowy PR po każdej porcji zmian – właściciel scala sam.
-- Aplikacja na żywo: https://chiniak.github.io/podroznik/ – wersja „1.2 · etapy 0–11”, pamięć offline **`podroznik-v41`**. APK: https://chiniak.github.io/podroznik/Podroznik.apk (zmiany w stronie nie wymagają nowego APK).
+- Aplikacja na żywo: https://chiniak.github.io/podroznik/ – wersja „1.2 · etapy 0–11”, pamięć offline **`podroznik-v42`**. APK: https://chiniak.github.io/podroznik/Podroznik.apk (zmiany w stronie nie wymagają nowego APK).
 - `podroznik/` – aplikacja (PWA, czysty JS bez frameworka, dane w IndexedDB, offline przez service worker)
 - `podroznik-app/` – **nowa aplikacja na Androida (Capacitor)**: cały kod w APK + funkcje telefonu; instrukcja i plan kroków w jego README
 - `podroznik-android/` – stary projekt APK (Trusted Web Activity, Bubblewrap) – do zastąpienia przez `podroznik-app/`
@@ -40,6 +40,7 @@ Ostatnia aktualizacja: 15 listopada 2026 (koniec sesji) – scalone PR #1–#17 
 - (gałąź, ten sam PR) **limit Gmail API** – zgłoszone 15.11 z telefonu (logowanie zadziałało!): „Quota exceeded for quota metric 'Total Query Cost' and limit 'Units per minute per user'”. Od 2026 Google obniżył limit na użytkownika (ok. 6000 jednostek/min). Było: 3 równoległe zapytania bez przerw. Teraz `api()` w gmail.js: zapytania po kolei z odstępem (`PACE.gap` 400 ms), po 429/403 „quota/rate” czeka (`Retry-After` albo 65 s) i próbuje dalej (4 razy), potem kończy z zapisem przeczytanych (`partial`, ponowna próba przy starcie po 10 min, bez pętli na ekranie); postęp zapisywany co 10 maili; węższe wyszukiwanie (bez order/zamówieni/tour/check-in/odprawa), do 100 maili. Test `t39`. APK 2.1.2 (versionCode 5). **Właściciel potwierdził 15.11 na telefonie: 2.1.2 zainstalowane, Gmail „działa elegancko”.**
 - PR #16 (scalony 15.11): prawdziwa aplikacja, „📬 Z Gmaila”, poprawka kopii, limit Gmail API.
 - (gałąź, PR do zrobienia) **powiadomienia w aplikacji** (`reminders.js`, `@capacitor/local-notifications` 8.3.1): najbliższe przypomnienia zaplanowane w telefonie (do 60 / 60 dni, `syncNative`, podpis zmian w localStorage `podroznik-ln-sig`, klucze `podroznik-ln-keys` – `tick()` nie dubluje), odtworzenie, gdy system skasował alarmy; zgoda przy pierwszym uruchomieniu; „⏰ Dokładne godziny”; dotknięcie → ekran; mała ikona `ic_stat_podroznik`. Test `t40`. APK 2.2.0 (versionCode 6).
+- (gałąź, PR do zrobienia) **redesign „Premium Light” – etap 1: design system** (właściciel 15.11 przysłał pełną specyfikację redesignu i zatwierdził projekt: makieta + plan 9 etapów). Zasady, tokeny i decyzje w **`DESIGN.md`** – czytaj przed każdą zmianą wyglądu. Nowe: tokeny w `style.css` (turkus `--accent-fill` tylko jako wypełnienie, `--accent` = ciemniejszy do tekstu, `--accent-ink` na turkusie), czcionki w `lib/fonts/` (Plus Jakarta Sans + Newsreader w tytułach), `icons.js` (`App.icon`), nowy dolny pasek, `.topbar.scrolled`. Tło ze zdjęć: nowi użytkownicy – wyłączone, kto już miał (`podroznik-bg-last`) – bez zmian (t29 sprawdza oba). Pełna seria testów zielona. **Następny: etap 2 – ekran Podróże według makiety** (opis w DESIGN.md), potem APK testowe do oceny na telefonie.
 - **Prywatność:** repozytorium jest publiczne – przykłady w `podroznik-testy/mails` mają zmyślone dane i inne trasy/daty niż prawdziwe rezerwacje właściciela. Nie wpisuj tu jego planów podróży (właściciel dostał 13.11 plik podróży zrobiony z jego Gmaila – poza repozytorium).
 
 ## Właściciel – preferencje i uwagi
@@ -97,7 +98,7 @@ Ostatnia aktualizacja: 15 listopada 2026 (koniec sesji) – scalone PR #1–#17 
 | `lib/` | pdf.js, bwip-js, ZXing, Leaflet, airports.js (OpenFlights), world.js (Natural Earth) – licencje w `lib/` |
 
 ## Zasady i pułapki (ważne przy zmianach)
-- **Po każdej zmianie plików aplikacji podbij `CACHE` w `sw.js`** (teraz `podroznik-v41`) i dopisz nowe pliki do listy `APP`.
+- **Po każdej zmianie plików aplikacji podbij `CACHE` w `sw.js`** (teraz `podroznik-v42`) i dopisz nowe pliki do listy `APP`.
 - Nowy magazyn danych = podbić `VERSION` w `db.js` i dodać do `STORES` (aktualizacja zachowuje dane – test t12).
 - Nasłuch zdarzeń podpinaj do elementów widoku, **nie do `#view`** (zostaje między ekranami → podwójne akcje).
 - Router ignoruje wolniej wczytany starszy ekran (`renderSeq` w `app.js`).
