@@ -14,6 +14,14 @@ obsługuje `podroznik/native.js` (w przeglądarce nic nie robi).
 - Uprawnienia aparatu (skaner kodów) i położenia („📍 Tutaj”) – w `AndroidManifest.xml`.
 - Ikona i ekran startowy Podróżnika (wygenerowane z `podroznik/icon-512.png`).
 
+## Powiadomienia (wersja 2.2)
+`@capacitor/local-notifications`: `reminders.js` planuje w telefonie najbliższe przypomnienia (do 60, na 60 dni) –
+przychodzą o czasie przy zamkniętej aplikacji i po restarcie telefonu. Plan odświeża się przy starcie, po każdej zmianie
+ekranu (z opóźnieniem 3 s) i przy chowaniu aplikacji; bez zmian nic nie jest planowane od nowa, chyba że system skasował
+alarmy (np. po aktualizacji aplikacji). Zgoda pytana przy pierwszym uruchomieniu, gdy są przypomnienia; „⏰ Dokładne godziny”
+(uprawnienie „Alarmy i przypomnienia”, Android 12+) w Ustawienia → Przypomnienia – bez niego telefon może opóźniać o kilka minut.
+Mała ikona: `res/drawable-*/ic_stat_podroznik.png` (samolot z ikony aplikacji).
+
 ## Wersje
 | | pakiet | nazwa | podpis |
 |---|---|---|---|
@@ -73,6 +81,6 @@ Błąd „Aplikacja nie jest zarejestrowana w Google Cloud” (kod 10) = brak kl
 ## Plan
 1. ✅ Projekt Capacitor, pliki przez „Udostępnij”, aparat, położenie, ikona (wersja 2.0.0)
 2. ✅ (2.1) Logowanie Google + propozycje z Gmaila
-3. ⬜ Punktualne powiadomienia (Local Notifications – także po restarcie telefonu) + jasność na maks przy bilecie
+3. ✅ (2.2) Punktualne powiadomienia (Local Notifications – także po restarcie telefonu) + jasność na maks przy bilecie
 4. ⬜ „Udostępnij → Podróżnik” dla plików (PDF, .ics, zdjęcia biletów z Gmaila i galerii)
 5. ⬜ Widżet na ekranie głównym, OCR z ML Kit, odcisk palca natywnie (WebAuthn w WebView nie działa – teraz tylko PIN)

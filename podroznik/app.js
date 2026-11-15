@@ -239,7 +239,7 @@
           <p class="small muted" style="margin:8px 0 0">Mapa w Podróżniku zapamiętuje oglądane fragmenty – przed wyjazdem przejrzyj na niej okolice noclegów i punktów planu, a będą widoczne także bez internetu.</p>
         </div>
         <a class="plan-link" href="#/ustawienia/przypomnienia"><span aria-hidden="true">🔔</span> Przypomnienia i kalendarz
-          <span class="muted">– ${"Notification" in window && Notification.permission === "granted" ? "powiadomienia włączone" : "ustaw powiadomienia"}</span><b aria-hidden="true">›</b></a>
+          <span class="muted">– ${(App.Reminders && App.Reminders.notifyOn ? App.Reminders.notifyOn() : "Notification" in window && Notification.permission === "granted") ? "powiadomienia włączone" : "ustaw powiadomienia"}</span><b aria-hidden="true">›</b></a>
         ${App.Gmail && App.Gmail.available() ? `<a class="plan-link" href="#/gmail?wroc=%23%2Fustawienia"><span aria-hidden="true">📬</span> Konto Google (Gmail)
           <span class="muted">– ${gmailCfg ? App.esc(gmailCfg.email) : "propozycje z maili"}</span><b aria-hidden="true">›</b></a>` : ""}
         <a class="plan-link${!last || age > 30 ? " warn" : ""}" href="#/ustawienia/kopia"><span aria-hidden="true">💾</span> Kopia zapasowa

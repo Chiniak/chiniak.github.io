@@ -4,5 +4,11 @@
   "webDir": "www",
   "android": {
     "backgroundColor": "#0e1416"
+  },
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_podroznik",
+      "iconColor": "#0F6E6E"
+    }
   }
 }

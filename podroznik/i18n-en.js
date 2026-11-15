@@ -578,6 +578,13 @@ self.I18N_EN = {
   "Nie udało się odczytać adresu e-mail": "Couldn't read the e-mail address", "Brak połączenia z Google": "No connection to Google", "Potrzebne logowanie": "Sign-in needed",
   "Aplikacja nie jest zarejestrowana w Google Cloud (pakiet + odcisk SHA-1)": "The app isn't registered in Google Cloud (package + SHA-1 fingerprint)",
   "Potrzebna zgoda użytkownika": "User consent needed", "Brak internetu": "No internet",
+  /* powiadomienia w aplikacji na Androida */
+  "Przypomnienia o podróży": "Trip reminders", "Odjazdy, odprawa, pakowanie, plan dnia": "Departures, check-in, packing, day plan",
+  "Telefon może je opóźniać o kilka minut – włącz „Dokładne godziny” poniżej.": "The phone may delay them by a few minutes – turn on “Exact times” below.",
+  "Włącz je w ustawieniach telefonu: Aplikacje → Podróżnik → Powiadomienia.": "Turn them on in the phone settings: Apps → Podróżnik → Notifications.",
+  "Zaplanowane w telefonie": "Scheduled on the phone", "Dokładne godziny": "Exact times", "tak ✅": "yes ✅",
+  "Przypomnienia są zaplanowane w telefonie – przyjdą o czasie także przy zamkniętej aplikacji i po ponownym uruchomieniu telefonu. Najbliższe {} na 60 dni; plan odświeża się sam po każdej zmianie.":
+    "Reminders are scheduled on the phone – they arrive on time even with the app closed and after the phone restarts. The next {} within 60 days; the schedule updates itself after every change.",
   "Google ogranicza tempo – czekam {} s i czytam dalej ({}/{})": "Google is limiting the pace – waiting {} s, then reading on ({}/{})",
   "Przeczytano {} maili, reszta ({}) przy następnym sprawdzeniu": "Read {} e-mails, the rest ({}) at the next check",
   "Google chwilowo ogranicza liczbę zapytań do Gmaila – reszta maili przy następnym sprawdzeniu": "Google is temporarily limiting Gmail requests – the remaining e-mails at the next check",
