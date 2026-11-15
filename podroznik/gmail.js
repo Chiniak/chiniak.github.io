@@ -411,30 +411,33 @@
         title: "Z Gmaila",
         back,
         html: `
-          <div class="card gm-intro">
-            <h2>📬 Propozycje z Twojej poczty</h2>
-            <p>Połącz konto Google, a Podróżnik sam znajdzie w Gmailu potwierdzenia rezerwacji i zaproponuje, co dodać:</p>
-            <ul class="gm-list">
-              <li>✈️ loty, 🚆 pociągi, 🚌 autobusy, ⛴️ promy</li>
-              <li>🏨 noclegi (Booking.com, Agoda, Airbnb…)</li>
-              <li>🎟️ wycieczki, bilety wstępu, koncerty (GetYourGuide, Klook, Viator…)</li>
-              <li>🍽️ stoliki w restauracjach</li>
+          <div class="gm-intro">
+            <section class="tx-hero">
+              <span class="tx-hero-ic" aria-hidden="true">${App.icon("mail")}</span>
+              <div><h2>Propozycje z Twojej poczty</h2>
+              <p>Połącz konto Google, a Podróżnik sam znajdzie w Gmailu potwierdzenia rezerwacji i zaproponuje, co dodać:</p></div>
+            </section>
+            <ul class="list gm-list">
+              <li class="li"><span class="li-ico" aria-hidden="true">${App.icon("plane")}</span><span class="li-main"><b>Loty, pociągi, autobusy, promy</b></span></li>
+              <li class="li"><span class="li-ico" aria-hidden="true">${App.icon("bed")}</span><span class="li-main"><b>Noclegi</b><small>Booking.com, Agoda, Airbnb…</small></span></li>
+              <li class="li"><span class="li-ico" aria-hidden="true">${App.icon("ticket")}</span><span class="li-main"><b>Wycieczki, bilety wstępu, koncerty</b><small>GetYourGuide, Klook, Viator…</small></span></li>
+              <li class="li"><span class="li-ico" aria-hidden="true">${App.icon("food")}</span><span class="li-main"><b>Stoliki w restauracjach</b></span></li>
             </ul>
-            <p class="small muted">Tylko odczyt – Podróżnik nie wysyła, nie usuwa i nie zmienia maili. Maile czyta telefon wprost z Gmaila, nic nie trafia na żaden serwer.
-              Szuka tylko maili z rezerwacjami z ostatnich 13 miesięcy. Każdą propozycję zatwierdzasz sam.</p>
-            ${can ? `<button type="button" class="btn primary wide" id="gm-connect">🔐 Zaloguj się kontem Google</button>`
-              : `<p class="error">Logowanie Google działa w aplikacji na Androida (Podróżnik 2.0). W przeglądarce możesz dalej wkleić maila: <a href="#/wklej">📧 Dodaj z maila</a>.</p>`}
+            <p class="td-note gm-privacy">${App.icon("shield", "sm")}<span>Tylko odczyt – Podróżnik nie wysyła, nie usuwa i nie zmienia maili. Maile czyta telefon wprost z Gmaila, nic nie trafia na żaden serwer.
+              Szuka tylko maili z rezerwacjami z ostatnich 13 miesięcy. Każdą propozycję zatwierdzasz sam.</span></p>
+            ${can ? `<button type="button" class="btn primary wide" id="gm-connect">${App.icon("lock", "sm")} <span>Zaloguj się kontem Google</span></button>`
+              : `<p class="td-note error gm-web">${App.icon("info", "sm")}<span>Logowanie Google działa w aplikacji na Androida (Podróżnik 2.0). W przeglądarce możesz dalej wkleić maila: <a href="#/wklej">Dodaj z maila</a>.</span></p>`}
           </div>`,
         after(v) {
           const b = v.querySelector("#gm-connect");
           if (b) b.onclick = async () => {
-            b.disabled = true; b.textContent = "Łączę…";
+            b.disabled = true; b.querySelector("span").textContent = "Łączę…";
             try {
               const email = await connect();
               App.toast(`Połączono: ${email}`);
               location.replace(`#/gmail?skanuj=1${q.wroc ? `&wroc=${encodeURIComponent(q.wroc)}` : ""}`);
             } catch (e) {
-              b.disabled = false; b.textContent = "🔐 Zaloguj się kontem Google";
+              b.disabled = false; b.querySelector("span").textContent = "Zaloguj się kontem Google";
               App.toast(e.message === "Anulowano" ? "Anulowano" : `Nie udało się połączyć: ${e.message || e}`);
             }
           };
@@ -460,19 +463,20 @@
       title: "Z Gmaila",
       back,
       html: `
-        <div class="card gm-account">
-          <div class="row"><span class="muted">Konto</span><b translate="no">${esc(cfg.email)}</b></div>
-          <div class="row"><span class="muted">Sprawdzone</span><b id="gm-last">${ago(cfg.lastScan)}</b></div>
+        <div class="pr-sum gm-account">
+          <div class="pr-sum-top"><span class="pr-sum-k">Gmail</span><span class="chip ok">połączone</span></div>
+          <h2 class="gm-mail" translate="no">${esc(cfg.email)}</h2>
+          <dl class="bk-facts"><div><dt>Sprawdzone</dt><dd id="gm-last">${ago(cfg.lastScan)}</dd></div></dl>
           ${cfg.error ? `<p class="error small" style="margin:8px 0 0">${esc(cfg.error)}</p>` : ""}
-          <div class="add-row" style="margin-top:10px">
-            <button type="button" class="btn primary" id="gm-scan">🔄 Sprawdź teraz</button>
+          <div class="add-row" style="margin-top:12px">
+            <button type="button" class="btn primary" id="gm-scan">${App.icon("undo", "sm")} Sprawdź teraz</button>
             <button type="button" class="btn" id="gm-off">Odłącz konto</button>
           </div>
           <p class="small muted" id="gm-prog" style="margin:8px 0 0"></p>
         </div>
         ${count ? `<h3 class="section">Propozycje: ${count}</h3>${groups.map(groupHtml).join("")}`
           : `<p class="muted">${cfg.lastScan ? "Brak nowych propozycji – wszystko z maili jest już w podróżach albo pominięte." : "Sprawdzam maile…"}</p>`}
-        ${pastCount ? `<p><a href="#/gmail?wczesniej=1">🕘 Pokaż też wcześniejsze (${pastCount}) – np. do statystyk</a></p>` : ""}
+        ${pastCount ? `<p><a href="#/gmail?wczesniej=1">Pokaż też wcześniejsze (${pastCount}) – np. do statystyk</a></p>` : ""}
         ${past ? `<p><a href="#/gmail">Tylko nadchodzące</a></p>` : ""}
         <p class="small muted">Nie znalazło jakiejś rezerwacji? Otwórz maila i użyj „Udostępnij → Podróżnik” albo <a href="#/wklej">📧 wklej treść</a>.</p>`,
       after(v) {

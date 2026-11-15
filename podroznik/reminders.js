@@ -333,7 +333,7 @@
       const c = cfg.types[k];
       return `
         <div class="rm-type" data-type="${k}">
-          <div class="rm-type-name"><span aria-hidden="true">${icon}</span> ${name}</div>
+          <div class="rm-type-name"><span class="li-ico" aria-hidden="true">${App.icon.type(k)}</span> ${name}</div>
           <div class="rm-type-opts">
             ${sw("day", c.day, k === "nocleg" ? "Dzień przed zameldowaniem (19:00)" : "Dzień wcześniej (19:00)")}
             ${k === "nocleg" ? sw("checkout", c.checkout, "Rano w dniu wymeldowania")
@@ -347,16 +347,18 @@
       title: "Przypomnienia",
       back: "#/ustawienia",
       html: `
-        <div class="card">
-          <h2>Powiadomienia</h2>
-          <div class="row"><span class="muted">Na tym telefonie</span><b>${perm}</b></div>
-          ${native ? `<div class="row"><span class="muted">Zaplanowane w telefonie</span><b>${sync && sync.scheduled != null ? sync.scheduled : 0}</b></div>
-          <div class="row"><span class="muted">Dokładne godziny</span><b>${nPerm.exact === "granted" ? "tak ✅" : "nie"}</b></div>`
-          : `<div class="row"><span class="muted">Sprawdzanie w tle</span><b>${bg === "włączone" ? "włączone ✅" : "niedostępne"}</b></div>`}
-          ${permHelp ? `<p class="small muted">${permHelp}</p>` : ""}
+        <section class="pr-sum rm-status">
+          <div class="pr-sum-top"><span class="pr-sum-k">Powiadomienia</span>${canNotify() ? `<span class="chip ok">działają</span>` : `<span class="chip warn">nie działają</span>`}</div>
+          <dl class="bk-facts">
+            <div><dt>Na tym telefonie</dt><dd>${perm}</dd></div>
+            ${native ? `<div><dt>Zaplanowane w telefonie</dt><dd>${sync && sync.scheduled != null ? sync.scheduled : 0}</dd></div>
+            <div><dt>Dokładne godziny</dt><dd>${nPerm.exact === "granted" ? "tak ✅" : "nie"}</dd></div>`
+            : `<div><dt>Sprawdzanie w tle</dt><dd>${bg === "włączone" ? "włączone ✅" : "niedostępne"}</dd></div>`}
+          </dl>
+          ${permHelp ? `<p class="rm-help">${permHelp}</p>` : ""}
           <div class="rm-btns">
-            ${(native ? nPerm.display === "prompt" : "Notification" in window && Notification.permission === "default") ? `<button type="button" class="btn primary" id="rm-perm">🔔 Włącz powiadomienia</button>` : ""}
-            ${native && nPerm.display === "granted" && nPerm.exact !== "granted" ? `<button type="button" class="btn primary" id="rm-exact">⏰ Dokładne godziny</button>` : ""}
+            ${(native ? nPerm.display === "prompt" : "Notification" in window && Notification.permission === "default") ? `<button type="button" class="btn primary" id="rm-perm">${App.icon("bell", "sm")} Włącz powiadomienia</button>` : ""}
+            ${native && nPerm.display === "granted" && nPerm.exact !== "granted" ? `<button type="button" class="btn primary" id="rm-exact">${App.icon("clock", "sm")} Dokładne godziny</button>` : ""}
             ${canNotify() ? `<button type="button" class="btn" id="rm-test">Wyślij próbne</button>` : ""}
           </div>
           ${native ? `<p class="rm-note">Przypomnienia są zaplanowane w telefonie – przyjdą o czasie także przy zamkniętej aplikacji i po ponownym uruchomieniu telefonu.
@@ -364,39 +366,39 @@
             Pewne są przypomnienia, gdy aplikacja jest otwarta albo gdy ją otworzysz (zaległe pokażą się od razu).
             ${bg === "włączone" ? "Chrome sprawdza je też w tle, ale sam decyduje jak często (zwykle kilka razy na dobę)." : "Sprawdzanie w tle Chrome włącza dopiero dla aplikacji dodanej do ekranu głównego i często używanej."}
             <b>Na 100% zadziała eksport do kalendarza</b> (niżej) – wtedy przypomni aplikacja Kalendarz.</p>`}
-        </div>
+        </section>
 
         <form id="rm-form">
-          <div class="card">
+          <div class="list rm-master">
             ${sw("enabled", cfg.enabled, "<b>Przypomnienia włączone</b>")}
           </div>
           <h3 class="section">Transport i noclegi</h3>
-          <div class="card rm-types">${typeRows}</div>
+          <div class="list rm-types">${typeRows}</div>
           <h3 class="section">Pakowanie i plan</h3>
-          <div class="card">
-            <label class="rm-sel"><span>🧳 Nie spakowane rzeczy (o 18:00)</span>
+          <div class="list rm-other">
+            <label class="rm-sel"><span>Nie spakowane rzeczy (o 18:00)</span>
               <select name="packDays">${opts([[0, "wył."], [1, "1 dzień przed"], [2, "2 dni przed"], [3, "3 dni przed"], [5, "5 dni przed"], [7, "tydzień przed"]], cfg.packDays)}</select></label>
-            ${sw("todos", cfg.todos, "✅ Zadania z terminem – o 9:00 w dniu terminu")}
-            ${sw("backup", cfg.backup, "💾 Kopia zapasowa – 3 dni przed wyjazdem, jeśli są nowe zmiany")}
-            <label class="rm-sel"><span>🗓️ Punkty planu z godziną</span>
+            ${sw("todos", cfg.todos, "Zadania z terminem – o 9:00 w dniu terminu")}
+            ${sw("backup", cfg.backup, "Kopia zapasowa – 3 dni przed wyjazdem, jeśli są nowe zmiany")}
+            <label class="rm-sel"><span>Punkty planu z godziną</span>
               <select name="plan">${opts([[0, "wył."], [15, "15 min przed"], [30, "30 min przed"], [60, "1 h przed"]], cfg.plan)}</select></label>
           </div>
         </form>
 
         <h3 class="section">Kalendarz</h3>
-        <div class="card">
+        <div class="bg-cfg rm-cal">
           <p class="small" style="margin-top:0">Plik .ics z podróżami, transportem, planem i zadaniami – razem z alarmami ustawionymi wyżej.
             Na telefonie wybierz aplikację Kalendarz (np. Samsung). Google Kalendarz importuje pliki na komputerze (calendar.google.com → Ustawienia → Importuj);
             na telefonie użyj przycisku „Dodaj do Google Kalendarza” na stronie lotu / pociągu.</p>
-          <button type="button" class="btn primary wide" id="rm-ics" ${trips.length ? "" : "disabled"}>📅 Eksportuj nadchodzące podróże (${trips.length})</button>
+          <button type="button" class="btn primary wide" id="rm-ics" ${trips.length ? "" : "disabled"}>${App.icon("plan", "sm")} Eksportuj nadchodzące podróże (${trips.length})</button>
         </div>
 
         <h3 class="section">Najbliższe przypomnienia</h3>
-        <div class="card">
+        <div class="list rm-list">
           ${upcoming.length ? upcoming.map(r => `
-            <a class="row rm-up" href="#${esc(r.href)}"><span><b>${esc(r.title)}</b><br><span class="muted small">${esc(r.body)}</span></span>
-              <b class="rm-when">${App.fmtDay(r.at)}<br>${App.time(r.at)}</b></a>`).join("")
-            : `<p class="muted small" style="margin:0">Brak zaplanowanych przypomnień${cfg.enabled ? "" : " – przypomnienia są wyłączone"}.</p>`}
+            <a class="li rm-up" href="#${esc(r.href)}"><span class="li-ico" aria-hidden="true">${App.icon("bell")}</span><span class="li-main"><b>${esc(r.title)}</b><small>${esc(r.body)}</small></span>
+              <span class="rm-when">${App.fmtDay(r.at)}<b>${App.time(r.at)}</b></span></a>`).join("")
+            : `<p class="f-hint rm-none">Brak zaplanowanych przypomnień${cfg.enabled ? "" : " – przypomnienia są wyłączone"}.</p>`}
         </div>`,
       after(view) {
         const form = view.querySelector("#rm-form");

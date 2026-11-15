@@ -444,7 +444,6 @@
   }
 
   /* ================= EKRAN „WKLEJ Z MAILA” ================= */
-  const TYPE_ICON = { lot: "✈️", pociag: "🚆", autobus: "🚌", nocleg: "🏨" };
   App.route(/^\/wklej$/, async (_, q) => {
     const trips = (await DB.all("trips")).sort((a, b) => b.start.localeCompare(a.start));
     const shared = App.sharedText || "";
@@ -454,15 +453,19 @@
       title: "Dodaj z maila",
       back: q.trip ? `#/podroze/${q.trip}` : "#/podroze",
       html: `
-        <p class="small muted" style="margin-top:0">Skopiuj treść maila z potwierdzeniem (lot, pociąg, autobus, prom, hotel) i wklej poniżej – albo wczytaj plik:
+        <section class="tx-hero">
+          <span class="tx-hero-ic" aria-hidden="true">${App.icon("mail")}</span>
+          <div><h2>Rezerwacja z maila</h2>
+          <p>Skopiuj treść maila z potwierdzeniem (lot, pociąg, autobus, prom, hotel) i wklej poniżej – albo wczytaj plik:
           PDF z biletem, zaproszenie do kalendarza (.ics) lub zapisany mail (.eml).
-          Odczyt dzieje się w telefonie – nic nie jest nigdzie wysyłane. <b>Sprawdź dane przed zapisaniem.</b></p>
-        <p class="small muted em-src">Rozpoznaje m.in.: Booking.com, Trip.com, Agoda, Airbnb, Gotogate, 12Go, Trainline, Rail Europe, AirAsia, VietJet, linie chińskie i europejskie, PKP, FlixBus.</p>
+          Odczyt dzieje się w telefonie – nic nie jest nigdzie wysyłane. <b>Sprawdź dane przed zapisaniem.</b></p></div>
+        </section>
+        <p class="f-hint em-src">Rozpoznaje m.in.: Booking.com, Trip.com, Agoda, Airbnb, Gotogate, 12Go, Trainline, Rail Europe, AirAsia, VietJet, linie chińskie i europejskie, PKP, FlixBus.</p>
         <textarea id="em-text" class="em-text" rows="8" placeholder="Wklej tutaj treść maila…">${esc(shared)}</textarea>
         <div class="add-row">
-          <button type="button" class="btn" id="em-paste">📋 Wklej ze schowka</button>
-          <label class="btn">📎 Z pliku<input type="file" id="em-file" accept=".pdf,.ics,.eml,.txt,.html,.htm,application/pdf,text/calendar,message/rfc822,text/plain,text/html" hidden></label>
-          <button type="button" class="btn primary" id="em-go">🔎 Odczytaj</button>
+          <button type="button" class="btn" id="em-paste">${App.icon("copy", "sm")} Wklej ze schowka</button>
+          <label class="btn">${App.icon("clip", "sm")} Z pliku<input type="file" id="em-file" accept=".pdf,.ics,.eml,.txt,.html,.htm,application/pdf,text/calendar,message/rfc822,text/plain,text/html" hidden></label>
+          <button type="button" class="btn primary em-go" id="em-go">${App.icon("search", "sm")} Odczytaj</button>
         </div>
         <div id="em-out"></div>`,
       after(view) {
@@ -477,7 +480,7 @@
             s.booking ? `rez. ${s.booking}` : "", s.price ? `${s.price.replace(".", ",")} ${s.currency}` : "", s.address].filter(Boolean);
           return `
             <div class="em-card${s.depart ? "" : " em-bad"}">
-              <div class="tl-ico" aria-hidden="true">${TYPE_ICON[s.type] || T.icon}</div>
+              <div class="tl-ico" aria-hidden="true">${App.icon.type(s.type)}</div>
               <div class="tl-main">
                 <div class="muted small">${T.name}</div>
                 <div class="tl-route"><b>${esc(title)}</b></div>

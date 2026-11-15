@@ -153,27 +153,31 @@
       title: "Kopia zapasowa",
       back,
       html: `
-        <div class="card">
-          <h2>💾 Zrób kopię</h2>
-          ${changed ? `<p class="bk-warn">⚠️ Od ostatniej kopii doszły zmiany (podróże, bilety, plan lub dokumenty) – zrób nową.</p>` : ""}
-          <div class="row"><span class="muted">W aplikacji</span><b>${countsText(counts)}</b></div>
-          <div class="row"><span class="muted">Ostatnia kopia</span><b class="${!last || age > 30 ? "warn-txt" : ""}">${lastTxt}</b></div>
-          ${last ? `<div class="row"><span class="muted">Rozmiar</span><b>${mb(last.bytes || 0)}${last.encrypted ? " · zaszyfrowana" : ""}</b></div>` : ""}
-          <form id="bk-export" class="form" style="margin-top:12px">
-            <label class="field"><span>Hasło do pliku (opcjonalnie)</span>
-              <input type="password" name="pw" autocomplete="new-password" placeholder="zalecane – kopia trafi poza telefon"></label>
-            <label class="field" id="pw2-box" hidden><span>Powtórz hasło</span><input type="password" name="pw2" autocomplete="new-password"></label>
-            <p class="error" id="bk-err" hidden></p>
-            <button class="btn primary wide" type="submit">💾 Zapisz kopię (z biletami)</button>
-          </form>
-          <p class="small muted">Jeden plik z podróżami, biletami (zdjęcia, PDF, kody), planem, pakowaniem i ustawieniami.
-            Na telefonie otworzy się menu „Udostępnij” – wybierz np. <b>Dysk Google</b>, mail do siebie albo „Zapisz w Plikach”.
-            Plik bez hasła zawiera Twoje bilety i dane rezerwacji – trzymaj go w bezpiecznym miejscu. <b>Hasła nie da się odzyskać.</b></p>
-        </div>
+        <section class="pr-sum bk-sum${!last || age > 30 || changed ? " is-warn" : " done"}">
+          <div class="pr-sum-top"><span class="pr-sum-k">Ostatnia kopia</span>${last ? (changed ? `<span class="chip warn">są zmiany</span>` : age > 30 ? `<span class="chip warn">stara</span>` : `<span class="chip ok">aktualna</span>`) : `<span class="chip warn">brak</span>`}</div>
+          <h2 id="bk-last">${lastTxt}</h2>
+          <dl class="bk-facts">
+            <div><dt>W aplikacji</dt><dd>${countsText(counts)}</dd></div>
+            ${last ? `<div><dt>Rozmiar</dt><dd>${mb(last.bytes || 0)}${last.encrypted ? " · zaszyfrowana" : ""}</dd></div>` : ""}
+          </dl>
+        </section>
+        ${changed ? `<p class="td-note bk-warn">${App.icon("alert", "sm")}<span>Od ostatniej kopii doszły zmiany (podróże, bilety, plan lub dokumenty) – zrób nową.</span></p>` : ""}
 
-        <div class="card bk-tips">
-          <h2>🧳 Na wypadek zgubienia telefonu</h2>
-          <ol class="small">
+        <h3 class="section">Zrób kopię</h3>
+        <form id="bk-export" class="form bg-cfg">
+          <label class="field"><span>Hasło do pliku (opcjonalnie)</span>
+            <input type="password" name="pw" autocomplete="new-password" placeholder="zalecane – kopia trafi poza telefon"></label>
+          <label class="field" id="pw2-box" hidden><span>Powtórz hasło</span><input type="password" name="pw2" autocomplete="new-password"></label>
+          <p class="error" id="bk-err" hidden></p>
+          <button class="btn primary wide" type="submit">${App.icon("download", "sm")} <span>Zapisz kopię (z biletami)</span></button>
+        </form>
+        <p class="f-hint bk-hint">Jeden plik z podróżami, biletami (zdjęcia, PDF, kody), planem, pakowaniem i ustawieniami.
+          Na telefonie otworzy się menu „Udostępnij” – wybierz np. <b>Dysk Google</b>, mail do siebie albo „Zapisz w Plikach”.
+          Plik bez hasła zawiera Twoje bilety i dane rezerwacji – trzymaj go w bezpiecznym miejscu. <b>Hasła nie da się odzyskać.</b></p>
+
+        <h3 class="section">Na wypadek zgubienia telefonu</h3>
+        <div class="list bk-tips">
+          <ol>
             <li><b>Przed wyjazdem</b> zapisz kopię z hasłem na <b>Dysku Google</b> albo wyślij <b>mailem do siebie</b> – dostaniesz się do niej z każdego telefonu czy komputera.</li>
             <li><b>Drugi telefon</b> (osoba, z którą jedziesz): wyślij jej plik, a ona w Podróżniku wybierze Ustawienia → Kopia zapasowa → „Wybierz plik kopii” → „Dołącz”. Bilety i plan będą też u niej.</li>
             <li>Hasło zapamiętaj albo zapisz poza telefonem (np. w notatce u bliskiej osoby).</li>
@@ -181,10 +185,10 @@
           </ol>
         </div>
 
-        <div class="card">
-          <h2>📥 Przywróć z kopii</h2>
-          <p class="small muted" style="margin-top:0">Np. po zmianie telefonu albo wyczyszczeniu danych przeglądarki.</p>
-          <label class="btn wide">📂 Wybierz plik kopii (.json)<input type="file" id="bk-file" accept=".json,application/json" hidden></label>
+        <h3 class="section">Przywróć z kopii</h3>
+        <div class="bg-cfg bk-restore">
+          <p class="f-hint bk-r-hint">Np. po zmianie telefonu albo wyczyszczeniu danych przeglądarki.</p>
+          <label class="btn wide">${App.icon("doc", "sm")} Wybierz plik kopii (.json)<input type="file" id="bk-file" accept=".json,application/json" hidden></label>
           <div id="bk-preview"></div>
         </div>`,
       after(view) {
@@ -197,7 +201,7 @@
           if (pw && pw.length < 6) { err.textContent = "Hasło musi mieć co najmniej 6 znaków."; err.hidden = false; return; }
           if (pw && pw !== f.pw2.value) { err.textContent = "Hasła się różnią."; err.hidden = false; return; }
           const btn = f.querySelector("button[type=submit]");
-          btn.disabled = true; btn.textContent = "Przygotowuję…";
+          btn.disabled = true; btn.querySelector("span").textContent = "Przygotowuję…";
           try {
             const r = await exportBackup(pw);
             if (r.res === "downloaded") App.toast(`Zapisano ${r.name} (${mb(r.bytes)})`);
@@ -205,7 +209,7 @@
             if (r.res !== "cancel") App.render();
           } catch (e2) {
             err.textContent = "Nie udało się zrobić kopii: " + e2.message; err.hidden = false;
-          } finally { btn.disabled = false; btn.textContent = "💾 Zapisz kopię (z biletami)"; }
+          } finally { btn.disabled = false; btn.querySelector("span").textContent = "Zapisz kopię (z biletami)"; }
         });
 
         const prev = view.querySelector("#bk-preview");
@@ -224,11 +228,11 @@
           const when = data.exportedAt ? new Intl.DateTimeFormat((self.I18N ? I18N.locale : "pl-PL"), { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(data.exportedAt)) : "?";
           prev.innerHTML = `
             <div class="bk-box">
-              <div class="row"><span class="muted">Kopia z</span><b>${when}</b></div>
-              <div class="row"><span class="muted">Zawiera</span><b>${countsText(c)}</b></div>
+              <dl class="bk-facts"><div><dt>Kopia z</dt><dd>${when}</dd></div>
+              <div><dt>Zawiera</dt><dd>${countsText(c)}</dd></div></dl>
               <button type="button" class="btn primary wide" data-mode="merge">Dołącz do obecnych danych</button>
               <button type="button" class="btn wide" data-mode="replace">Zastąp wszystko kopią</button>
-              <p class="small muted">„Dołącz” dodaje brakujące i nadpisuje te same pozycje wersją z kopii. „Zastąp” najpierw usuwa wszystko z aplikacji.</p>
+              <p class="f-hint">„Dołącz” dodaje brakujące i nadpisuje te same pozycje wersją z kopii. „Zastąp” najpierw usuwa wszystko z aplikacji.</p>
             </div>`;
           prev.querySelectorAll("[data-mode]").forEach(b => b.onclick = async () => {
             const mode = b.dataset.mode;
