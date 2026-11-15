@@ -8,7 +8,7 @@
 
   /* ---------- pomocniki ---------- */
   // wersja aplikacji – ta sama co versionName APK (podroznik-app/android/app/build.gradle); podbijaj razem
-  App.VERSION = "2.6.0";
+  App.VERSION = "2.7.0";
   App.esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const pad = n => String(n).padStart(2, "0");
   App.todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
@@ -163,7 +163,7 @@
     for (const [re, fn] of routes) { match = path.match(re); if (match) { handler = fn; break; } }
     if (!handler) { location.replace("#/podroze"); return; }
 
-    const TAB_OF = { odcinek: "podroze", bilet: "bilety", skanuj: "bilety", punkt: "plan", rzecz: "pakowanie", dokumenty: "bilety", dokument: "bilety", budzet: "podroze", wydatek: "podroze", statystyki: "podroze", wklej: "podroze", mapa: "plan", odkrywaj: "plan", rozliczenie: "podroze", udostepnij: "podroze", "mapa-offline": "plan", karty: "plan", przygotuj: "podroze" };
+    const TAB_OF = { odcinek: "podroze", bilet: "bilety", skanuj: "bilety", punkt: "plan", rzecz: "pakowanie", dokumenty: "bilety", dokument: "bilety", budzet: "podroze", wydatek: "podroze", statystyki: "podroze", wklej: "podroze", mapa: "plan", odkrywaj: "plan", rozliczenie: "podroze", udostepnij: "podroze", "mapa-offline": "plan", karty: "plan", przygotuj: "podroze", dzis: "podroze" };
     const first = path.split("/")[1];
     const tab = TAB_OF[first] || first;
     document.querySelectorAll(".tabbar a").forEach(a => {
@@ -240,6 +240,11 @@
       if (shared) { App.sharedText = shared; history.replaceState(null, "", location.pathname + "#/wklej"); }
     }
     if (!location.hash) history.replaceState(null, "", "#/podroze");
+    // tryb „W podróży” (dzis.js): w trakcie podróży aplikacja otwiera się na ekranie „Dziś”, jeśli tak ustawiono
+    if (location.hash === "#/podroze" && App.Today && await App.Today.startScreen() === "dzis") {
+      const t = await App.Today.ongoingTrip().catch(() => null);
+      if (t) history.replaceState(null, "", `#/dzis/${t.id}`);
+    }
     render();
   }
 

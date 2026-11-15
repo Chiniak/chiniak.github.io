@@ -50,6 +50,7 @@ testy powiadomień (t9, t11–t16) używają `chromium.launch({ channel: 'chromi
 | t39 | Gmail: limit zapytań Google (429 „quota”) – zapytania po kolei, czekanie i dalsze czytanie, przy uporczywym limicie zapis przeczytanych bez pętli |
 | t40 | aplikacja: przypomnienia zaplanowane w telefonie (udawana wtyczka LocalNotifications) – zgoda, czasy, bez dublowania, odświeżenie po zmianie, odtworzenie po skasowaniu, dotknięcie, Ustawienia |
 | t37 | aplikacja na Androida (`native.js`, udawany Capacitor): kopia, .ics i skan PDF przez natywne „Udostępnij”, anulowanie bez błędu; w przeglądarce bez zmian |
+| t42 | tryb „W podróży” – ekran Dziś: nagłówek dnia, Teraz/Dalej, nocleg (nawigacja, telefon, kierowca), bilety dnia, plan dnia (minione przekreślone), szybki wydatek, strzałki dni, jutro, wejście z ekranu głównego i Planu, ekran startowy, podgląd przyszłej/zakończonej podróży, angielski |
 | t41 | zdjęcia celu podróży (covers.js): Wikipedia pl/en i Commons symulowane, filtr motywów religijnych/kolaży/map, własna okładka ma pierwszeństwo, usuwanie, zmiana celu, offline |
 
 Testy ustawiają `locale: 'pl-PL'` – bez tego aplikacja (język „Auto”) przełączy się na angielski.

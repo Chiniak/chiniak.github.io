@@ -205,6 +205,20 @@ dwa kroje, zdjęcia bez motywów religijnych, tło ze zdjęć – nowi użytkown
 - Puste stany (`App.empty`) – ikona SVG w miękkim kółku zamiast dużego emoji (mapa `EMPTY_IC` w app.js); statystyki z przełącznikiem `.sw`
   i liczbami w Newsreader.
 
+## Tryb „W podróży” – ekran Dziś (`dzis.js`, po redesignie)
+- Trasy `#/dzis` (trwająca podróż, inaczej `pickTrip`) i `#/dzis/:id?d=RRRR-MM-DD` (dzień spoza podróży → dziś / 1. / ostatni dzień).
+  Tytuł paska „Dziś”, akcja = Plan. Wejścia: przycisk `.hm-today` pod kartą trwającej podróży na ekranie głównym, link „Cały dzień”
+  (`.td-more`) w karcie „Dziś” w Planie (`todayCard(…, { more: true })`), ustawienie **Podróżowanie → Ekran startowy w trakcie podróży**
+  (`startScreen`: `dzis` / `podroze`; bez wyboru – w aplikacji (APK, PWA zainstalowana) **„Dziś”** (decyzja właściciela 15.11), w karcie
+  przeglądarki „Podróże”; app.js przy starcie z `#/podroze`, tylko gdy podróż trwa).
+- Kolejność: `.dz-head` (chip stanu: W podróży / Podgląd / Miniony dzień, nazwa podróży, strzałki dni `.dz-arrow`, „DZIEŃ N Z M”,
+  data w Newsreader, pogoda dnia `.dz-wx`, pasek postępu) · karta Teraz/Dalej (tylko dziś, odświeżana co minutę) · nocleg `.dz-stay`
+  (`hotelFor`; wymeldowanie bez nowego noclegu = ikona `key` na ostrzegawczym tle; akcje `.dz-acts`: Nawiguj, Zadzwoń – `tel:`, Dla kierowcy;
+  ≤ 380 px ikona nad tekstem) · „Bilety na ten dzień” `.dz-ticket` (odcinki i punkty planu z plikiem, turkusowe „Pokaż”) · „Plan dnia”
+  `.list.dz-plan` (godzina, ikona, nazwa, adres, Nawiguj; minione dziś przekreślone `.is-done`) · „Wydatki dziś” `.dz-money` (suma dnia
+  w Newsreader, chip „ok. X na dzień”, kategorie jako `.type-chip`, kwota + waluta zapamiętana `budgetCur:<id>`) · skróty `.pl-tools.dz-tools`
+  (Mapa dnia, W pobliżu, Rozmówki, Dokumenty) · „Jutro” `.dz-next` (do 3 punktów z godziną) albo „Ostatni dzień podróży”.
+
 ## Testy całości (etap 9)
 - Przegląd automatyczny: 38 ekranów × 5 wariantów (jasny, ciemny, angielski, 360 px, tablet 1024 px) – bez błędów JS w konsoli,
   bez elementów wychodzących poza ekran, bez poziomego przewijania; zrzuty obejrzane ręcznie.

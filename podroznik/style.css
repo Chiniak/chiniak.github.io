@@ -1083,8 +1083,10 @@ html.has-bg .hm-stats, html.has-bg .tk-stub, html.has-bg .hm-qa, html.has-bg .rm
 /* karta „Dziś” */
 .today-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-feature); padding: 14px 16px 12px; margin-bottom: 12px; box-shadow: var(--shadow); }
 .td-head { display: flex; align-items: center; gap: 8px; font-size: var(--fs-sm); color: var(--muted); margin-bottom: 4px; }
-.td-head > span:last-child { display: inline-block; }
-.td-head > span:last-child::first-letter { text-transform: uppercase; }
+.td-head > span:nth-child(2) { display: inline-block; }
+.td-head > span:nth-child(2)::first-letter { text-transform: uppercase; }
+.td-more { margin-left: auto; display: inline-flex; align-items: center; gap: 2px; font-weight: 600; color: var(--accent); text-decoration: none; }
+.td-more .ic { width: 16px; height: 16px; }
 .td-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
 .td-head + .td-row { border-top: 0; }
 .td-ico { flex: none; width: 42px; height: 42px; border-radius: var(--r-ctl); background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-size: var(--fs-xl); }
@@ -1655,3 +1657,73 @@ button.li { font-weight: 400; }
 .empty-ic { width: 72px; height: 72px; margin: 0 auto 16px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); }
 .empty-ic .ic { width: 32px; height: 32px; }
 .empty-ic.warn { background: var(--warn-soft); color: var(--warn); }
+
+/* ---------- tryb „W podróży” – ekran Dziś (dzis.js) ---------- */
+.dz-head { margin: 4px 0 14px; }
+.dz-top { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.dz-state .live { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-fill); animation: pl-pulse 1.6s ease-in-out infinite; }
+.dz-trip { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-sm); font-weight: 600; color: var(--muted); text-decoration: none; }
+.dz-day { display: flex; align-items: center; gap: 12px; margin: 12px 0 10px; }
+.dz-day .icon-btn { margin: 0; background: var(--surface); border: 1px solid var(--line); }
+.dz-day .icon-btn.off { opacity: .35; }
+.dz-day-t { flex: 1; min-width: 0; text-align: center; }
+.dz-n { font-size: var(--fs-cap); font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--accent); }
+.dz-day-t h2 { margin: 2px 0 0; font-family: var(--font-display); font-weight: 500; font-size: var(--fs-2xl); line-height: 1.15; }
+.dz-day-t h2::first-letter { text-transform: uppercase; }
+.dz-wx { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 12px; }
+.dz-wx-ico { font-size: var(--fs-2xl); line-height: 1; }
+.dz-wx b { font-size: var(--fs-xl); font-weight: 600; }
+.dz-wx small { margin-left: 6px; color: var(--muted); font-size: var(--fs-body); }
+.dz-wx-rain { font-size: var(--fs-sm); color: var(--muted); }
+.dz-wx-rain::before { content: "💧"; margin-right: 2px; }
+.dz-note { margin: 0 0 12px; }
+.dz-stay { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.dz-stay-main { display: flex; align-items: center; gap: 12px; padding: 14px; color: inherit; text-decoration: none; }
+.dz-stay-main .li-ico { background: var(--accent-soft); color: var(--accent); }
+.dz-stay.is-out .dz-stay-main .li-ico { background: var(--warn-soft); color: var(--warn); }
+.dz-stay-main > .ic:last-child { width: 18px; height: 18px; color: var(--faint); }
+.dz-when { color: var(--text) !important; }
+.dz-acts { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); border-top: 1px solid var(--line); }
+.dz-act { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 48px; padding: 0 6px; color: var(--accent); font-size: var(--fs-sm); font-weight: 600; text-decoration: none; }
+.dz-act + .dz-act { border-left: 1px solid var(--line); }
+.dz-act:active { background: var(--surface-2); }
+.dz-tickets { display: flex; flex-direction: column; gap: 8px; }
+.dz-ticket { display: flex; align-items: center; gap: 12px; padding: 10px 10px 10px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); color: inherit; text-decoration: none; }
+.dz-tk-ico { flex: none; width: 36px; height: 36px; border-radius: var(--r-sm); display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); }
+.dz-tk-ico .ic { width: 20px; height: 20px; }
+.dz-tk-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.dz-tk-main b { font-weight: 600; overflow-wrap: anywhere; }
+.dz-tk-main small { font-size: var(--fs-sm); color: var(--muted); }
+.dz-tk-qr { flex: none; display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border-radius: var(--r-btn); background: var(--accent-fill); color: var(--accent-ink); font-size: var(--fs-sm); font-weight: 600; }
+.dz-tk-qr .ic { width: 20px; height: 20px; }
+.dz-plan .dz-row { gap: 10px; padding-right: 10px; }
+.dz-time { flex: none; width: 44px; font-size: var(--fs-sm); font-weight: 600; font-variant-numeric: tabular-nums; }
+.dz-ico { display: inline-flex; vertical-align: -3px; color: var(--accent); }
+.dz-ico .ic { width: 18px; height: 18px; }
+.dz-row .li-main { color: inherit; text-decoration: none; }
+.dz-nav { margin: 0; color: var(--accent); }
+.dz-row.is-done .dz-time, .dz-row.is-done .li-main { color: var(--muted); }
+.dz-row.is-done .li-main b { text-decoration: line-through; text-decoration-color: var(--faint); }
+.dz-add { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 4px; color: var(--accent); font-size: var(--fs-sm); font-weight: 600; text-decoration: none; }
+.dz-money { display: flex; flex-direction: column; gap: 10px; padding: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.dz-money-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.dz-spent { font-family: var(--font-display); font-weight: 500; font-size: var(--fs-2xl); line-height: 1.1; }
+.dz-cats { margin: 0 -14px; padding: 2px 14px 2px; }
+.dz-cat span .ic { width: 16px; height: 16px; }
+.dz-amt { display: flex; gap: 8px; }
+.dz-amt input { min-width: 0; min-height: 48px; padding: 0 12px; border-radius: var(--r-ctl); border: 1px solid var(--line); background: var(--bg); color: var(--text); font: inherit; }
+.dz-amt input[name="amount"] { flex: 1; }
+.dz-amt input[name="currency"] { flex: none; width: 84px; text-transform: uppercase; }
+.dz-amt input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.dz-amt .btn { flex: none; width: 48px; padding: 0; }
+.dz-tools { margin: 16px 0 6px; }
+.dz-next { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; padding: 14px; border-radius: var(--radius); background: var(--surface-2); color: inherit; text-decoration: none; }
+.dz-next-h { display: flex; align-items: center; gap: 8px; font-size: var(--fs-sm); color: var(--muted); }
+.dz-next-h .section { margin: 0; }
+.dz-next-h .ic { margin-left: auto; width: 18px; height: 18px; }
+.dz-next-row { display: flex; align-items: center; gap: 8px; font-size: var(--fs-sm); }
+.dz-next-row b { width: 44px; flex: none; font-variant-numeric: tabular-nums; }
+.dz-next-row > span:last-child { min-width: 0; overflow-wrap: anywhere; }
+.hm-today { margin: 12px 0 0; }
+.dz-head ~ .sec-h { margin-top: 20px; }
+@media (max-width: 380px) { .dz-act { flex-direction: column; gap: 2px; min-height: 56px; font-size: var(--fs-cap); white-space: nowrap; } }

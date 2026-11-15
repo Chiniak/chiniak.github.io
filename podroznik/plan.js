@@ -76,7 +76,8 @@
   const byOrder = (a, b) => (a.order ?? 0) - (b.order ?? 0) || (a.created || "").localeCompare(b.created || "");
 
   /* ---------- karta „Dziś” ---------- */
-  function todayCard(trip, events, items) {
+  // opts.more: link do ekranu „Dziś” (tryb W podróży, dzis.js) w nagłówku karty
+  function todayCard(trip, events, items, opts = {}) {
     const now = nowStr(), today = App.todayStr();
     const all = events.map(e => ({ at: e.at, end: e.end, icon: e.ico || e.icon, title: e.title, sub: e.sub, nav: e.nav, href: e.href }))
       .concat(items.filter(i => i.time).map(i => ({
@@ -113,7 +114,7 @@
     ].filter(Boolean).map(x => `<span>${x}</span>`).join(" · ");
     return `
       <section class="today-card" aria-label="Dziś">
-        <div class="td-head"><span class="chip accent">Dziś</span><span>${App.fmtDayLong(today)}</span></div>
+        <div class="td-head"><span class="chip accent">Dziś</span><span>${App.fmtDayLong(today)}</span>${opts.more ? `<a class="td-more" href="#/dzis/${trip.id}">Cały dzień${App.icon("chev", "sm")}</a>` : ""}</div>
         ${html}
         ${summary ? `<div class="td-foot">${summary}</div>` : ""}
       </section>`;
@@ -201,7 +202,7 @@
         <button type="button" class="pl-dchip pl-dchip-ideas" data-go="ideas" aria-label="Pomysły – bez dnia"><small>💡</small><b>${ideas.length}</b><i aria-hidden="true"></i></button>
       </nav>`;
 
-    if (ongoing) html += todayCard(trip, events, items);
+    if (ongoing) html += todayCard(trip, events, items, { more: true });
 
     // szybki dostęp (etap 10–11 + bilety w planie)
     const tool = (href, ico, name, sub) => `<a class="plan-link pl-tool" href="${href}" title="${sub}"><i aria-hidden="true">${App.icon(ico)}</i><span>${name}</span></a>`;
@@ -333,7 +334,7 @@
           // co minutę odśwież tylko kartę „Dziś” (liczniki „za X min”), bez przewijania strony
           timer = setInterval(() => {
             const card = view.querySelector(".today-card");
-            if (card && !document.hidden) card.outerHTML = todayCard(trip, events, items);
+            if (card && !document.hidden) card.outerHTML = todayCard(trip, events, items, { more: true });
           }, 60000);
         }
         view.querySelectorAll(".pl-handle").forEach(h => enableDrag(h));
@@ -721,5 +722,5 @@
   App.route(/^\/plan\/([\w-]+)\/nowy$/, ([tripId], q) => itemForm({ tripId, date: q.d, q }));
   App.route(/^\/punkt\/([\w-]+)$/, ([itemId]) => itemForm({ itemId }));
 
-  App.Plan = { infoFromText, segEvents, CATS, catOf, pickTrip, tripOptions, routeIcon, placeInDay };
+  App.Plan = { infoFromText, segEvents, CATS, catOf, pickTrip, tripOptions, routeIcon, placeInDay, todayCard, mergeDay, byOrder, inTime };
 })();

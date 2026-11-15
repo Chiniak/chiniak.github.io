@@ -660,4 +660,20 @@ self.I18N_EN = {
   "Dołącz bilety i zdjęcia ({}) – plik będzie większy": "Include tickets and photos ({}) – the file will be bigger",
   /* etap 8 */
   "To {}": "That's {}", "{} {} bez położenia": "{} {} without a location", "Uzupełnij położenie (internet)": "Fill in locations (internet)", "Plan jako tekst": "Plan as text",
+
+  /* ---------- tryb „W podróży” – ekran Dziś (dzis.js) ---------- */
+  "Tryb „W podróży”": "Travel mode", "Gdy podróż trwa, tu zobaczysz cały dzień na jednym ekranie: co teraz i dalej, nocleg, bilety, plan i wydatki.":
+    "While a trip is on, this screen shows the whole day: what's now and next, where you sleep, tickets, plan and spending.",
+  "Poprzedni dzień: {}": "Previous day: {}", "Następny dzień: {}": "Next day: {}", "W podróży": "On the road", "Miniony dzień": "Past day",
+  "Podgląd": "Preview", "Podróż zaczyna się {} – wtedy ten ekran pokaże, co teraz i co dalej.": "The trip starts on {} – then this screen will show what's now and next.",
+  "Podróż się zakończyła – to podgląd jej dni.": "The trip is over – this is a preview of its days.", "Wymeldowanie dziś": "Check-out today",
+  "Nocleg · zameldowanie dziś": "Stay · check-in today", "od {}": "from {}", "wymeldowanie do {}": "check-out by {}", "Zadzwoń": "Call",
+  "Bilety na ten dzień": "Tickets for this day", "Plan dnia": "Day plan", "Cały plan": "Full plan", "Nawiguj: {}": "Navigate: {}",
+  "Dodaj punkt": "Add a stop", "Nic nie zaplanowano – dodaj punkt": "Nothing planned – add a stop", "Wydatki dziś": "Spent today",
+  "Wydatki tego dnia": "Spent this day", "Mapa dnia": "Day map", "Następny dzień": "Next day", "{} punkt bez godziny": "{} stop without a time",
+  "{} punkty bez godziny": "{} stops without a time", "{} punktów bez godziny": "{} stops without a time", "Nic jeszcze nie zaplanowano": "Nothing planned yet",
+  "Ostatni dzień podróży.": "Last day of the trip.", "Plan podróży": "Trip plan", "Cały dzień": "Whole day", "Dziś w podróży": "Today on the road",
+  "Ekran startowy w trakcie podróży": "Start screen during a trip", "„Dziś” – jeden ekran na dzień: co teraz i dalej, nocleg, bilety, plan, wydatki":
+    "“Today” – one screen for the day: now and next, stay, tickets, plan, spending",
+  "Dodano {}": "Added {}", "Dodano {} · uzupełnij kurs {}": "Added {} · fill in the {} rate",
 };
