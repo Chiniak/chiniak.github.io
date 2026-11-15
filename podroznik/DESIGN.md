@@ -48,7 +48,7 @@ Uwaga: teksty z emoji są kluczami tłumaczeń w `i18n-en.js` – zmieniając te
 Ruch: krótkie przejścia 0.12–0.25 s; `prefers-reduced-motion` wyłącza animacje.
 
 ## Etapy redesignu
-1. Design system ✔ (ten dokument) · 2. Podróże ✔ · 3. Bilety ✔ · 4. Plan ✔ · 5. Pakowanie ✔ · 6. Ustawienia ✔ · 7. ekrany dodatkowe (7a ✔ szczegóły podróży + formularze, 7b ✔ mapa, Odkrywaj, karty, offline, 7c ✔ budżet, rozliczenie, dokumenty) · 8. szlif (animacje, dostępność, tablet, style z JS) · 9. testy całości.
+1. Design system ✔ (ten dokument) · 2. Podróże ✔ · 3. Bilety ✔ · 4. Plan ✔ · 5. Pakowanie ✔ · 6. Ustawienia ✔ · 7. ekrany dodatkowe (7a ✔ szczegóły podróży + formularze, 7b ✔ mapa, Odkrywaj, karty, offline, 7c ✔ budżet, rozliczenie, dokumenty, 7d ✔ kopia, PIN, przypomnienia, Gmail, udostępnianie, z maila) · 8. szlif (animacje, dostępność, tablet, style z JS) · 9. testy całości.
 Makieta zatwierdzona przez właściciela: ekran Podróże – nagłówek z powitaniem, karta bieżącej podróży ze zdjęciem i odliczaniem,
 pasek postępu (spakowane / punkty planu / budżet), najbliższy bilet jako odcinek z QR, zadanie przed wyjazdem, nadchodzące
 podróże w poziomym rzędzie, szybkie akcje (Nowa podróż, Z Gmaila, Otwórz wspólną). Decyzje: ciemny turkus do tekstu,
@@ -176,3 +176,18 @@ dwa kroje, zdjęcia bez motywów religijnych, tło ze zdjęć – nowi użytkown
   turkus / ostrzeżenie / błąd), tytuł, numer, chip stanu (ważny / wkrótce wygasa / nieważny / bez daty) + tekst ważności, ostrzeżenia
   z ikoną (`tripWarnings` zwraca `{ lvl, txt }`, bez emoji). Podgląd: karta `.doc-head` (ikona, chip, tytuł w Newsreader, numer, pasek
   pozostałej ważności do 10 lat), ostrzeżenia jako panele, „Kopiuj numer”, fakty jako `dl.list`, notatka jako `.td-note`. Formularz: grupy Ważność / Skan i notatka.
+
+## Kopia, blokada, przypomnienia, Gmail, udostępnianie, z maila (etap 7d)
+- Wspólny wzór ekranów „informacyjnych”: nagłówek `.tx-hero` (ikona w białym kwadracie na `--accent-soft`, tytuł w Newsreader, opis),
+  karta stanu `.pr-sum` z etykietą wersalikami, chipem stanu i listą faktów `dl.bk-facts`, formularze w karcie `.bg-cfg`,
+  ustawienia jako `.list` z wierszami (`.li` + `li-ico`), uwagi jako `.td-note` (ikona + tekst; `white-space: normal`, notatki
+  użytkownika `.td-note.note` / `.doc-note` zachowują nowe wiersze).
+- Kopia (`backup.js`): karta „Ostatnia kopia” (`#bk-last` – data albo „jeszcze nie było”; chip aktualna / stara / są zmiany / brak),
+  ostrzeżenie `.bk-warn`, „Zrób kopię” w karcie `#bk-export`, porady `.bk-tips` jako lista z numerami w kółkach, „Przywróć z kopii”.
+- Blokada (`lock.js`): nagłówek z chipem wł./wył., „Ustaw PIN” w karcie, ostrzeżenie o PIN-ie; po włączeniu ustawienia jako lista
+  (`.lk-row` – czas blokady, odcisk palca jako przełącznik) i „Zmień PIN albo wyłącz”. Ekran blokady bez zmian.
+- Przypomnienia (`reminders.js`): karta stanu `.rm-status` (chip działają / nie działają, fakty, przyciski z ikonami), główny przełącznik
+  `.rm-master`, rodzaje transportu `.rm-types` z ikoną SVG i opcjami wciętymi o 48 px, „Pakowanie i plan” jako lista, kalendarz w karcie,
+  najbliższe przypomnienia `.list.rm-list` (ikona dzwonka, dzień i godzina po prawej).
+- Gmail (`gmail.js`): `.gm-intro` = nagłówek + lista rodzajów rezerwacji z ikonami + uwaga o prywatności; konto jako `.pr-sum.gm-account`.
+- Udostępnianie (`share.js`) i „Dodaj z maila” (`email.js`): nagłówek `.tx-hero`, przyciski z ikonami, dołączanie biletów jako przełącznik `.sw`.
