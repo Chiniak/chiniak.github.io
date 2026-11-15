@@ -1,6 +1,6 @@
 # Podróżnik – stan projektu (do kontynuacji w nowej sesji)
 
-Ostatnia aktualizacja: 15 listopada 2026 (noc) – scalone PR #1–#22. **TRWA REDESIGN „Premium Light” (9 etapów) – zrobione etapy 1–6 i 7a (szczegóły podróży + formularze, PR do otwarcia/otwarty), NASTĘPNY: 7b (mapa, Odkrywaj, karty dla kierowcy, rozmówki, offline).** Zasady wyglądu, tokeny, decyzje właściciela i opis zrobionych ekranów: **`DESIGN.md` – przeczytaj przed każdą zmianą wyglądu.** Zacznij od tego pliku (sekcja „REDESIGN – TU ZACZNIJ” niżej), potem `DESIGN.md`, `PLAN.md` i `DO-SPRAWDZENIA.md`.
+Ostatnia aktualizacja: 15 listopada 2026 (noc) – scalone PR #1–#22. **TRWA REDESIGN „Premium Light” (9 etapów) – zrobione etapy 1–6 i 7a (szczegóły podróży + formularze, **PR #23 otwarty – czeka na „scalaj”**), NASTĘPNY: 7b (mapa, Odkrywaj, karty dla kierowcy, rozmówki, offline).** Zasady wyglądu, tokeny, decyzje właściciela i opis zrobionych ekranów: **`DESIGN.md` – przeczytaj przed każdą zmianą wyglądu.** Zacznij od tego pliku (sekcja „REDESIGN – TU ZACZNIJ” niżej), potem `DESIGN.md`, `PLAN.md` i `DO-SPRAWDZENIA.md`.
 
 ## REDESIGN „Premium Light” – TU ZACZNIJ
 - Właściciel 15.11 przysłał pełną specyfikację redesignu (premium, jasny minimalizm, styl magazynu podróżniczego) i zatwierdził
@@ -23,7 +23,7 @@ Ostatnia aktualizacja: 15 listopada 2026 (noc) – scalone PR #1–#22. **TRWA R
   wysyłać przez SendUserFile (display: attach), nie commitować. Ostatnie wysłane: **2.4.0 (versionCode 8)** – etapy 1–4 + zdjęcia celu.
   Przy następnym APK podbij versionCode/versionName w `podroznik-app/android/app/build.gradle`. Etapy 3–4 są w APK 2.4.0 (czeka na ocenę właściciela).
 - Właściciel gra czasem w Tibię – prosił, żeby **nie otwierać mu żadnych okien** (bez podglądów/artefaktów otwieranych automatycznie; pliki tylko jako załącznik).
-- **Na start następnej sesji:** jeśli właściciel napisze „scalaj” – scal PR z etapem 7a, potem `git checkout -B claude/travel-planning-app-tl9mvf origin/main`.
+- **Na start następnej sesji:** jeśli właściciel napisze „scalaj” – scal PR #23 (etap 7a), potem `git checkout -B claude/travel-planning-app-tl9mvf origin/main`.
   Etap 7 podzielony na PR: 7a ✔ szczegóły podróży + formularze; **następny 7b**: mapa, Odkrywaj,
   karty dla kierowcy, rozmówki, offline; 7c: budżet, rozliczenie, dokumenty; 7d: kopia, PIN, Gmail, przypomnienia, okna/toasty).
   Otwarte pytania do właściciela: (1) co pokazywać jako wersję w Ustawieniach → O aplikacji (teraz nieaktualne „1.2 · etapy 0–11”,
