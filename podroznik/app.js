@@ -199,6 +199,7 @@
     const [last, lock] = await Promise.all([DB.getSetting("lastBackup", null), DB.getSetting("lock", null)]);
     const age = last ? Math.floor((Date.now() - new Date(last.at)) / 86400000) : null;
     const backupTxt = !last ? "jeszcze nie zrobiona" : age === 0 ? "ostatnia dziś" : `ostatnia ${age} ${App.plural(age, "dzień", "dni", "dni")} temu`;
+    const gmailCfg = App.Gmail ? await DB.getSetting("gmail", null) : null;
     const opt = (v, label) => `<button type="button" data-theme-opt="${v}" aria-pressed="${theme === v}">${label}</button>`;
     return {
       html: `
@@ -239,6 +240,8 @@
         </div>
         <a class="plan-link" href="#/ustawienia/przypomnienia"><span aria-hidden="true">🔔</span> Przypomnienia i kalendarz
           <span class="muted">– ${"Notification" in window && Notification.permission === "granted" ? "powiadomienia włączone" : "ustaw powiadomienia"}</span><b aria-hidden="true">›</b></a>
+        ${App.Gmail && App.Gmail.available() ? `<a class="plan-link" href="#/gmail?wroc=%23%2Fustawienia"><span aria-hidden="true">📬</span> Konto Google (Gmail)
+          <span class="muted">– ${gmailCfg ? App.esc(gmailCfg.email) : "propozycje z maili"}</span><b aria-hidden="true">›</b></a>` : ""}
         <a class="plan-link${!last || age > 30 ? " warn" : ""}" href="#/ustawienia/kopia"><span aria-hidden="true">💾</span> Kopia zapasowa
           <span class="muted">– ${backupTxt}</span><b aria-hidden="true">›</b></a>
         <a class="plan-link" href="#/ustawienia/blokada"><span aria-hidden="true">🔒</span> Blokada PIN-em

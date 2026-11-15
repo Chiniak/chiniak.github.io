@@ -404,7 +404,7 @@
       let v = m[1].trim();
       if (!v && lines[i + 1]) v = lines[i + 1];
       if (letters(v) >= 4 && !/^\d+\s*[a-z]?$/i.test(v) && !/rząd|row|sektor|seat/i.test(v)) {
-        if (lines[i + 1] && m[1].trim() && /\d/.test(lines[i + 1]) && letters(lines[i + 1]) >= 3 && !LABEL_PLACE.test(lines[i + 1]) && !NOT_TITLE.test(lines[i + 1])) v += ", " + lines[i + 1]; // adres w dwóch wierszach
+        if (lines[i + 1] && m[1].trim() && /\d/.test(lines[i + 1]) && letters(lines[i + 1]) >= 3 && !LABEL_PLACE.test(lines[i + 1]) && !NOT_TITLE.test(lines[i + 1]) && !/^\p{L}[\p{L} ]{2,25}:/u.test(lines[i + 1])) v += ", " + lines[i + 1]; // adres w dwóch wierszach
         out.place = v.slice(0, 200); break;
       }
     }

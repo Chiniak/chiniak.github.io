@@ -45,8 +45,34 @@ pomaga `~/.gradle/init.d/maven-mirror.gradle` z lustrem `https://maven-central.s
 
 Wersja docelowa: `./gradlew assembleRelease`, potem `zipalign` i `apksigner` jak w `../podroznik-android/README.md`.
 
+## Logowanie Google i „📬 Z Gmaila” (wersja 2.1)
+Aplikacja sama szuka w Gmailu potwierdzeń rezerwacji (loty, pociągi, autobusy, promy, noclegi, wycieczki, bilety,
+stoliki w restauracjach) i proponuje dodanie ich do podróży – `podroznik/gmail.js`, wtyczka `GoogleAuthPlugin.java`
+(Google Identity Services – Authorization API, `play-services-auth`). Zakres: `gmail.readonly`. Bez serwera i bez hasła:
+token dostępu (ok. 1 h) dostaje telefon, Gmail API pyta wprost. Przy uruchomieniu aplikacja sprawdza pocztę sama (co 6 h).
+
+**Konfiguracja w Google Cloud (raz, robi właściciel konta):**
+1. https://console.cloud.google.com → nowy projekt, np. „Podróżnik”.
+2. *APIs & Services → Library* → **Gmail API** → *Enable*.
+3. *Google Auth Platform* (dawniej „OAuth consent screen”) → *Get started*: nazwa aplikacji „Podróżnik”, e-mail kontaktowy,
+   odbiorcy **External**. Potem *Audience* → zostaw **Testing** i w *Test users* dodaj swój adres Gmail.
+   *Data access* → *Add or remove scopes* → `https://www.googleapis.com/auth/gmail.readonly`.
+4. *Clients* → *Create client* → typ **Android**:
+   - wersja testowa: pakiet `io.github.chiniak.podroznik.test`, SHA-1 `25:50:DC:17:A8:54:34:A0:04:E2:4A:86:F0:37:2F:51:94:6F:86:FD`
+   - wersja docelowa: drugi klient – pakiet `io.github.chiniak.podroznik`, SHA-1 prawdziwego klucza
+     (`keytool -list -v -keystore podroznik.keystore`).
+5. (opcjonalnie, dla strony WWW) *Clients* → *Create client* → **Web application**, *Authorized JavaScript origins*:
+   `https://chiniak.github.io` → identyfikator klienta wpisać do `WEB_CLIENT_ID` w `podroznik/gmail.js`.
+
+W trybie **Testing** Google pokazuje ostrzeżenie „Google nie zweryfikował tej aplikacji” – *Kontynuuj*. Zgoda w tym trybie
+może wygasać po 7 dniach – wtedy aplikacja poprosi o ponowne zalogowanie. Publikacja dla innych osób wymagałaby
+weryfikacji Google (zakres „restricted”) – dla własnego użytku niepotrzebna.
+
+Błąd „Aplikacja nie jest zarejestrowana w Google Cloud” (kod 10) = brak klienta Android z tym pakietem i odciskiem SHA-1.
+
 ## Plan
 1. ✅ Projekt Capacitor, pliki przez „Udostępnij”, aparat, położenie, ikona (wersja 2.0.0)
-2. ⬜ Punktualne powiadomienia (Local Notifications – także po restarcie telefonu) + jasność na maks przy bilecie
-3. ⬜ „Udostępnij → Podróżnik” dla plików (PDF, .ics, zdjęcia biletów z Gmaila i galerii)
-4. ⬜ Widżet na ekranie głównym, OCR z ML Kit, odcisk palca natywnie (WebAuthn w WebView nie działa – teraz tylko PIN)
+2. ✅ (2.1) Logowanie Google + propozycje z Gmaila
+3. ⬜ Punktualne powiadomienia (Local Notifications – także po restarcie telefonu) + jasność na maks przy bilecie
+4. ⬜ „Udostępnij → Podróżnik” dla plików (PDF, .ics, zdjęcia biletów z Gmaila i galerii)
+5. ⬜ Widżet na ekranie głównym, OCR z ML Kit, odcisk palca natywnie (WebAuthn w WebView nie działa – teraz tylko PIN)
