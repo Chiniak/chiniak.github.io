@@ -187,6 +187,13 @@
     $("#action").innerHTML = r.action || "";
     view.innerHTML = r.html;
     if (r.after) r.after(view);
+    // poziome paski wyboru (rodzaj, kategoria): zaznaczony element widoczny, nawet gdy jest na końcu listy
+    view.querySelectorAll(".type-chips").forEach(bar => {
+      const c = bar.querySelector("input:checked");
+      if (!c || bar.scrollWidth <= bar.clientWidth) return;
+      const b = bar.getBoundingClientRect(), k = c.closest(".type-chip").getBoundingClientRect();
+      if (k.right > b.right || k.left < b.left) bar.scrollLeft += k.left - b.left - 16;
+    });
     cleanup = r.cleanup || null;
     window.scrollTo(0, 0);
     if (App.Backdrop) App.Backdrop.next(); // losowe zdjęcie w tle przy każdej zmianie ekranu

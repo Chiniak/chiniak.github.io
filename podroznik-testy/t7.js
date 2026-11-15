@@ -61,7 +61,7 @@ const SP = process.argv[2];
   console.log('own template:', await p.textContent('.tpl >> nth=0'));
   // trip page link
   await p.goto(B+'#/podroze/'+tid); await p.waitForTimeout(400);
-  console.log('trip link:', (await p.textContent('.plan-link >> nth=1')).replace(/\s+/g,' ').trim());
+  console.log('trip link:', (await p.textContent('.td-stats a[href^="#/pakowanie/"]')).replace(/\s+/g,' ').trim());
   await shot('k-trip');
   await p.emulateMedia({ colorScheme: 'dark' }); await p.goto(B+'#/pakowanie/'+tid); await p.waitForTimeout(400); await shot('k-dark');
   console.log('errors:', errs); await b.close(); })();

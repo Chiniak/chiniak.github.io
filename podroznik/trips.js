@@ -299,36 +299,63 @@
       back: t ? `#/podroze/${t.id}` : "#/podroze",
       html: `
         <form id="trip-form" class="form" novalidate>
-          <label class="field"><span>Nazwa</span>
-            <input name="name" required maxlength="80" placeholder="np. Majówka w Lizbonie" value="${esc(v.name)}"></label>
-          <label class="field"><span>Cel podróży</span>
-            <input name="destination" maxlength="80" placeholder="np. Lizbona, Portugalia" value="${esc(v.destination)}"></label>
-          <div class="grid2">
-            <label class="field"><span>Od</span><input type="date" name="start" required value="${esc(v.start)}"></label>
-            <label class="field"><span>Do</span><input type="date" name="end" required value="${esc(v.end)}"></label>
+          <div class="fsec">
+            <label class="field"><span>Nazwa</span>
+              <input name="name" required maxlength="80" placeholder="np. Majówka w Lizbonie" value="${esc(v.name)}"></label>
+            <label class="field"><span>Cel podróży</span>
+              <input name="destination" maxlength="80" placeholder="np. Lizbona, Portugalia" value="${esc(v.destination)}"></label>
           </div>
-          <fieldset class="field"><legend>Kolor</legend><div class="swatches">${swatches}</div></fieldset>
-          <div class="field"><span>Zdjęcie w tle</span>
-            <div class="cover-pick" id="cover-box" data-cover="${t ? t.id : ""}">
-              <label class="btn">🖼️ ${cover ? "Zmień zdjęcie" : "Wybierz zdjęcie"}<input type="file" id="cover" accept="image/*" hidden></label>
-              ${cover ? `<button type="button" class="btn" id="cover-del">Usuń</button>` : ""}
-              ${auto ? `<button type="button" class="btn" id="cover-auto-del">Usuń zdjęcie celu</button>` : ""}
+          <div class="fsec"><h3 class="section">Termin</h3>
+            <div class="grid2">
+              <label class="field"><span>Od</span><input type="date" name="start" required value="${esc(v.start)}"></label>
+              <label class="field"><span>Do</span><input type="date" name="end" required value="${esc(v.end)}"></label>
             </div>
-            ${auto ? `<small class="muted" id="cover-auto-txt">Zdjęcie celu dobrane automatycznie · ${esc(auto.credit)}</small>` : ""}</div>
-          <label class="field"><span>Notatka</span>
-            <textarea name="note" rows="3" placeholder="opcjonalnie">${esc(v.note)}</textarea></label>
+            <p class="f-hint" id="tf-days" aria-live="polite"></p>
+          </div>
+          <div class="fsec"><h3 class="section">Wygląd</h3>
+            <div class="field"><span>Okładka</span>
+              <div class="cover-pick hm-hero" id="cover-box" data-cover="${t ? t.id : ""}" style="--c:${esc(v.color || COLORS[0])}">
+                <div class="hm-hero-body"><span class="hm-dest" id="cp-dest">${esc(v.destination)}</span><h2 id="cp-name">${esc(v.name) || "Nowa podróż"}</h2></div>
+                <div class="cp-btns">
+                  <label class="glass cp-btn">${ic("image", "sm")}<span>${cover ? "Zmień zdjęcie" : "Wybierz zdjęcie"}</span><input type="file" id="cover" accept="image/*" hidden></label>
+                  ${cover ? `<button type="button" class="glass cp-btn" id="cover-del">${ic("trash", "sm")}<span>Usuń</span></button>` : ""}
+                  ${auto ? `<button type="button" class="glass cp-btn" id="cover-auto-del">${ic("close", "sm")}<span>Usuń zdjęcie celu</span></button>` : ""}
+                </div>
+              </div>
+              ${auto ? `<small class="f-hint" id="cover-auto-txt">Zdjęcie celu dobrane automatycznie · ${esc(auto.credit)}</small>` : `<small class="f-hint">Bez zdjęcia okładka ma kolor podróży.</small>`}</div>
+            <fieldset class="field"><legend>Kolor</legend><div class="swatches">${swatches}</div></fieldset>
+          </div>
+          <div class="fsec"><h3 class="section">Notatka</h3>
+            <label class="field"><span class="sr">Notatka</span>
+              <textarea name="note" rows="3" placeholder="np. wiza, ubezpieczenie, kontakt do hotelu">${esc(v.note)}</textarea></label>
+          </div>
           <p class="error" id="err" hidden></p>
-          <button class="btn primary wide" type="submit">${t ? "Zapisz zmiany" : "Utwórz podróż"}</button>
-          ${t ? `<button class="btn danger wide" type="button" id="del">Usuń podróż</button>` : ""}
+          <div class="f-actions">
+            <button class="btn primary wide" type="submit">${t ? "Zapisz zmiany" : "Utwórz podróż"}</button>
+            ${t ? `<button class="btn danger wide" type="button" id="del">${ic("trash", "sm")} Usuń podróż</button>` : ""}
+          </div>
         </form>`,
       after(view) {
         const f = view.querySelector("#trip-form");
+        const daysEl = view.querySelector("#tf-days");
+        const showDays = () => {
+          const ok = f.start.value && f.end.value && f.end.value >= f.start.value;
+          const n = ok ? dayDiff(f.start.value, f.end.value) + 1 : 0;
+          daysEl.textContent = ok ? `${n} ${plural(n, "dzień", "dni", "dni")}${f.start.value > todayStr() ? ` · wyjazd za ${dayDiff(todayStr(), f.start.value)} ${plural(dayDiff(todayStr(), f.start.value), "dzień", "dni", "dni")}` : ""}` : "";
+        };
         f.start.addEventListener("change", () => {
           if (!f.end.value || f.end.value < f.start.value) f.end.value = f.start.value;
           f.end.min = f.start.value;
+          showDays();
         });
+        f.end.addEventListener("change", showDays);
+        showDays();
         if (!t) f.name.focus();
         const box = view.querySelector("#cover-box");
+        // podgląd okładki: nazwa, cel i kolor na żywo
+        f.name.addEventListener("input", () => { view.querySelector("#cp-name").textContent = f.name.value.trim() || "Nowa podróż"; });
+        f.destination.addEventListener("input", () => { view.querySelector("#cp-dest").textContent = f.destination.value.trim(); });
+        f.addEventListener("change", e => { if (e.target.name === "color") box.style.setProperty("--c", e.target.value); });
         if (shown) unpaint = paintCovers(view, { [t.id]: shown });
         const adel = view.querySelector("#cover-auto-del");
         if (adel) adel.onclick = () => { dropAuto = true; if (!newCover) box.classList.remove("has-photo"); adel.hidden = true; view.querySelector("#cover-auto-txt").hidden = true; };
@@ -379,17 +406,18 @@
   App.route(/^\/podroze\/([\w-]+)\/edytuj$/, ([id]) => tripForm(id));
 
   /* ================= SZCZEGÓŁY PODRÓŻY + OŚ CZASU ================= */
-  function chips(s) {
+  function chips(s, noWho) {
     const T = typeOf(s);
     const out = [];
-    for (const [k, label] of T.extra) if (s[k]) out.push(k === "carrier" || k === "number" ? esc(s[k]) : `${label}: ${esc(s[k])}`);
+    for (const [k, label] of T.extra) if (s[k] && !(noWho && (k === "carrier" || k === "number"))) out.push(k === "carrier" || k === "number" ? esc(s[k]) : `${label}: ${esc(s[k])}`);
     if (s.booking) out.push(`Rez.: ${esc(s.booking)}`);
     if (s.price) out.push(`${esc(s.price)} ${esc(s.currency || "")}`.trim());
     return out.length ? `<div class="chips">${out.map(c => `<span>${c}</span>`).join("")}</div>` : "";
   }
 
-  // 🎫 przy odcinku, który ma podpięte bilety
-  const ticketMark = n => n ? `<span class="tl-tickets" title="Bilety: ${n}">🎫${n > 1 ? " " + n : ""}</span>` : "";
+  // bilet przy odcinku, który ma podpięte pliki
+  const ticketMark = n => n ? `<span class="tl-tickets chip accent" title="Bilety: ${n}">${ic("ticket", "sm")}${n > 1 ? " " + n : ""}</span>` : "";
+  const segIco = s => `<div class="tl-ico" aria-hidden="true">${ic(ICON_OF[s.type] || "compass")}</div>`;
 
   function segCard(s, nTickets = 0) {
     const T = typeOf(s);
@@ -397,11 +425,12 @@
       const nights = s.arrive ? dayDiff(s.depart, s.arrive) : 0;
       return `
         <a class="tl-card" href="#/odcinek/${s.id}">
-          <div class="tl-ico" aria-hidden="true">${T.icon}</div>
+          ${segIco(s)}
           <div class="tl-main">
-            <div class="tl-time">Zameldowanie ${App.time(s.depart)}${nights > 0 ? ` <span class="muted">· ${nights} ${plural(nights, "noc", "noce", "nocy")}</span>` : ""}${ticketMark(nTickets)}</div>
+            <div class="tl-kind">${esc(T.name)}${ticketMark(nTickets)}</div>
             <div class="tl-route">${esc(s.name || "Nocleg")}</div>
-            ${s.address ? `<div class="muted small">${esc(s.address)}</div>` : ""}
+            <div class="tl-time">Zameldowanie ${App.time(s.depart)}${nights > 0 ? ` <span class="muted">· ${nights} ${plural(nights, "noc", "noce", "nocy")}</span>` : ""}</div>
+            ${s.address ? `<div class="tl-addr">${ic("pin", "xs")}<span>${esc(s.address)}</span></div>` : ""}
             ${chips(s)}
           </div>
         </a>`;
@@ -409,14 +438,16 @@
     const arriveDay = s.arrive ? dayDiff(s.depart, s.arrive) : 0;
     const dur = s.arrive ? App.duration(App.segMinutes(s)) : "";
     const shift = App.tzShiftText(s);
+    const who = [s.carrier, s.number].filter(Boolean).map(esc).join(" · ");
     return `
       <a class="tl-card" href="#/odcinek/${s.id}">
-        <div class="tl-ico" aria-hidden="true">${T.icon}</div>
+        ${segIco(s)}
         <div class="tl-main">
-          <div class="tl-time">${App.time(s.depart)}${s.arrive ? ` → ${App.time(s.arrive)}${arriveDay > 0 ? `<sup>+${arriveDay}</sup>` : ""}` : ""}
-            ${dur ? `<span class="muted">· ${dur}</span>` : ""}${shift ? ` <span class="muted small">· ${shift}</span>` : ""}${ticketMark(nTickets)}</div>
+          <div class="tl-kind">${esc(T.name)}${who ? ` <span class="muted">· ${who}</span>` : ""}${ticketMark(nTickets)}</div>
           <div class="tl-route">${esc(s.from || "?")} → ${esc(s.to || "?")}</div>
-          ${chips(s)}
+          <div class="tl-time">${App.time(s.depart)}${s.arrive ? ` → ${App.time(s.arrive)}${arriveDay > 0 ? `<sup>+${arriveDay}</sup>` : ""}` : ""}
+            ${dur ? `<span class="muted">· ${dur}</span>` : ""}${shift ? ` <span class="muted small">· ${shift}</span>` : ""}</div>
+          ${chips(s, true)}
         </div>
       </a>`;
   }
@@ -424,11 +455,13 @@
   // wymeldowanie z noclegu jako mała pozycja w dniu wyjazdu
   const checkoutCard = s => `
     <a class="tl-card tl-light" href="#/odcinek/${s.id}">
-      <div class="tl-ico" aria-hidden="true">🔑</div>
+      <div class="tl-ico" aria-hidden="true">${ic("key")}</div>
       <div class="tl-main"><div class="tl-time">Wymeldowanie ${App.time(s.arrive)}</div>
       <div class="muted small">${esc(s.name || "Nocleg")}</div></div>
     </a>`;
 
+  /* Szczegóły podróży (etap 7a redesignu – DESIGN.md): okładka jak na ekranie głównym, postęp (spakowane / plan / wydatki),
+     narzędzia jako lista, oś czasu z nagłówkami dni jak w Planie, dodawanie odcinka kafelkami z ikonami. */
   App.route(/^\/podroze\/([\w-]+)$/, async ([id]) => {
     const t = await DB.get("trips", id);
     if (!t) { location.replace("#/podroze"); return ""; }
@@ -448,53 +481,96 @@
     items.sort((a, b) => a[1].localeCompare(b[1]));
 
     const total = dayDiff(t.start, t.end) + 1;
-    const pk = App.Pack ? await App.Pack.summary(id) : null;
-    const packTxt = pk && pk.total + pk.todo
-      ? `spakowane ${pk.done}/${pk.total}${pk.buy ? ` · do kupienia ${pk.buy}` : ""}${pk.todo ? ` · zadania ${pk.todoDone}/${pk.todo}` : ""}`
-      : "lista rzeczy i zadań przed wyjazdem";
-    const bg = App.Budget ? await App.Budget.summary(id) : null;
-    const bgTxt = !bg ? "" : bg.budget ? `wydano ${App.Budget.money(bg.spent, bg.home)} z ${App.Budget.money(bg.budget, bg.home)}`
-      : bg.spent ? `wydano ${App.Budget.money(bg.spent, bg.home)}` : "wydatki, waluty, ile zostało";
+    const today = todayStr(), st = status(t);
+    const [pk, plan, bg] = await Promise.all([
+      App.Pack ? App.Pack.summary(id) : null,
+      DB.byIndex("planItems", "tripId", id),
+      App.Budget ? App.Budget.summary(id).catch(() => null) : null,
+    ]);
+    const planned = plan.filter(p => p.date).length, ideas = plan.length - planned;
     const wx = App.Weather ? await App.Weather.get(t) : null;
     const cov = await covers(id);
     let unpaint = null;
+
+    // oś czasu: nagłówek dnia jak w Planie (DZIEŃ N + data w Newsreader)
     let timeline = "", lastDay = null;
     for (const [day, , html] of items) {
       if (day !== lastDay) {
+        if (lastDay) timeline += `</div></section>`;
         const n = dayDiff(t.start, day) + 1;
-        const tag = n >= 1 && n <= total ? `dzień ${n}` : n < 1 ? "przed podróżą" : "po podróży";
-        timeline += `<h3 class="tl-day${day === todayStr() ? " today" : ""}">${App.fmtDayLong(day)} <span class="muted">· ${tag}${day === todayStr() ? " · dziś" : ""}</span></h3>`;
+        const tag = n >= 1 && n <= total ? `Dzień ${n}` : n < 1 ? "Przed podróżą" : "Po podróży";
+        timeline += `<section class="td-day${day === today ? " is-today" : ""}">
+          <div class="pl-day-head"><div class="pl-day-t">
+            <div class="pl-day-n"><span>${tag}</span>${day === today ? ` <span class="chip accent">dziś</span>` : ""}</div>
+            <h3 class="tl-day">${App.fmtDayLong(day)}</h3></div></div><div class="td-list">`;
         lastDay = day;
       }
       timeline += html;
     }
+    if (lastDay) timeline += `</div></section>`;
 
+    // A: okładka – zdjęcie albo kolor podróży (jak karta na ekranie głównym)
+    const sub = st === "now" ? `dzień ${dayDiff(t.start, today) + 1} z ${total}` : `${total} ${plural(total, "dzień", "dni", "dni")}`;
+    const pct = st === "now" ? Math.round((dayDiff(t.start, today) + 1) / total * 100) : 0;
     const head = `
-      <div class="trip-head" data-cover="${t.id}" style="--c:${esc(t.color || COLORS[0])}">
-        ${t.destination ? `<div class="dest">${esc(t.destination)}</div>` : ""}
-        <div class="dates">${App.fmtRange(t.start, t.end)} · ${total} ${plural(total, "dzień", "dni", "dni")}</div>
-        <span class="pill pill-${status(t)}">${statusText(t)}</span>
-        ${t.note ? `<p class="note">${esc(t.note)}</p>` : ""}
+      <div class="trip-head hm-hero td-hero" data-cover="${t.id}" style="--c:${esc(t.color || COLORS[0])}">
+        <div class="hm-hero-top">
+          <span class="glass pill-${st}">${st === "now" ? `<i class="live" aria-hidden="true"></i>` : ""}${statusText(t)}</span>
+        </div>
+        <div class="hm-hero-body">
+          ${t.destination ? `<span class="hm-dest dest">${esc(t.destination)}</span>` : ""}
+          <h2>${esc(t.name)}</h2>
+          <span class="hm-dates dates">${App.fmtRange(t.start, t.end)} · ${sub}</span>
+          ${st === "now" ? `<span class="bar td-bar" aria-hidden="true"><i style="width:${pct}%"></i></span>` : ""}
+        </div>
       </div>
       ${cov[id] && cov[id].auto ? `<p class="cover-credit">Zdjęcie: ${esc(cov[id].credit)}</p>` : ""}
-      <a class="plan-link" href="#/plan/${t.id}"><span aria-hidden="true">🗓️</span> Plan dnia po dniu <span class="muted">– zwiedzanie, jedzenie, mapa</span><b aria-hidden="true">›</b></a>
-      ${t.end >= todayStr() ? `<a class="plan-link" href="#/przygotuj/${t.id}"><span aria-hidden="true">📥</span> Przygotuj offline <span class="muted">– mapa, karty, zdjęcia, kursy na zapas</span><b aria-hidden="true">›</b></a>` : ""}
-      <a class="plan-link" href="#/pakowanie/${t.id}"><span aria-hidden="true">🧳</span> Pakowanie <span class="muted">– ${packTxt}</span><b aria-hidden="true">›</b></a>
-      ${bg ? `<a class="plan-link${bg.budget && bg.spent > bg.budget ? " warn" : ""}" href="#/budzet/${t.id}"><span aria-hidden="true">💰</span> Budżet <span class="muted">– ${bgTxt}</span><b aria-hidden="true">›</b></a>` : ""}
-      <a class="plan-link" href="#/udostepnij/${t.id}"><span aria-hidden="true">👥</span> Udostępnij <span class="muted">– wspólna podróż, plan jako tekst</span><b aria-hidden="true">›</b></a>
-      <button type="button" class="plan-link" id="ics-trip"><span aria-hidden="true">📅</span> Do kalendarza <span class="muted">– plik .ics z przypomnieniami</span><b aria-hidden="true">›</b></button>`;
+      ${t.note ? `<p class="td-note note">${ic("info", "sm")}<span>${esc(t.note)}</span></p>` : ""}`;
+
+    // B: postęp – każdy kafelek prowadzi do swojego ekranu
+    const over = bg && bg.budget && bg.spent > bg.budget;
+    const ppct = pk && pk.total ? Math.round(pk.done / pk.total * 100) : 0;
+    const stats = `
+      <div class="hm-stats td-stats">
+        <a class="hm-stat" href="#/plan/${t.id}"><small>W planie</small>
+          <b>${planned}<span> ${plural(planned, "punkt", "punkty", "punktów")}</span></b>${ideas ? `<em>${ideas} ${plural(ideas, "pomysł", "pomysły", "pomysłów")}</em>` : ""}</a>
+        <a class="hm-stat" href="#/pakowanie/${t.id}"><small>Spakowane</small>
+          ${pk && pk.total ? `<b>${pk.done}<span> / ${pk.total}</span></b><span class="bar"><i style="width:${ppct}%"></i></span>` : `<b class="hm-none">Dodaj listę</b>`}
+          ${pk && pk.todo ? `<em>zadania ${pk.todoDone}/${pk.todo}</em>` : ""}</a>
+        ${App.Budget ? `<a class="hm-stat${over ? " over" : ""}" href="#/budzet/${t.id}"><small>Wydatki</small>
+          ${bg && bg.spent ? `<b>${App.Budget.money(bg.spent, bg.home)}</b>` : `<b class="hm-none">Budżet</b>`}
+          ${bg && bg.budget ? `<em>${over ? "ponad budżet" : `z ${App.Budget.money(bg.budget, bg.home)}`}</em>` : ""}</a>` : ""}
+      </div>`;
+
+    // C: narzędzia
+    const row = (href, icon, title, desc, extra = "") => `
+      <${href ? `a href="${href}"` : `button type="button"`} class="li td-link"${extra}>
+        <span class="li-ico">${ic(icon)}</span>
+        <span class="li-main"><b>${title}</b><small>${desc}</small></span>${ic("chev")}
+      </${href ? "a" : "button"}>`;
+    const tools = `
+      <div class="list td-tools">
+        ${row(`#/plan/${t.id}`, "plan", "Plan dnia po dniu", "zwiedzanie, jedzenie, mapa")}
+        ${t.end >= today ? row(`#/przygotuj/${t.id}`, "cloud", "Przygotuj offline", "mapa, karty, zdjęcia, kursy na zapas") : ""}
+        ${row(`#/udostepnij/${t.id}`, "users", "Udostępnij", "wspólna podróż, plan jako tekst")}
+        ${row(null, "bell", "Do kalendarza", "plik .ics z przypomnieniami", ` id="ics-trip"`)}
+      </div>`;
 
     const typeButtons = Object.entries(TYPES).map(([k, T]) =>
-      `<a class="type-btn" href="#/podroze/${id}/dodaj?typ=${k}"><span aria-hidden="true">${T.icon}</span>${T.name}</a>`).join("");
+      `<a class="type-btn" href="#/podroze/${id}/dodaj?typ=${k}"><i aria-hidden="true">${ic(ICON_OF[k] || "compass")}</i>${T.name}</a>`).join("");
+    const nSeg = segs.length;
 
     return {
-      title: t.name,
+      title: "Podróż",
       back: "#/podroze",
-      action: `<a class="icon-btn" href="#/podroze/${id}/edytuj" aria-label="Edytuj podróż">${editIcon}</a>`,
-      html: head + (wx && wx.data ? App.Weather.strip(wx.data, t) : "") +
+      action: `<a class="icon-btn" href="#/podroze/${id}/edytuj" aria-label="Edytuj podróż">${ic("edit")}</a>`,
+      html: head + stats + tools + (wx && wx.data ? App.Weather.strip(wx.data, t) : "") +
+        `<div class="sec-h td-sec"><h3 class="section">Trasa i noclegi</h3>${nSeg ? `<span class="chip">${nSeg}</span>` : ""}</div>` +
         (timeline || App.empty("🗺️", "Pusta oś czasu", "Dodaj pierwszy lot, pociąg, autobus albo nocleg – wybierz poniżej.")) +
-        `<h3 class="section">Dodaj</h3><div class="type-grid">${typeButtons}</div>
-         <a class="plan-link" href="#/wklej?trip=${id}" style="margin-top:10px"><span aria-hidden="true">📧</span> Z maila <span class="muted">– potwierdzenie lotu, pociągu, hotelu, PDF, .ics</span><b aria-hidden="true">›</b></a>`,
+        `<h3 class="section">Dodaj do podróży</h3><div class="type-grid">${typeButtons}</div>
+         <div class="list td-tools td-mail">
+           ${row(`#/wklej?trip=${id}`, "mail", "Z maila", "potwierdzenie lotu, pociągu, hotelu, PDF, .ics")}
+         </div>`,
       cleanup() { if (unpaint) unpaint(); },
       after(view) {
         unpaint = paintCovers(view, cov);
@@ -520,23 +596,20 @@
       }
       return h;
     };
-    let h = "";
-    if (T.route === false) {
-      h += input("name", "Nazwa obiektu", "np. Hotel Avenida", "required maxlength=\"100\"");
-      h += input("address", "Adres", "ulica, miasto");
-    } else {
-      h += input("from", T.from, T.fromPh || "", "maxlength=\"100\"");
-      h += input("to", T.to, T.toPh || "", "maxlength=\"100\"");
-    }
-    h += `<label class="field"><span>${T.depart}</span><input type="datetime-local" name="depart" required value="${esc(v.depart)}"></label>
-      <label class="field"><span>${T.arrive}</span><input type="datetime-local" name="arrive" value="${esc(v.arrive)}"></label>`;
-    h += pairs(T.extra.concat(TAIL));
-    h += `<div class="grid2 price">
-      ${input("price", "Cena", "np. 249", "inputmode=\"decimal\"")}
-      ${input("currency", "Waluta", "PLN", "maxlength=\"5\" autocapitalize=\"characters\"")}
-    </div>`;
-    h += `<label class="field"><span>Notatka</span><textarea name="note" rows="3" placeholder="opcjonalnie">${esc(v.note)}</textarea></label>`;
-    return h;
+    const sec = (title, body) => `<div class="fsec"><h3 class="section">${title}</h3>${body}</div>`;
+    const where = T.route === false
+      ? input("name", "Nazwa obiektu", "np. Hotel Avenida", "required maxlength=\"100\"") + input("address", "Adres", "ulica, miasto")
+      : input("from", T.from, T.fromPh || "", "maxlength=\"100\"") + input("to", T.to, T.toPh || "", "maxlength=\"100\"");
+    const when = `<label class="field"><span>${T.depart}</span><input type="datetime-local" name="depart" required value="${esc(v.depart)}"></label>
+      <label class="field"><span>${T.arrive}</span><input type="datetime-local" name="arrive" value="${esc(v.arrive)}"></label>
+      <p class="f-hint" id="sf-dur" aria-live="polite"></p>`;
+    return sec(T.route === false ? "Obiekt" : "Trasa", where) + sec("Czas", when) +
+      sec("Szczegóły", pairs(T.extra.concat(TAIL))) +
+      sec("Cena i notatka", `<div class="grid2 price">
+        ${input("price", "Cena", "np. 249", "inputmode=\"decimal\"")}
+        ${input("currency", "Waluta", "PLN", "maxlength=\"5\" autocapitalize=\"characters\"")}
+      </div>
+      <label class="field"><span>Notatka</span><textarea name="note" rows="3" placeholder="opcjonalnie">${esc(v.note)}</textarea></label>`);
   }
 
   async function segForm({ segId, tripId, type }) {
@@ -554,27 +627,41 @@
 
     const typeChips = Object.entries(TYPES).map(([k, T]) => `
       <label class="type-chip"><input type="radio" name="type" value="${k}" ${k === cur ? "checked" : ""}>
-        <span><b aria-hidden="true">${T.icon}</b>${T.name}</span></label>`).join("");
+        <span><b aria-hidden="true">${ic(ICON_OF[k] || "compass", "sm")}</b>${T.name}</span></label>`).join("");
 
     return {
-      title: s ? `${TYPES[cur].icon} ${TYPES[cur].name}` : "Nowy odcinek",
+      title: s ? TYPES[cur].name : "Nowy odcinek",
       back: s ? `#/odcinek/${s.id}` : `#/podroze/${trip.id}`,
       html: `
         <form id="seg-form" class="form" novalidate>
           <div class="type-chips" role="radiogroup" aria-label="Rodzaj">${typeChips}</div>
-          <div id="seg-fields">${segFields(cur, v)}</div>
+          ${fromMail ? `<p class="td-note">${ic("mail", "sm")}<span>Dane odczytane z maila – sprawdź godziny i miejsca przed zapisaniem.</span></p>` : ""}
+          <div id="seg-fields" class="fsecs">${segFields(cur, v)}</div>
           <p class="error" id="err" hidden></p>
-          <button class="btn primary wide" type="submit">${s ? "Zapisz zmiany" : "Dodaj do podróży"}</button>
-          ${s ? `<button class="btn danger wide" type="button" id="del">Usuń</button>` : ""}
+          <div class="f-actions">
+            <button class="btn primary wide" type="submit">${s ? "Zapisz zmiany" : "Dodaj do podróży"}</button>
+            ${s ? `<button class="btn danger wide" type="button" id="del">${ic("trash", "sm")} Usuń</button>` : ""}
+          </div>
         </form>`,
       after(view) {
         const f = view.querySelector("#seg-form");
         const box = view.querySelector("#seg-fields");
         const bindDates = () => {
+          // czas trwania / liczba nocy pod polami dat
+          const dur = () => {
+            const el = view.querySelector("#sf-dur"), a = f.depart.value, b = f.arrive.value;
+            if (!el) return;
+            if (!a || !b || b <= a) { el.textContent = ""; return; }
+            if (TYPES[cur].route === false) { const n = dayDiff(a, b); el.textContent = n > 0 ? `${n} ${plural(n, "noc", "noce", "nocy")}` : ""; }
+            else el.textContent = cur === "lot" ? "" : `Czas podróży: ${App.duration(App.segMinutes({ depart: a, arrive: b }))}`; // lot: strefy liczone w szczegółach
+          };
           // podpowiedź: przy pierwszym wyborze daty ustaw przyjazd na tę samą chwilę (zostaje tylko poprawić godzinę)
           f.depart.addEventListener("change", () => {
             if (f.depart.value && (!f.arrive.value || f.arrive.value < f.depart.value)) f.arrive.value = f.depart.value;
+            dur();
           });
+          f.arrive.addEventListener("change", dur);
+          dur();
         };
         bindDates();
         f.addEventListener("change", e => {
