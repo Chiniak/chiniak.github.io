@@ -11,16 +11,19 @@
   const { esc, plural } = App;
 
   const TYPES = {
-    paszport: { icon: "🛂", name: "Paszport" },
-    dowod: { icon: "🪪", name: "Dowód osobisty" },
-    prawo_jazdy: { icon: "🚗", name: "Prawo jazdy" },
-    ubezpieczenie: { icon: "🩺", name: "Ubezpieczenie / EKUZ" },
-    wiza: { icon: "📄", name: "Wiza / ESTA / eTA" },
-    karta: { icon: "💳", name: "Karta płatnicza" },
-    szczepienie: { icon: "💉", name: "Szczepienie" },
-    inne: { icon: "📁", name: "Inny dokument" },
+    paszport: { icon: "🛂", ic: "passport", name: "Paszport" },
+    dowod: { icon: "🪪", ic: "idcard", name: "Dowód osobisty" },
+    prawo_jazdy: { icon: "🚗", ic: "car", name: "Prawo jazdy" },
+    ubezpieczenie: { icon: "🩺", ic: "shield", name: "Ubezpieczenie / EKUZ" },
+    wiza: { icon: "📄", ic: "doc", name: "Wiza / ESTA / eTA" },
+    karta: { icon: "💳", ic: "card", name: "Karta płatnicza" },
+    szczepienie: { icon: "💉", ic: "syringe", name: "Szczepienie" },
+    inne: { icon: "📁", ic: "doc", name: "Inny dokument" },
   };
   const typeOf = d => TYPES[d.type] || TYPES.inne;
+  const ST = { expired: ["err", "nieważny"], soon: ["warn", "wkrótce wygasa"], ok: ["ok", "ważny"], none: ["", "bez daty"] };
+  const stChip = v => `<span class="chip ${ST[v.st][0]} doc-st">${ST[v.st][1]}</span>`;
+  const warnHtml = w => w.map(x => `<div class="doc-warn ${x.lvl}">${App.icon("alert", "sm")}<span>${esc(x.txt)}</span></div>`).join("");
   const title = d => `${typeOf(d).name}${d.person ? ` – ${d.person}` : ""}`;
 
   // stan ważności: expired | soon (≤ 90 dni) | ok | none (bez daty)
@@ -39,8 +42,8 @@
     const out = [];
     for (const t of trips) {
       if (t.end < today) continue;
-      if (d.expires < t.end) out.push(`❗ Wygaśnie przed końcem podróży „${t.name}” (${App.fmtRange(t.start, t.end)})`);
-      else if (d.type === "paszport" && d.expires < App.addDays(t.end, 182)) out.push(`⚠️ Ważny krócej niż 6 mies. po powrocie z „${t.name}” – część krajów tego wymaga`);
+      if (d.expires < t.end) out.push({ lvl: "err", txt: `Wygaśnie przed końcem podróży „${t.name}” (${App.fmtRange(t.start, t.end)})` });
+      else if (d.type === "paszport" && d.expires < App.addDays(t.end, 182)) out.push({ lvl: "warn", txt: `Ważny krócej niż 6 mies. po powrocie z „${t.name}” – część krajów tego wymaga` });
     }
     return out;
   }
@@ -68,16 +71,15 @@
     return {
       title: "Dokumenty",
       back: "#/bilety",
-      html: rows.map(({ d, v, w }) => `
+      html: `<p class="f-hint doc-intro">Aplikacja przypomni, zanim dokument wygaśnie, i ostrzeże, gdy paszport nie wystarczy na podróż.</p>` + rows.map(({ d, v, w }) => `
         <a class="doc-card st-${v.st}" href="#/dokument/${d.id}">
-          <div class="doc-ico" aria-hidden="true">${typeOf(d).icon}</div>
+          <div class="doc-ico" aria-hidden="true">${App.icon(typeOf(d).ic)}</div>
           <div class="doc-main">
-            <div class="doc-title">${esc(title(d))}</div>
+            <div class="doc-top"><span class="doc-title">${esc(title(d))}</span>${d.blob ? `<span class="doc-clip" title="Ma zdjęcie / skan" aria-label="ma skan">${App.icon("clip", "sm")}</span>` : ""}</div>
             ${d.number ? `<div class="doc-num">${esc(d.number)}</div>` : ""}
-            <div class="doc-valid">${v.txt}</div>
-            ${w.map(x => `<div class="doc-warn">${esc(x)}</div>`).join("")}
+            <div class="doc-valid-row">${stChip(v)}<span class="doc-valid">${v.txt}</span></div>
+            ${warnHtml(w)}
           </div>
-          ${d.blob ? `<span class="doc-clip" title="Ma zdjęcie / skan" aria-label="ma skan">📎</span>` : ""}
         </a>`).join("") + add,
     };
   });
@@ -88,34 +90,35 @@
     if (!d) { location.replace("#/dokumenty"); return ""; }
     const v = validity(d), w = tripWarnings(d, trips);
     let url = null;
-    const row = (k, val) => val ? `<div class="row"><span class="muted">${k}</span><b>${esc(val)}</b></div>` : "";
+    const row = (k, val) => val ? `<div class="doc-fact"><dt>${k}</dt><dd>${esc(val)}</dd></div>` : "";
     return {
       title: typeOf(d).name,
       back: "#/dokumenty",
       action: `<a class="icon-btn" href="#/dokument/${id}/edytuj" aria-label="Edytuj">${App.Trips.editIcon}</a>`,
       html: `
         <div class="doc-head st-${v.st}">
-          <div class="doc-big-ico" aria-hidden="true">${typeOf(d).icon}</div>
+          <div class="doc-head-top"><span class="doc-big-ico" aria-hidden="true">${App.icon(typeOf(d).ic)}</span>${stChip(v)}</div>
           <div class="doc-title">${esc(title(d))}</div>
           ${d.number ? `<div class="doc-big-num" id="doc-num">${esc(d.number)}</div>` : ""}
           <div class="doc-valid">${v.txt}</div>
-          ${w.map(x => `<div class="doc-warn">${esc(x)}</div>`).join("")}
+          ${d.expires && v.days != null && v.days >= 0 ? `<div class="bar doc-bar" aria-hidden="true"><i style="width:${Math.max(4, Math.min(100, Math.round(v.days / 3650 * 100)))}%"></i></div>` : ""}
         </div>
-        <div class="card">
+        ${warnHtml(w)}
+        ${d.number ? `<button type="button" class="btn wide doc-copy" id="doc-copy">${App.icon("copy", "sm")} Kopiuj numer</button>` : ""}
+        <dl class="list doc-facts">
           ${row("Kraj", d.country)}
           ${row("Wydany", d.issued ? App.fmtRange(d.issued) : "")}
           ${row("Ważny do", d.expires ? App.fmtRange(d.expires) : "")}
           ${row("Przypomnienie", d.expires && +d.remind ? `${d.remind} dni przed wygaśnięciem` : d.expires ? "wyłączone" : "")}
-          ${d.note ? `<p class="note" style="white-space:pre-wrap;margin:8px 0 0">${esc(d.note)}</p>` : ""}
-        </div>
-        ${d.number ? `<button type="button" class="btn wide" id="doc-copy">📋 Kopiuj numer</button>` : ""}
+        </dl>
+        ${d.note ? `<p class="td-note doc-note">${App.icon("info", "sm")}<span>${esc(d.note)}</span></p>` : ""}
         <div id="doc-scan"></div>`,
       after(view) {
         const box = view.querySelector("#doc-scan");
         if (d.blob) {
           url = URL.createObjectURL(d.blob);
           box.innerHTML = /pdf/.test(d.blob.type)
-            ? `<a class="btn wide" href="${url}" target="_blank" rel="noopener" style="margin-top:10px">📄 Otwórz skan (PDF)</a>`
+            ? `<a class="btn wide doc-pdf" href="${url}" target="_blank" rel="noopener">${App.icon("doc", "sm")} Otwórz skan (PDF)</a>`
             : `<h3 class="section">Skan / zdjęcie</h3><img class="doc-img" src="${url}" alt="Skan dokumentu">`;
         }
         const c = view.querySelector("#doc-copy");
@@ -135,7 +138,7 @@
     let newBlob = undefined; // undefined = bez zmian, null = usuń
     const types = Object.entries(TYPES).map(([k, T]) => `
       <label class="type-chip"><input type="radio" name="type" value="${k}" ${k === v.type ? "checked" : ""}>
-        <span><b aria-hidden="true">${T.icon}</b>${T.name}</span></label>`).join("");
+        <span><b aria-hidden="true">${App.icon(T.ic, "sm")}</b>${T.name}</span></label>`).join("");
     const REMIND = [[0, "bez przypomnienia"], [30, "30 dni przed"], [60, "60 dni przed"], [90, "90 dni przed"], [180, "6 miesięcy przed"]];
     return {
       title: d ? "Edytuj dokument" : "Nowy dokument",
@@ -143,28 +146,36 @@
       html: `
         <form id="doc-form" class="form" novalidate>
           <div class="type-chips" role="radiogroup" aria-label="Rodzaj">${types}</div>
-          <div class="grid2">
-            <label class="field"><span>Czyj</span><input name="person" maxlength="40" placeholder="np. Jan, Ania" value="${esc(v.person)}"></label>
-            <label class="field"><span>Kraj</span><input name="country" maxlength="40" placeholder="np. Polska" value="${esc(v.country)}"></label>
-          </div>
-          <label class="field"><span>Numer</span><input name="number" maxlength="40" autocapitalize="characters" placeholder="np. EA1234567" value="${esc(v.number)}"></label>
-          <div class="grid2">
-            <label class="field"><span>Data wydania</span><input type="date" name="issued" value="${esc(v.issued)}"></label>
-            <label class="field"><span>Ważny do</span><input type="date" name="expires" value="${esc(v.expires)}"></label>
-          </div>
-          <label class="rm-sel"><span>Przypomnij przed wygaśnięciem</span>
-            <select name="remind">${REMIND.map(([k, n]) => `<option value="${k}" ${+v.remind === k ? "selected" : ""}>${n}</option>`).join("")}</select></label>
-          <div class="field"><span>Skan / zdjęcie (opcjonalnie, zostaje tylko w telefonie)</span>
-            <div class="doc-file">
-              <span id="doc-file-name" class="muted small">${d && d.blob ? "📎 dodano skan" : "brak"}</span>
-              <label class="btn">📷 Wybierz<input type="file" id="doc-pick" accept="image/*,application/pdf,.pdf" hidden></label>
-              ${d && d.blob ? `<button type="button" class="btn" id="doc-rm">Usuń skan</button>` : ""}
+          <div class="fsec">
+            <div class="grid2">
+              <label class="field"><span>Czyj</span><input name="person" maxlength="40" placeholder="np. Jan, Ania" value="${esc(v.person)}"></label>
+              <label class="field"><span>Kraj</span><input name="country" maxlength="40" placeholder="np. Polska" value="${esc(v.country)}"></label>
             </div>
+            <label class="field"><span>Numer</span><input name="number" maxlength="40" autocapitalize="characters" placeholder="np. EA1234567" value="${esc(v.number)}"></label>
           </div>
-          <label class="field"><span>Notatka</span><textarea name="note" rows="2" placeholder="np. numer polisy, telefon alarmowy ubezpieczyciela">${esc(v.note)}</textarea></label>
+          <div class="fsec"><h3 class="section">Ważność</h3>
+            <div class="grid2">
+              <label class="field"><span>Data wydania</span><input type="date" name="issued" value="${esc(v.issued)}"></label>
+              <label class="field"><span>Ważny do</span><input type="date" name="expires" value="${esc(v.expires)}"></label>
+            </div>
+            <label class="field"><span>Przypomnij przed wygaśnięciem</span>
+              <select name="remind">${REMIND.map(([k, n]) => `<option value="${k}" ${+v.remind === k ? "selected" : ""}>${n}</option>`).join("")}</select></label>
+          </div>
+          <div class="fsec"><h3 class="section">Skan i notatka</h3>
+            <div class="field"><span>Skan / zdjęcie (opcjonalnie, zostaje tylko w telefonie)</span>
+              <div class="doc-file">
+                <span id="doc-file-name" class="muted small">${d && d.blob ? "dodano skan" : "brak"}</span>
+                <label class="btn">${App.icon("camera", "sm")} Wybierz<input type="file" id="doc-pick" accept="image/*,application/pdf,.pdf" hidden></label>
+                ${d && d.blob ? `<button type="button" class="btn" id="doc-rm">${App.icon("trash", "sm")} Usuń skan</button>` : ""}
+              </div>
+            </div>
+            <label class="field"><span>Notatka</span><textarea name="note" rows="2" placeholder="np. numer polisy, telefon alarmowy ubezpieczyciela">${esc(v.note)}</textarea></label>
+          </div>
           <p class="error" id="err" hidden></p>
-          <button class="btn primary wide" type="submit">${d ? "Zapisz zmiany" : "Dodaj dokument"}</button>
-          ${d ? `<button class="btn danger wide" type="button" id="del">Usuń dokument</button>` : ""}
+          <div class="f-actions">
+            <button class="btn primary wide" type="submit">${d ? "Zapisz zmiany" : "Dodaj dokument"}</button>
+            ${d ? `<button class="btn danger wide" type="button" id="del">${App.icon("trash", "sm")} Usuń dokument</button>` : ""}
+          </div>
         </form>`,
       after(view) {
         const f = view.querySelector("#doc-form");
@@ -172,7 +183,7 @@
           const file = e.target.files[0];
           if (!file) return;
           newBlob = file;
-          view.querySelector("#doc-file-name").textContent = `📎 ${file.name}`;
+          view.querySelector("#doc-file-name").textContent = file.name;
         });
         const rm = view.querySelector("#doc-rm");
         if (rm) rm.onclick = () => { newBlob = null; view.querySelector("#doc-file-name").textContent = "skan zostanie usunięty"; };

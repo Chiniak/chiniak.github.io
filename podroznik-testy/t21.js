@@ -21,7 +21,7 @@ const dir = process.argv[2] || 'podroznik-testy';
     await p.selectOption('#bg-add select[name=paidBy]', payer); await p.selectOption('#bg-add select[name=split]', split);
     await p.click('#bg-add button[type=submit]'); await p.waitForTimeout(400); };
   await add('kolacja', '90', 'Ja', ''); await add('bilety', '60', 'Ania', ''); await add('pamiątka', '30', 'Tomek', 'Tomek');
-  console.log('rows:', await p.$$eval('.bg-row-name', e => e.map(x => x.textContent.replace(/\s+/g, ' ').trim())));
+  console.log('rows:', await p.$$eval('.bg-row .li-main', e => e.map(x => x.textContent.replace(/\s+/g, ' ').trim())));
   await p.click('a[href^="#/rozliczenie/"]'); await p.waitForTimeout(500);
   const read = () => p.evaluate(() => ({ t: [...document.querySelectorAll('.sp-transfer')].map(x => x.textContent.replace(/\s+/g, ' ').trim()),
     b: [...document.querySelectorAll('.sp-bal')].map(x => x.textContent.trim()), top: document.querySelector('.bg-top b').textContent }));
@@ -32,7 +32,7 @@ const dir = process.argv[2] || 'podroznik-testy';
   // edycja wydatku: kolacja tylko za Ja i Ania
   await p.goto(`http://localhost:8765/podroznik/#/budzet/${id}`); await p.waitForTimeout(400);
   await p.click('.bg-row:has-text("kolacja")'); await p.waitForTimeout(400);
-  await p.uncheck('input[name=split][value=Tomek]'); await p.click('button[type=submit]'); await p.waitForTimeout(400);
+  await p.click('label:has(input[name=split][value=Tomek])'); await p.click('button[type=submit]'); await p.waitForTimeout(400);
   console.log('kolacja split:', await p.evaluate(i => DB.byIndex('expenses', 'tripId', i).then(a => a.find(e => e.title === 'kolacja').split), id));
 
   // plan jako tekst

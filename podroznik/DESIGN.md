@@ -48,7 +48,7 @@ Uwaga: teksty z emoji są kluczami tłumaczeń w `i18n-en.js` – zmieniając te
 Ruch: krótkie przejścia 0.12–0.25 s; `prefers-reduced-motion` wyłącza animacje.
 
 ## Etapy redesignu
-1. Design system ✔ (ten dokument) · 2. Podróże ✔ · 3. Bilety ✔ · 4. Plan ✔ · 5. Pakowanie ✔ · 6. Ustawienia ✔ · 7. ekrany dodatkowe (7a ✔ szczegóły podróży + formularze, 7b ✔ mapa, Odkrywaj, karty, offline) · 8. szlif (animacje, dostępność, tablet, style z JS) · 9. testy całości.
+1. Design system ✔ (ten dokument) · 2. Podróże ✔ · 3. Bilety ✔ · 4. Plan ✔ · 5. Pakowanie ✔ · 6. Ustawienia ✔ · 7. ekrany dodatkowe (7a ✔ szczegóły podróży + formularze, 7b ✔ mapa, Odkrywaj, karty, offline, 7c ✔ budżet, rozliczenie, dokumenty) · 8. szlif (animacje, dostępność, tablet, style z JS) · 9. testy całości.
 Makieta zatwierdzona przez właściciela: ekran Podróże – nagłówek z powitaniem, karta bieżącej podróży ze zdjęciem i odliczaniem,
 pasek postępu (spakowane / punkty planu / budżet), najbliższy bilet jako odcinek z QR, zadanie przed wyjazdem, nadchodzące
 podróże w poziomym rzędzie, szybkie akcje (Nowa podróż, Z Gmaila, Otwórz wspólną). Decyzje: ciemny turkus do tekstu,
@@ -159,3 +159,20 @@ dwa kroje, zdjęcia bez motywów religijnych, tło ze zdjęć – nowi użytkown
 - Przygotuj offline (`prep.js`): karta `.pr-sum` (nazwa podróży, X/Y gotowe, tytuł w Newsreader, pasek – komplet zielony),
   ostrzeżenie o Chinach jako panel `--warn-soft`, „Lista kontrolna” `.list.pr-list`: ikona kroku, opis, kółko stanu `.pr-mark`
   (`.ok` zielone z ✓, `.todo` puste, `.na` przerywane, `.busy` kręci się; tekst dla czytnika w `.sr`), strzałka `.pr-go`.
+
+## Budżet, rozliczenie, dokumenty (etap 7c)
+- Nowe ikony: `passport`, `idcard`, `card`, `syringe`, `bag`, `box`, `arrow`, `copy`, `bank`. Kategorie wydatków mają `ic` (`App.Budget.CATS`)
+  i kolor `--cc` (`.c-transport` niebieski, `.c-nocleg` fiolet, `.c-jedzenie` pomarańcz, `.c-atrakcje` turkus, `.c-zakupy` róż, `.c-inne` szary):
+  ikona w kwadracie `.bg-ico` (tło = 14% koloru) i pasek kategorii w tym samym kolorze.
+- Budżet (`#/budzet/:id`, tytuł „Budżet”): karta `.bg-sum` (WYDANO wersalikami, kwota w Newsreader 32 px, pasek, „Zostało X z Y”,
+  chipy „ok. N na dzień” i liczba dni; ponad budżetem kwota czerwona), brak kursu = panel `.td-note.bg-warn`; „Kategorie” jako `.list`;
+  „Rozliczenie” jako wiersz listy; „Dodaj wydatek” – karta `#bg-add` (na co, kwota + waluta, kategoria + dzień, kto/za kogo, przycisk na całą
+  szerokość); wydatki wg dni: nagłówek sekcji z sumą dnia, `.list` z `.li.bg-row` (ikona kategorii, nazwa `.bg-row-name`, kategoria · z biletów ·
+  kto płaci, kwota + przeliczenie); „Budżet i waluty” – karta `#bg-cfg`, kursy jako lista `.bg-rate-row`.
+- Wydatek (`#/wydatek/:id`): grupy `.fsec`, kategorie z ikonami, „Za kogo” jako chipy-przełączniki (`.type-chip` z checkboxem).
+- Rozliczenie (tytuł „Rozliczenie”): karta podsumowania jak w budżecie, inicjały osób w kółkach (`.sp-av`, kolor stały wg kolejności),
+  „Kto komu oddaje” – `.sp-transfer` (inicjał, A → B, kwota w Newsreader), „Wyślij rozliczenie” jako przycisk główny, salda jako lista.
+- Dokumenty: opis pod paskiem, karty `.doc-card` (klasa stanu `st-…` zostaje drugą klasą – t12): ikona SVG rodzaju (tło wg stanu:
+  turkus / ostrzeżenie / błąd), tytuł, numer, chip stanu (ważny / wkrótce wygasa / nieważny / bez daty) + tekst ważności, ostrzeżenia
+  z ikoną (`tripWarnings` zwraca `{ lvl, txt }`, bez emoji). Podgląd: karta `.doc-head` (ikona, chip, tytuł w Newsreader, numer, pasek
+  pozostałej ważności do 10 lat), ostrzeżenia jako panele, „Kopiuj numer”, fakty jako `dl.list`, notatka jako `.td-note`. Formularz: grupy Ważność / Skan i notatka.
