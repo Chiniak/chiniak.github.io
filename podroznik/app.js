@@ -241,7 +241,7 @@
     }
     if (!location.hash) history.replaceState(null, "", "#/podroze");
     // tryb „W podróży” (dzis.js): w trakcie podróży aplikacja otwiera się na ekranie „Dziś”, jeśli tak ustawiono
-    if (location.hash === "#/podroze" && App.Today && await DB.getSetting("startScreen", "podroze") === "dzis") {
+    if (location.hash === "#/podroze" && App.Today && await App.Today.startScreen() === "dzis") {
       const t = await App.Today.ongoingTrip().catch(() => null);
       if (t) history.replaceState(null, "", `#/dzis/${t.id}`);
     }

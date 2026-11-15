@@ -19,11 +19,12 @@ const SP = process.argv[2];
   const ids = await p.evaluate(async () => {
     const pad = n => String(n).padStart(2, '0'); const T = App.todayStr();
     const at = m => { const x = new Date(Date.now() + m * 60000); return `${x.getFullYear()}-${pad(x.getMonth() + 1)}-${pad(x.getDate())}T${pad(x.getHours())}:${pad(x.getMinutes())}`; };
+    const nw = new Date(), soon = Math.max(1, Math.min(90, 23 * 60 + 58 - nw.getHours() * 60 - nw.getMinutes())); // autobus zawsze dziś
     const t = await DB.put('trips', { name: 'Hanoi i okolice', destination: 'Hanoi', start: App.addDays(T, -1), end: App.addDays(T, 2), color: '#2f6fd6', budget: { amount: 4000, currency: 'PLN' }, rates: { VND: 0.00016 } });
     const f = await DB.put('trips', { name: 'Rzym', destination: 'Rzym', start: App.addDays(T, 30), end: App.addDays(T, 33) });
     await DB.put('segments', { tripId: t.id, type: 'nocleg', name: 'Hotel Lotus', address: '12 Hang Bac, Hanoi', phone: '+84 24 1234 567', room: '305', depart: App.addDays(T, -1) + 'T14:00', arrive: App.addDays(T, 1) + 'T12:00' });
     await DB.put('segments', { tripId: t.id, type: 'nocleg', name: 'Ha Long Cruise', address: 'Tuan Chau, Ha Long', depart: App.addDays(T, 1) + 'T13:00', arrive: App.addDays(T, 2) + 'T10:00' });
-    const bus = await DB.put('segments', { tripId: t.id, type: 'autobus', from: 'Hanoi', to: 'Ninh Binh', depart: at(90), arrive: at(210), number: 'VX 12' });
+    const bus = await DB.put('segments', { tripId: t.id, type: 'autobus', from: 'Hanoi', to: 'Ninh Binh', depart: at(soon), arrive: at(soon + 120), number: 'VX 12' });
     await DB.put('segments', { tripId: t.id, type: 'lot', from: 'Hanoi HAN', to: 'Warszawa WAW', depart: App.addDays(T, 2) + 'T23:30', arrive: App.addDays(T, 3) + 'T07:10' });
     const png = await (await fetch('icon-192.png')).blob();
     await DB.put('files', { tripId: t.id, segmentId: bus.id, kind: 'image', name: 'bilet.png', type: 'image/png', blob: png });
@@ -123,6 +124,22 @@ const SP = process.argv[2];
   ok(!pl.length, 'angielski: brak polskich tekstów ' + JSON.stringify(pl));
   ok(/Today/.test(await txt('#title')), 'angielski: tytuł „Today”');
   await shot('t42-dzis-en', true);
+
+  // ---------- aplikacja (udawany Capacitor): bez wyboru start na „Dziś” ----------
+  const ctx2 = await b.newContext({ ...devices['Pixel 7'], locale: 'pl-PL' });
+  await ctx2.addInitScript(() => { window.Capacitor = { isNativePlatform: () => true, getPlatform: () => 'android', Plugins: { Filesystem: { rmdir: async () => {}, writeFile: async () => ({ uri: '' }) } } }; });
+  const q = await ctx2.newPage();
+  const errs2 = []; q.on('pageerror', e => errs2.push(e.message));
+  await q.goto(B + '#/podroze'); await q.waitForTimeout(600);
+  const tid = await q.evaluate(async () => (await DB.put('trips', { name: 'Kraków', start: App.addDays(App.todayStr(), -1), end: App.addDays(App.todayStr(), 1) })).id);
+  await q.reload(); await q.waitForTimeout(900);
+  ok(q.url().endsWith(`#/dzis/${tid}`), 'APK bez wyboru: start na „Dziś”');
+  await q.goto(B + '#/ustawienia'); await q.waitForTimeout(600);
+  ok(await q.getAttribute('[data-start-opt="dzis"]', 'aria-pressed') === 'true', 'APK: w Ustawieniach zaznaczone „Dziś”');
+  await q.click('[data-start-opt="podroze"]'); await q.waitForTimeout(400);
+  await q.goto(B + '#/podroze'); await q.reload(); await q.waitForTimeout(900);
+  ok(q.url().endsWith('#/podroze'), 'APK po wyborze „Podróże”: start na Podróżach');
+  ok(!errs2.length, 'APK: bez błędów ' + JSON.stringify(errs2));
 
   console.log(fails.length ? `\n${fails.length} FAIL` : '\nALL OK');
   console.log('errors:', errs);

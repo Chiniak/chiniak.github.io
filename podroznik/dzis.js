@@ -5,7 +5,8 @@
    Na ekranie: nagłówek (dzień X z Y, pogoda, strzałki dni) · Teraz / Dalej (karta „Dziś” z plan.js, tylko dziś) ·
    nocleg (nawigacja, telefon, karta dla kierowcy) · bilety na ten dzień · plan dnia · wydatki dnia z szybkim dodawaniem ·
    skróty (mapa dnia, w pobliżu, rozmówki, dokumenty) · jutro (pierwsze punkty następnego dnia).
-   Ustawienie „startScreen” = "dzis" → aplikacja w trakcie podróży otwiera się na tym ekranie (app.js). */
+   Ustawienie „startScreen” ("dzis" / "podroze") – ekran startowy w trakcie podróży (app.js). Bez wyboru: w aplikacji (APK,
+   zainstalowana na ekranie głównym) „dzis”, w zwykłej karcie przeglądarki „podroze” (link otwiera to, co wskazuje). */
 (function () {
   const { esc, plural } = App;
   const I = (n, c) => App.icon(n, c);
@@ -232,5 +233,8 @@
     };
   });
 
-  App.Today = { ongoingTrip };
+  const isApp = () => !!(self.PodroznikNative && PodroznikNative.isNative) || (self.matchMedia && matchMedia("(display-mode: standalone)").matches);
+  async function startScreen() { return (await DB.getSetting("startScreen", null)) || (isApp() ? "dzis" : "podroze"); }
+
+  App.Today = { ongoingTrip, startScreen };
 })();

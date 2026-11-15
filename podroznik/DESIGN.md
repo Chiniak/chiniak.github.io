@@ -209,7 +209,8 @@ dwa kroje, zdjęcia bez motywów religijnych, tło ze zdjęć – nowi użytkown
 - Trasy `#/dzis` (trwająca podróż, inaczej `pickTrip`) i `#/dzis/:id?d=RRRR-MM-DD` (dzień spoza podróży → dziś / 1. / ostatni dzień).
   Tytuł paska „Dziś”, akcja = Plan. Wejścia: przycisk `.hm-today` pod kartą trwającej podróży na ekranie głównym, link „Cały dzień”
   (`.td-more`) w karcie „Dziś” w Planie (`todayCard(…, { more: true })`), ustawienie **Podróżowanie → Ekran startowy w trakcie podróży**
-  (`startScreen`: `podroze` domyślnie / `dzis`; app.js przy starcie z `#/podroze`, tylko gdy podróż trwa).
+  (`startScreen`: `dzis` / `podroze`; bez wyboru – w aplikacji (APK, PWA zainstalowana) **„Dziś”** (decyzja właściciela 15.11), w karcie
+  przeglądarki „Podróże”; app.js przy starcie z `#/podroze`, tylko gdy podróż trwa).
 - Kolejność: `.dz-head` (chip stanu: W podróży / Podgląd / Miniony dzień, nazwa podróży, strzałki dni `.dz-arrow`, „DZIEŃ N Z M”,
   data w Newsreader, pogoda dnia `.dz-wx`, pasek postępu) · karta Teraz/Dalej (tylko dziś, odświeżana co minutę) · nocleg `.dz-stay`
   (`hotelFor`; wymeldowanie bez nowego noclegu = ikona `key` na ostrzegawczym tle; akcje `.dz-acts`: Nawiguj, Zadzwoń – `tel:`, Dla kierowcy;

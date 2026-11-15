@@ -19,7 +19,7 @@
 
   App.route(/^\/ustawienia$/, async () => {
     const theme = await DB.getSetting("theme", "auto");
-    const startScreen = await DB.getSetting("startScreen", "podroze");
+    const startScreen = App.Today ? await App.Today.startScreen() : "podroze";
     const [last, lock, nTrips] = await Promise.all([DB.getSetting("lastBackup", null), DB.getSetting("lock", null), DB.count("trips")]);
     const age = last ? Math.floor((Date.now() - new Date(last.at)) / 86400000) : null;
     const backupTxt = !last ? "jeszcze nie zrobiona" : age === 0 ? "ostatnia dziś" : `ostatnia ${age} ${App.plural(age, "dzień", "dni", "dni")} temu`;
