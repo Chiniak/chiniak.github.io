@@ -659,5 +659,5 @@ self.I18N_EN = {
   "Otwórz plik podróży": "Open a trip file", "Rezerwacja z maila": "Booking from an e-mail", "Wklej ze schowka": "Paste from clipboard", "Z pliku": "From file", "Odczytaj": "Read",
   "Dołącz bilety i zdjęcia ({}) – plik będzie większy": "Include tickets and photos ({}) – the file will be bigger",
   /* etap 8 */
-  "To {}": "That's {}", "{} {} bez położenia": "{} {} without a location", "Uzupełnij położenie (internet)": "Fill in locations (internet)",
+  "To {}": "That's {}", "{} {} bez położenia": "{} {} without a location", "Uzupełnij położenie (internet)": "Fill in locations (internet)", "Plan jako tekst": "Plan as text",
 };

@@ -48,7 +48,7 @@ Uwaga: teksty z emoji są kluczami tłumaczeń w `i18n-en.js` – zmieniając te
 Ruch: krótkie przejścia 0.12–0.25 s; `prefers-reduced-motion` wyłącza animacje.
 
 ## Etapy redesignu
-1. Design system ✔ (ten dokument) · 2. Podróże ✔ · 3. Bilety ✔ · 4. Plan ✔ · 5. Pakowanie ✔ · 6. Ustawienia ✔ · 7. ekrany dodatkowe (7a ✔ szczegóły podróży + formularze, 7b ✔ mapa, Odkrywaj, karty, offline, 7c ✔ budżet, rozliczenie, dokumenty, 7d ✔ kopia, PIN, przypomnienia, Gmail, udostępnianie, z maila) · 8. szlif ✔ (animacje, dostępność, tablet, style z JS) · 9. testy całości.
+1. Design system ✔ (ten dokument) · 2. Podróże ✔ · 3. Bilety ✔ · 4. Plan ✔ · 5. Pakowanie ✔ · 6. Ustawienia ✔ · 7. ekrany dodatkowe (7a ✔ szczegóły podróży + formularze, 7b ✔ mapa, Odkrywaj, karty, offline, 7c ✔ budżet, rozliczenie, dokumenty, 7d ✔ kopia, PIN, przypomnienia, Gmail, udostępnianie, z maila) · 8. szlif ✔ (animacje, dostępność, tablet, style z JS) · 9. testy całości ✔.
 Makieta zatwierdzona przez właściciela: ekran Podróże – nagłówek z powitaniem, karta bieżącej podróży ze zdjęciem i odliczaniem,
 pasek postępu (spakowane / punkty planu / budżet), najbliższy bilet jako odcinek z QR, zadanie przed wyjazdem, nadchodzące
 podróże w poziomym rzędzie, szybkie akcje (Nowa podróż, Z Gmaila, Otwórz wspólną). Decyzje: ciemny turkus do tekstu,
@@ -204,3 +204,12 @@ dwa kroje, zdjęcia bez motywów religijnych, tło ze zdjęć – nowi użytkown
 - **Style w JS:** zostały tylko wartości dynamiczne (`--c`, `--pc`, szerokości pasków); stałe przeniesione do CSS.
 - Puste stany (`App.empty`) – ikona SVG w miękkim kółku zamiast dużego emoji (mapa `EMPTY_IC` w app.js); statystyki z przełącznikiem `.sw`
   i liczbami w Newsreader.
+
+## Testy całości (etap 9)
+- Przegląd automatyczny: 38 ekranów × 5 wariantów (jasny, ciemny, angielski, 360 px, tablet 1024 px) – bez błędów JS w konsoli,
+  bez elementów wychodzących poza ekran, bez poziomego przewijania; zrzuty obejrzane ręcznie.
+- Offline (service worker): wszystkie 38 ekranów działa bez sieci, także po przeładowaniu; wszystkie pliki z `index.html`, czcionki
+  i biblioteki ładowane na żądanie są na liście `APP` w `sw.js`.
+- Dostępność: axe-core 0 problemów (etap 8). Pełna seria testów Playwright t3–t41 zielona.
+- Poprawki z przeglądu: brak tłumaczenia „Plan jako tekst”, tło panelu przy ostrzeżeniach na liście dokumentów.
+- **Redesign „Premium Light” zakończony** (etapy 1–9). Dalsze zmiany wyglądu – według zasad z tego pliku.
