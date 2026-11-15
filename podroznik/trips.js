@@ -192,7 +192,8 @@
               ${next ? `<span class="hm-count-at"><span>${esc(T.depart)}</span> <b>${App.time(next.depart)}</b></span>` : ""}
             </div>` : ""}
           </div>
-        </a>`;
+        </a>
+        ${st === "now" ? `<a class="btn primary wide hm-today" href="#/dzis/${hero.id}">${ic("sun", "sm")} Dziś w podróży</a>` : ""}`;
 
       // ---------- C: postęp ----------
       const [pk, plan, bud] = await Promise.all([

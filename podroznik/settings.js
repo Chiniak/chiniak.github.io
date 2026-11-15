@@ -19,6 +19,7 @@
 
   App.route(/^\/ustawienia$/, async () => {
     const theme = await DB.getSetting("theme", "auto");
+    const startScreen = await DB.getSetting("startScreen", "podroze");
     const [last, lock, nTrips] = await Promise.all([DB.getSetting("lastBackup", null), DB.getSetting("lock", null), DB.count("trips")]);
     const age = last ? Math.floor((Date.now() - new Date(last.at)) / 86400000) : null;
     const backupTxt = !last ? "jeszcze nie zrobiona" : age === 0 ? "ostatnia dziś" : `ostatnia ${age} ${App.plural(age, "dzień", "dni", "dni")} temu`;
@@ -54,6 +55,8 @@
         <p class="set-info">W Chinach Google (Mapy, Gmail) nie działa bez VPN. Do Azji polecamy <b>Organic Maps</b> – darmowe mapy offline:
           przed wyjazdem pobierz w niej mapy krajów przez Wi-Fi i wybierz tu „Aplikację z telefonu”.</p>
         <p class="set-info">Mapa w Podróżniku zapamiętuje oglądane fragmenty – przed wyjazdem przejrzyj na niej okolice noclegów i punktów planu, a będą widoczne także bez internetu.</p>`) +
+      ctl("sun", "Ekran startowy w trakcie podróży", seg("start-opt", startScreen, [["podroze", "Podróże"], ["dzis", "Dziś"]], "Ekran startowy w trakcie podróży"),
+        "„Dziś” – jeden ekran na dzień: co teraz i dalej, nocleg, bilety, plan, wydatki") +
       link("#/ustawienia/przypomnienia", "bell", "Przypomnienia i kalendarz", notifyOn ? "powiadomienia włączone" : "ustaw powiadomienia",
         notifyOn ? "" : chip("wył.", "warn")));
 
@@ -121,6 +124,11 @@
           try { localStorage.setItem("podroznik-lang", val); } catch (e) { /* brak dostępu */ }
           await DB.setSetting("lang", val);
           location.reload(); // tłumaczenie całego ekranu od nowa
+        }));
+        v.querySelectorAll("[data-start-opt]").forEach(b => b.addEventListener("click", async () => {
+          await DB.setSetting("startScreen", b.dataset.startOpt);
+          v.querySelectorAll("[data-start-opt]").forEach(x => x.setAttribute("aria-pressed", x === b));
+          App.toast("Zapisano");
         }));
         v.querySelector("#nav-app").onchange = async e => { App.navApp = e.target.value; await DB.setSetting("navApp", App.navApp); App.toast("Zapisano"); };
         $("#sw-state", v).textContent = navigator.serviceWorker && navigator.serviceWorker.controller ? "włączony" : "uruchomi się po ponownym otwarciu";
