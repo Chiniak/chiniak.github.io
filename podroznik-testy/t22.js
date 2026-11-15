@@ -21,7 +21,7 @@ const { chromium, devices } = require('playwright');
     await p.goto('http://localhost:8765/podroznik/#/podroze'); await p.waitForTimeout(400);
     const id = await p.evaluate(() => DB.put('trips', { name: 'Kraków', destination: '', start: '2027-05-01', end: '2027-05-03' }).then(t => t.id));
     await p.goto(`http://localhost:8765/podroznik/#/odkrywaj/${id}`); await p.waitForTimeout(400);
-    await p.click('#dc-gps'); await p.waitForSelector('.dc-card, .dc-list p:not(:first-child), .dc-list p:has-text("⚠️")', { timeout: 20000 }); await p.waitForTimeout(300);
+    await p.click('#dc-gps'); await p.waitForSelector('.dc-card, .dc-list p:not(:first-child), .dc-list .dc-warn', { timeout: 20000 }); await p.waitForTimeout(300);
     console.log(`[${mode}] attractions:`, await p.$$eval('.dc-card b', e => e.map(x => x.textContent)), '| servers:', [...new Set(hits)].join(','));
     if (mode === 'down') {
       await p.click('a.st-chip[href*="t=jedzenie"]'); await p.waitForTimeout(4000);
@@ -35,6 +35,6 @@ const { chromium, devices } = require('playwright');
   const ctx = await b.newContext({ ...devices['Pixel 7'], locale: 'pl-PL' }); await ctx.route(/overpass|maps\.mail\.ru|wikipedia|open-meteo/, r => r.fulfill({ status: 503, body: '' }));
   const p = await ctx.newPage(); await p.goto('http://localhost:8765/podroznik/#/podroze'); await p.waitForTimeout(400);
   const id = await p.evaluate(() => DB.put('trips', { name: 'X', start: '2027-05-01', end: '2027-05-03' }).then(t => t.id));
-  await p.goto(`http://localhost:8765/podroznik/#/odkrywaj/${id}?t=atrakcje&lat=50.06&lon=19.93&gdzie=tutaj`); await p.waitForSelector('.dc-list p:has-text("⚠️")', { timeout: 20000 });
+  await p.goto(`http://localhost:8765/podroznik/#/odkrywaj/${id}?t=atrakcje&lat=50.06&lon=19.93&gdzie=tutaj`); await p.waitForSelector('.dc-list .dc-warn', { timeout: 20000 });
   console.log('[all down] message:', (await p.textContent('.dc-list')).trim());
   await b.close(); })();
