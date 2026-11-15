@@ -219,6 +219,14 @@ dwa kroje, zdjęcia bez motywów religijnych, tło ze zdjęć – nowi użytkown
   w Newsreader, chip „ok. X na dzień”, kategorie jako `.type-chip`, kwota + waluta zapamiętana `budgetCur:<id>`) · skróty `.pl-tools.dz-tools`
   (Mapa dnia, W pobliżu, Rozmówki, Dokumenty) · „Jutro” `.dz-next` (do 3 punktów z godziną) albo „Ostatni dzień podróży”.
 
+## Wjazd i wizy (`visas.js`, panel w szczegółach podróży)
+- Sekcja „Wjazd i wizy” w `#/podroze/:id` (pod narzędziami, tylko podróże nie zakończone): nagłówek z chipem „N do zrobienia” (`warn`) albo
+  „w porządku” (`ok`); `.list.vz-list` – wiersz `.vz-row`: flaga w `li-ico` (`is-act` = tło ostrzegawcze), nazwa kraju + chip rodzaju
+  (bez wizy `ok`, formularz / wiza po przylocie `accent`, zezwolenie / e-wiza / sprawdź `warn`, wiza `err`, mam `ok`), opis, dodatki
+  (`.vz-bad` przekroczony limit dni / koniec zwolnienia, `.vz-ok` mam, termin przypomnienia), przyciski-pigułki `.vz-acts` (Oficjalna strona,
+  Mam – `aria-pressed`), krzyżyk `.vz-x` w rogu = „Nie jadę”. Pod listą `select` „+ Dodaj kraj” (przerywana ramka) i źródło `.vz-src` (MSZ).
+- Dane: polski paszport, stan 2026 – orientacyjne, zawsze link do MSZ; linki tylko do oficjalnych stron (pośrednicy).
+
 ## Testy całości (etap 9)
 - Przegląd automatyczny: 38 ekranów × 5 wariantów (jasny, ciemny, angielski, 360 px, tablet 1024 px) – bez błędów JS w konsoli,
   bez elementów wychodzących poza ekran, bez poziomego przewijania; zrzuty obejrzane ręcznie.

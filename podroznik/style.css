@@ -1727,3 +1727,28 @@ button.li { font-weight: 400; }
 .hm-today { margin: 12px 0 0; }
 .dz-head ~ .sec-h { margin-top: 20px; }
 @media (max-width: 380px) { .dz-act { flex-direction: column; gap: 2px; min-height: 56px; font-size: var(--fs-cap); white-space: nowrap; } }
+/* ---------- wjazd i wizy (trips.js + visas.js) ---------- */
+.vz-list .vz-row { align-items: flex-start; padding-top: 12px; padding-bottom: 10px; }
+.vz-flag { background: var(--surface-2); font-size: var(--fs-xl); line-height: 1; }
+.vz-row.is-act .vz-flag { background: var(--warn-soft); }
+.vz-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.vz-top .chip { height: 22px; padding: 0 8px; }
+.vz-row small { overflow-wrap: anywhere; }
+.vz-extra { display: flex; flex-direction: column; margin-top: 2px; }
+.vz-bad { color: var(--err-text); font-weight: 600; }
+.vz-ok { color: var(--ok-text); font-weight: 600; }
+.vz-acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.vz-acts a, .vz-acts button { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface); color: var(--accent); font: inherit; font-size: var(--fs-sm); font-weight: 600; text-decoration: none; cursor: pointer; }
+.vz-acts .ic { width: 16px; height: 16px; }
+.vz-row { position: relative; }
+.vz-row .li-main { padding-right: 28px; }
+.vz-x { position: absolute; top: 10px; right: 10px; margin: 0; width: 36px; height: 36px; color: var(--faint); }
+.vz-x .ic { width: 16px; height: 16px; }
+.vz-acts button[aria-pressed="true"] { background: var(--ok-soft); border-color: var(--ok-soft); color: var(--ok-text); }
+.vz-row.is-done .li-main > small:first-of-type { color: var(--muted); }
+.vz-add { display: block; margin: 8px 0 0; }
+.vz-add select { width: 100%; min-height: 44px; padding: 0 12px; border-radius: var(--r-ctl); border: 1px dashed var(--line); background: transparent; color: var(--accent); font: inherit; font-size: var(--fs-sm); font-weight: 600; }
+.vz-src { display: flex; gap: 8px; margin: 10px 2px 0; font-size: var(--fs-cap); color: var(--muted); }
+.vz-src .ic { flex: none; width: 16px; height: 16px; margin-top: 1px; }
+.vz-src a { color: var(--accent); }
+.vz-none { margin: 0; }

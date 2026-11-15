@@ -557,6 +557,8 @@
         ${row(null, "bell", "Do kalendarza", "plik .ics z przypomnieniami", ` id="ics-trip"`)}
       </div>`;
 
+    const visas = t.end >= today && self.Visas ? await visaPanel(t, segs, plan) : "";
+
     const typeButtons = Object.entries(TYPES).map(([k, T]) =>
       `<a class="type-btn" href="#/podroze/${id}/dodaj?typ=${k}"><i aria-hidden="true">${ic(ICON_OF[k] || "compass")}</i>${T.name}</a>`).join("");
     const nSeg = segs.length;
@@ -565,7 +567,7 @@
       title: "Podróż",
       back: "#/podroze",
       action: `<a class="icon-btn" href="#/podroze/${id}/edytuj" aria-label="Edytuj podróż">${ic("edit")}</a>`,
-      html: head + stats + tools + (wx && wx.data ? App.Weather.strip(wx.data, t) : "") +
+      html: head + stats + tools + visas + (wx && wx.data ? App.Weather.strip(wx.data, t) : "") +
         `<div class="sec-h td-sec"><h2 class="section">Trasa i noclegi</h2>${nSeg ? `<span class="chip">${nSeg}</span>` : ""}</div>` +
         (timeline || App.empty("🗺️", "Pusta oś czasu", "Dodaj pierwszy lot, pociąg, autobus albo nocleg – wybierz poniżej.")) +
         `<h2 class="section">Dodaj do podróży</h2><div class="type-grid">${typeButtons}</div>
@@ -578,11 +580,83 @@
         if (App.Covers && !cov[id]) App.Covers.fill([t], new Set(), (x, c) => paintAuto(view, x.id, c.data));
         // pogoda: pokazane zapisane dane, świeże pobierane w tle (jeśli są starsze niż 3 h)
         if (wx) wx.refresh().then(changed => { if (changed) App.render(); }).catch(() => {});
+        bindVisas(view, t);
         const b = view.querySelector("#ics-trip");
         if (b) b.onclick = () => App.Reminders.exportTrips([t.id], t.name);
       },
     };
   });
+
+  /* ================= WJAZD I WIZY (visas.js) ================= */
+  const flag = cc => String.fromCodePoint(...[...cc].map(c => 0x1f1e6 + c.charCodeAt(0) - 65));
+  const dmy = s => `${+s.slice(8)}.${s.slice(5, 7)}.${s.slice(0, 4)}`;
+  async function visaPanel(t, segs, plan) {
+    await Visas.ready();
+    const list = Visas.analyze(t, segs, plan, await DB.all("docs"));
+    const daysTxt = n => `${n} ${plural(n, "dzień", "dni", "dni")}`;
+    const info = v => {
+      const p = v.permit;
+      return {
+        free: `Bez wizy do ${daysTxt(v.days)}`,
+        form: `Bez wizy do ${daysTxt(v.days)} · ${p} – online najwcześniej 3 dni przed przylotem`,
+        eta: `${p} – złóż online przed wylotem${v.transit ? " · także przy samej przesiadce" : ""}`,
+        evisa: `${p} – złóż online z wyprzedzeniem`,
+        voa: `Wiza na lotnisku albo wcześniej online${p ? ` (${p})` : ""}`,
+        visa: `${p || "Wiza z ambasady"} – zacznij załatwiać wcześnie`,
+        check: `Zasady czasowe albo niepewne${p ? ` (${p})` : ""} – sprawdź przed wyjazdem`,
+        unknown: "Brak danych w aplikacji – sprawdź na stronie MSZ",
+      }[v.kind];
+    };
+    const chipCls = { free: "ok", form: "accent", eta: "warn", evisa: "warn", voa: "accent", visa: "err", check: "warn", unknown: "" };
+    const rows = list.map(v => {
+      const act = Visas.needsAction(v);
+      const lead = (Visas.LEAD[v.kind] || [])[0];
+      const extra = [
+        v.over ? `<span class="vz-bad">Podróż: ${daysTxt(v.stay)} – dłużej, niż można bez wizy</span>` : "",
+        v.untilPassed ? `<span class="vz-bad">Zwolnienie z wiz do ${dmy(v.until)} – podróż kończy się później</span>` : v.until ? `<span>Zwolnienie czasowe – do ${dmy(v.until)}</span>` : "",
+        v.done ? `<span class="vz-ok">${v.doneBy === "doc" ? "Wiza w Dokumentach" : "Oznaczone: mam"}</span>`
+          : act && lead ? `<span>${v.arriveKnown ? `Przylot ${App.fmtDay(v.arrive)} · przypomnę ${daysTxt(lead)} wcześniej` : `Przypomnę ${daysTxt(lead)} przed wyjazdem`}</span>` : v.transit ? "<span>przesiadka</span>" : "",
+      ].filter(Boolean).join("");
+      return `
+        <div class="li vz-row${v.done ? " is-done" : ""}${act ? " is-act" : ""}" data-cc="${v.cc}">
+          <span class="li-ico vz-flag" aria-hidden="true">${flag(v.cc)}</span>
+          <span class="li-main">
+            <span class="vz-top"><b>${esc(v.name)}</b><span class="chip ${v.done ? "ok" : chipCls[v.kind]}">${v.done ? "mam" : Visas.KIND_TXT[v.kind]}</span></span>
+            <button type="button" class="icon-btn vz-x" data-vz-skip="${v.cc}" aria-label="Nie jadę do: ${esc(v.name)}" title="Nie jadę tam">${ic("close", "sm")}</button>
+            <small>${esc(info(v))}</small>
+            ${extra ? `<small class="vz-extra">${extra}</small>` : ""}
+            ${v.url && v.kind !== "free" || !(["free", "unknown"].includes(v.kind) && !v.over && !v.untilPassed || v.doneBy === "doc") ? `<span class="vz-acts">` : `<span class="vz-acts" hidden>`}
+              ${v.url && v.kind !== "free" ? `<a href="${esc(v.url)}" target="_blank" rel="noopener">${ic("globe", "sm")}<span>Oficjalna strona</span></a>` : ""}
+              ${["free", "unknown"].includes(v.kind) && !v.over && !v.untilPassed || v.doneBy === "doc" ? "" : `<button type="button" data-vz-done="${v.cc}" aria-pressed="${v.done}">${ic("check", "sm")}<span>Mam</span></button>`}
+            </span>
+          </span>
+        </div>`;
+    }).join("");
+    const opts = Object.keys(Visas.D).filter(cc => Visas.D[cc][0] !== "eu" && !list.some(v => v.cc === cc))
+      .map(cc => [cc, Visas.name(cc)]).sort((a, b) => a[1].localeCompare(b[1], "pl"))
+      .map(([cc, n]) => `<option value="${cc}">${esc(n)}</option>`).join("");
+    const todo = list.filter(Visas.needsAction).length;
+    return `
+      <div class="sec-h td-sec"><h2 class="section">Wjazd i wizy</h2>${todo ? `<span class="chip warn">${todo} do zrobienia</span>` : list.length ? `<span class="chip ok">w porządku</span>` : ""}</div>
+      ${rows ? `<div class="list vz-list">${rows}</div>` : `<p class="f-hint vz-none">Nie rozpoznano kraju poza Unią Europejską – dodaj go niżej, jeśli trzeba.</p>`}
+      <label class="vz-add"><span class="sr">Dodaj kraj</span><select id="vz-add"><option value="">+ Dodaj kraj</option>${opts}</select></label>
+      <p class="vz-src">${ic("info", "sm")}<span>Polski paszport, dane orientacyjne (stan: ${Visas.AS_OF}). Przepisy się zmieniają – przed wyjazdem sprawdź
+        <a href="${Visas.MSZ}" target="_blank" rel="noopener">MSZ: Informacje dla podróżujących</a>. Wnioski składaj tylko na oficjalnych stronach.</span></p>`;
+  }
+  function bindVisas(view, t) {
+    const save = async fn => {
+      const cur = await DB.get("trips", t.id);
+      const v = { add: [], skip: [], done: [], ...(cur.visa || {}) };
+      fn(v);
+      await DB.put("trips", { ...cur, visa: v });
+      App.render();
+    };
+    const tog = (arr, cc, on) => { const i = arr.indexOf(cc); if (on && i < 0) arr.push(cc); if (!on && i >= 0) arr.splice(i, 1); };
+    view.querySelectorAll("[data-vz-done]").forEach(b => b.onclick = () => save(v => tog(v.done, b.dataset.vzDone, b.getAttribute("aria-pressed") !== "true")));
+    view.querySelectorAll("[data-vz-skip]").forEach(b => b.onclick = () => save(v => { const cc = b.dataset.vzSkip; if (v.add.includes(cc)) tog(v.add, cc, false); else tog(v.skip, cc, true); }));
+    const sel = view.querySelector("#vz-add");
+    if (sel) sel.onchange = () => sel.value && save(v => { tog(v.add, sel.value, true); tog(v.skip, sel.value, false); });
+  }
 
   /* ================= FORMULARZ ODCINKA ================= */
   function segFields(type, v) {

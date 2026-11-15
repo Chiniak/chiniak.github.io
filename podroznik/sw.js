@@ -2,12 +2,12 @@
    Pliki aplikacji: najpierw sieć (aktualizacje od razu), zapisana kopia gdy brak internetu.
    Przy każdej zmianie plików podbij numer CACHE. Dane użytkownika są w IndexedDB, nie tutaj. */
 // baza i wyliczanie przypomnień – do sprawdzania w tle (Periodic Background Sync)
-importScripts("i18n-en.js", "i18n.js", "db.js", "reminders-core.js");
+importScripts("i18n-en.js", "i18n.js", "db.js", "lib/airports.js", "visas.js", "reminders-core.js");
 
-const CACHE = "podroznik-v56";
+const CACHE = "podroznik-v57";
 const APP = [
   "./", "./index.html", "./style.css", "./i18n-en.js", "./i18n.js", "./native.js", "./db.js", "./app.js", "./trips.js", "./manifest.webmanifest",
-  "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png", "./tickets.js", "./plan.js", "./pack.js", "./reminders-core.js", "./reminders.js", "./backup.js", "./lock.js", "./docs.js", "./budget.js", "./stats.js", "./weather.js", "./email.js", "./places.js", "./discover.js", "./split.js", "./share.js", "./offline.js", "./phrases.js", "./photos.js", "./backdrop.js", "./prep.js", "./ocr.js", "./gmail.js", "./icons.js", "./covers.js", "./settings.js", "./dzis.js",
+  "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png", "./tickets.js", "./plan.js", "./pack.js", "./reminders-core.js", "./reminders.js", "./backup.js", "./lock.js", "./docs.js", "./budget.js", "./stats.js", "./weather.js", "./email.js", "./places.js", "./discover.js", "./split.js", "./share.js", "./offline.js", "./phrases.js", "./photos.js", "./backdrop.js", "./prep.js", "./ocr.js", "./gmail.js", "./icons.js", "./covers.js", "./settings.js", "./dzis.js", "./visas.js",
   // czcionki (lib/fonts) – wygląd bez internetu
   "./lib/fonts/plus-jakarta-sans-latin-wght-normal.woff2", "./lib/fonts/plus-jakarta-sans-latin-ext-wght-normal.woff2", "./lib/fonts/plus-jakarta-sans-vietnamese-wght-normal.woff2",
   "./lib/fonts/newsreader-latin-500-normal.woff2", "./lib/fonts/newsreader-latin-ext-500-normal.woff2", "./lib/fonts/newsreader-vietnamese-500-normal.woff2",
@@ -107,6 +107,9 @@ self.addEventListener("periodicsync", e => {
 // aplikacja (otwarta) prosi o pokazanie powiadomienia
 self.addEventListener("message", e => {
   if (e.data && e.data.type === "check-reminders") e.waitUntil(Reminders.check(showReminder));
+  // diagnostyka (test t43): czy przypomnienia o wizach liczą się w tle – lotniska i visas.js wczytane
+  if (e.data && e.data.type === "visa-status" && e.ports[0]) e.waitUntil(Reminders.load().then(({ list }) =>
+    e.ports[0].postMessage({ visas: list.filter(r => r.id.startsWith("visa:")).length, airports: !!self.AIRPORT_DATA })));
 });
 
 // dotknięcie powiadomienia otwiera aplikację na właściwym ekranie

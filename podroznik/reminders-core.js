@@ -44,13 +44,14 @@
     packDays: 2,   // przypomnienie o pakowaniu N dni przed wyjazdem o 18:00 (0 = wył.)
     todos: true,   // zadania „przed wyjazdem” z terminem – o 9:00 w dniu terminu
     plan: 0,       // punkty planu z godziną – minut przed (0 = wył.)
+    visa: true,    // wizy i zezwolenia (visas.js) – N dni przed przylotem do kraju, o 10:00
     backup: true,  // kopia zapasowa poza telefonem – 3 dni przed wyjazdem o 18:00, jeśli od ostatniej kopii coś się zmieniło
   };
 
   function config(saved) {
     const c = JSON.parse(JSON.stringify(DEFAULTS));
     if (!saved) return c;
-    for (const k of ["enabled", "packDays", "todos", "plan", "backup"]) if (k in saved) c[k] = saved[k];
+    for (const k of ["enabled", "packDays", "todos", "plan", "backup", "visa"]) if (k in saved) c[k] = saved[k];
     if (saved.types) for (const t in c.types) Object.assign(c.types[t], saved.types[t] || {});
     return c;
   }
@@ -139,6 +140,8 @@
           title: `${name} traci ważność ${leftTxt}`, body: `Ważny do ${fmtDay(d.expires)}. Sprawdź, ile trwa wyrobienie nowego.` });
       }
     }
+    // wizy i zezwolenia na wjazd (visas.js; w service workerze wczytany przez importScripts)
+    if (cfg.visa && root.Visas) out.push(...root.Visas.reminders(data, now.slice(0, 10)));
     return out.sort((a, b) => a.at.localeCompare(b.at));
   }
 
@@ -160,13 +163,15 @@
     const due = list.filter(r => r.at <= now && now < r.eventAt), best = {};
     for (const r of due) {
       const key = r.id.startsWith("seg:") ? r.id.split(":").slice(0, 2).join(":") + (r.id.endsWith(":out") ? ":out" : "")
-        : r.id.startsWith("doc:") ? r.id.split(":").slice(0, 2).join(":") : r.id;
+        : r.id.startsWith("doc:") ? r.id.split(":").slice(0, 2).join(":")
+        : r.id.startsWith("visa:") ? r.id.split(":").slice(0, 3).join(":") : r.id;
       if (!best[key] || best[key].at < r.at) best[key] = r;
     }
     return Object.values(best).sort((a, b) => a.at.localeCompare(b.at));
   }
 
   async function load() {
+    if (root.Visas) await root.Visas.ready(); // lista lotnisk (kraj przylotu)
     const [trips, segments, packItems, planItems, docs, files, expenses, saved, lastBackup] = await Promise.all([
       DB.all("trips"), DB.all("segments"), DB.all("packItems"), DB.all("planItems"), DB.all("docs"), DB.all("files"), DB.all("expenses"),
       DB.getSetting("reminders", null), DB.getSetting("lastBackup", null)]);
