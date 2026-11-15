@@ -163,6 +163,7 @@
       back: `#/podroze/${id}`,
       html: `${summaryCard}${cats ? `<h2 class="section">Kategorie</h2><div class="list bg-cats">${cats}</div>` : ""}
         ${people.length > 1 ? `<div class="list bg-split-link"><a class="li" href="#/rozliczenie/${id}"><span class="li-ico">${I("users")}</span><span class="li-main"><b>Rozliczenie</b><small>kto komu ile oddaje · ${people.length} ${plural(people.length, "osoba", "osoby", "osób")}</small></span>${I("chev")}</a></div>` : ""}
+        <div class="list bg-split-link"><a class="li" href="#/waluty/${id}"><span class="li-ico">${I("currency")}</span><span class="li-main"><b>Przelicznik walut</b><small>offline, ściąga kwot, kursy na drogę</small></span>${I("chev")}</a></div>
         ${add}
         <div id="bg-list">${list}</div>
         <h2 class="section">Budżet i waluty</h2>
@@ -198,9 +199,13 @@
           const t = await DB.get("trips", id);
           const newHome = cur3(cfg.home.value) || "PLN";
           const rates = { ...(t.rates || {}) };
-          d.currencies.forEach(c => { const v = num(cfg[`rate_${c}`].value); if (v > 0) rates[c] = v; else delete rates[c]; });
+          const info = { ...(t.ratesInfo || {}) };
+          d.currencies.forEach(c => {
+            const inp = cfg[`rate_${c}`], v = num(inp.value);
+            if (v > 0) { if (v !== rates[c]) info[c] = { at: App.todayStr(), src: inp.dataset.src || "ręcznie" }; rates[c] = v; } else { delete rates[c]; delete info[c]; }
+          });
           const ppl = [...new Set(cfg.people.value.split(",").map(x => x.trim().slice(0, 30)).filter(Boolean))];
-          await DB.put("trips", { ...t, budget: { amount: num(cfg.budget.value), currency: newHome }, rates, people: ppl });
+          await DB.put("trips", { ...t, budget: { amount: num(cfg.budget.value), currency: newHome }, rates, ratesInfo: info, people: ppl });
           App.toast("Zapisano");
           App.render();
         });
@@ -211,7 +216,7 @@
           let ok = 0;
           for (const c of d.currencies) {
             const v = await nbp(c);
-            if (v) { cfg[`rate_${c}`].value = String(v).replace(".", ","); ok++; }
+            if (v) { cfg[`rate_${c}`].value = String(v).replace(".", ","); cfg[`rate_${c}`].dataset.src = "NBP"; ok++; }
           }
           nbpBtn.disabled = false; nbpBtn.innerHTML = `${App.icon("bank", "sm")} Pobierz kursy z NBP`;
           App.toast(ok ? `Pobrano ${ok} ${plural(ok, "kurs", "kursy", "kursów")} – zapisz` : "Nie udało się pobrać (brak internetu?) – wpisz ręcznie");

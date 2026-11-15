@@ -227,6 +227,15 @@ dwa kroje, zdjęcia bez motywów religijnych, tło ze zdjęć – nowi użytkown
   Mam – `aria-pressed`), krzyżyk `.vz-x` w rogu = „Nie jadę”. Pod listą `select` „+ Dodaj kraj” (przerywana ramka) i źródło `.vz-src` (MSZ).
 - Dane: polski paszport, stan 2026 – orientacyjne, zawsze link do MSZ; linki tylko do oficjalnych stron (pośrednicy).
 
+## Przelicznik walut (`waluty.js`, trasa `#/waluty/:id`)
+- Tytuł „Waluty”, akcja = Budżet. Karta `.cv-card` (cień): chip podróży + chip „brak kursu”, pole kwoty `.cv-line` (Newsreader 32 px, przy
+  długim tekście `.long` 20 px; liczy `+ − × /` – `App.Money.calc`), pod nim wynik wyrażenia `.cv-calc` i okrągły przycisk zamiany `.cv-swap`,
+  wynik `.cv-out` na `--accent-soft` (turkusowy tekst), kurs w obie strony `.cv-rate`, „Dodaj jako wydatek”. Pod kartą chipy walut podróży
+  (`.st-chip.on`), „Ściąga: X → Y” – siatka 2 kolumny okrągłych kwot (ok. 1–3000 zł), dotknięcie wpisuje kwotę; „Kursy na drogę” – lista
+  z kodem waluty w `li-ico`, źródłem i datą („NBP · 15.11”, „wpisany ręcznie”, „kurs z budżetu”) i polem do wpisania kursu; NBP (wyłączony offline),
+  „+ Dodaj walutę”, uwaga o kursie średnim. Wejścia: kafelek „Waluty” na ekranie Dziś (kafelki 3 × 2), wiersz w podróży, link w budżecie,
+  krok „Kursy walut” w Przygotuj offline.
+
 ## Testy całości (etap 9)
 - Przegląd automatyczny: 38 ekranów × 5 wariantów (jasny, ciemny, angielski, 360 px, tablet 1024 px) – bez błędów JS w konsoli,
   bez elementów wychodzących poza ekran, bez poziomego przewijania; zrzuty obejrzane ręcznie.

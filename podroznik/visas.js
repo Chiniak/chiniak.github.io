@@ -162,8 +162,9 @@
 
   /* kraje jednej podróży z wymaganiami:
      [{ cc, name, kind, days, permit, url, until, arrive, leave, stay, over, transit, done, doneBy, manual }] */
-  function analyze(trip, segs = [], items = [], docs = []) {
-    const seen = {}; // cc → { arrive, leave, text, air, transitOnly }
+  // kraje podróży: cc → { arrive, leave, text, stay, air } (air bez stay i text = tylko przesiadka)
+  function detect(trip, segs = [], items = []) {
+    const seen = {};
     const note = (cc, at, how) => {
       if (!cc || cc === HOME) return;
       const s = seen[cc] || (seen[cc] = { arrive: null, leave: null, text: false, stay: false, air: false });
@@ -187,8 +188,18 @@
       for (const cc of textCountries(s.type === "nocleg" ? `${s.name || ""} | ${s.address || ""}` : `${s.from || ""} | ${s.to || ""}`)) note(cc, day(s.depart), "text");
     }
     for (const i of items) for (const cc of textCountries(i.place && !/^https?:/i.test(i.place) ? i.place : "")) note(cc, i.date || null, "text");
+    for (const cc of (trip.visa || {}).add || []) note(cc, null, "text");
+    return seen;
+  }
+  // kraje, w których się bywa (bez samych przesiadek i bez „Nie jadę”) – np. do walut (waluty.js)
+  function countries(trip, segs = [], items = []) {
+    const seen = detect(trip, segs, items), skip = (trip.visa || {}).skip || [];
+    return Object.keys(seen).filter(cc => (seen[cc].stay || seen[cc].text) && !skip.includes(cc));
+  }
+
+  function analyze(trip, segs = [], items = [], docs = []) {
+    const seen = detect(trip, segs, items);
     const V = trip.visa || {};
-    for (const cc of V.add || []) note(cc, null, "text");
 
     const total = Math.round((new Date(trip.end) - new Date(trip.start)) / 86400000) + 1;
     const stayCountries = Object.keys(seen).filter(cc => seen[cc].stay || seen[cc].text);
@@ -251,5 +262,5 @@
     return out;
   }
 
-  root.Visas = { D, AS_OF, MSZ, LEAD, KIND_TXT, analyze, needsAction, reminders, textCountries, name, ready, airCC };
+  root.Visas = { detect, countries, D, AS_OF, MSZ, LEAD, KIND_TXT, analyze, needsAction, reminders, textCountries, name, ready, airCC };
 })(self);
