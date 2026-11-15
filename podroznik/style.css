@@ -1039,6 +1039,7 @@ html.has-bg .card, html.has-bg .pl-row, html.has-bg .plan-link { box-shadow: 0 2
 .hm-tcard:active .hm-tcard-img { opacity: .9; }
 .hm-thumb { flex: none; width: 44px; height: 44px; border-radius: var(--r-sm); background: color-mix(in srgb, var(--c) 75%, var(--surface)); }
 .hm-nothing { margin: 8px 2px; }
+.cover-credit { margin: -2px 4px 10px; font-size: var(--fs-cap); color: var(--muted); overflow-wrap: anywhere; }
 
 /* F: szybkie akcje */
 .hm-quick { display: grid; grid-template-columns: repeat(auto-fit, minmax(76px, 1fr)); gap: 10px; }
