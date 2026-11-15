@@ -214,8 +214,8 @@
       title: "Odkrywaj",
       back: `#/plan/${id}`,
       html: `
-        <div class="dc-tabs" role="tablist">${tabs}</div>
-        ${tab !== "szukaj" ? `<h3 class="section dc-near-label">W pobliżu</h3><div class="st-chips dc-near">${near}</div>` : ""}
+        <div class="dc-tabs">${tabs}</div>
+        ${tab !== "szukaj" ? `<h2 class="section dc-near-label">W pobliżu</h2><div class="st-chips dc-near">${near}</div>` : ""}
         ${tab === "szukaj" ? `
           <form class="pl-search dc-search" id="dc-form" role="search"><span class="pl-search-ic" aria-hidden="true">${I("search")}</span><input name="q" placeholder="np. Pastéis de Belém, plaża, muzeum azulejos" value="${esc(q.q || "")}" autocomplete="off" aria-label="Szukaj miejsca">
             <button class="btn primary" type="submit">Szukaj</button></form>` : ""}

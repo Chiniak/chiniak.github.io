@@ -536,21 +536,21 @@
             <label class="field"><span>Co</span>
               <input name="title" required maxlength="100" placeholder="np. Oceanarium, kolacja w Time Out Market" value="${esc(v.title)}"></label>
           </div>
-          <div class="fsec"><h3 class="section">Kiedy</h3>
+          <div class="fsec"><h2 class="section">Kiedy</h2>
             <div class="grid2">
               <label class="field"><span>Dzień</span><select name="date">${dateOpts}</select></label>
               <label class="field"><span>Godzina (opcjonalnie)</span><input type="time" name="time" value="${esc(v.time)}"></label>
             </div>
           </div>
-          <div class="fsec"><h3 class="section">Gdzie</h3>
+          <div class="fsec"><h2 class="section">Gdzie</h2>
             ${App.Places ? App.Places.searchBox(v) : `<label class="field"><span>Miejsce – adres, nazwa lub link do mapy</span>
               <input name="place" maxlength="500" value="${esc(v.place)}"></label>`}
           </div>
-          ${App.Tickets && App.Tickets.addFiles ? `<div class="fsec"><h3 class="section">Bilety i zdjęcia</h3><div class="field"><span>Bilet, screen potwierdzenia, zaproszenie</span>
+          ${App.Tickets && App.Tickets.addFiles ? `<div class="fsec"><h2 class="section">Bilety i zdjęcia</h2><div class="field"><span>Bilet, screen potwierdzenia, zaproszenie</span>
             <div class="pl-files" id="pl-files">${files.map(x => `<a class="pl-file" href="#/bilet/${x.id}">${App.icon(x.kind === "code" ? "qr" : x.kind === "pdf" ? "doc" : "image", "sm")} ${esc(x.label || "Bilet")}${x.code ? " · kod" : ""}</a>`).join("")}</div>
             <label class="btn wide">${App.icon("clip", "sm")} Dodaj zdjęcie, screen lub PDF<input type="file" id="pl-file" accept="image/*,application/pdf,.pkpass" multiple hidden></label>
             <p class="f-hint" id="pl-file-note">${files.length ? "Dotknij biletu, by pokazać go na pełnym ekranie (np. przy wejściu)." : "Bilet pokaże się na pełnym ekranie, a kod (QR, kreskowy) aplikacja odczyta sama."}</p></div></div>` : ""}
-          <div class="fsec"><h3 class="section">Koszt i notatka</h3>
+          <div class="fsec"><h2 class="section">Koszt i notatka</h2>
             <div class="grid2 price">
               <label class="field"><span>Koszt</span><input name="cost" inputmode="decimal" placeholder="np. 25" value="${esc(v.cost)}"></label>
               <label class="field"><span>Waluta</span><input name="currency" maxlength="5" autocapitalize="characters" value="${esc(v.currency || "PLN")}"></label>
@@ -558,7 +558,7 @@
             <label class="field"><span>Notatka</span>
               <textarea name="note" rows="3" placeholder="np. bilety kupić online, zamknięte w poniedziałki">${esc(v.note)}</textarea></label>
           </div>
-          ${App.Photos ? `<div class="fsec"><h3 class="section">Zdjęcie</h3><div class="field"><span class="sr">Zdjęcie</span>
+          ${App.Photos ? `<div class="fsec"><h2 class="section">Zdjęcie</h2><div class="field"><span class="sr">Zdjęcie</span>
             <div class="pl-ph-box" id="pl-ph">${photoBox(v.photo)}</div>
             <div class="pl-ph-btns">
               <button type="button" class="btn" id="pl-ph-find">${App.icon("search", "sm")} Znajdź</button>

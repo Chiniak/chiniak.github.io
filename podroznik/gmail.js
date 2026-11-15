@@ -450,7 +450,7 @@
     const tripOpts = sel => trips.map(t => `<option value="${t.id}" ${t.id === sel ? "selected" : ""}>${esc(t.name)} · ${App.fmtRange(t.start, t.end)}</option>`).join("");
     const groupHtml = (g, gi) => `
       <section class="gm-group" data-g="${gi}">
-        <h3 class="section">${g.trip ? `🧳 ${esc(g.trip.name)}` : `➕ Nowa podróż: ${esc(g.name)}`} <span class="muted small">${App.fmtRange(g.start, g.end)}</span></h3>
+        <h2 class="section">${g.trip ? `🧳 ${esc(g.trip.name)}` : `➕ Nowa podróż: ${esc(g.name)}`} <span class="muted small">${App.fmtRange(g.start, g.end)}</span></h2>
         ${g.items.map(itemHtml).join("")}
         <div class="card em-save">
           <label class="field"><span>Dodaj do podróży</span>
@@ -467,14 +467,14 @@
           <div class="pr-sum-top"><span class="pr-sum-k">Gmail</span><span class="chip ok">połączone</span></div>
           <h2 class="gm-mail" translate="no">${esc(cfg.email)}</h2>
           <dl class="bk-facts"><div><dt>Sprawdzone</dt><dd id="gm-last">${ago(cfg.lastScan)}</dd></div></dl>
-          ${cfg.error ? `<p class="error small" style="margin:8px 0 0">${esc(cfg.error)}</p>` : ""}
-          <div class="add-row" style="margin-top:12px">
+          ${cfg.error ? `<p class="error small gm-err">${esc(cfg.error)}</p>` : ""}
+          <div class="add-row gm-acts">
             <button type="button" class="btn primary" id="gm-scan">${App.icon("undo", "sm")} Sprawdź teraz</button>
             <button type="button" class="btn" id="gm-off">Odłącz konto</button>
           </div>
-          <p class="small muted" id="gm-prog" style="margin:8px 0 0"></p>
+          <p class="small muted gm-prog" id="gm-prog"></p>
         </div>
-        ${count ? `<h3 class="section">Propozycje: ${count}</h3>${groups.map(groupHtml).join("")}`
+        ${count ? `<h2 class="section">Propozycje: ${count}</h2>${groups.map(groupHtml).join("")}`
           : `<p class="muted">${cfg.lastScan ? "Brak nowych propozycji – wszystko z maili jest już w podróżach albo pominięte." : "Sprawdzam maile…"}</p>`}
         ${pastCount ? `<p><a href="#/gmail?wczesniej=1">Pokaż też wcześniejsze (${pastCount}) – np. do statystyk</a></p>` : ""}
         ${past ? `<p><a href="#/gmail">Tylko nadchodzące</a></p>` : ""}

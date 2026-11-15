@@ -175,7 +175,7 @@
       back: "#/podroze",
       html: `
         <div class="st-chips">${chips}</div>
-        <label class="pk-toggle st-plan"><input type="checkbox" id="st-plan" ${withPlanned ? "checked" : ""}> Licz też zaplanowane podróże</label>
+        <label class="sw st-plan"><input type="checkbox" id="st-plan" ${withPlanned ? "checked" : ""}><span class="sw-ui" aria-hidden="true"></span><span>Licz też zaplanowane podróże</span></label>
         <div class="st-tiles">
           ${tile(s.trips, plural(s.trips, "podróż", "podróże", "podróży"))}
           ${tile(s.days, plural(s.days, "dzień w drodze", "dni w drodze", "dni w drodze"))}
@@ -184,18 +184,18 @@
           ${tile(flights, plural(flights, "lot", "loty", "lotów"))}
           ${tile(s.nights, plural(s.nights, "noc w hotelach", "noce w hotelach", "nocy w hotelach"))}
         </div>
-        ${earth >= 0.05 ? `<p class="st-fun">🌍 To ${earth >= 1 ? `${earth.toFixed(1).replace(".", ",")} × dookoła Ziemi` : `${Math.round(earth * 100)}% drogi dookoła Ziemi`}</p>` : ""}
+        ${earth >= 0.05 ? `<p class="st-fun">${App.icon("globe", "sm")} To ${earth >= 1 ? `${earth.toFixed(1).replace(".", ",")} × dookoła Ziemi` : `${Math.round(earth * 100)}% drogi dookoła Ziemi`}</p>` : ""}
         ${map ? `<div class="card st-map-card">${map}</div>` : ""}
         ${s.missing.size ? `
           <div class="card st-missing">
-            <b>📍 ${s.missing.size} ${plural(s.missing.size, "miejsce", "miejsca", "miejsc")} bez położenia</b>
+            <b class="st-miss-t">${App.icon("pin", "sm")} ${s.missing.size} ${plural(s.missing.size, "miejsce", "miejsca", "miejsc")} bez położenia</b>
             <p class="small muted">${[...s.missing].slice(0, 6).map(esc).join(" · ")}${s.missing.size > 6 ? " …" : ""}</p>
             <p class="small muted">Kody lotnisk (np. WAW, LIS) działają bez internetu. Dworce, miasta i noclegi aplikacja może wyszukać w internecie (Open-Meteo).</p>
-            <button type="button" class="btn primary wide" id="st-geo">🔎 Uzupełnij położenie (internet)</button>
+            <button type="button" class="btn primary wide" id="st-geo">${App.icon("search", "sm")} Uzupełnij położenie (internet)</button>
           </div>` : ""}
-        ${kmRows ? `<h3 class="section">Transport</h3><div class="card">${kmRows}</div>` : ""}
-        ${countries.length ? `<h3 class="section">Kraje</h3><div class="card st-countries">${countries.map(c => `<span>${flag(c)} ${esc(regionName(c))}</span>`).join("")}</div>` : ""}
-        ${s.longest || s.longestTrip ? `<h3 class="section">Rekordy</h3><div class="card">
+        ${kmRows ? `<h2 class="section">Transport</h2><div class="card">${kmRows}</div>` : ""}
+        ${countries.length ? `<h2 class="section">Kraje</h2><div class="card st-countries">${countries.map(c => `<span>${flag(c)} ${esc(regionName(c))}</span>`).join("")}</div>` : ""}
+        ${s.longest || s.longestTrip ? `<h2 class="section">Rekordy</h2><div class="card">
           ${s.longestTrip ? `<div class="row"><span class="muted">Najdłuższa podróż</span><b>${esc(s.longestTrip.name)} · ${s.longestTrip.days} ${plural(s.longestTrip.days, "dzień", "dni", "dni")}</b></div>` : ""}
           ${s.longest ? `<div class="row"><span class="muted">Najdłuższy lot</span><b>${esc(s.longest.from)} → ${esc(s.longest.to)} · ${fmtKm(s.longest.km)}</b></div>` : ""}
           ${s.cities.size ? `<div class="row"><span class="muted">Miejsca (stacje, lotniska)</span><b>${s.cities.size}</b></div>` : ""}
@@ -210,7 +210,7 @@
             App.toast(found ? `Znaleziono ${found} z ${s.missing.size}` : "Nie znaleziono – spróbuj wpisać nazwę miasta");
             App.render();
           } catch (e) {
-            geo.disabled = false; geo.textContent = "🔎 Uzupełnij położenie (internet)";
+            geo.disabled = false; geo.innerHTML = `${App.icon("search", "sm")} Uzupełnij położenie (internet)`;
             App.toast("Brak internetu albo wyszukiwarka nie odpowiada");
           }
         };

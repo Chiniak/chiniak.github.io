@@ -79,12 +79,12 @@
         </section>
         ${s.skipped ? `<p class="td-note bg-warn">${App.icon("alert", "sm")}<span>${s.skipped} ${plural(s.skipped, "wydatek pominięty", "wydatki pominięte", "wydatków pominiętych")} – brak kursu waluty (uzupełnij w budżecie)</span></p>` : ""}
         ${s.unassigned ? `<p class="td-note bg-warn">${App.icon("alert", "sm")}<span>${s.unassigned} ${plural(s.unassigned, "wydatek ma", "wydatki mają", "wydatków ma")} osobę spoza listy uczestników – popraw w wydatku</span></p>` : ""}
-        <h3 class="section">Kto komu oddaje</h3>
+        <h2 class="section">Kto komu oddaje</h2>
         <div class="list sp-list">${transfers || `<p class="sp-done">${App.icon("check", "sm")} Wszyscy są rozliczeni.</p>`}</div>
         ${s.transfers.length ? `<button type="button" class="btn primary wide sp-share" id="sp-share">${App.icon("share", "sm")} Wyślij rozliczenie</button>` : ""}
-        <h3 class="section">Salda</h3>
+        <h2 class="section">Salda</h2>
         <div class="list sp-list">${rows}</div>
-        ${segSum ? `<h3 class="section">Bilety i noclegi z podróży</h3>
+        ${segSum ? `<h2 class="section">Bilety i noclegi z podróży</h2>
         <form class="form bg-cfg" id="sp-seg"><label class="field"><span>Kto je opłacił? (${m(segSum)} – dzielone na wszystkich)</span>
           <select name="payer"><option value="">nie dziel – każdy płacił za siebie</option>${s.people.map(n => `<option ${n === s.segPayer ? "selected" : ""}>${esc(n)}</option>`).join("")}</select></label></form>` : ""}
         <p class="f-hint sp-hint">Wydatki bez wskazanej osoby liczą się jako zapłacone przez „${esc(s.people[0])}” za wszystkich. Kto płacił i za kogo – ustawisz w szybkim dodawaniu albo w edycji wydatku.</p>`,

@@ -119,7 +119,7 @@
           url = URL.createObjectURL(d.blob);
           box.innerHTML = /pdf/.test(d.blob.type)
             ? `<a class="btn wide doc-pdf" href="${url}" target="_blank" rel="noopener">${App.icon("doc", "sm")} Otwórz skan (PDF)</a>`
-            : `<h3 class="section">Skan / zdjęcie</h3><img class="doc-img" src="${url}" alt="Skan dokumentu">`;
+            : `<h2 class="section">Skan / zdjęcie</h2><img class="doc-img" src="${url}" alt="Skan dokumentu">`;
         }
         const c = view.querySelector("#doc-copy");
         if (c) c.onclick = async () => {
@@ -153,7 +153,7 @@
             </div>
             <label class="field"><span>Numer</span><input name="number" maxlength="40" autocapitalize="characters" placeholder="np. EA1234567" value="${esc(v.number)}"></label>
           </div>
-          <div class="fsec"><h3 class="section">Ważność</h3>
+          <div class="fsec"><h2 class="section">Ważność</h2>
             <div class="grid2">
               <label class="field"><span>Data wydania</span><input type="date" name="issued" value="${esc(v.issued)}"></label>
               <label class="field"><span>Ważny do</span><input type="date" name="expires" value="${esc(v.expires)}"></label>
@@ -161,7 +161,7 @@
             <label class="field"><span>Przypomnij przed wygaśnięciem</span>
               <select name="remind">${REMIND.map(([k, n]) => `<option value="${k}" ${+v.remind === k ? "selected" : ""}>${n}</option>`).join("")}</select></label>
           </div>
-          <div class="fsec"><h3 class="section">Skan i notatka</h3>
+          <div class="fsec"><h2 class="section">Skan i notatka</h2>
             <div class="field"><span>Skan / zdjęcie (opcjonalnie, zostaje tylko w telefonie)</span>
               <div class="doc-file">
                 <span id="doc-file-name" class="muted small">${d && d.blob ? "dodano skan" : "brak"}</span>

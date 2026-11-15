@@ -10,16 +10,16 @@ ciemny motyw redefiniuje tylko kolory. Nowe style buduj z tokenów, bez kolorów
 | `--surface` | #FFFFFF | #18201F | karty, listy, pasek dolny |
 | `--surface-2` | #F0F3F1 | #1F2928 | tła pomocnicze, wciśnięcie |
 | `--text` | #202B2B | #E6ECEA | tekst |
-| `--muted` | #66736F | #93A19E | tekst drugorzędny (spec. #788582 – za mały kontrast, 3.6:1) |
+| `--muted` | #5F6C68 | #93A19E | tekst drugorzędny (etap 8: było #66736F – 4,4:1 na szarym tle; spec. #788582 – 3.6:1) |
 | `--faint` | #B7C2BF | #4A5755 | nieaktywne, puste pola wyboru |
 | `--line` | #E8EEEB | #2A3533 | obramowania, separatory |
 | `--accent-fill` | #43BDB5 | #5CCFC6 | **tylko wypełnienia**: przycisk główny, paski postępu, zaznaczenia |
-| `--accent` | #1A7F78 | #5CCFC6 | tekst i ikony w kolorze akcentu (4.8:1) |
+| `--accent` | #177670 | #5CCFC6 | tekst i ikony w kolorze akcentu (etap 8: było #1A7F78 – 4,4:1 na `--accent-soft`) |
 | `--accent-ink` | #0E3532 | #0B2A28 | tekst NA turkusie (nie biały – 2.3:1) |
 | `--accent-soft` | #EAF7F5 | #16302E | tło aktywnej zakładki, chipów |
-| `--ok` / `--ok-text` / `--ok-soft` | #269B73 / #1E8463 | | sukces |
+| `--ok` / `--ok-text` / `--ok-soft` | #269B73 / #1A7757 | | sukces (etap 8: tekst ciemniejszy, ≥ 4,5:1 na `--ok-soft`) |
 | `--warn-fill` / `--warn` / `--warn-soft` | #E6A23C / #9C5A12 | | ostrzeżenie (`--warn` = tekst) |
-| `--err` / `--err-text` / `--err-soft` | #DC6262 / #C24F4F | | błąd |
+| `--err` / `--err-text` / `--err-soft` | #DC6262 / #B44444 | | błąd (etap 8: było #C24F4F) |
 
 Turkus oszczędnie: główna akcja ekranu, aktywna zakładka, postęp, zaznaczenie. Nie wszystko turkusowe.
 Ekrany „zawsze białe” (bilet na pełnym ekranie, karta dla kierowcy, okienko mapy) mają stałe kolory – skaner na bramce.
@@ -48,7 +48,7 @@ Uwaga: teksty z emoji są kluczami tłumaczeń w `i18n-en.js` – zmieniając te
 Ruch: krótkie przejścia 0.12–0.25 s; `prefers-reduced-motion` wyłącza animacje.
 
 ## Etapy redesignu
-1. Design system ✔ (ten dokument) · 2. Podróże ✔ · 3. Bilety ✔ · 4. Plan ✔ · 5. Pakowanie ✔ · 6. Ustawienia ✔ · 7. ekrany dodatkowe (7a ✔ szczegóły podróży + formularze, 7b ✔ mapa, Odkrywaj, karty, offline, 7c ✔ budżet, rozliczenie, dokumenty, 7d ✔ kopia, PIN, przypomnienia, Gmail, udostępnianie, z maila) · 8. szlif (animacje, dostępność, tablet, style z JS) · 9. testy całości.
+1. Design system ✔ (ten dokument) · 2. Podróże ✔ · 3. Bilety ✔ · 4. Plan ✔ · 5. Pakowanie ✔ · 6. Ustawienia ✔ · 7. ekrany dodatkowe (7a ✔ szczegóły podróży + formularze, 7b ✔ mapa, Odkrywaj, karty, offline, 7c ✔ budżet, rozliczenie, dokumenty, 7d ✔ kopia, PIN, przypomnienia, Gmail, udostępnianie, z maila) · 8. szlif ✔ (animacje, dostępność, tablet, style z JS) · 9. testy całości.
 Makieta zatwierdzona przez właściciela: ekran Podróże – nagłówek z powitaniem, karta bieżącej podróży ze zdjęciem i odliczaniem,
 pasek postępu (spakowane / punkty planu / budżet), najbliższy bilet jako odcinek z QR, zadanie przed wyjazdem, nadchodzące
 podróże w poziomym rzędzie, szybkie akcje (Nowa podróż, Z Gmaila, Otwórz wspólną). Decyzje: ciemny turkus do tekstu,
@@ -191,3 +191,16 @@ dwa kroje, zdjęcia bez motywów religijnych, tło ze zdjęć – nowi użytkown
   najbliższe przypomnienia `.list.rm-list` (ikona dzwonka, dzień i godzina po prawej).
 - Gmail (`gmail.js`): `.gm-intro` = nagłówek + lista rodzajów rezerwacji z ikonami + uwaga o prywatności; konto jako `.pr-sum.gm-account`.
 - Udostępnianie (`share.js`) i „Dodaj z maila” (`email.js`): nagłówek `.tx-hero`, przyciski z ikonami, dołączanie biletów jako przełącznik `.sw`.
+
+## Szlif (etap 8)
+- **Dostępność:** audyt axe-core (WCAG 2 A/AA + dobre praktyki) na 30 ekranach, jasny i ciemny motyw – 0 problemów. Poprawki: kontrast
+  tokenów (tabela wyżej), nagłówki sekcji `.section` to teraz `h2` (pasek = `h1`, podgrupy `h3`) – styl zależy od klasy, nie od znacznika,
+  `aria-label` kolorów podróży na polu wyboru, zakładki Pakowania i Odkrywaj bez błędnych ról `tab`/`tablist` (przełączniki z `aria-pressed`).
+  Skrypt audytu: scratchpad sesji (axe-core 4.10 z npm + Playwright) – przy kolejnych zmianach powtórzyć.
+- **Ruch:** nowy ekran pojawia się z krótkim przenikaniem (`#view.v-in`, 0,2 s, tylko przy zmianie ekranu, tylko `opacity` – transform
+  przestawiłby elementy `fixed`), płynne wciśnięcia list/kart/chipów, `prefers-reduced-motion` wyłącza wszystko.
+- **Tablet (≥ 752 px):** górny i dolny pasek wyrównane do kolumny treści (720 px), wyższa okładka.
+- **Duża czcionka systemowa:** skala w rem; podpisy dolnego paska `min(--fs-cap, 3.1vw)` – mieszczą się przy 130%.
+- **Style w JS:** zostały tylko wartości dynamiczne (`--c`, `--pc`, szerokości pasków); stałe przeniesione do CSS.
+- Puste stany (`App.empty`) – ikona SVG w miękkim kółku zamiast dużego emoji (mapa `EMPTY_IC` w app.js); statystyki z przełącznikiem `.sw`
+  i liczbami w Newsreader.

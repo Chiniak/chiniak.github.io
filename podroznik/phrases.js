@@ -167,7 +167,7 @@
     let list = "";
     for (const g of ["Noclegi", "Plan", "Pomysły"]) {
       const es = located.filter(e => e.group === g);
-      if (es.length) list += `<h3 class="section">${g}</h3><div class="list tx-list">${es.map(row).join("")}</div>`;
+      if (es.length) list += `<h2 class="section">${g}</h2><div class="list tx-list">${es.map(row).join("")}</div>`;
     }
 
     return {
@@ -184,11 +184,11 @@
         ${located.length ? list : App.empty("🚕", "Brak miejsc z położeniem", "Dodaj nocleg z adresem albo punkt planu wybrany z wyszukiwarki – wtedy pojawi się tu jego karta.")}
         ${noXY ? `<p class="f-hint tx-noxy">${noXY} ${plural(noXY, "miejsce nie ma", "miejsca nie mają", "miejsc nie ma")} położenia na mapie – <a href="#/mapa/${id}?d=wszystko">znajdź je na mapie</a>.</p>` : ""}
 
-        <h3 class="section tx-ph-h">Rozmówki</h3>
+        <h2 class="section tx-ph-h">Rozmówki</h2>
         <div class="st-chips tx-langs">${order.map(l => `<a class="st-chip${l === lang ? " on" : ""}" href="#/karty/${id}?j=${l}" ${l === lang ? 'aria-current="true"' : ""}>${LANGS[l].flag} <span translate="no">${LANGS[l].name}</span></a>`).join("")}</div>
         ${GROUPS.map(([gk, gname]) => {
           const ps = PHRASES.filter(p => p[3] === gk && p[2][lang]);
-          return ps.length ? `<h4 class="tx-group">${gname}</h4><div class="list tx-list">
+          return ps.length ? `<h3 class="tx-group">${gname}</h3><div class="list tx-list">
           ${ps.map(p => `<button type="button" class="tx-row tx-ph" data-p="${p[0]}">
             <span class="tx-main"><span class="tx-loc" lang="${lang}" translate="no">${esc(p[2][lang][0])}</span>
               <span class="tx-pl"><span>${esc(p[1])}</span>${p[2][lang][1] ? ` · <i translate="no">${esc(p[2][lang][1])}</i>` : ""}</span></span>
