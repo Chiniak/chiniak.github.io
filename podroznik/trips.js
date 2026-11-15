@@ -10,7 +10,7 @@
 (function () {
   const { esc, todayStr, dayDiff, plural } = App;
 
-  const COLORS = ["#0f6e6e", "#2f6fd6", "#c2453a", "#d08a17", "#7b4fd1", "#2e8b57"];
+  const COLORS = ["#43BDB5", "#4C7FD9", "#D9645A", "#E0A23F", "#8A6BD6", "#3E9B74"]; // redesign: kolory dopasowane do palety
 
   /* ---------- rodzaje odcinków ----------
      extra: [pole, etykieta, podpowiedź]; route=false oznacza nocleg (nazwa + adres zamiast skąd/dokąd) */
@@ -83,68 +83,183 @@
     return () => urls.forEach(u => URL.revokeObjectURL(u));
   }
 
-  /* ================= LISTA PODRÓŻY ================= */
+  /* ================= LISTA PODRÓŻY (ekran główny, redesign „Premium Light” – DESIGN.md) =================
+     A nagłówek: powitanie + data · B karta bieżącej / najbliższej podróży (okładka albo kolor podróży, odliczanie)
+     C postęp: spakowane, punkty planu, wydatki · D najbliższy bilet (odcinek z QR) · przypomnienia i Gmail
+     E pozostałe nadchodzące (poziomy rząd), archiwum · F szybkie akcje */
+  const ICON_OF = { lot: "plane", pociag: "train", autobus: "bus", prom: "ferry", auto: "car", taxi: "taxi", metro: "train", nocleg: "bed", inny: "compass" };
+  const ic = (n, c) => App.icon ? App.icon(n, c) : "";
+  const tripDays = t => dayDiff(t.start, t.end) + 1;
+  const daysTxt = n => `${n} ${plural(n, "dzień", "dni", "dni")}`;
+
+  // odliczanie: największa jednostka dużą cyfrą, reszta obok
+  function countdown(at, tz) {
+    const ms = App.instant(at, tz) - Date.now();
+    if (ms <= 60000) return { big: "0", unit: "min" };
+    const min = Math.floor(ms / 60000), d = Math.floor(min / 1440), h = Math.floor(min % 1440 / 60), m = min % 60;
+    if (d >= 1) return { big: String(d), unit: plural(d, "dzień", "dni", "dni"), rest: h ? `${h} h` : "" };
+    if (h >= 1) return { big: String(h), unit: "h", rest: `${m} min` };
+    return { big: String(m), unit: "min" };
+  }
+  const cdHtml = c => `<b>${c.big}</b><span>${c.unit}</span>${c.rest ? `<span class="cd-rest">${c.rest}</span>` : ""}`;
+
+  function greeting() {
+    const h = new Date().getHours();
+    return h >= 18 || h < 4 ? "Dobry wieczór" : "Dzień dobry";
+  }
+  const longDate = () => new Intl.DateTimeFormat(self.I18N ? I18N.locale : "pl-PL", { weekday: "long", day: "numeric", month: "long" }).format(new Date());
+
+  const quickActions = () => {
+    const gm = App.Gmail && App.Gmail.available();
+    return `
+      <div class="hm-quick">
+        <a class="hm-qa primary" href="#/podroze/nowa"><i>${ic("plus")}</i><span>Nowa podróż</span></a>
+        ${gm ? `<a class="hm-qa" href="#/gmail"><i>${ic("mail")}</i><span>Z Gmaila</span></a>` : ""}
+        <a class="hm-qa" href="#/wklej"><i>${ic("doc")}</i><span>Z maila lub PDF</span></a>
+        <a class="hm-qa" href="#/udostepnij"><i>${ic("download")}</i><span>Otwórz od kogoś</span></a>
+      </div>`;
+  };
+
   App.route(/^\/podroze$/, async () => {
     const [trips, segs] = await Promise.all([DB.all("trips"), DB.all("segments")]);
     const segsOf = {};
     segs.forEach(s => (segsOf[s.tripId] = segsOf[s.tripId] || []).push(s));
+    const statsAction = `<a class="icon-btn" href="#/statystyki" aria-label="Statystyki">${ic("chart")}</a>`;
+    const head = `<header class="hm-head"><h2>${greeting()}</h2><p>${longDate()}</p></header>`;
 
-    // licznik do wyjazdu / odjazdu i aktywne przypomnienia (etap 5); bilet pokazany osobno, jeśli to inny odcinek niż w liczniku
-    const home = App.Reminders ? await App.Reminders.homeCards() : { html: "" };
-    const nearest = App.Tickets ? await App.Tickets.nearestCard({ skipSeg: home.segId }) : "";
-    const fab = `<a class="fab" href="#/podroze/nowa" aria-label="Nowa podróż">${plusIcon}<span>Nowa podróż</span></a>`;
     if (!trips.length) {
       return {
-        title: "Podróżnik",
-        html: App.empty("🧳", "Nie masz jeszcze podróży",
-          "Dodaj pierwszy wyjazd, a potem jego loty, pociągi, autobusy i noclegi.",
-          `<a class="btn primary" href="#/podroze/nowa">${plusIcon} Dodaj podróż</a>${App.Gmail && App.Gmail.available() ? `<p style="margin-top:14px"><a class="btn" href="#/gmail">📬 Znajdź rezerwacje w Gmailu</a></p>` : ""}<p style="margin-top:14px"><a href="#/udostepnij">📥 Otwórz podróż od kogoś</a></p>`),
+        title: "Podróżnik", brand: true, action: statsAction,
+        html: `${head}
+          <section class="hm-empty">
+            <div class="hm-empty-art" aria-hidden="true">${ic("trips", "lg")}</div>
+            <h3>Zaplanuj pierwszą podróż</h3>
+            <p>Dodaj wyjazd, a potem loty, pociągi i noclegi. Bilety, plan dnia i lista pakowania będą w jednym miejscu – także offline.</p>
+          </section>
+          <h3 class="section">Zacznij</h3>${quickActions()}`,
       };
     }
-
-    const card = t => {
-      const list = (segsOf[t.id] || []).sort(bySegTime);
-      const icons = [...new Set(list.map(s => typeOf(s).icon))].join(" ");
-      const transport = list.filter(s => s.type !== "nocleg").length, stays = list.length - transport;
-      const counts = [
-        transport && `${transport} ${plural(transport, "odcinek", "odcinki", "odcinków")}`,
-        stays && `${stays} ${plural(stays, "nocleg", "noclegi", "noclegów")}`,
-      ].filter(Boolean).join(" · ");
-      return `
-        <a class="trip-card" href="#/podroze/${t.id}" data-cover="${t.id}" style="--c:${esc(t.color || COLORS[0])}">
-          <div class="trip-top">
-            <h2>${esc(t.name)}</h2>
-            <span class="pill pill-${status(t)}">${statusText(t)}</span>
-          </div>
-          <div class="muted">${[esc(t.destination), App.fmtRange(t.start, t.end)].filter(Boolean).join(" · ")}</div>
-          ${list.length ? `<div class="trip-meta"><span class="icons">${icons}</span><span class="muted">${counts}</span></div>` : ""}
-        </a>`;
-    };
 
     const now = trips.filter(t => status(t) === "now").sort((a, b) => a.start.localeCompare(b.start));
     const future = trips.filter(t => status(t) === "future").sort((a, b) => a.start.localeCompare(b.start));
     const past = trips.filter(t => status(t) === "past").sort((a, b) => b.start.localeCompare(a.start));
+    const hero = now[0] || future[0] || null;
+    const cov = await covers();
 
+    // ---------- B: bieżąca / najbliższa podróż ----------
+    let heroHtml = "", statsHtml = "", cdAt = null, cdTz = null;
+    if (hero) {
+      const list = (segsOf[hero.id] || []).sort(bySegTime);
+      const nowStr = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+      const next = list.find(x => x.type !== "nocleg" && x.depart && x.depart > nowStr);
+      const st = status(hero);
+      cdAt = next ? next.depart : st === "future" ? `${hero.start}T00:00` : null;
+      cdTz = next ? next.tzFrom : null;
+      const T = next ? typeOf(next) : null;
+      const label = st === "now" ? "W trakcie" : "Najbliższa podróż";
+      const sub = st === "now" ? `dzień ${dayDiff(hero.start, todayStr()) + 1} z ${tripDays(hero)}` : daysTxt(tripDays(hero));
+      const c = cdAt ? countdown(cdAt, cdTz) : null;
+      heroHtml = `
+        <a class="hm-hero trip-card" href="#/podroze/${hero.id}" data-cover="${hero.id}" style="--c:${esc(hero.color || COLORS[0])}">
+          <div class="hm-hero-top">
+            <span class="glass cd-label"><i class="live" aria-hidden="true"></i>${label}</span>
+            ${T ? `<span class="glass" aria-label="${esc(T.name)}">${ic(ICON_OF[next.type] || "compass", "sm")}</span>` : ""}
+          </div>
+          <div class="hm-hero-body">
+            ${hero.destination ? `<span class="hm-dest">${esc(hero.destination)}</span>` : ""}
+            <h2>${esc(hero.name)}</h2>
+            <span class="hm-dates">${App.fmtRange(hero.start, hero.end)} · ${sub}</span>
+            ${c ? `<div class="hm-count">
+              <div class="cd-time" id="cd-time" role="timer" data-at="${esc(cdAt)}" data-tz="${esc(cdTz || "")}">${cdHtml(c)}</div>
+              <span class="hm-count-what">${next ? (st === "now" ? "do odjazdu" : "do wyjazdu") : "do wyjazdu"}</span>
+              ${next ? `<span class="hm-count-at"><span>${esc(T.depart)}</span> <b>${App.time(next.depart)}</b></span>` : ""}
+            </div>` : ""}
+          </div>
+        </a>`;
+
+      // ---------- C: postęp ----------
+      const [pk, plan, bud] = await Promise.all([
+        App.Pack ? App.Pack.summary(hero.id) : null,
+        DB.byIndex("planItems", "tripId", hero.id),
+        App.Budget ? App.Budget.summary(hero.id).catch(() => null) : null,
+      ]);
+      const planned = plan.filter(p => p.date).length;
+      const pct = pk && pk.total ? Math.round(pk.done / pk.total * 100) : 0;
+      statsHtml = `
+        <div class="hm-stats">
+          <a class="hm-stat" href="#/pakowanie/${hero.id}"><small>Spakowane</small>
+            ${pk && pk.total ? `<b>${pk.done}<span> / ${pk.total}</span></b><span class="bar"><i style="width:${pct}%"></i></span>` : `<b class="hm-none">Dodaj listę</b>`}</a>
+          <a class="hm-stat" href="#/plan/${hero.id}"><small>W planie</small>
+            <b>${planned}<span> ${plural(planned, "punkt", "punkty", "punktów")}</span></b></a>
+          <a class="hm-stat" href="#/budzet/${hero.id}"><small>Wydatki</small>
+            ${bud && bud.spent ? `<b>${App.Budget.money(bud.spent, bud.home)}</b>` : `<b class="hm-none">Budżet</b>`}</a>
+        </div>`;
+    }
+
+    // ---------- D: najbliższy bilet, przypomnienia, Gmail ----------
+    const tk = App.Tickets ? await App.Tickets.nearest() : null;
+    let ticketHtml = "";
+    if (tk) {
+      const s = tk.seg;
+      const split = v => { const m = String(v || "").match(/^(.*?)[\s(]*\b([A-Z]{3})\)?$/); return m ? { code: m[2], city: m[1].trim() } : { code: "", city: String(v || "?") }; };
+      const route = !s.plan && s.type !== "nocleg" && (s.from || s.to);
+      const A = route ? split(s.from) : null, B = route ? split(s.to) : null;
+      const end = x => x.code ? `<span class="code">${esc(x.code)}</span><span class="city">${esc(x.city)}</span>` : `<span class="code long">${esc(x.city)}</span>`;
+      const prov = s.plan ? [] : [s.carrier, s.number].filter(Boolean);
+      const typeName = s.plan ? (App.Plan ? App.Plan.catOf(s.plan).name : "") : typeOf(s).name;
+      ticketHtml = `
+        <div class="sec-h"><h3 class="section">Najbliższy bilet</h3><a href="#/bilety">Wszystkie</a></div>
+        <div class="tk-stub">
+          <a class="tk-stub-main" href="${tk.href}">
+            <span class="tk-prov">${ic(s.plan ? "ticket" : ICON_OF[s.type] || "compass", "sm")}<span>${esc(prov.length ? prov.join(" · ") : typeName)}</span><span class="chip accent">${tk.rel}</span></span>
+            ${route ? `<span class="tk-route"><span class="tk-end">${end(A)}</span><span class="tk-line" aria-hidden="true">${ic(ICON_OF[s.type] || "compass", s.type === "lot" ? "sm rot" : "sm")}</span><span class="tk-end r">${end(B)}</span></span>`
+              : `<span class="tk-title">${esc(tk.title)}</span>`}
+            <span class="tk-when">${tk.when}</span>
+          </a>
+          <a class="tk-stub-qr" href="#/bilet/${tk.fileId}" aria-label="Pokaż bilet">${ic("qr", "lg")}<span>Pokaż</span></a>
+        </div>`;
+    }
+    const home = App.Reminders ? await App.Reminders.homeCards({ countdown: false }) : { html: "" };
     const gmail = App.Gmail ? await App.Gmail.homeCard() : "";
-    let html = home.html + gmail + nearest;
-    if (now.length) html += `<h3 class="section">Trwające</h3>${now.map(card).join("")}`;
-    html += `<h3 class="section">Nadchodzące</h3>` +
-      (future.length ? future.map(card).join("") : `<p class="muted small">Brak zaplanowanych wyjazdów.</p>`);
+
+    // ---------- E: pozostałe podróże ----------
+    const rest = [...now, ...future].filter(t => t !== hero);
+    const tcard = t => `
+      <a class="hm-tcard trip-card" href="#/podroze/${t.id}">
+        <span class="hm-tcard-img" data-cover="${t.id}" style="--c:${esc(t.color || COLORS[0])}"><span class="glass">${statusText(t)}</span></span>
+        <b>${esc(t.name)}</b>
+        <small>${[App.fmtRange(t.start, t.end), esc(t.destination)].filter(Boolean).join(" · ")}</small>
+      </a>`;
+    const trow = t => {
+      const list = segsOf[t.id] || [];
+      return `
+      <a class="li hm-trow trip-card" href="#/podroze/${t.id}">
+        <span class="hm-thumb" data-cover="${t.id}" style="--c:${esc(t.color || COLORS[0])}"></span>
+        <span class="li-main"><b>${esc(t.name)}</b><small>${[App.fmtRange(t.start, t.end), esc(t.destination)].filter(Boolean).join(" · ")}${list.length ? ` · ${list.length} ${plural(list.length, "odcinek", "odcinki", "odcinków")}` : ""}</small></span>
+        ${ic("chev")}
+      </a>`;
+    };
+
+    let html = head + heroHtml + statsHtml + ticketHtml + home.html + gmail;
+    if (!hero) html += `<p class="muted hm-nothing">Brak zaplanowanych wyjazdów.</p>`;
+    if (rest.length) html += `<div class="sec-h"><h3 class="section">Nadchodzące</h3></div><div class="hm-scroll">${rest.map(tcard).join("")}</div>`;
+    html += `<h3 class="section">Szybkie akcje</h3>${quickActions()}`;
     if (past.length) html += `
       <details class="archive">
         <summary><h3 class="section">Archiwum <span class="muted">(${past.length})</span></h3></summary>
-        ${past.map(card).join("")}
+        <div class="list">${past.map(trow).join("")}</div>
       </details>`;
-    if (App.Gmail && App.Gmail.available() && !gmail) html += `<a class="plan-link st-link" href="#/gmail"><span aria-hidden="true">📬</span> Z Gmaila <span class="muted">– rezerwacje i aktywności znalezione w poczcie</span><b aria-hidden="true">›</b></a>`;
-    html += `<a class="plan-link${App.Gmail && App.Gmail.available() && !gmail ? "" : " st-link"}" href="#/wklej"${App.Gmail && App.Gmail.available() && !gmail ? ' style="margin-top:8px"' : ""}><span aria-hidden="true">📧</span> Dodaj z maila <span class="muted">– potwierdzenie, PDF albo .ics z rezerwacji</span><b aria-hidden="true">›</b></a>`;
-    html += `<a class="plan-link" href="#/udostepnij" style="margin-top:8px"><span aria-hidden="true">📥</span> Otwórz podróż od kogoś <span class="muted">– plik z Podróżnika</span><b aria-hidden="true">›</b></a>`;
-    html += `<a class="plan-link" href="#/statystyki" style="margin-top:8px"><span aria-hidden="true">📊</span> Statystyki <span class="muted">– kilometry, kraje, mapa</span><b aria-hidden="true">›</b></a>`;
-    const cov = await covers();
-    let unpaint = null;
+
+    let unpaint = null, timer = null;
     return {
-      title: "Podróżnik", html: html + fab,
-      after(v) { unpaint = paintCovers(v, cov); if (home.after) home.after(v); },
-      cleanup() { if (unpaint) unpaint(); if (home.cleanup) home.cleanup(); },
+      title: "Podróżnik", brand: true, action: statsAction, html,
+      after(v) {
+        unpaint = paintCovers(v, cov);
+        if (home.after) home.after(v);
+        const el = v.querySelector("#cd-time");
+        if (el) timer = setInterval(() => { el.innerHTML = cdHtml(countdown(el.dataset.at, el.dataset.tz || undefined)); }, 15000);
+      },
+      cleanup() { if (unpaint) unpaint(); if (home.cleanup) home.cleanup(); clearInterval(timer); },
     };
   });
 

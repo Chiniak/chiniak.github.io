@@ -336,6 +336,13 @@
         <div class="nt-go" aria-hidden="true">🎫</div>
       </a>`;
   }
+  // dane najbliższego biletu (ekran główny rysuje go sam jako „odcinek” z QR)
+  async function nearest() {
+    const { upcoming, bySeg } = await upcomingWithTickets();
+    if (!upcoming.length) return null;
+    const s = upcoming[0];
+    return { seg: s, fileId: bySeg[s.id][0].id, count: bySeg[s.id].length, href: segHref(s), title: segTitle(s), when: segWhen(s), rel: relTime(s) };
+  }
   // tekst z PDF (pierwsze strony) – do odczytu daty i godziny biletu
   async function pdfText(blob, pages = 2) {
     const doc = await pdfDoc(blob);
@@ -343,7 +350,7 @@
     for (let n = 1; n <= Math.min(pages, doc.numPages); n++) out += (await (await doc.getPage(n)).getTextContent()).items.map(i => i.str).join(" ") + "\n";
     return out;
   }
-  App.Tickets = { nearestCard, addFiles, planSeg, pdfText, kindOf };
+  App.Tickets = { nearestCard, nearest, addFiles, planSeg, pdfText, kindOf };
 
   /* ================= ZAKŁADKA BILETY ================= */
   // link do dokumentów (etap 8) – z ostrzeżeniem, gdy coś wygasło albo zaraz wygaśnie

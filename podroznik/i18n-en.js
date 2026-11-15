@@ -17,6 +17,15 @@ self.I18N_EN = {
   "włączone": "on", "wyłączone": "off", "włączona": "on", "wyłączona": "off", "włączony": "on", "wył.": "off",
   "niedostępne": "unavailable", "brak danych": "no data",
 
+  /* ---------- ekran główny (redesign Premium Light) ---------- */
+  "Dobry wieczór": "Good evening", "Najbliższa podróż": "Next trip", "W trakcie": "In progress", "do wyjazdu": "until departure",
+  "do odjazdu": "until departure", "W planie": "In the plan", "Wydatki": "Expenses", "Dodaj listę": "Add a list",
+  "Najbliższy bilet": "Next ticket", "Pokaż": "Show", "Pokaż bilet": "Show ticket", "Szybkie akcje": "Quick actions",
+  "Z maila lub PDF": "From email or PDF", "Otwórz od kogoś": "Open from someone", "Zacznij": "Get started",
+  "Zaplanuj pierwszą podróż": "Plan your first trip", "dzień {} z {}": "day {} of {}", "{} h": "{} h", "h": "h",
+  "Dodaj wyjazd, a potem loty, pociągi i noclegi. Bilety, plan dnia i lista pakowania będą w jednym miejscu – także offline.":
+    "Add a trip, then its flights, trains and stays. Tickets, the day plan and the packing list in one place – offline too.",
+
   /* ---------- liczebniki i odmiana (wartości w {}) ---------- */
   "dzień": "day", "dni": "days", "1 dzień": "1 day", "{} dni": "{} days", "noc": "night", "noce": "nights", "nocy": "nights",
   "podróż": "trip", "podróże": "trips", "podróży": "trips", "odcinek": "segment", "odcinki": "segments", "odcinków": "segments",

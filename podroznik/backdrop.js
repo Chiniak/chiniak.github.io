@@ -2,7 +2,7 @@
    Zdjęcia: „Featured pictures” z Wikimedia Commons (wolne licencje, autor widoczny w Ustawieniach → Tło).
    Lista kandydatów (ustawienie `bgPool`) pobierana raz na 30 dni; same zdjęcia (~1000 px) pobierane po jednym
    przy kolejnych przejściach, aż będzie ich 100 – w pamięci „tla-zdjecia” (działa offline, nie kasuje jej nowa wersja aplikacji).
-   Ustawienie `bgPhotos` (domyślnie włączone; `localStorage podroznik-bg` – żeby nie mignęło przy starcie). */
+   Ustawienie `bgPhotos` (od redesignu domyślnie wyłączone dla nowych użytkowników; `localStorage podroznik-bg` – żeby nie mignęło przy starcie). */
 (function () {
   const CACHE = "tla-zdjecia", MAX = 100, WIDTH = 1000, POOL_AGE = 30 * 86400000;
   // v2: tylko natura i miasta (v1 wciągała też obrazy religijne) – starsze zdjęcia są kasowane
@@ -20,8 +20,14 @@
   const BAD = new RegExp("\\b(map|maps|chart|logo|flag|flags|wat|god|gods|art|arts|cross|crosses|icon|icons|mary|saint|saints|st\\.|angel|angels|grave|graves|tomb|tombs|bird|birds|animal|animals|people|person|insect|insects|spider|nun|nuns|monk|monks|priest|pope)\\b" +
     "|\\b(diagram|portrait|nude|microscop|x-ray|anatomy|skull|church|cathedral|chapel|basilica|monaster|abbey|convent|temple|mosque|synagogue|shrine|pagoda|stupa|religio|christ|jesus|madonna|virgin|apostle|holy|sacred|bible|crucifix|altar|fresco|mural|painting|artwork|museum|sculpture|statue|stained glass|interior|cemetery|buddha|hindu|deity|coat of arms|kości|katedr|kaplic|święt|jezus|chrystus|matka boża|obraz|cerkiew|klasztor)", "i");
 
-  let enabled = true;
-  try { enabled = localStorage.getItem("podroznik-bg") !== "0"; } catch (e) { /* brak dostępu */ }
+  /* redesign „Premium Light” (15.11.2026): nowi użytkownicy – gładkie tło (zdjęcia do włączenia w Ustawieniach → Tło).
+     Kto miał już tło ze zdjęć (bez zapisanego wyboru, ale z pokazanym zdjęciem – podroznik-bg-last), zostaje przy nim. */
+  let enabled = false;
+  try {
+    let v = localStorage.getItem("podroznik-bg");
+    if (v === null) { v = localStorage.getItem("podroznik-bg-last") ? "1" : "0"; localStorage.setItem("podroznik-bg", v); }
+    enabled = v !== "0";
+  } catch (e) { /* brak dostępu */ }
   /* jak często nowe zdjęcie (zgłoszone 13.11: zmiana przy każdym ekranie – ekran za często „miga”):
      "screen" – przy każdej zmianie ekranu, "10" – najwyżej co 10 minut, "start" – przy uruchomieniu aplikacji (domyślnie), "day" – raz dziennie.
      localStorage: podroznik-bg-every (tryb), podroznik-bg-last ({ src, at } – ostatnio pokazane, do trybu dziennego i 10 min) */

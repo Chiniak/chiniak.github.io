@@ -179,6 +179,7 @@
     if (typeof r === "string") r = { html: r };
     const title = r.title || TAB_TITLES[tab] || "Podróżnik";
     $("#title").textContent = title;
+    $(".topbar").classList.toggle("brand", !!r.brand); // ekran główny: mały znak „Podróżnik” zamiast dużego tytułu
     document.title = title === "Podróżnik" ? title : `${title} · Podróżnik`;
     const back = $("#back");
     back.hidden = !r.back;
@@ -334,6 +335,11 @@
     if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
     if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(e => console.warn("SW:", e));
     window.addEventListener("hashchange", () => { navCount++; render(); });
+    // linia pod górnym paskiem dopiero po przewinięciu (czystszy nagłówek na górze ekranu)
+    const bar = $(".topbar");
+    const onScroll = () => bar.classList.toggle("scrolled", window.scrollY > 4);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
     window.addEventListener("online", updateOnline);
     window.addEventListener("offline", updateOnline);
     updateOnline();

@@ -29,6 +29,13 @@ function png(r, g, b) {
   });
   await ctx.route(/upload\.wikimedia\.org/, r => { imgCalls++; const n = [...r.request().url()].reduce((a, c) => a + c.charCodeAt(0), 0);
     r.fulfill({ body: png(n * 7 % 255, n * 13 % 255, n * 29 % 255), contentType: 'image/png', headers: { 'access-control-allow-origin': '*' } }); });
+  // nowy użytkownik (od redesignu Premium Light): domyślnie gładkie tło, bez pobierania zdjęć
+  { const c2 = await b.newContext({ ...devices['Pixel 7'], locale: 'pl-PL' }); let hit = 0; await c2.route(/wikimedia/, r => { hit++; r.abort(); });
+    const q = await c2.newPage(); await q.goto('http://localhost:8765/podroznik/#/podroze'); await q.waitForTimeout(1200);
+    console.log('new user: bg off', !(await q.evaluate(() => document.documentElement.classList.contains('has-bg'))),
+      '| setting', await q.evaluate(() => localStorage.getItem('podroznik-bg')), '| no Commons requests', hit === 0); await c2.close(); }
+  // dalej: telefon, który już miał tło ze zdjęć (pokazane zdjęcie = podroznik-bg-last) – zostaje włączone
+  await ctx.addInitScript(() => { try { if (!localStorage.getItem('podroznik-bg-last')) localStorage.setItem('podroznik-bg-last', 'null'); } catch (e) {} });
   const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message));
   // telefon ze starą wersją tła (v1): lista bez wersji i pobrane zdjęcie religijne – mają zniknąć
   await p.goto('http://localhost:8765/podroznik/#/ustawienia/blokada'); await p.waitForTimeout(500);
