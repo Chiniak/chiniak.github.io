@@ -48,7 +48,7 @@ Uwaga: teksty z emoji są kluczami tłumaczeń w `i18n-en.js` – zmieniając te
 Ruch: krótkie przejścia 0.12–0.25 s; `prefers-reduced-motion` wyłącza animacje.
 
 ## Etapy redesignu
-1. Design system ✔ (ten dokument) · 2. Podróże ✔ · 3. Bilety · 4. Plan · 5. Pakowanie · 6. Ustawienia · 7. ekrany dodatkowe · 8. szlif (animacje, dostępność, tablet, style z JS) · 9. testy całości.
+1. Design system ✔ (ten dokument) · 2. Podróże ✔ · 3. Bilety ✔ · 4. Plan · 5. Pakowanie · 6. Ustawienia · 7. ekrany dodatkowe · 8. szlif (animacje, dostępność, tablet, style z JS) · 9. testy całości.
 Makieta zatwierdzona przez właściciela: ekran Podróże – nagłówek z powitaniem, karta bieżącej podróży ze zdjęciem i odliczaniem,
 pasek postępu (spakowane / punkty planu / budżet), najbliższy bilet jako odcinek z QR, zadanie przed wyjazdem, nadchodzące
 podróże w poziomym rzędzie, szybkie akcje (Nowa podróż, Z Gmaila, Otwórz wspólną). Decyzje: ciemny turkus do tekstu,
@@ -68,3 +68,13 @@ dwa kroje, zdjęcia bez motywów religijnych, tło ze zdjęć – nowi użytkown
   zapas: wyróżnione/dobre zdjęcia Commons. Filtr `App.Backdrop.BAD` + kolaże, mapy, flagi; tylko poziome JPEG ≥ 900 px.
   Zapis w podróży (`coverAuto`, `putRaw`), autor pod nagłówkiem szczegółów (`.cover-credit`), „Usuń zdjęcie celu” w formularzu
   (`coverOff` = cel, dla którego usunięto). Własna okładka ma pierwszeństwo. Test t41.
+
+## Bilety (etap 3, `tickets.js`)
+- Zakładka `#/bilety` – portfel: wiersz Dokumenty (`.li-ico.ok/.warn/.err` = stan ważności), **najbliższy bilet** jako duża karta
+  `.wl-feature` (rodzaj, przewoźnik, trasa z godzinami i czasem podróży, data, miejsce/gate/rezerwacja, perforacja,
+  „Pokaż bilet” = `.next-ticket` → pełny ekran, „Szczegóły”), potem `.list` nadchodzących i zwijane „Wykorzystane”.
+- Wspólne: `App.Tickets.routeHtml(s, środek)` / `ends(s)` (kody lotnisk z końca nazwy, godziny), `App.icon.type(rodzaj)`.
+- Szczegóły odcinka `#/odcinek/:id` – karta `.jr` (`.seg-head`): trasa jak na bilecie albo nocleg (nazwa, adres, siatka
+  zameldowanie / wymeldowanie / noce), fakty w `dl.jr-facts`, akcje jako wiersze listy (Nawiguj = `.map-link`, kierowca,
+  kalendarz, podróż), kafelki biletów i dodawanie bez zmian.
+- Pełny ekran `#/bilet/:id` – zawsze biały (skaner na bramce), stałe kolory zamiast tokenów; ikony zamiast emoji.

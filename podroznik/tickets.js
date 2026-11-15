@@ -55,10 +55,31 @@
     if (s.arrive) t += ` → ${s.arrive.slice(0, 10) !== s.depart.slice(0, 10) ? App.fmtDay(s.arrive) + " " : ""}${App.time(s.arrive)}`;
     return t;
   }
-  function segSeat(s) {
+  // „Warszawa WAW” → { code: "WAW", city: "Warszawa" }; bez kodu: { code: "", city: całość }
+  function endOf3(v) {
+    const m = String(v || "").match(/^(.*?)[\s(]*\b([A-Z]{3})\)?$/);
+    return m ? { code: m[2], city: m[1].trim() } : { code: "", city: String(v || "?") };
+  }
+  // początek i koniec trasy z godzinami (karta biletu, szczegóły odcinka); null dla noclegu i punktu planu
+  function ends(s) {
+    if (s.plan || s.type === "nocleg" || !(s.from || s.to)) return null;
+    return { a: { ...endOf3(s.from), time: App.time(s.depart) }, b: { ...endOf3(s.to), time: s.arrive ? App.time(s.arrive) : "" } };
+  }
+  const endHtml = (x, right) => `<span class="tk-end${right ? " r" : ""}">${x.code ? `<span class="code">${esc(x.code)}</span><span class="city">${esc(x.city)}</span>`
+    : `<span class="code long">${esc(x.city)}</span>`}${x.time ? `<b class="tk-time">${x.time}</b>` : ""}</span>`;
+  // trasa „WAW ✈ LIS” z godzinami i czasem podróży pośrodku
+  function routeHtml(s, mid = "") {
+    const e = ends(s);
+    if (!e) return "";
+    const ico = App.icon ? App.icon.type(s.type, s.type === "lot" ? "sm rot" : "sm") : "";
+    return `<span class="tk-route">${endHtml(e.a)}<span class="tk-line" aria-hidden="true">${ico}${mid ? `<small>${mid}</small>` : ""}</span>${endHtml(e.b, true)}</span>`;
+  }
+  const typeName = s => s.plan ? (App.Plan ? App.Plan.catOf(s.plan).name : "") : Tr().typeOf(s).name;
+
+  function segSeat(s, withNumber = true) {
     if (s.plan) return [s.plan.place && !/^https?:/i.test(s.plan.place) ? s.plan.place : ""].filter(Boolean).join("");
     const parts = [];
-    if (s.number) parts.push(s.number);
+    if (s.number && withNumber) parts.push(s.number);
     if (s.car) parts.push(`wagon ${s.car}`);
     if (s.seat) parts.push(`miejsce ${s.seat}`);
     if (s.gate) parts.push(`gate ${s.gate}`);
@@ -321,21 +342,6 @@
   }
 
   // skipSeg: nie pokazuj, gdy ten sam odcinek jest już w liczniku na ekranie głównym (tam jest przycisk „Bilet”)
-  async function nearestCard({ skipSeg } = {}) {
-    const { upcoming, bySeg } = await upcomingWithTickets();
-    if (!upcoming.length || upcoming[0].id === skipSeg) return "";
-    const s = upcoming[0], T = { icon: iconOf(s) };
-    return `
-      <a class="next-ticket" href="#/bilet/${bySeg[s.id][0].id}">
-        <div class="nt-ico" aria-hidden="true">${T.icon}</div>
-        <div class="nt-main">
-          <div class="nt-label">Najbliższy bilet · ${relTime(s)}</div>
-          <div class="nt-title">${esc(segTitle(s))}</div>
-          <div class="nt-when">${segWhen(s)}</div>
-        </div>
-        <div class="nt-go" aria-hidden="true">🎫</div>
-      </a>`;
-  }
   // dane najbliższego biletu (ekran główny rysuje go sam jako „odcinek” z QR)
   async function nearest() {
     const { upcoming, bySeg } = await upcomingWithTickets();
@@ -350,56 +356,91 @@
     for (let n = 1; n <= Math.min(pages, doc.numPages); n++) out += (await (await doc.getPage(n)).getTextContent()).items.map(i => i.str).join(" ") + "\n";
     return out;
   }
-  App.Tickets = { nearestCard, nearest, addFiles, planSeg, pdfText, kindOf };
+  App.Tickets = { nearest, addFiles, planSeg, pdfText, kindOf, ends, routeHtml, segSeat, typeName };
 
-  /* ================= ZAKŁADKA BILETY ================= */
-  // link do dokumentów (etap 8) – z ostrzeżeniem, gdy coś wygasło albo zaraz wygaśnie
+  /* ================= ZAKŁADKA BILETY – portfel (redesign etap 3, DESIGN.md) =================
+     dokumenty (stan ważności) · najbliższy bilet wyróżniony · nadchodzące · wykorzystane */
+  const ic = (n, c) => App.icon ? App.icon(n, c) : "";
+  const tic = (s, c) => App.icon ? App.icon.type(s.plan ? "_plan" : s.type, c) : "";
+
+  // dokumenty (etap 8) – wiersz z ostrzeżeniem, gdy coś wygasło albo zaraz wygaśnie
   async function docsLink() {
     if (!App.Docs) return "";
     const s = await App.Docs.summary();
+    const st = !s.total ? "" : s.expired ? "err" : s.soon ? "warn" : "ok";
     const txt = !s.total ? "paszport, dowód, ubezpieczenie – z datą ważności"
-      : s.expired ? `❗ wygasłe: ${s.expired}` : s.soon ? `⚠️ wygasa wkrótce: ${s.soon}` : `${s.total} · wszystkie ważne`;
-    return `<a class="plan-link${s.expired || s.soon ? " warn" : ""}" href="#/dokumenty" style="margin-bottom:10px"><span aria-hidden="true">🛂</span> Dokumenty <span class="muted">– ${txt}</span><b aria-hidden="true">›</b></a>`;
+      : s.expired ? `wygasłe: ${s.expired}` : s.soon ? `wygasa wkrótce: ${s.soon}` : `${s.total} · wszystkie ważne`;
+    return `
+      <a class="li wl-docs${st === "err" || st === "warn" ? " warn" : ""}" href="#/dokumenty">
+        <span class="li-ico${st ? " " + st : ""}">${ic("doc")}</span>
+        <span class="li-main"><b>Dokumenty</b><small>${txt}</small></span>
+        ${ic("chev")}
+      </a>`;
   }
 
   App.route(/^\/bilety$/, async () => {
     const { upcoming, past, bySeg } = await upcomingWithTickets();
     const docs = await docsLink();
+    const docsBox = docs ? `<div class="list wl-docs-box">${docs}</div>` : "";
     if (!upcoming.length && !past.length) {
-      return docs + App.empty("🎫", "Nie masz jeszcze biletów",
-        "Otwórz podróż, kliknij lot, pociąg albo nocleg i dodaj zdjęcie, PDF lub zeskanuj kod biletu. Bilet na wydarzenie albo spotkanie dodasz w planie: „📎 Z biletu lub screena”.",
-        `<a class="btn primary" href="#/podroze">Przejdź do podróży</a>`);
+      return docsBox + `
+        <section class="wl-empty">
+          <div class="wl-empty-art" aria-hidden="true">${ic("ticket", "lg")}</div>
+          <h2>Nie masz jeszcze biletów</h2>
+          <p>Otwórz podróż, kliknij lot, pociąg albo nocleg i dodaj zdjęcie, PDF lub zeskanuj kod biletu. Bilet na wydarzenie albo spotkanie dodasz w planie: „📎 Z biletu lub screena”.</p>
+          <a class="btn primary" href="#/podroze">Przejdź do podróży</a>
+        </section>`;
     }
     const trips = Object.fromEntries((await DB.all("trips")).map(t => [t.id, t]));
+    const tripName = s => trips[s.tripId] ? trips[s.tripId].name : "";
+
+    // najbliższy bilet – duża karta
+    let html = docsBox;
+    if (upcoming.length) {
+      const s = upcoming[0], files = bySeg[s.id], f0 = files[0];
+      const dur = s.arrive && !s.plan && s.type !== "nocleg" && App.segMinutes ? App.duration(App.segMinutes(s)) : "";
+      const prov = s.plan ? "" : [s.carrier, s.number].filter(Boolean).join(" · ");
+      const seat = segSeat(s, false);
+      html += `
+        <h3 class="section">Najbliższy</h3>
+        <article class="wl-feature">
+          <div class="wl-f-top">
+            <span class="wl-type">${tic(s, "sm")}<span>${esc(typeName(s))}</span></span>
+            <span class="chip accent">${relTime(s)}</span>
+          </div>
+          ${prov ? `<div class="wl-prov">${esc(prov)}</div>` : ""}
+          ${ends(s) ? routeHtml(s, dur) : `<div class="wl-title">${esc(segTitle(s))}</div>`}
+          <div class="wl-when">${s.depart ? App.fmtDayLong(s.depart) : esc(segWhen(s))}${!ends(s) && s.depart && App.time(s.depart) !== "00:00" ? ` · ${App.time(s.depart)}` : ""}</div>
+          ${seat ? `<div class="wl-seat">${esc(seat)}</div>` : ""}
+          <div class="wl-perf" aria-hidden="true"></div>
+          <div class="wl-actions">
+            <a class="btn primary next-ticket" href="#/bilet/${f0.id}">${ic("qr")} Pokaż bilet</a>
+            <a class="btn" href="${segHref(s)}">Szczegóły</a>
+          </div>
+          ${files.length > 1 ? `<div class="wl-more">${files.length} ${App.plural(files.length, "bilet", "bilety", "biletów")} · ${esc(tripName(s))}</div>` : tripName(s) ? `<div class="wl-more">${esc(tripName(s))}</div>` : ""}
+        </article>`;
+    }
+
     const row = s => {
-      const T = { icon: iconOf(s) }, n = bySeg[s.id].length;
+      const n = bySeg[s.id].length;
       return `
-        <div class="tk-row">
-          <a class="tk-row-main" href="#/bilet/${bySeg[s.id][0].id}">
-            <div class="tl-ico" aria-hidden="true">${T.icon}</div>
-            <div class="tl-main">
-              <div class="tl-time">${segWhen(s)}</div>
-              <div class="tl-route">${esc(segTitle(s))}</div>
-              <div class="muted small">${esc(trips[s.tripId] ? trips[s.tripId].name : "")}</div>
-            </div>
-            <span class="tk-count">🎫${n > 1 ? " " + n : ""}</span>
-          </a>
-          <a class="tk-row-more" href="${segHref(s)}" aria-label="${s.plan ? "Szczegóły punktu" : "Szczegóły odcinka"}">›</a>
-        </div>`;
+        <a class="li wl-row" href="#/bilet/${bySeg[s.id][0].id}">
+          <span class="li-ico">${tic(s)}</span>
+          <span class="li-main"><b>${esc(segTitle(s))}</b><small>${segWhen(s)}${tripName(s) ? ` · ${esc(tripName(s))}` : ""}</small></span>
+          ${n > 1 ? `<span class="chip">${n}</span>` : ""}
+          ${ic("chev")}
+        </a>`;
     };
-    let html = docs + await nearestCard();
-    if (upcoming.length > 1) html += `<h3 class="section">Nadchodzące</h3>${upcoming.slice(1).map(row).join("")}`;
+    if (upcoming.length > 1) html += `<h3 class="section">Nadchodzące</h3><div class="list">${upcoming.slice(1).map(row).join("")}</div>`;
     if (past.length) html += `
       <details class="archive">
         <summary><h3 class="section">Wykorzystane <span class="muted">(${past.length})</span></h3></summary>
-        ${past.map(row).join("")}
+        <div class="list wl-past">${past.map(row).join("")}</div>
       </details>`;
     return { html };
   });
 
   /* ================= SZCZEGÓŁY ODCINKA ================= */
-  const camIcon = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V5h3M17 5h3v3M20 16v3h-3M7 19H4v-3"/><path d="M7 12h10"/></svg>`;
-  const clipIcon = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11l-8 8a5 5 0 01-7-7l8-8a3.5 3.5 0 015 5l-8 8a2 2 0 01-3-3l7-7"/></svg>`;
 
   App.route(/^\/odcinek\/([\w-]+)$/, async ([id]) => {
     const s = await DB.get("segments", id);
@@ -415,41 +456,64 @@
     const nights = s.type === "nocleg" && s.arrive ? App.dayDiff(s.depart, s.arrive) : 0;
     // „Nawiguj”: do noclegu albo na miejsce odjazdu (lotnisko, dworzec, przystanek)
     const navTo = s.type === "nocleg" ? (s.address || s.name) : s.from;
-    const mapLink = navTo
-      ? `<a class="map-link" href="${esc(App.mapsUrl(navTo))}" target="_blank" rel="noopener">📍 Nawiguj: ${esc(navTo)}</a>` : "";
+    const actRow = (cls, href, icon, title, sub, ext) => `
+      <a class="li ${cls}" href="${esc(href)}"${ext ? ' target="_blank" rel="noopener"' : ""}>
+        <span class="li-ico">${ic(icon)}</span><span class="li-main"><b>${title}</b>${sub ? `<small>${sub}</small>` : ""}</span>${ic("chev")}
+      </a>`;
+    const actions = [
+      navTo ? actRow("map-link", App.mapsUrl(navTo), "navigate", "Nawiguj", esc(navTo), true) : "",
+      s.type === "nocleg" && s.lat != null ? actRow("", `#/karty/${s.tripId}?k=s:${s.id}`, "taxi", "Pokaż kierowcy", "adres w lokalnym piśmie") : "",
+      s.depart && App.Reminders ? actRow("", App.Reminders.gcalUrl(s), "plan", "Dodaj do Google Kalendarza", "", true) : "",
+      trip ? actRow("trip-link", `#/podroze/${trip.id}`, "trips", "Podróż", esc(trip.name)) : "",
+    ].join("");
+
+    // szczegóły w siatce: pola rodzaju (bez przewoźnika i numeru – są w nagłówku), rezerwacja, cena
+    const facts = [
+      ...T.extra.filter(([k]) => k !== "carrier" && k !== "number" && s[k]).map(([k, label]) => [label, s[k]]),
+      ...(s.booking ? [["Nr rezerwacji", s.booking]] : []),
+      ...(s.price ? [["Cena", `${s.price} ${s.currency || ""}`.trim()]] : []),
+    ];
+    const prov = [s.carrier, s.number].filter(Boolean).join(" · ");
+    const stay = s.type === "nocleg";
 
     const tiles = files.map(f => `
       <a class="tk-tile" href="#/bilet/${f.id}">
-        <div class="tk-thumb" data-thumb="${f.id}">${f.kind === "pdf" ? "📄" : f.kind === "code" ? "" : "🖼️"}</div>
+        <div class="tk-thumb" data-thumb="${f.id}">${f.kind === "pdf" ? ic("doc", "lg") : f.kind === "code" ? "" : ic("image", "lg")}</div>
         <span class="tk-name">${esc(f.label || "Bilet")}</span>
         ${f.code ? `<span class="tk-badge">${fmtName(f.code.format)}</span>` : ""}
       </a>`).join("");
 
     return {
-      title: `${T.icon} ${T.name}`,
+      title: T.name,
       back: `#/podroze/${s.tripId}`,
       action: `<a class="icon-btn" href="#/odcinek/${id}/edytuj" aria-label="Edytuj">${Tr().editIcon}</a>`,
       html: `
-        <div class="seg-head">
-          <div class="seg-route">${esc(segTitle(s))}</div>
-          <div class="seg-when">${s.depart ? App.fmtDayLong(s.depart) : ""}</div>
-          <div class="seg-times">${s.type === "nocleg"
-            ? `Zameldowanie ${App.time(s.depart)}${s.arrive ? ` · wymeldowanie ${App.fmtDay(s.arrive)} ${App.time(s.arrive)}` : ""}${nights > 0 ? ` · ${nights} ${App.plural(nights, "noc", "noce", "nocy")}` : ""}`
-            : `${App.time(s.depart)}${s.arrive ? ` → ${App.time(s.arrive)}` : ""}${dur ? ` · ${dur}` : ""}`}</div>
-          ${shift ? `<div class="muted small">${shift} · godziny podane w czasie lokalnym lotnisk</div>` : ""}
-          ${mapLink}
-          ${s.type === "nocleg" && s.lat != null ? `<a class="map-link" href="#/karty/${s.tripId}?k=s:${s.id}">🚕 Pokaż kierowcy (adres w lokalnym piśmie)</a>` : ""}
-          ${s.depart && App.Reminders ? `<a class="map-link" href="${esc(App.Reminders.gcalUrl(s))}" target="_blank" rel="noopener">📅 Dodaj do Google Kalendarza</a>` : ""}
-          ${Tr().chips(s)}
+        <section class="seg-head jr">
+          <div class="jr-top">
+            <span class="chip accent">${tic(s, "sm")}${esc(T.name)}</span>
+            ${prov ? `<span class="jr-prov">${esc(prov)}</span>` : ""}
+          </div>
+          ${stay ? `
+            <h2 class="jr-stay">${esc(s.name || "Nocleg")}</h2>
+            ${s.address ? `<p class="jr-addr">${esc(s.address)}</p>` : ""}
+            <div class="jr-stay-grid">
+              <div><small>Zameldowanie</small><b>${s.depart ? App.fmtDay(s.depart) : "–"}</b><span>${App.time(s.depart)}</span></div>
+              <div><small>Wymeldowanie</small><b>${s.arrive ? App.fmtDay(s.arrive) : "–"}</b><span>${App.time(s.arrive)}</span></div>
+              ${nights > 0 ? `<div><small>Pobyt</small><b>${nights}</b><span>${App.plural(nights, "noc", "noce", "nocy")}</span></div>` : ""}
+            </div>`
+          : `${routeHtml(s, dur)}
+            <p class="jr-date seg-when">${s.depart ? App.fmtDayLong(s.depart) : ""}${s.arrive && s.depart && s.arrive.slice(0, 10) !== s.depart.slice(0, 10) ? ` → ${App.fmtDayLong(s.arrive)}` : ""}</p>
+            ${shift ? `<p class="jr-shift">${shift} · godziny podane w czasie lokalnym lotnisk</p>` : ""}`}
+          ${facts.length ? `<dl class="jr-facts">${facts.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>` : ""}
           ${s.note ? `<p class="note">${esc(s.note)}</p>` : ""}
-          ${trip ? `<a class="muted small trip-link" href="#/podroze/${trip.id}">Podróż: ${esc(trip.name)}</a>` : ""}
-        </div>
+        </section>
+        ${actions ? `<div class="list jr-actions">${actions}</div>` : ""}
 
         <h3 class="section">Bilety</h3>
         ${files.length ? `<div class="tk-grid">${tiles}</div>` : `<p class="muted small">Dodaj zdjęcie, zrzut ekranu, PDF lub kartę .pkpass (Apple Wallet) biletu albo zeskanuj jego kod – będzie dostępny bez internetu.</p>`}
         <div class="add-row">
-          <a class="btn" href="#/skanuj/${id}">${camIcon} Skanuj kod</a>
-          <label class="btn primary">${clipIcon} Zdjęcie / PDF
+          <a class="btn" href="#/skanuj/${id}">${ic("scan")} Skanuj kod</a>
+          <label class="btn primary">${ic("clip")} Zdjęcie / PDF
             <input type="file" id="pick" accept="image/*,application/pdf,.pdf,.pkpass,application/vnd.apple.pkpass" multiple hidden></label>
         </div>`,
       after(view) {
@@ -483,7 +547,6 @@
     const s = await segOf(f.segmentId);
     const all = (await DB.byIndex("files", "segmentId", f.segmentId)).sort(byCreated);
     const idx = all.findIndex(x => x.id === id);
-    const T = { icon: s ? iconOf(s) : "🎫" };
     const both = !!(f.code && f.blob);
     let mode = f.code ? "kod" : "oryginal";
     let lock = null;
@@ -492,9 +555,9 @@
     const seatLine = s ? segSeat(s) : "";
     const nav = all.length > 1 ? `
       <div class="tv-nav">
-        <button type="button" class="tv-arrow" data-go="-1" ${idx === 0 ? "disabled" : ""} aria-label="Poprzedni bilet">‹</button>
+        <button type="button" class="tv-arrow" data-go="-1" ${idx === 0 ? "disabled" : ""} aria-label="Poprzedni bilet">${ic("back")}</button>
         <span>${idx + 1} / ${all.length}</span>
-        <button type="button" class="tv-arrow" data-go="1" ${idx === all.length - 1 ? "disabled" : ""} aria-label="Następny bilet">›</button>
+        <button type="button" class="tv-arrow" data-go="1" ${idx === all.length - 1 ? "disabled" : ""} aria-label="Następny bilet">${ic("chev")}</button>
       </div>` : "";
 
     async function paint(view) {
@@ -537,7 +600,7 @@
           <div class="tv-top">
             <button type="button" class="tv-btn" id="tv-close" aria-label="Zamknij">${xIcon}</button>
             <div class="tv-title">
-              <b>${T.icon} ${esc(s ? segTitle(s) : "Bilet")}</b>
+              <b>${s ? tic(s, "sm") : ic("ticket", "sm")}<span>${esc(s ? segTitle(s) : "Bilet")}</span></b>
               <span>${s ? segWhen(s) : ""}</span>
             </div>
           </div>

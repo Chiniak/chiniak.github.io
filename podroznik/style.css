@@ -304,18 +304,6 @@ main a:not([class]) { color: var(--accent); font-weight: 600; text-decoration-th
 /* ---------- etap 2: bilety ---------- */
 .tl-tickets { float: right; font-size: var(--fs-sm); font-weight: 400; }
 
-.next-ticket {
-  display: flex; align-items: center; gap: 12px; margin-bottom: 8px;
-  padding: 14px 16px; border-radius: var(--radius); text-decoration: none;
-  background: var(--accent-fill); color: var(--accent-ink);
-  box-shadow: var(--accent-glow);
-}
-.nt-ico { flex: none; width: 44px; height: 44px; border-radius: var(--r-ctl); background: rgba(255,255,255,.18); display: grid; place-items: center; font-size: var(--fs-xl); }
-.nt-main { flex: 1; min-width: 0; }
-.nt-label { font-size: var(--fs-cap); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; opacity: .85; }
-.nt-title { font-size: var(--fs-lg); font-weight: 600; overflow-wrap: anywhere; }
-.nt-when { font-size: var(--fs-sm); opacity: .9; }
-.nt-go { font-size: var(--fs-2xl); }
 
 .seg-head { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
 .seg-route { font-size: var(--fs-xl); font-weight: 600; overflow-wrap: anywhere; }
@@ -375,7 +363,7 @@ main a:not([class]) { color: var(--accent); font-weight: 600; text-decoration-th
 .tv-arrow:disabled { opacity: .3; }
 .tv-foot { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
 .tv-link { min-height: 40px; padding: 0 12px; border: 0; background: transparent; color: #1A7F78; font: inherit; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; cursor: pointer; }
-.tv-link.danger { color: var(--err-text); }
+.tv-link.danger { color: #C24F4F; }
 
 /* skaner */
 .scan { background: #0b0f10; color: #eee; color-scheme: dark; }
@@ -1060,3 +1048,83 @@ html.has-bg .card, html.has-bg .pl-row, html.has-bg .plan-link { box-shadow: 0 2
 .hm-empty p { margin: 0 auto; max-width: 34ch; opacity: .92; font-size: var(--fs-sm); }
 
 html.has-bg .hm-stats, html.has-bg .tk-stub, html.has-bg .hm-qa, html.has-bg .rm-due { box-shadow: 0 2px 10px rgba(0, 0, 0, .12); }
+
+/* ---------- Bilety: portfel (redesign etap 3) ---------- */
+.wl-docs-box { margin-bottom: 4px; }
+.li-ico.ok { background: var(--ok-soft); color: var(--ok-text); }
+.li-ico.warn { background: var(--warn-soft); color: var(--warn); }
+.li-ico.err { background: var(--err-soft); color: var(--err-text); }
+.wl-feature { position: relative; display: flex; flex-direction: column; gap: 12px; padding: 16px 16px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-feature); box-shadow: var(--shadow); }
+.wl-f-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.wl-type { display: inline-flex; align-items: center; gap: 8px; font-size: var(--fs-sm); font-weight: 600; color: var(--accent); }
+.wl-prov { margin-top: -6px; font-size: var(--fs-sm); color: var(--muted); }
+.wl-title { font-family: var(--font-display); font-weight: 500; font-size: var(--fs-2xl); line-height: 1.15; overflow-wrap: anywhere; }
+.wl-when { font-size: var(--fs-body); font-weight: 500; }
+.wl-when::first-letter { text-transform: uppercase; }
+.wl-seat { display: flex; flex-wrap: wrap; gap: 6px; font-size: var(--fs-sm); color: var(--muted); }
+.wl-perf { position: relative; height: 0; margin: 4px -16px; border-top: 1.5px dashed var(--line); }
+.wl-perf::before, .wl-perf::after { content: ""; position: absolute; top: -9px; width: 16px; height: 16px; border-radius: 50%; background: var(--bg); border: 1px solid var(--line); }
+.wl-perf::before { left: -9px; border-left-color: transparent; border-bottom-color: transparent; transform: rotate(45deg); }
+.wl-perf::after { right: -9px; border-right-color: transparent; border-top-color: transparent; transform: rotate(45deg); }
+.wl-actions { display: grid; grid-template-columns: 1.4fr 1fr; gap: 10px; }
+.wl-actions .ic { width: 20px; height: 20px; }
+.wl-more { font-size: var(--fs-sm); color: var(--muted); text-align: center; margin-top: -2px; }
+.wl-feature .tk-end .code { font-size: 2rem; }
+.wl-row .chip { min-width: 26px; justify-content: center; }
+.wl-past .li { opacity: .72; }
+.tk-time { font-size: var(--fs-body); font-weight: 600; font-variant-numeric: tabular-nums; margin-top: 2px; }
+.tk-line { flex-direction: column; height: auto; min-height: 18px; gap: 2px; }
+.tk-line small { font-size: var(--fs-cap); color: var(--muted); white-space: nowrap; background: var(--surface); padding: 0 4px; position: relative; }
+.wl-empty { text-align: center; padding: 36px 16px 8px; }
+.wl-empty-art { width: 72px; height: 72px; margin: 0 auto 16px; border-radius: 22px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); }
+.wl-empty-art .ic { width: 32px; height: 32px; }
+.wl-empty h2 { margin: 0 0 8px; font-family: var(--font-display); font-weight: 500; font-size: var(--fs-2xl); }
+.wl-empty p { margin: 0 auto 18px; max-width: 34ch; color: var(--muted); font-size: var(--fs-sm); }
+
+/* szczegóły odcinka – karta podróży */
+.jr { display: flex; flex-direction: column; gap: 12px; padding: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-feature); margin-bottom: 12px; }
+.jr-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.jr-top .chip .ic { width: 15px; height: 15px; }
+.jr-prov { font-size: var(--fs-sm); color: var(--muted); font-weight: 500; }
+.jr .tk-end .code { font-size: 2rem; }
+.jr-date { margin: 0; font-weight: 500; }
+.jr-date::first-letter { text-transform: uppercase; }
+.jr-shift { margin: -6px 0 0; font-size: var(--fs-sm); color: var(--muted); }
+.jr-stay { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: var(--fs-2xl); line-height: 1.15; overflow-wrap: anywhere; }
+.jr-addr { margin: -6px 0 0; color: var(--muted); font-size: var(--fs-sm); overflow-wrap: anywhere; }
+.jr-stay-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 8px; }
+.jr-stay-grid > div { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: var(--r-ctl); background: var(--surface-2); min-width: 0; }
+.jr-stay-grid small, .jr-facts dt { font-size: var(--fs-cap); color: var(--muted); font-weight: 500; }
+.jr-stay-grid b { font-weight: 600; }
+.jr-stay-grid span { font-size: var(--fs-sm); color: var(--muted); font-variant-numeric: tabular-nums; }
+.jr-facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px 16px; margin: 0; padding-top: 12px; border-top: 1px solid var(--line); }
+.jr-facts div { min-width: 0; }
+.jr-facts dd { margin: 2px 0 0; font-weight: 600; overflow-wrap: anywhere; }
+.jr .note { margin: 0; padding-top: 12px; border-top: 1px solid var(--line); white-space: pre-wrap; color: var(--muted); }
+.jr-actions { margin-bottom: 4px; }
+.map-link.li { display: flex; margin-top: 0; font-weight: 400; color: inherit; }
+
+/* kafelki biletów */
+.tk-thumb { border-radius: var(--r-ctl); color: var(--muted); }
+.tk-thumb .ic { width: 30px; height: 30px; }
+.tk-name { font-weight: 500; }
+.tk-badge { background: var(--accent-fill); color: var(--accent-ink); }
+.add-row .ic { width: 20px; height: 20px; }
+
+/* bilet na pełnym ekranie – nadal zawsze białe tło (skaner na bramce) */
+.tv { gap: 12px; padding-left: 18px; padding-right: 18px; font-family: var(--font); }
+.tv-title b { display: flex; align-items: center; gap: 8px; font-size: var(--fs-lg); font-weight: 600; }
+.tv-title b .ic { color: #1A7F78; }
+.tv-title span { font-size: var(--fs-sm); color: #66736F; }
+.tv-btn { background: #F0F3F1; }
+.tv-btn svg { stroke-width: 1.9; }
+.tv-seat { border-radius: var(--r-ctl); background: #F0F3F1; color: #202B2B; }
+.tv-label { color: #66736F; }
+.tv-switch { background: #F0F3F1; }
+.tv-switch button { color: #66736F; }
+.tv-switch button[aria-pressed="true"] { color: #202B2B; }
+.tv-body { padding: 16px; border-radius: var(--r-feature); border: 1px solid #E8EEEB; }
+.tv-fmt { color: #66736F; }
+.tv-arrow { display: grid; place-items: center; border-color: #E8EEEB; }
+.tv-arrow .ic { width: 22px; height: 22px; }
+.tv-link { color: #1A7F78; }

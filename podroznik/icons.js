@@ -60,6 +60,10 @@
   }
   icon.names = Object.keys(P);
 
+  // ikona rodzaju odcinka (trips.js TYPES) – „_plan” = bilet przypięty do punktu planu
+  const TYPE = { lot: "plane", pociag: "train", autobus: "bus", prom: "ferry", auto: "car", taxi: "taxi", metro: "train", nocleg: "bed", inny: "compass", _plan: "ticket" };
+  icon.type = (type, cls) => icon(TYPE[type] || "compass", cls);
+
   if (self.App) App.icon = icon;
   self.Icons = icon;
 })();
