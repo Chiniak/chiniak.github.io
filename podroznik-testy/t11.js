@@ -28,7 +28,7 @@ const fs = require('fs'); const crypto = require('crypto'); const SP = process.a
   [dl] = await Promise.all([p.waitForEvent('download'), p.click('#bk-export button[type=submit]')]);
   const encf = SP+'/backup-enc.json'; await dl.saveAs(encf);
   const e = JSON.parse(fs.readFileSync(encf,'utf8')); console.log('encrypted:', dl.suggestedFilename(), !!e.encrypted, 'no plaintext:', !fs.readFileSync(encf,'utf8').includes('Oceanarium'));
-  await p.waitForTimeout(500); console.log('last backup line:', (await p.textContent('.card .row >> nth=1')).replace(/\s+/g,' ').trim());
+  await p.waitForTimeout(500); console.log('last backup line:', (await p.textContent('#bk-last')).replace(/\s+/g,' ').trim());
   // ---- phone B: restore
   const Bc = await b.newContext({ ...devices['Pixel 7'], locale: 'pl-PL' }); const q = await Bc.newPage(); watch(q);
   let ans = 'zle-haslo'; q.on('dialog', d => d.type()==='prompt' ? d.accept(ans) : d.accept());

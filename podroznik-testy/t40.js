@@ -70,7 +70,7 @@ const MOCK = () => {
 
   // ustawienia przypomnień
   await p.goto(U + '#/ustawienia/przypomnienia'); await p.waitForTimeout(1200);
-  console.log('settings:', await p.$eval('.card', e => e.textContent.replace(/\s+/g, ' ').trim().slice(0, 260)));
+  console.log('settings:', await p.$eval('.rm-status', e => e.textContent.replace(/\s+/g, ' ').trim().slice(0, 260)));
   console.log('buttons:', await p.$$eval('.rm-btns button', e => e.map(x => x.id)));
   await p.evaluate(() => { __lnLog.length = 0; }); await p.click('#rm-exact'); await p.waitForTimeout(1500);
   console.log('exact → log:', JSON.stringify(await p.evaluate(() => __lnLog)), '| all exact:', await p.evaluate(() => __ln.pending.every(n => n.exact)));

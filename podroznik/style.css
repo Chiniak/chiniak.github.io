@@ -1542,3 +1542,81 @@ button.li { font-weight: 400; }
 .doc-pdf { margin-top: 12px; }
 .doc-img { width: 100%; border-radius: var(--r-ctl); border: 1px solid var(--line); }
 .bg-split { gap: 8px; margin-top: 2px; }
+
+/* ---------- etap 7d: kopia zapasowa (backup.js) ---------- */
+.bk-sum h2 { font-size: var(--fs-xl); margin-bottom: 4px; }
+.bk-sum.is-warn .pr-sum-k { color: var(--warn); }
+.bk-facts { display: flex; flex-direction: column; gap: 6px; margin: 10px 0 0; padding-top: 10px; border-top: 1px solid var(--line); }
+.bk-facts div { display: flex; justify-content: space-between; gap: 12px; font-size: var(--fs-sm); }
+.bk-facts dt { color: var(--muted); flex: none; }
+.bk-facts dd { margin: 0; text-align: right; font-weight: 500; }
+.bk-warn { margin: 0 0 4px; padding: 12px 14px; border-radius: var(--r-ctl); color: var(--text); }
+.bk-warn .ic { color: var(--warn); }
+.bk-hint { margin-top: 10px; }
+.bk-tips { padding: 4px 0; }
+.bk-tips ol { list-style: none; counter-reset: bk; margin: 0; padding: 0; gap: 0; }
+.bk-tips li { counter-increment: bk; position: relative; padding: 12px 14px 12px 52px; border-top: 1px solid var(--line); font-size: var(--fs-sm); line-height: 1.45; }
+.bk-tips li:first-child { border-top: 0; }
+.bk-tips li::before { content: counter(bk); position: absolute; left: 14px; top: 11px; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); font-weight: 600; font-size: var(--fs-cap); }
+.bk-restore { display: flex; flex-direction: column; gap: 10px; }
+.bk-r-hint { margin: 0; }
+.bk-box { margin-top: 2px; }
+.bk-box .bk-facts { margin: 0 0 4px; padding-top: 0; border-top: 0; }
+
+/* ---------- etap 7d: blokada PIN (lock.js) ---------- */
+.lk-hero h2 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.lk-hero h2 .chip { font-family: var(--font); height: 22px; }
+.lk-note { margin-top: 12px; }
+.lk-note .ic { color: var(--warn); }
+.lk-opts { padding: 0; }
+.lk-row { gap: 12px; }
+.lk-row .li-ico { background: var(--accent-soft); color: var(--accent); }
+.lk-row select { flex: none; max-width: 46%; min-height: 40px; padding: 0 8px; border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; font-size: var(--fs-sm); }
+.lk-row.sw { cursor: pointer; }
+
+/* ---------- etap 7d: przypomnienia (reminders.js) ---------- */
+.rm-status { margin-bottom: 16px; }
+.rm-help { margin: 10px 0 0; font-size: var(--fs-sm); color: var(--muted); }
+.rm-btns { margin-top: 12px; }
+.rm-btns .btn { flex: 1; min-width: 140px; }
+.rm-master { margin-top: 0; }
+.rm-master .sw, .rm-other .sw, .rm-other .rm-sel { min-height: 56px; padding: 6px 14px; border-top: 1px solid var(--line); }
+.rm-master .sw { border-top: 0; }
+.rm-other > :first-child { border-top: 0; }
+.rm-types { padding: 0; }
+.rm-type { padding: 12px 14px; }
+.rm-type-name { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; font-weight: 500; }
+.rm-type-name .li-ico { background: var(--accent-soft); color: var(--accent); }
+.rm-type-opts { padding-left: 48px; }
+@media (max-width: 380px) { .rm-type-opts { padding-left: 0; } }
+.rm-cal { display: flex; flex-direction: column; gap: 10px; }
+.rm-cal p { margin: 0; color: var(--muted); }
+.rm-list { padding: 0; }
+.rm-up .li-ico { background: var(--accent-soft); color: var(--accent); }
+.rm-up .li-main small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rm-when { display: flex; flex-direction: column; align-items: flex-end; color: var(--muted); font-size: var(--fs-cap); }
+.rm-when b { color: var(--accent); font-size: var(--fs-body); font-weight: 600; }
+.rm-none { margin: 0; padding: 14px; }
+
+/* ---------- etap 7d: Gmail (gmail.js) ---------- */
+.gm-intro .tx-hero p { margin: 0; }
+.gm-intro .gm-list { margin: 0 0 12px; padding: 0; line-height: normal; }
+.gm-list .li { min-height: 54px; }
+.gm-list .li-ico { background: var(--accent-soft); color: var(--accent); }
+.gm-privacy { margin: 0 0 14px; }
+.gm-privacy .ic { color: var(--ok-text); }
+.gm-web { margin: 0; background: var(--surface-2); color: var(--text); }
+.gm-web .ic { color: var(--accent); }
+.gm-account h2.gm-mail { font-size: var(--fs-xl); margin: 6px 0 0; }
+
+/* ---------- etap 7d: udostępnianie, z maila (share.js, email.js) ---------- */
+.sh-box { display: flex; flex-direction: column; gap: 12px; }
+.sh-sw { font-size: var(--fs-sm); }
+.sh-ico { background: var(--accent-soft); color: var(--accent); }
+.sh-note { margin-top: 14px; }
+.sh-note .ic { color: var(--ok-text); }
+.em-src { margin: 0 2px 10px; }
+.em-go { grid-column: 1 / -1; }
+.em-card .tl-ico .ic { width: 20px; height: 20px; }
+.td-note { white-space: normal; }
+.td-note.note, .doc-note { white-space: pre-wrap; }

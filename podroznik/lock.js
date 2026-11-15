@@ -138,41 +138,41 @@
     const bioOk = await bioAvailable();
     const TIMEOUTS = [[0, "od razu"], [1, "po 1 min"], [5, "po 5 min"], [15, "po 15 min"], [60, "po 1 h"]];
 
+    const hero = (on, text) => `
+      <section class="tx-hero lk-hero${on ? " on" : ""}">
+        <span class="tx-hero-ic" aria-hidden="true">${App.icon("lock")}</span>
+        <div><h2>${on ? "Blokada włączona" : "Blokada PIN-em"} <span class="chip ${on ? "ok" : ""}">${on ? "wł." : "wył."}</span></h2><p>${text}</p></div>
+      </section>`;
     const off = `
-      <div class="card">
-        <h2>🔒 Blokada PIN-em</h2>
-        <p class="small muted" style="margin-top:0">Po włączeniu aplikacja przy otwarciu poprosi o PIN (4–6 cyfr)${bioOk ? " albo odcisk palca" : ""}.
-          Chroni bilety i dane rezerwacji, gdy ktoś inny weźmie telefon.</p>
-        <form id="lk-set" class="form" novalidate>
-          ${pinField("p1", "Nowy PIN (4–6 cyfr)")}
-          ${pinField("p2", "Powtórz PIN")}
-          <p class="error" id="lk-err" hidden></p>
-          <button class="btn primary wide" type="submit">Włącz blokadę</button>
-        </form>
-        <p class="small muted"><b>PIN-u nie da się odzyskać.</b> Gdy go zapomnisz, trzeba wyczyścić dane aplikacji i przywrócić je z kopii zapasowej – zrób ją najpierw.</p>
-      </div>`;
+      ${hero(false, `Po włączeniu aplikacja przy otwarciu poprosi o PIN (4–6 cyfr)${bioOk ? " albo odcisk palca" : ""}. Chroni bilety i dane rezerwacji, gdy ktoś inny weźmie telefon.`)}
+      <h3 class="section">Ustaw PIN</h3>
+      <form id="lk-set" class="form bg-cfg" novalidate>
+        ${pinField("p1", "Nowy PIN (4–6 cyfr)")}
+        ${pinField("p2", "Powtórz PIN")}
+        <p class="error" id="lk-err" hidden></p>
+        <button class="btn primary wide" type="submit">${App.icon("lock", "sm")} Włącz blokadę</button>
+      </form>
+      <p class="td-note lk-note">${App.icon("alert", "sm")}<span><b>PIN-u nie da się odzyskać.</b> Gdy go zapomnisz, trzeba wyczyścić dane aplikacji i przywrócić je z kopii zapasowej – zrób ją najpierw.</span></p>`;
 
     const on = cur ? `
-      <div class="card">
-        <h2>🔒 Blokada włączona</h2>
-        <form id="lk-opts">
-          <label class="rm-sel"><span>Blokuj po wyjściu z aplikacji</span>
-            <select name="timeout">${TIMEOUTS.map(([v, n]) => `<option value="${v}" ${cur.timeout === v ? "selected" : ""}>${n}</option>`).join("")}</select></label>
-          ${bioOk ? `<label class="sw"><input type="checkbox" name="bio" ${cur.bio ? "checked" : ""}><span class="sw-ui" aria-hidden="true"></span><span>Odblokowanie odciskiem palca</span></label>` : ""}
-        </form>
-        <p class="small muted">Blokada chroni przed podejrzeniem danych w telefonie. Dane w pamięci przeglądarki nie są szyfrowane.</p>
-      </div>
-      <div class="card">
-        <h2>Zmień PIN albo wyłącz</h2>
-        <form id="lk-change" class="form" novalidate>
-          ${pinField("old", "Obecny PIN")}
-          ${pinField("p1", "Nowy PIN (zostaw puste, by tylko wyłączyć)").replace(" required", "")}
-          ${pinField("p2", "Powtórz nowy PIN").replace(" required", "")}
-          <p class="error" id="lk-err" hidden></p>
+      ${hero(true, "Blokada chroni przed podejrzeniem danych w telefonie. Dane w pamięci przeglądarki nie są szyfrowane.")}
+      <h3 class="section">Ustawienia</h3>
+      <form id="lk-opts" class="list lk-opts">
+        <label class="li set-ctl lk-row"><span class="li-ico">${App.icon("clock")}</span><span class="li-main"><b>Blokuj po wyjściu z aplikacji</b></span>
+          <select name="timeout">${TIMEOUTS.map(([v, n]) => `<option value="${v}" ${cur.timeout === v ? "selected" : ""}>${n}</option>`).join("")}</select></label>
+        ${bioOk ? `<label class="li lk-row sw"><span class="li-ico">${App.icon("shield")}</span><span class="li-main"><b>Odblokowanie odciskiem palca</b></span><input type="checkbox" name="bio" ${cur.bio ? "checked" : ""}><span class="sw-ui" aria-hidden="true"></span></label>` : ""}
+      </form>
+      <h3 class="section">Zmień PIN albo wyłącz</h3>
+      <form id="lk-change" class="form bg-cfg" novalidate>
+        ${pinField("old", "Obecny PIN")}
+        ${pinField("p1", "Nowy PIN (zostaw puste, by tylko wyłączyć)").replace(" required", "")}
+        ${pinField("p2", "Powtórz nowy PIN").replace(" required", "")}
+        <p class="error" id="lk-err" hidden></p>
+        <div class="f-actions">
           <button class="btn primary wide" type="submit" name="act" value="change">Zmień PIN</button>
           <button class="btn danger wide" type="submit" name="act" value="off">Wyłącz blokadę</button>
-        </form>
-      </div>` : "";
+        </div>
+      </form>` : "";
 
     return {
       title: "Blokada",

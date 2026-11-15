@@ -85,19 +85,21 @@
       title: "Udostępnij podróż",
       back: `#/podroze/${id}`,
       html: `
-        <div class="card">
-          <h2>📤 Wspólna podróż</h2>
-          <p class="small">Wyślij plik podróży osobie, z którą jedziesz (WhatsApp, mail, Messenger…). U niej: <b>Podróże → 📥 Otwórz podróż od kogoś</b>.
-            Gdy ktoś coś zmieni i odeśle plik – zmiany dołączą się do Twojej podróży (nowsza wersja wygrywa).</p>
-          ${nFiles ? `<label class="pk-toggle"><input type="checkbox" id="sh-files"> Dołącz bilety i zdjęcia (${nFiles}) – plik będzie większy</label>` : ""}
-          <button type="button" class="btn primary wide" id="sh-file" style="margin-top:8px">📤 Wyślij podróż (plik)</button>
+        <section class="tx-hero">
+          <span class="tx-hero-ic" aria-hidden="true">${App.icon("users")}</span>
+          <div><h2>Wspólna podróż</h2>
+          <p>Wyślij plik podróży osobie, z którą jedziesz (WhatsApp, mail, Messenger…). U niej: <b>Podróże → Otwórz od kogoś</b>.
+            Gdy ktoś coś zmieni i odeśle plik – zmiany dołączą się do Twojej podróży (nowsza wersja wygrywa).</p></div>
+        </section>
+        <div class="bg-cfg sh-box">
+          ${nFiles ? `<label class="sw sh-sw"><input type="checkbox" id="sh-files"><span class="sw-ui" aria-hidden="true"></span><span>Dołącz bilety i zdjęcia (${nFiles}) – plik będzie większy</span></label>` : ""}
+          <button type="button" class="btn primary wide" id="sh-file">${App.icon("share", "sm")} Wyślij podróż (plik)</button>
         </div>
-        <div class="card" style="margin-top:12px">
-          <h2>📝 Plan jako tekst</h2>
-          <p class="small muted">Do wklejenia w wiadomość – loty, noclegi i plan dnia po dniu.</p>
-          <button type="button" class="btn wide" id="sh-text">📝 Wyślij plan jako tekst</button>
+        <h3 class="section">Plan jako tekst</h3>
+        <div class="list">
+          <button type="button" class="li" id="sh-text"><span class="li-ico sh-ico">${App.icon("list")}</span><span class="li-main"><b>Wyślij plan jako tekst</b><small>do wklejenia w wiadomość – loty, noclegi i plan dnia po dniu</small></span>${App.icon("chev")}</button>
         </div>
-        <p class="muted small">Dane nie przechodzą przez żaden serwer. Usunięcie czegoś u jednej osoby nie usuwa tego u drugiej.</p>`,
+        <p class="td-note sh-note">${App.icon("shield", "sm")}<span>Dane nie przechodzą przez żaden serwer. Usunięcie czegoś u jednej osoby nie usuwa tego u drugiej.</span></p>`,
       after(view) {
         view.querySelector("#sh-file").onclick = async () => {
           const box = view.querySelector("#sh-files");
@@ -120,13 +122,14 @@
     title: "Podróż od kogoś",
     back: "#/podroze",
     html: `
-      <div class="card">
-        <h2>📥 Otwórz plik podróży</h2>
-        <p class="small">Wybierz plik <b>podroz-….json</b>, który ktoś Ci wysłał z Podróżnika. Nowa podróż zostanie dodana,
-          a jeśli już ją masz – dołączą się zmiany (nowsza wersja każdej pozycji wygrywa).</p>
-        <label class="btn primary wide">📂 Wybierz plik<input type="file" id="sh-in" accept="application/json,.json" hidden></label>
-        <p class="error" id="err" hidden></p>
-      </div>`,
+      <section class="tx-hero">
+        <span class="tx-hero-ic" aria-hidden="true">${App.icon("download")}</span>
+        <div><h2>Otwórz plik podróży</h2>
+        <p>Wybierz plik <b>podroz-….json</b>, który ktoś Ci wysłał z Podróżnika. Nowa podróż zostanie dodana,
+          a jeśli już ją masz – dołączą się zmiany (nowsza wersja każdej pozycji wygrywa).</p></div>
+      </section>
+      <label class="btn primary wide">${App.icon("doc", "sm")} Wybierz plik<input type="file" id="sh-in" accept="application/json,.json" hidden></label>
+      <p class="error" id="err" hidden></p>`,
     after(view) {
       view.querySelector("#sh-in").onchange = async e => {
         const file = e.target.files[0];
