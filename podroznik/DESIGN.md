@@ -48,7 +48,7 @@ Uwaga: teksty z emoji są kluczami tłumaczeń w `i18n-en.js` – zmieniając te
 Ruch: krótkie przejścia 0.12–0.25 s; `prefers-reduced-motion` wyłącza animacje.
 
 ## Etapy redesignu
-1. Design system ✔ (ten dokument) · 2. Podróże ✔ · 3. Bilety ✔ · 4. Plan ✔ · 5. Pakowanie · 6. Ustawienia · 7. ekrany dodatkowe · 8. szlif (animacje, dostępność, tablet, style z JS) · 9. testy całości.
+1. Design system ✔ (ten dokument) · 2. Podróże ✔ · 3. Bilety ✔ · 4. Plan ✔ · 5. Pakowanie ✔ · 6. Ustawienia · 7. ekrany dodatkowe · 8. szlif (animacje, dostępność, tablet, style z JS) · 9. testy całości.
 Makieta zatwierdzona przez właściciela: ekran Podróże – nagłówek z powitaniem, karta bieżącej podróży ze zdjęciem i odliczaniem,
 pasek postępu (spakowane / punkty planu / budżet), najbliższy bilet jako odcinek z QR, zadanie przed wyjazdem, nadchodzące
 podróże w poziomym rzędzie, szybkie akcje (Nowa podróż, Z Gmaila, Otwórz wspólną). Decyzje: ciemny turkus do tekstu,
@@ -98,3 +98,17 @@ dwa kroje, zdjęcia bez motywów religijnych, tło ze zdjęć – nowi użytkown
 - „Poprzednie dni” i „Pomysły – bez dnia” jako zwijane `details` z własnym `summary` (chip z liczbą, strzałka).
   Pomysły pod planem dni, wyraźnie oddzielone: szary panel `--r-feature`, karty bez ramki, „+ dzień” do przeniesienia.
 - Koszty: dnia `.pl-cost`, razem `.pl-total`.
+
+## Pakowanie (etap 5, `pack.js` – trasa `#/pakowanie/:id`)
+- Tytuł „Pakowanie”; nagłówek jak w Planie (`.pl-head`, przełącznik `#pk-trip` na nazwie), pod nim zakres dat · „wyjazd za N dni”.
+- Karta postępu `.pk-progress`: pierścień SVG (`.pk-ring`, procent w środku; komplet = zielony + ✓), tytuł w Newsreader
+  („Zostało N rzeczy/zadań”, „Wszystko spakowane”), licznik `.pk-prog-top` „Spakowane X/Y” (na zakładce zadań „Zrobione”),
+  chipy: do kupienia (tylko Rzeczy), po terminie (tylko Przed wyjazdem). Pusta lista – karty nie ma, jest stan pusty.
+- Zakładki `.pk-tabs` z licznikami (Rzeczy X/Y, Przed wyjazdem X/Y). Na zakładce Rzeczy `.pk-next` – najbliższe
+  niezrobione zadanie (po terminie: czerwone tło, ikona ostrzeżenia), dotknięcie → zakładka zadań.
+- Kategorie bez kart: nagłówek `.pk-cat` (emoji, nazwa wersalikami, licznik `.pk-count`, mini pasek `.pk-mini`; komplet = zielony),
+  wiersze `.pk-row` oddzielone liniami. Zadania: grupy „Do zrobienia” i „Zrobione”, termin pod nazwą (`.pk-due`, po terminie czerwony).
+- Wózek „do kupienia” = ikona `cart` (nowe ikony: `cart`, `star`, `undo`, `list`).
+- Pod listą: przełącznik `.sw` „Ukryj spakowane” (`#pk-hide`) i lista `.list` – Szablony (`#pk-tpl`), Zapisz jako szablon
+  (`#pk-save`), Odznacz wszystko (`#pk-reset`); `button.li` = wiersz listy jako przycisk.
+- Szablony: dwie `.list.tpl-box` (Twoje / Gotowe), usuwanie ikoną kosza.
