@@ -380,6 +380,7 @@
               <select name="packDays">${opts([[0, "wył."], [1, "1 dzień przed"], [2, "2 dni przed"], [3, "3 dni przed"], [5, "5 dni przed"], [7, "tydzień przed"]], cfg.packDays)}</select></label>
             ${sw("todos", cfg.todos, "Zadania z terminem – o 9:00 w dniu terminu")}
             ${sw("backup", cfg.backup, "Kopia zapasowa – 3 dni przed wyjazdem, jeśli są nowe zmiany")}
+            ${sw("visa", cfg.visa, "Wizy i zezwolenia na wjazd – z wyprzedzeniem przed przylotem")}
             <label class="rm-sel"><span>Punkty planu z godziną</span>
               <select name="plan">${opts([[0, "wył."], [15, "15 min przed"], [30, "30 min przed"], [60, "1 h przed"]], cfg.plan)}</select></label>
           </div>
@@ -404,7 +405,7 @@
         const form = view.querySelector("#rm-form");
         form.addEventListener("change", async () => {
           const f = new FormData(form);
-          const next = { enabled: form.enabled.checked, packDays: +f.get("packDays"), todos: form.todos.checked, backup: form.backup.checked, plan: +f.get("plan"), types: {} };
+          const next = { enabled: form.enabled.checked, packDays: +f.get("packDays"), todos: form.todos.checked, backup: form.backup.checked, visa: form.visa.checked, plan: +f.get("plan"), types: {} };
           form.querySelectorAll(".rm-type").forEach(row => {
             const t = {}, g = n => row.querySelector(`[name="${n}"]`);
             if (g("day")) t.day = g("day").checked;

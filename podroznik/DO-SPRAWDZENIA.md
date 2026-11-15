@@ -190,6 +190,11 @@ Adres (po scaleniu pull requesta): https://chiniak.github.io/podroznik/
 - [ ] Po scaleniu: przełączanie zakładek nie zmienia tła; nowe zdjęcie po ponownym uruchomieniu aplikacji
 - [ ] Ustawienia → Tło → „Nowe zdjęcie”: przy uruchomieniu / co 10 minut / raz dziennie / przy każdej zmianie ekranu
 
+## Wizy i zezwolenia (APK 2.8.0)
+- ⬜ Podróż poza UE: sekcja „Wjazd i wizy” w szczegółach podróży – czy kraje rozpoznane dobrze (loty, cel, noclegi), czy opisy się zgadzają
+- ⬜ „Mam”, krzyżyk „Nie jadę”, „+ Dodaj kraj”; wiza dodana w Dokumentach (rodzaj „Wiza”, kraj) = „mam”
+- ⬜ Przypomnienia o e-wizie / ESTA / formularzu przyjazdu przychodzą (Ustawienia → Przypomnienia → „Wizy i zezwolenia”)
+
 ## Tryb „W podróży” – ekran Dziś (APK 2.7.0) – właściciel 15.11: „sprawdza się bardzo dobrze”
 - ✅ Ekran główny w trakcie podróży: przycisk „Dziś w podróży” pod kartą podróży
 - ✅ Ekran Dziś: teraz / dalej, nocleg (Nawiguj, Zadzwoń, Dla kierowcy), bilety na dziś („Pokaż”), plan dnia, strzałki ‹ › między dniami, „Jutro”
