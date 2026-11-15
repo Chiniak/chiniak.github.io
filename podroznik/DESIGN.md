@@ -113,14 +113,15 @@ dwa kroje, zdjęcia bez motywów religijnych, tło ze zdjęć – nowi użytkown
   (`#pk-save`), Odznacz wszystko (`#pk-reset`); `button.li` = wiersz listy jako przycisk.
 - Szablony: dwie `.list.tpl-box` (Twoje / Gotowe), usuwanie ikoną kosza.
 
-## Ustawienia (etap 6, `settings.js` – trasa `#/ustawienia`)
-- Ekran przeniesiony z `app.js` do `settings.js` (motyw przez `App.applyTheme`). Na górze `.set-head`: ikona aplikacji,
-  „Podróżnik” (Newsreader), liczba podróży · „dane tylko w tym telefonie”.
-- Grupy `.set-group` = etykieta sekcji + `.list`: **Wygląd** (motyw, tło ze zdjęć, język), **Podróżowanie** (nawigacja i mapy
-  z poradą o Chinach / Organic Maps, przypomnienia), **Bezpieczeństwo** (blokada PIN), **Dane** (kopia zapasowa, dane w telefonie
-  z paskiem zajętości), **Integracje** (Gmail – tylko gdy dostępny, APK – tylko w przeglądarce), **O aplikacji** (wersja `#app-version`, tryb offline).
-- Wiersz-link: `.li` z `.li-ico` (turkusowe tło), tytuł, opis, chip stanu (`ok` / `warn`), strzałka. Wiersz z kontrolką `.set-ctl`:
-  przełącznik `.seg` lub lista pod tytułem (`.set-body`, wcięcie 48 px, na ≤ 380 px bez wcięcia). `.seg` z dwoma przyciskami = dwie kolumny.
+## Ustawienia (etap 6, `settings.js` – trasa `#/ustawienia`; uporządkowane 15.11 na prośbę właściciela – „za dużo miejsca, nie wszystko potrzebne”)
+- Ekran ok. 1 wysokości telefonu: bez nagłówka z logo, 4 grupy `.set-group` = etykieta sekcji + `.list`:
+  **Wygląd** (Motyw `#theme-sel`, Język `#lang-sel`, Tło ze zdjęć – przełącznik `.sw` `#bg-on`; „Nowe zdjęcie” `#bg-every` i `#bg-info` tylko
+  przy włączonym tle), **Podróżowanie** (Nawigacja `#nav-app` – krótka podpowiedź tylko dla „Inna aplikacja” / „Amap”, Start w trakcie podróży
+  `#start-sel`, Przypomnienia), **Dane i bezpieczeństwo** (Kopia zapasowa, Blokada PIN-em), **Aplikacja** (Gmail – tylko gdy dostępny, APK –
+  tylko w przeglądarce, „Podróżnik 2.9.0” `#app-version` + jedna linijka `#storage`: podróże · MB w telefonie · działa offline).
+- Wiersz z wyborem `.li.set-row` + `select.set-sel` po prawej (systemowa lista, własna strzałka); wiersz-link: `.li-ico`, tytuł, krótki opis,
+  chip stanu (`ok` / `warn`), strzałka. Usunięte: akapity o mapach (porada o mapie offline jest w Przygotuj offline), pasek zajętości
+  i „ochrona przed usunięciem” (krok w Przygotuj offline), osobny wiersz „Tryb offline”.
 - Ostrzeżenia: brak kopii / stara kopia → chip „zrób kopię” i ikona w kolorze ostrzeżenia; powiadomienia wyłączone → chip „wył.”.
 
 ## Szczegóły podróży i formularze (etap 7a)

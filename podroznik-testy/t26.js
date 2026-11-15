@@ -46,6 +46,6 @@ const dir = process.argv[2] || 'podroznik-testy';
   console.log('share text:\n' + await p.evaluate(i => App.Share.planText(i), ids.t));
   // przełączenie na polski
   await p.goto('http://localhost:8765/podroznik/#/ustawienia'); await p.waitForTimeout(400);
-  await Promise.all([p.waitForNavigation(), p.click('[data-lang-opt="pl"]')]); await p.waitForTimeout(600);
+  await Promise.all([p.waitForNavigation(), p.selectOption('#lang-sel', 'pl')]); await p.waitForTimeout(600);
   console.log('after PL:', await p.evaluate(() => I18N.lang), await p.textContent('#title'), '| db:', await p.evaluate(() => DB.getSetting('lang')));
   console.log('errors:', errs); await b.close(); })();

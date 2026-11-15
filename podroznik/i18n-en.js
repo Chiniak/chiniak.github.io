@@ -721,4 +721,14 @@ self.I18N_EN = {
   "Pobrano {} z NBP": "Downloaded {} from NBP", "Nie udało się pobrać (brak internetu?)": "Could not download (no internet?)",
   "działa offline, kursy na drogę": "works offline, rates for the road", "offline, ściąga kwot, kursy na drogę": "offline, cheat sheet, rates for the road",
   "kurs": "rate", "kursy": "rates", "kursów": "rates",
+
+  /* ---------- ustawienia uporządkowane (settings.js) ---------- */
+  "Tło ze zdjęć": "Photo background", "natura i miasta z Wikimedia Commons": "nature and cities from Wikimedia Commons",
+  "przy uruchomieniu": "at start", "co 10 minut": "every 10 minutes", "raz dziennie": "once a day", "przy każdym ekranie": "on every screen",
+  "Nawigacja": "Navigation", "Inna aplikacja": "Another app", "Amap (Chiny)": "Amap (China)", "np. Organic Maps – mapy offline": "e.g. Organic Maps – offline maps",
+  "高德 – w Chinach Google nie działa": "高德 – Google doesn't work in China", "Start w trakcie podróży": "Start screen during a trip",
+  "Dane i bezpieczeństwo": "Data & security", "Aplikacja": "App", "otwiera się po podaniu PIN-u": "opens with your PIN", "zabezpiecz bilety i dokumenty": "protect tickets and documents",
+  "pobierz APK": "download the APK", "{} MB w telefonie": "{} MB on the phone", "działa offline": "works offline", "offline po ponownym otwarciu": "offline after reopening",
+  "Brak internetu – zdjęcia pobiorą się później.": "No internet – photos will download later.", "Pobieram zdjęcia – przełącz kilka ekranów.": "Downloading photos – switch a few screens.",
+  "{} podróż": "{} trip", "{} podróże": "{} trips", "{} podróży": "{} trips",
 };

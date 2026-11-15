@@ -78,7 +78,7 @@ function png(r, g, b) {
   console.log('blocked:', await p.evaluate(async s => [(await DB.getSetting('bgBlocked', [])).includes(s), !(await (await caches.open('tla-zdjecia')).match(s)), (await DB.getSetting('bgPool')).items.some(i => i.src === s)], cur),
     '| new current differs:', await p.evaluate(() => App.Backdrop.info().then(i => i.current && i.current.src)) !== cur);
   // jasny motyw
-  await p.click('[data-theme-opt="light"]'); await p.evaluate(() => { location.hash = '#/plan'; }); await p.waitForTimeout(1000);
+  await p.selectOption('#theme-sel', 'light'); await p.evaluate(() => { location.hash = '#/plan'; }); await p.waitForTimeout(1000);
   await p.screenshot({ path: `${dir}/t29-light.png` });
   // offline: nadal zmienia się z pobranych
   await ctx.setOffline(true); const before = await cnt(); const s2 = new Set();
@@ -87,7 +87,7 @@ function png(r, g, b) {
   await ctx.setOffline(false);
   // wyłączenie
   await p.goto('http://localhost:8765/podroznik/#/ustawienia'); await p.waitForTimeout(500);
-  await p.click('[data-bg-opt="0"]'); await p.waitForTimeout(300);
+  await p.click('.set-bg .sw'); console.log('switch off:', !(await p.isChecked('#bg-on'))); await p.waitForTimeout(300);
   await p.evaluate(() => { location.hash = '#/bilety'; }); await p.waitForTimeout(700);
   console.log('off: has-bg', await p.evaluate(() => document.documentElement.classList.contains('has-bg')), '| after reload:', await p.reload().then(() => p.waitForTimeout(1200)).then(() => p.evaluate(() => document.documentElement.classList.contains('has-bg'))));
   console.log('errors:', errs); await b.close(); })();

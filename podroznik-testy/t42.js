@@ -95,11 +95,11 @@ const SP = process.argv[2];
 
   // ---------- ustawienie ekranu startowego ----------
   await p.goto(B + '#/ustawienia'); await p.waitForTimeout(600);
-  ok(await p.getAttribute('[data-start-opt="podroze"]', 'aria-pressed') === 'true', 'domyślnie start na Podróżach');
+  ok(await p.inputValue('#start-sel') === 'podroze', 'domyślnie start na Podróżach');
   await p.goto(B + '#/podroze'); await p.reload(); await p.waitForTimeout(800);
   ok(p.url().endsWith('#/podroze'), 'bez ustawienia: start na Podróżach');
   await p.goto(B + '#/ustawienia'); await p.waitForTimeout(600);
-  await p.click('[data-start-opt="dzis"]'); await p.waitForTimeout(400);
+  await p.selectOption('#start-sel', 'dzis'); await p.waitForTimeout(400);
   await p.goto(B + '#/podroze'); await p.reload(); await p.waitForTimeout(900);
   ok(p.url().endsWith(`#/dzis/${ids.t}`), 'ustawienie „Dziś”: start w trakcie podróży na ekranie Dziś');
   await p.goto(B + `#/bilety`); await p.reload(); await p.waitForTimeout(800);
@@ -135,8 +135,8 @@ const SP = process.argv[2];
   await q.reload(); await q.waitForTimeout(900);
   ok(q.url().endsWith(`#/dzis/${tid}`), 'APK bez wyboru: start na „Dziś”');
   await q.goto(B + '#/ustawienia'); await q.waitForTimeout(600);
-  ok(await q.getAttribute('[data-start-opt="dzis"]', 'aria-pressed') === 'true', 'APK: w Ustawieniach zaznaczone „Dziś”');
-  await q.click('[data-start-opt="podroze"]'); await q.waitForTimeout(400);
+  ok(await q.inputValue('#start-sel') === 'dzis', 'APK: w Ustawieniach wybrane „Dziś”');
+  await q.selectOption('#start-sel', 'podroze'); await q.waitForTimeout(400);
   await q.goto(B + '#/podroze'); await q.reload(); await q.waitForTimeout(900);
   ok(q.url().endsWith('#/podroze'), 'APK po wyborze „Podróże”: start na Podróżach');
   ok(!errs2.length, 'APK: bez błędów ' + JSON.stringify(errs2));
