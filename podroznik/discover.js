@@ -14,7 +14,10 @@
 
   // Amap szuka po chińsku
   const AMAP_WORD = { "atrakcje turystyczne": "景点", muzea: "博物馆", parki: "公园", restauracje: "餐厅", kawiarnie: "咖啡", bary: "酒吧" };
-  const TABS = { atrakcje: "🏛️ Atrakcje", jedzenie: "🍽️ Jedzenie", szukaj: "🔎 Szukaj" };
+  const TABS = { atrakcje: "Atrakcje", jedzenie: "Jedzenie", szukaj: "Szukaj" };
+  const TAB_ICON = { atrakcje: "landmark", jedzenie: "food", szukaj: "search" };
+  const I = (n, c = "sm") => App.icon(n, c);
+  const addLabel = on => on ? `${I("check")} <span>w planie</span>` : `${I("idea")} <span>Do pomysłów</span>`;
   const KIND = {
     museum: "muzeum", attraction: "atrakcja", viewpoint: "punkt widokowy", gallery: "galeria", zoo: "zoo", theme_park: "park rozrywki",
     aquarium: "akwarium", monument: "pomnik", castle: "zamek", memorial: "miejsce pamięci", ruins: "ruiny", archaeological_site: "stanowisko archeologiczne",
@@ -198,30 +201,30 @@
     const hotels = segs.filter(s => s.type === "nocleg" && P().hasXY(s));
     let c = q.lat && q.lon ? { lat: +q.lat, lon: +q.lon, label: q.gdzie || "wybrane miejsce" } : await P().center(trip);
     const link = extra => `#/odkrywaj/${id}?${new URLSearchParams({ t: tab, ...(q.lat ? { lat: q.lat, lon: q.lon, gdzie: q.gdzie || "" } : {}), ...extra })}`;
-    const tabs = Object.entries(TABS).map(([k, n]) => `<a class="st-chip${k === tab ? " on" : ""}" href="${link({ t: k })}" ${k === tab ? 'aria-current="true"' : ""}>${n}</a>`).join("");
+    const tabs = Object.entries(TABS).map(([k, n]) => `<a class="st-chip${k === tab ? " on" : ""}" href="${link({ t: k })}" ${k === tab ? 'aria-current="true"' : ""}>${I(TAB_ICON[k])}<span>${n}</span></a>`).join("");
     // „w pobliżu czego”: cel podróży, noclegi z położeniem, telefon (GPS)
-    const near = [`<button type="button" class="st-chip${q.gdzie === "tutaj" ? " on" : ""}" id="dc-gps">📍 Tutaj</button>`, `<a class="st-chip${!q.lat ? " on" : ""}" href="#/odkrywaj/${id}?t=${tab}">🎯 ${esc(trip.destination || "cel podróży")}</a>`]
-      .concat(hotels.map(h => `<a class="st-chip${q.lat == h.lat && q.lon == h.lon ? " on" : ""}" href="#/odkrywaj/${id}?${new URLSearchParams({ t: tab, lat: h.lat, lon: h.lon, gdzie: h.name || "nocleg" })}">🏨 ${esc(h.name || "Nocleg")}</a>`))
+    const near = [`<button type="button" class="st-chip${q.gdzie === "tutaj" ? " on" : ""}" id="dc-gps">${I("locate")}<span class="dc-gps-t">Tutaj</span></button>`, `<a class="st-chip${!q.lat ? " on" : ""}" href="#/odkrywaj/${id}?t=${tab}">${I("pin")}<span>${esc(trip.destination || "cel podróży")}</span></a>`]
+      .concat(hotels.map(h => `<a class="st-chip${q.lat == h.lat && q.lon == h.lon ? " on" : ""}" href="#/odkrywaj/${id}?${new URLSearchParams({ t: tab, lat: h.lat, lon: h.lon, gdzie: h.name || "nocleg" })}">${I("bed")}<span>${esc(h.name || "Nocleg")}</span></a>`))
       .join("");
     const items = await DB.byIndex("planItems", "tripId", id);
     const have = new Map(items.map(i => [norm(i.title), i])); // nazwa → punkt planu (do odznaczania)
 
     const needCenter = !c && tab !== "szukaj";
     return {
-      title: `Odkrywaj · ${trip.name}`,
+      title: "Odkrywaj",
       back: `#/plan/${id}`,
       html: `
-        <div class="st-chips">${tabs}</div>
-        ${tab !== "szukaj" ? `<div class="st-chips dc-near"><span class="muted small dc-near-label">W pobliżu:</span>${near}</div>` : ""}
+        <div class="dc-tabs" role="tablist">${tabs}</div>
+        ${tab !== "szukaj" ? `<h3 class="section dc-near-label">W pobliżu</h3><div class="st-chips dc-near">${near}</div>` : ""}
         ${tab === "szukaj" ? `
-          <form class="pl-search dc-search" id="dc-form"><input name="q" placeholder="np. Pastéis de Belém, plaża, muzeum azulejos" value="${esc(q.q || "")}" autocomplete="off" aria-label="Szukaj miejsca">
+          <form class="pl-search dc-search" id="dc-form" role="search"><span class="pl-search-ic" aria-hidden="true">${I("search")}</span><input name="q" placeholder="np. Pastéis de Belém, plaża, muzeum azulejos" value="${esc(q.q || "")}" autocomplete="off" aria-label="Szukaj miejsca">
             <button class="btn primary" type="submit">Szukaj</button></form>` : ""}
         ${needCenter ? App.empty("🧭", "Gdzie szukać?", trip.destination
-            ? `Nie udało się ustalić położenia „${esc(trip.destination)}”${navigator.onLine ? "" : " – brak internetu"}. Wybierz „📍 Tutaj” albo wpisz miejsce w zakładce Szukaj.`
-            : "Wpisz cel podróży (np. „Lizbona”) w ustawieniach podróży albo wybierz „📍 Tutaj”.",
+            ? `Nie udało się ustalić położenia „${esc(trip.destination)}”${navigator.onLine ? "" : " – brak internetu"}. Wybierz „Tutaj” albo wpisz miejsce w zakładce Szukaj.`
+            : "Wpisz cel podróży (np. „Lizbona”) w ustawieniach podróży albo wybierz „Tutaj”.",
             `<a class="btn" href="#/podroze/${id}/edytuj">Ustaw cel podróży</a>`) : ""}
-        ${c && tab !== "szukaj" ? `<div class="dc-google"><span class="muted small">${App.navApp === "amap" ? "Amap:" : App.navApp === "geo" ? "W aplikacji map:" : "Mapy Google:"}</span>${(tab === "jedzenie" ? [["🍽️", "restauracje"], ["☕", "kawiarnie"], ["🍺", "bary"]] : [["🏛️", "atrakcje turystyczne"], ["🖼️", "muzea"], ["🌳", "parki"]])
-          .map(([i, w]) => `<a class="st-chip" href="${esc(App.mapsSearchUrl(App.navApp === "amap" ? AMAP_WORD[w] || w : w, c.lat, c.lon))}" target="_blank" rel="noopener">${i} ${w.split(" ")[0]}</a>`).join("")}</div>` : ""}
+        ${c && tab !== "szukaj" ? `<div class="dc-google"><span class="dc-google-l">${App.navApp === "amap" ? "Amap:" : App.navApp === "geo" ? "W aplikacji map:" : "Mapy Google:"}</span>${(tab === "jedzenie" ? [["food", "restauracje"], ["food", "kawiarnie"], ["food", "bary"]] : [["landmark", "atrakcje turystyczne"], ["image", "muzea"], ["tree", "parki"]])
+          .map(([i, w]) => `<a class="st-chip" href="${esc(App.mapsSearchUrl(App.navApp === "amap" ? AMAP_WORD[w] || w : w, c.lat, c.lon))}" target="_blank" rel="noopener">${I(i)}<span>${w.split(" ")[0]}</span></a>`).join("")}</div>` : ""}
         <div id="dc-list" class="dc-list">${needCenter || tab === "szukaj" && !q.q ? "" : `<p class="muted small">Szukam w okolicy${c ? ` „${esc(c.label)}”` : ""}…</p>`}</div>
         <p class="muted small dc-src">Dane: © OpenStreetMap, opisy: Wikipedia. Wymaga internetu.</p>`,
       after(view) {
@@ -231,16 +234,16 @@
         if (gps) gps.onclick = () => {
           if (!navigator.geolocation) { App.toast("Telefon nie udostępnia położenia"); return; }
           if (gps.disabled) return;
-          gps.disabled = true; gps.textContent = "📍 Ustalam…";
+          gps.disabled = true; const gt = gps.querySelector(".dc-gps-t"); gt.textContent = "Ustalam…";
           let done = false;
           const ok = pos => { if (done) return; done = true; clearTimeout(watchdog);
             location.replace(link({ lat: pos.coords.latitude.toFixed(5), lon: pos.coords.longitude.toFixed(5), gdzie: "tutaj" })); };
           const fail = msg => { if (done) return; done = true; clearTimeout(watchdog);
-            gps.disabled = false; gps.textContent = "📍 Tutaj"; App.toast(msg); };
+            gps.disabled = false; gt.textContent = "Tutaj"; App.toast(msg); };
           const watchdog = setTimeout(() => fail("Telefon nie podał położenia – włącz lokalizację (GPS) i spróbuj jeszcze raz"), 18000);
           navigator.geolocation.getCurrentPosition(ok, err => {
             if (err.code === 1) return fail("Brak zgody na lokalizację – zezwól w ustawieniach telefonu (Chrome → Uprawnienia → Lokalizacja)");
-            gps.textContent = "📍 Ustalam (GPS)…";
+            gt.textContent = "Ustalam (GPS)…";
             navigator.geolocation.getCurrentPosition(ok,
               e2 => fail(e2.code === 1 ? "Brak zgody na lokalizację" : "Nie udało się ustalić położenia – włącz GPS albo wyjdź bliżej okna"),
               { enableHighAccuracy: true, timeout: 13000, maximumAge: 5 * 60000 });
@@ -251,19 +254,19 @@
           if (!list.length) { box.innerHTML = `<p class="muted small">Nic nie znaleziono w okolicy.</p>`; return; }
           box.innerHTML = list.map((p, i) => `
             <div class="dc-card">
-              ${p.thumb ? `<img class="dc-img" src="${esc(p.thumb)}" alt="" loading="lazy">` : `<div class="dc-img dc-ico" aria-hidden="true">${(App.Plan.CATS[p.cat] || App.Plan.CATS.inne).icon}</div>`}
+              ${p.thumb ? `<img class="dc-img" src="${esc(p.thumb)}" alt="" loading="lazy">` : `<div class="dc-img dc-ico" aria-hidden="true">${App.icon(p.cat === "jedzenie" ? "food" : p.cat === "natura" ? "tree" : "landmark")}</div>`}
               <div class="dc-main">
                 <b>${esc(p.name)}</b>${p.local ? `<span class="small dc-local" lang="und">${esc(p.local)}</span>` : ""}
                 <span class="muted small">${[p.kind, p.cuisine, p.dist ? `${P().fmtDist(p.dist)} stąd` : ""].filter(Boolean).map(esc).join(" · ")}</span>
                 ${p.desc ? `<span class="small">${esc(p.desc)}</span>` : ""}
-                ${p.hours ? `<span class="muted small">🕒 ${esc(p.hours.slice(0, 60))}</span>` : ""}
+                ${p.hours ? `<span class="muted small dc-hours">${I("clock")} ${esc(p.hours.slice(0, 60))}</span>` : ""}
                 <span class="dc-links">${p.wikiUrl ? `<a href="${esc(p.wikiUrl)}" target="_blank" rel="noopener">Wikipedia ↗</a>` : ""}
                   ${p.website ? `<a href="${esc(p.website)}" target="_blank" rel="noopener">Strona ↗</a>` : ""}
                   <a href="${esc(App.mapsUrl(`${p.lat},${p.lon}`))}" target="_blank" rel="noopener">Nawiguj ↗</a></span>
               </div>
-              <button type="button" class="btn dc-add${have.has(norm(p.name)) ? " done" : ""}" data-i="${i}" aria-pressed="${have.has(norm(p.name))}">${have.has(norm(p.name)) ? "✓ w planie" : "💡 Do pomysłów"}</button>
+              <button type="button" class="btn dc-add${have.has(norm(p.name)) ? " done" : ""}" data-i="${i}" aria-pressed="${have.has(norm(p.name))}">${addLabel(have.has(norm(p.name)))}</button>
             </div>`).join("");
-          const setBtn = (b, on) => { b.textContent = on ? "✓ w planie" : "💡 Do pomysłów"; b.classList.toggle("done", on); b.setAttribute("aria-pressed", on); };
+          const setBtn = (b, on) => { b.innerHTML = addLabel(on); b.classList.toggle("done", on); b.setAttribute("aria-pressed", on); };
           box.querySelectorAll(".dc-add").forEach(b => b.onclick = async () => {
             const p = list[+b.dataset.i];
             const k = norm(p.name);
@@ -290,13 +293,13 @@
 
         const run = async (key, fn) => {
           if (cache.has(key)) return render(cache.get(key));
-          const partial = list => { if (box.isConnected && !cache.has(key)) { render(list); box.insertAdjacentHTML("afterbegin", `<p class="muted small dc-more">⏳ Uzupełniam z OpenStreetMap…</p>`); } };
+          const partial = list => { if (box.isConnected && !cache.has(key)) { render(list); box.insertAdjacentHTML("afterbegin", `<p class="muted small dc-more">Uzupełniam z OpenStreetMap…</p>`); } };
           try {
             const list = await fn(partial);
             cache.set(key, list);
             if (box.isConnected) render(list);
           } catch (e) {
-            if (box.isConnected) box.innerHTML = `<p class="muted small">⚠️ ${navigator.onLine ? `Serwery map nie odpowiadają – spróbuj za chwilę albo użyj zakładki „🔎 Szukaj”.${lastErr ? ` <span class="dc-err">(${esc(lastErr)})</span>` : ""}` : "Brak internetu – odkrywanie działa tylko online."}</p>`;
+            if (box.isConnected) box.innerHTML = `<p class="td-note dc-warn">${I("alert")}<span>${navigator.onLine ? `Serwery map nie odpowiadają – spróbuj za chwilę albo użyj zakładki „Szukaj”.${lastErr ? ` <span class="dc-err">(${esc(lastErr)})</span>` : ""}` : "Brak internetu – odkrywanie działa tylko online."}</span></p>`;
           }
         };
         if (tab === "szukaj") {

@@ -58,7 +58,7 @@ const CORS = { 'access-control-allow-origin': '*' };
   const t0 = Date.now();
   await p.click('#pr-go');
   await p.waitForTimeout(700);
-  console.log('while running:', !!(await p.$('#pr-stop')), '|', (await state()).filter(s => s.startsWith('⏳')).join(' | '));
+  console.log('while running:', !!(await p.$('#pr-stop')), '|', (await state()).filter(s => s.startsWith('trwa')).join(' | '));
   await p.waitForFunction(() => !document.querySelector('#pr-stop'), null, { timeout: 120000 }).catch(e => console.log('TIMEOUT'));
   await p.waitForTimeout(500);
   console.log('done in', Math.round((Date.now() - t0) / 1000), 's | sum:', await p.$eval('.pr-sum b', e => e.textContent));

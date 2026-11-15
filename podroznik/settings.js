@@ -74,7 +74,7 @@
         <span class="li-main"><b>Aplikacja na Androida</b><small>pobierz APK (430 KB)</small></span>${icon("chev")}</a>`)) : "";
 
     const about = group("O aplikacji", `
-      <div class="li"><span class="li-ico" aria-hidden="true">${icon("info")}</span><span class="li-main"><b>Wersja</b></span><b class="set-val" id="app-version">1.2 · etapy 0–11</b></div>
+      <div class="li"><span class="li-ico" aria-hidden="true">${icon("info")}</span><span class="li-main"><b>Wersja</b></span><b class="set-val" id="app-version">${App.VERSION}</b></div>
       <div class="li"><span class="li-ico" aria-hidden="true">${icon("download")}</span><span class="li-main"><b>Tryb offline</b></span><b class="set-val" id="sw-state">…</b></div>`);
 
     return {

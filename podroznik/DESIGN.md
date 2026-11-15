@@ -48,7 +48,7 @@ Uwaga: teksty z emoji są kluczami tłumaczeń w `i18n-en.js` – zmieniając te
 Ruch: krótkie przejścia 0.12–0.25 s; `prefers-reduced-motion` wyłącza animacje.
 
 ## Etapy redesignu
-1. Design system ✔ (ten dokument) · 2. Podróże ✔ · 3. Bilety ✔ · 4. Plan ✔ · 5. Pakowanie ✔ · 6. Ustawienia ✔ · 7. ekrany dodatkowe (7a ✔ szczegóły podróży + formularze) · 8. szlif (animacje, dostępność, tablet, style z JS) · 9. testy całości.
+1. Design system ✔ (ten dokument) · 2. Podróże ✔ · 3. Bilety ✔ · 4. Plan ✔ · 5. Pakowanie ✔ · 6. Ustawienia ✔ · 7. ekrany dodatkowe (7a ✔ szczegóły podróży + formularze, 7b ✔ mapa, Odkrywaj, karty, offline) · 8. szlif (animacje, dostępność, tablet, style z JS) · 9. testy całości.
 Makieta zatwierdzona przez właściciela: ekran Podróże – nagłówek z powitaniem, karta bieżącej podróży ze zdjęciem i odliczaniem,
 pasek postępu (spakowane / punkty planu / budżet), najbliższy bilet jako odcinek z QR, zadanie przed wyjazdem, nadchodzące
 podróże w poziomym rzędzie, szybkie akcje (Nowa podróż, Z Gmaila, Otwórz wspólną). Decyzje: ciemny turkus do tekstu,
@@ -138,3 +138,24 @@ dwa kroje, zdjęcia bez motywów religijnych, tło ze zdjęć – nowi użytkown
   Okładka w formularzu podróży = podgląd karty na żywo (`.cover-pick.hm-hero`: nazwa, cel i kolor zmieniają się przy pisaniu),
   przyciski zdjęcia jako `.glass.cp-btn`. Rodzaje odcinka z ikonami SVG zamiast emoji; tytuł formularza bez emoji.
   Paski `.type-chips` przewijają się same do zaznaczonego elementu (`App.render`). Z maila: nad polami ostrzeżenie „sprawdź”.
+
+## Mapa, Odkrywaj, karty dla kierowcy, offline (etap 7b)
+- Tytuły pasków krótkie, bez nazwy podróży: „Mapa”, „Odkrywaj”, „Karty i rozmówki”, „Mapa offline”, „Przygotuj offline”.
+- Nowe ikony: `locate`, `landmark`, `food`, `tree`, `idea`, `walk`, `phone`, `sparkle`, `shield`, `currency`, `layers`, `volume`, `key`.
+- Wyszukiwarka `.pl-search` (mapa, Odkrywaj, pole „Miejsce”): pole 48 px jak `.field`, lupa w środku (`.pl-search-ic`), kwadratowy przycisk.
+- Mapa (`places.js`): `.mp-card` z ramką i zaokrągleniem, kontrolki Leaflet białe z cieniem (zoom, `.mp-locate` z ikonami
+  `locate` / `landmark`, warstwy), pinezka noclegu ciemna z ikoną łóżka, atrakcje z ikonami SVG; okienko pinezki – przyciski z ikonami
+  (zawsze białe). Pod mapą: „Ułóż najkrótszą trasę” (główny przycisk), nagłówek dnia, `.list.mp-list` (numer w kółku, miniatura,
+  nazwa · godzina, chev; dojście `.mp-leg` z ikoną `walk`/`taxi`), potem `.list.mp-tools`: Znajdź położenie (`#mp-geo`), Trasa w Mapach
+  Google, Mapa offline (`#mp-off`).
+- Odkrywaj (`discover.js`): zakładki jako segmentowany przełącznik `.dc-tabs` (linki `.st-chip` zostają – testy), „W pobliżu” jako
+  etykieta sekcji + chipy z ikonami (`#dc-gps` – tekst w `.dc-gps-t`), linki do Map Google z ikonami, karty `.dc-card` z ikoną kategorii
+  zamiast emoji, przycisk „Do pomysłów” / „w planie” z ikoną; błąd serwerów = panel `.td-note.dc-warn` (t22 czeka na `.dc-warn`).
+- Karty i rozmówki (`phrases.js`): nagłówek `.tx-hero` (ikona taxi, opis), lista miejsc `.list.tx-list` z `li-ico` (bed/pin/idea),
+  zielony znaczek = karta gotowa, „bez lokalnego adresu” na pomarańczowo; zwroty: lokalne pismo dużą czcionką, polski + wymowa pod spodem.
+  Pełny ekran karty bez zmian (zawsze biały), „Nawiguj” z ikoną.
+- Mapa offline (`offline.js`): `.tx-hero` z nazwą podróży, `.hm-stats.of-info` (pobrane, wolne miejsce, ostatnio), obszary jako `.list`
+  z polami wyboru, stan `.of-state.chip` (ok = pobrana).
+- Przygotuj offline (`prep.js`): karta `.pr-sum` (nazwa podróży, X/Y gotowe, tytuł w Newsreader, pasek – komplet zielony),
+  ostrzeżenie o Chinach jako panel `--warn-soft`, „Lista kontrolna” `.list.pr-list`: ikona kroku, opis, kółko stanu `.pr-mark`
+  (`.ok` zielone z ✓, `.todo` puste, `.na` przerywane, `.busy` kręci się; tekst dla czytnika w `.sr`), strzałka `.pr-go`.

@@ -146,28 +146,32 @@
       return `<label class="of-row">
           <input type="checkbox" name="a" value="${a.key}" ${full ? "disabled checked" : a.tiles.length > MAX_TILES ? "" : "checked"}>
           <span class="of-name"><b>${esc(a.name)}</b><span class="muted small">${esc(a.sub)} · ${a.tiles.length} ${plural(a.tiles.length, "kafelek", "kafelki", "kafelków")} · ok. ${mb(a.tiles.length)}</span></span>
-          <span class="of-state ${full ? "ok" : ""}">${full ? "✅ pobrana" : got ? `${Math.round(got / a.tiles.length * 100)}%` : ""}</span>
+          <span class="of-state chip ${full ? "ok" : got ? "accent" : "of-none"}">${full ? `${App.icon("check", "sm")} pobrana` : got ? `${Math.round(got / a.tiles.length * 100)}%` : ""}</span>
         </label>`;
     }).join("");
     const meta = trip.offlineMap;
 
     return {
-      title: `Mapa offline · ${trip.name}`,
+      title: "Mapa offline",
       back: `#/mapa/${id}`,
       html: `
-        <p class="muted small">Pobierz mapę przed wyjazdem (najlepiej przez Wi-Fi) – mapa planu, noclegi i punkty będą widoczne bez internetu. Pobierana jest wersja z napisami łacińskimi, do zbliżenia ulic (zoom 16).</p>
-        ${areas.length ? `<form id="of-form" class="card of-list">${rows}</form>
-          <button type="button" class="btn primary wide" id="of-go">⬇️ Pobierz zaznaczone</button>
+        <section class="tx-hero of-hero">
+          <span class="tx-hero-ic" aria-hidden="true">${App.icon("map")}</span>
+          <div><h2>${esc(trip.name)}</h2>
+          <p>Pobierz mapę przed wyjazdem (najlepiej przez Wi-Fi) – plan, noclegi i punkty będą widoczne bez internetu. Wersja z napisami łacińskimi, do zbliżenia ulic.</p></div>
+        </section>
+        <div class="hm-stats of-info">
+          <div class="hm-stat"><small>Pobrane</small><b id="of-have">${have.size ? `${have.size} ${plural(have.size, "kafelek", "kafelki", "kafelków")} · ok. ${mb(have.size)}` : "nic"}</b></div>
+          ${free != null ? `<div class="hm-stat"><small>Wolne miejsce</small><b>${free > 2 ** 30 ? `${(free / 2 ** 30).toFixed(1).replace(".", ",")} GB` : `${Math.round(free / 2 ** 20)} MB`}</b></div>` : ""}
+          ${meta && meta.at ? `<div class="hm-stat"><small>Ostatnio</small><b>${App.fmtDay(meta.at.slice(0, 10))}</b></div>` : ""}
+        </div>
+        ${areas.length ? `<h3 class="section">Obszary</h3><form id="of-form" class="list of-list">${rows}</form>
+          <button type="button" class="btn primary wide of-go" id="of-go">${App.icon("download", "sm")} Pobierz zaznaczone</button>
           <div class="of-prog" id="of-prog" hidden><div class="bar"><i id="of-bar" style="width:0"></i></div><p class="muted small" id="of-txt"></p>
             <button type="button" class="btn wide" id="of-stop">Zatrzymaj</button></div>`
         : App.empty("🗺️", "Brak miejsc do pobrania", "Dodaj noclegi lub punkty planu z położeniem (albo cel podróży), potem wróć tutaj. Możesz też otworzyć mapę, ustawić widok i wybrać „Mapa offline”.")}
-        <div class="card of-info">
-          <div class="row"><span class="muted">Pobrane dla tej podróży</span><b id="of-have">${have.size ? `${have.size} ${plural(have.size, "kafelek", "kafelki", "kafelków")} · ok. ${mb(have.size)}` : "nic"}</b></div>
-          ${meta && meta.at ? `<div class="row"><span class="muted">Ostatnio</span><b>${App.fmtDay(meta.at.slice(0, 10))}</b></div>` : ""}
-          ${free != null ? `<div class="row"><span class="muted">Wolne miejsce dla aplikacji</span><b>${free > 2 ** 30 ? `${(free / 2 ** 30).toFixed(1).replace(".", ",")} GB` : `${Math.round(free / 2 ** 20)} MB`}</b></div>` : ""}
-        </div>
-        ${have.size ? `<button type="button" class="btn danger wide" id="of-del">Usuń mapę offline tej podróży</button>` : ""}
-        <p class="muted small">Mapa: © OpenStreetMap, © CARTO. Pobrane mapy zostają w telefonie do usunięcia (także po aktualizacji aplikacji). Jeśli telefon ma mało miejsca, przeglądarka może je usunąć – włącz „Ochronę przed usunięciem” (Ustawienia).</p>`,
+        ${have.size ? `<button type="button" class="btn danger wide" id="of-del">${App.icon("trash", "sm")} Usuń mapę offline tej podróży</button>` : ""}
+        <p class="f-hint of-foot">Mapa: © OpenStreetMap, © CARTO. Pobrane mapy zostają w telefonie do usunięcia (także po aktualizacji aplikacji). Jeśli telefon ma mało miejsca, przeglądarka może je usunąć – włącz „Ochronę przed usunięciem” (Ustawienia).</p>`,
       after(view) {
         const go = view.querySelector("#of-go");
         if (go) go.onclick = async () => {
@@ -188,7 +192,7 @@
             txt.textContent = `Pobieram… ${st.done}/${st.total}${st.failed ? ` · błędy: ${st.failed}` : ""}`;
           };
           const st = await download(id, tiles, show);
-          App.toast(st.stopped ? "Zatrzymano – pobrane kafelki zostają" : st.failed ? `Pobrano · nie udało się ${st.failed} – spróbuj ponownie` : "Mapa offline gotowa ✅");
+          App.toast(st.stopped ? "Zatrzymano – pobrane kafelki zostają" : st.failed ? `Pobrano · nie udało się ${st.failed} – spróbuj ponownie` : "Mapa offline gotowa");
           if (location.hash.startsWith(`#/mapa-offline/${id}`)) App.render();
         };
         const del = view.querySelector("#of-del");

@@ -125,7 +125,7 @@
         ${e.rec.local && !L0.lang ? `<p class="tx-note">W tym kraju pismo jest łacińskie – pokaż nazwę i adres powyżej.</p>` : ""}
       </div>
       <div class="tv-foot">
-        <a class="tv-link" href="${esc(App.mapsUrl(`${lat},${lon}`))}" target="_blank" rel="noopener">🧭 Nawiguj</a>
+        <a class="tv-link" href="${esc(App.mapsUrl(`${lat},${lon}`))}" target="_blank" rel="noopener">${App.icon("navigate", "sm")} Nawiguj</a>
         <a class="tv-link" href="${esc(e.href)}">Szczegóły</a>
       </div>`;
   }
@@ -142,10 +142,10 @@
     const [items, segs] = await Promise.all([DB.byIndex("planItems", "tripId", id), DB.byIndex("segments", "tripId", id)]);
     const entries = [];
     segs.filter(s => s.type === "nocleg").sort((a, b) => String(a.depart).localeCompare(String(b.depart))).forEach(s => entries.push({
-      key: `s:${s.id}`, store: "segments", rec: s, icon: "🏨", title: s.name || "Nocleg", addr: s.address || "",
+      key: `s:${s.id}`, store: "segments", rec: s, icon: "bed", title: s.name || "Nocleg", addr: s.address || "",
       when: s.depart ? App.fmtDay(s.depart) : "", href: `#/odcinek/${s.id}`, group: "Noclegi" }));
     items.slice().sort((a, b) => (a.date || "9999").localeCompare(b.date || "9999") || (a.order ?? 0) - (b.order ?? 0)).forEach(i => entries.push({
-      key: `p:${i.id}`, store: "planItems", rec: i, icon: i.date ? "📍" : "💡", title: i.title, addr: i.place && !/^https?:/i.test(i.place) ? i.place : "",
+      key: `p:${i.id}`, store: "planItems", rec: i, icon: i.date ? "pin" : "idea", title: i.title, addr: i.place && !/^https?:/i.test(i.place) ? i.place : "",
       when: i.date ? App.fmtDay(i.date) : "pomysł", href: `#/punkt/${i.id}`, group: i.date ? "Plan" : "Pomysły" }));
     const located = entries.filter(e => hasXY(e.rec));
     const noXY = entries.filter(e => !hasXY(e.rec)).length;
@@ -160,37 +160,41 @@
       const L0 = e.rec.local;
       const loc = L0 && L0.lang && fresh(e.rec) ? (L0.name || L0.addr) : "";
       return `<button type="button" class="tx-row" data-k="${e.key}">
-          ${e.rec.photo && e.rec.photo.data ? `<img class="tx-thumb" src="${e.rec.photo.data}" alt="" loading="lazy" decoding="async">` : `<span class="tx-ic" aria-hidden="true">${e.icon}</span>`}
-          <span class="tx-main"><b>${esc(e.title)}</b><span class="muted small">${esc(e.when)}${loc ? ` · <span lang="${L0.lang}" translate="no">${esc(loc)}</span>` : fresh(e.rec) ? "" : " · bez lokalnego adresu"}</span></span>
-          <b class="tx-go" aria-hidden="true">›</b></button>`;
+          ${e.rec.photo && e.rec.photo.data ? `<img class="tx-thumb" src="${e.rec.photo.data}" alt="" loading="lazy" decoding="async">` : `<span class="li-ico tx-ic" aria-hidden="true">${App.icon(e.icon)}</span>`}
+          <span class="tx-main"><b>${esc(e.title)}</b><span class="muted small">${esc(e.when)}${loc ? ` · <span lang="${L0.lang}" translate="no">${esc(loc)}</span>` : fresh(e.rec) ? "" : ` · <span class="tx-miss">bez lokalnego adresu</span>`}</span></span>
+          ${fresh(e.rec) ? `<span class="chip ok tx-ready" title="gotowa">${App.icon("check", "sm")}</span>` : ""}${App.icon("chev")}</button>`;
     };
     let list = "";
     for (const g of ["Noclegi", "Plan", "Pomysły"]) {
       const es = located.filter(e => e.group === g);
-      if (es.length) list += `<h3 class="section">${g}</h3><div class="card tx-list">${es.map(row).join("")}</div>`;
+      if (es.length) list += `<h3 class="section">${g}</h3><div class="list tx-list">${es.map(row).join("")}</div>`;
     }
 
     return {
-      title: `Karty i rozmówki · ${trip.name}`,
+      title: "Karty i rozmówki",
       back: `#/plan/${id}`,
       html: `
-        <p class="muted small">Karta pokazuje nazwę i adres w lokalnym piśmie – pokaż ją taksówkarzowi albo kierowcy tuk-tuka. Działa bez internetu.</p>
-        ${todo.length ? `<button type="button" class="btn primary wide" id="tx-prep">🚕 Przygotuj karty (${todo.length}) – internet</button>
-          <p class="muted small" id="tx-prog"></p>` : ""}
+        <section class="tx-hero">
+          <span class="tx-hero-ic" aria-hidden="true">${App.icon("taxi")}</span>
+          <div><h2>Karty dla kierowcy</h2>
+          <p>Nazwa i adres w lokalnym piśmie – pokaż taksówkarzowi albo kierowcy tuk-tuka. Działają bez internetu.</p></div>
+        </section>
+        ${todo.length ? `<button type="button" class="btn primary wide" id="tx-prep">${App.icon("download", "sm")} Przygotuj karty (${todo.length}) – internet</button>
+          <p class="f-hint tx-prog" id="tx-prog"></p>` : located.length ? `<p class="tx-allok">${App.icon("check", "sm")} Wszystkie karty gotowe – działają bez internetu</p>` : ""}
         ${located.length ? list : App.empty("🚕", "Brak miejsc z położeniem", "Dodaj nocleg z adresem albo punkt planu wybrany z wyszukiwarki – wtedy pojawi się tu jego karta.")}
-        ${noXY ? `<p class="muted small">${noXY} ${plural(noXY, "miejsce nie ma", "miejsca nie mają", "miejsc nie ma")} położenia na mapie – <a href="#/mapa/${id}?d=wszystko">znajdź je na mapie</a>.</p>` : ""}
+        ${noXY ? `<p class="f-hint tx-noxy">${noXY} ${plural(noXY, "miejsce nie ma", "miejsca nie mają", "miejsc nie ma")} położenia na mapie – <a href="#/mapa/${id}?d=wszystko">znajdź je na mapie</a>.</p>` : ""}
 
-        <h3 class="section">Rozmówki</h3>
-        <div class="st-chips">${order.map(l => `<a class="st-chip${l === lang ? " on" : ""}" href="#/karty/${id}?j=${l}" ${l === lang ? 'aria-current="true"' : ""}>${LANGS[l].flag} <span translate="no">${LANGS[l].name}</span></a>`).join("")}</div>
+        <h3 class="section tx-ph-h">Rozmówki</h3>
+        <div class="st-chips tx-langs">${order.map(l => `<a class="st-chip${l === lang ? " on" : ""}" href="#/karty/${id}?j=${l}" ${l === lang ? 'aria-current="true"' : ""}>${LANGS[l].flag} <span translate="no">${LANGS[l].name}</span></a>`).join("")}</div>
         ${GROUPS.map(([gk, gname]) => {
           const ps = PHRASES.filter(p => p[3] === gk && p[2][lang]);
-          return ps.length ? `<h4 class="tx-group">${gname}</h4><div class="card tx-list">
+          return ps.length ? `<h4 class="tx-group">${gname}</h4><div class="list tx-list">
           ${ps.map(p => `<button type="button" class="tx-row tx-ph" data-p="${p[0]}">
             <span class="tx-main"><span class="tx-loc" lang="${lang}" translate="no">${esc(p[2][lang][0])}</span>
-              <span class="muted small"><span>${esc(p[1])}</span>${p[2][lang][1] ? ` · <i translate="no">${esc(p[2][lang][1])}</i>` : ""}</span></span>
-            <b class="tx-go" aria-hidden="true">›</b></button>`).join("")}</div>` : "";
+              <span class="tx-pl"><span>${esc(p[1])}</span>${p[2][lang][1] ? ` · <i translate="no">${esc(p[2][lang][1])}</i>` : ""}</span></span>
+            ${App.icon("chev")}</button>`).join("")}</div>` : "";
         }).join("")}
-        <p class="muted small"><span>Dotknij zwrotu, by pokazać go dużymi literami. Wymowa jest uproszczona.</span>
+        <p class="f-hint tx-foot"><span>Dotknij zwrotu, by pokazać go dużymi literami. Wymowa jest uproszczona.</span>
           ${lang === "th" ? `<span>Po tajsku mężczyzna kończy zdanie „khrap”, kobieta „kha”.</span>` : ""}
           ${lang === "lo" ? `<span>W Laosie tuk-tuki nie mają taksometrów – cenę ustal przed jazdą.</span>` : ""}</p>`,
       after(view) {

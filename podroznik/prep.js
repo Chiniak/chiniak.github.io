@@ -173,29 +173,34 @@
     const askPersist = steps.find(s => s.key === "persist" && s.done === false);
     const ready = steps.filter(s => s.done === true).length, total = steps.filter(s => s.done !== null).length;
     const busy = running && running.id === id;
-    const mark = s => s.done === true ? "✅" : s.done === false ? "⬜" : "➖";
-    const rows = steps.map(s => `<div class="pr-row${s.done === null ? " na" : ""}" data-k="${s.key}">
-        <span class="pr-mark" aria-hidden="true">${mark(s)}</span>
-        <span class="pr-main"><b><span aria-hidden="true">${s.icon}</span> ${esc(s.name)}</b><span class="muted small pr-txt">${esc(s.txt)}</span></span>
-        ${s.href ? `<a class="pr-go" href="${s.href}" aria-label="Otwórz: ${esc(s.name)}">›</a>` : ""}
+    const ICON = { persist: "shield", cards: "taxi", photos: "image", rates: "currency", weather: "sun", map: "map", ocr: "scan", backup: "cloud" };
+    const rows = steps.map(s => `<div class="pr-row${s.done === null ? " na" : s.done ? " ok" : ""}" data-k="${s.key}">
+        <span class="li-ico pr-ico" aria-hidden="true">${App.icon(ICON[s.key] || "check")}</span>
+        <span class="pr-main"><b>${esc(s.name)}</b><span class="muted small pr-txt">${esc(s.txt)}</span></span>
+        <span class="pr-mark ${s.done === true ? "ok" : s.done === false ? "todo" : "na"}">${s.done === true ? App.icon("check", "sm") : ""}<span class="sr">${s.done === true ? "gotowe" : s.done === false ? "do zrobienia" : "nie dotyczy"}</span></span>
+        ${s.href ? `<a class="pr-go" href="${s.href}" aria-label="Otwórz: ${esc(s.name)}">${App.icon("chev")}</a>` : ""}
       </div>`).join("");
 
     return {
-      title: `Przygotuj offline · ${trip.name}`,
+      title: "Przygotuj offline",
       back: `#/podroze/${id}`,
       html: `
-        ${china ? `<div class="card pr-warn"><b>🇨🇳 Przed wjazdem do Chin</b>
-          <p class="small">W Chinach nie działają Google, Wikipedia i część serwerów map, a reszta bywa bardzo wolna. Zrób to w Polsce albo w hotelu z Wi-Fi przed granicą – potem karty, zdjęcia i mapa działają bez internetu. Nawigację ustaw na Amap (Ustawienia).</p></div>`
-        : `<p class="muted small">Pobierz na zapas wszystko, co potem wymaga internetu – najlepiej przez Wi-Fi przed wyjazdem. Bilety, plan i dokumenty są w telefonie zawsze.</p>`}
-        <div class="card pr-sum"><b>${ready}/${total} gotowe</b>
-          <div class="bar"><i style="width:${total ? Math.round(ready / total * 100) : 0}%"></i></div></div>
+        ${china ? `<div class="td-note pr-warn">${App.icon("alert", "sm")}<div><b>Przed wjazdem do Chin</b>
+          <p class="small">W Chinach nie działają Google, Wikipedia i część serwerów map, a reszta bywa bardzo wolna. Zrób to w Polsce albo w hotelu z Wi-Fi przed granicą – potem karty, zdjęcia i mapa działają bez internetu. Nawigację ustaw na Amap (Ustawienia).</p></div></div>`
+        : ""}
+        <section class="pr-sum${ready === total ? " done" : ""}">
+          <div class="pr-sum-top"><span class="pr-sum-k">${esc(trip.name)}</span><b>${ready}/${total} gotowe</b></div>
+          <h2>${ready === total ? "Gotowe do podróży bez internetu" : "Pobierz na zapas przed wyjazdem"}</h2>
+          <div class="bar"><i style="width:${total ? Math.round(ready / total * 100) : 0}%"></i></div>
+          <p>Najlepiej przez Wi-Fi. Bilety, plan i dokumenty są w telefonie zawsze.</p></section>
         ${busy ? `<button type="button" class="btn wide" id="pr-stop">Zatrzymaj</button>`
-          : todo.length ? `<button type="button" class="btn primary wide" id="pr-go">📥 Przygotuj wszystko (${todo.length})</button>`
-          : `<p class="pr-ok">✅ Wszystko gotowe do podróży bez internetu.</p>${askPersist ? `<button type="button" class="btn wide" id="pr-persist">🛡️ Włącz ochronę danych</button>` : ""}`}
-        <div class="card pr-list">${rows}</div>
-        ${steps.find(s => s.key === "backup" && !s.done) ? `<a class="btn wide pr-backup" href="#/ustawienia/kopia?wroc=/przygotuj/${id}">💾 Zrób kopię poza telefonem</a>
-          <p class="muted small">Kopię zapisz sam (Dysk Google, mail do siebie) – najlepiej na końcu, gdy wszystko jest już pobrane. Zgubisz telefon – wczytasz ją na innym.</p>` : ""}
-        <p class="muted small">Możesz wyjść z tego ekranu – pobieranie trwa dalej, dopóki aplikacja jest otwarta. Przycisk można nacisnąć ponownie: pobierze tylko to, czego brakuje.</p>`,
+          : todo.length ? `<button type="button" class="btn primary wide" id="pr-go">${App.icon("download", "sm")} Przygotuj wszystko (${todo.length})</button>`
+          : `<p class="pr-ok">${App.icon("check", "sm")} Wszystko gotowe do podróży bez internetu.</p>${askPersist ? `<button type="button" class="btn wide" id="pr-persist">${App.icon("shield", "sm")} Włącz ochronę danych</button>` : ""}`}
+        <h3 class="section">Lista kontrolna</h3>
+        <div class="list pr-list">${rows}</div>
+        ${steps.find(s => s.key === "backup" && !s.done) ? `<a class="btn wide pr-backup" href="#/ustawienia/kopia?wroc=/przygotuj/${id}">${App.icon("cloud", "sm")} Zrób kopię poza telefonem</a>
+          <p class="f-hint pr-hint">Kopię zapisz sam (Dysk Google, mail do siebie) – najlepiej na końcu, gdy wszystko jest już pobrane. Zgubisz telefon – wczytasz ją na innym.</p>` : ""}
+        <p class="f-hint pr-hint">Możesz wyjść z tego ekranu – pobieranie trwa dalej, dopóki aplikacja jest otwarta. Przycisk można nacisnąć ponownie: pobierze tylko to, czego brakuje.</p>`,
       after(view) {
         const stop = view.querySelector("#pr-stop");
         if (stop) stop.onclick = () => { if (running) running.stopped = true; stop.disabled = true; stop.textContent = "Zatrzymuję…"; };
@@ -221,7 +226,7 @@
           for (const s of todo) {
             if (running.stopped) continue;
             const row = () => document.querySelector(`.pr-row[data-k="${s.key}"]`);
-            const say = t => { const r = row(); if (r) { r.querySelector(".pr-mark").textContent = "⏳"; r.querySelector(".pr-txt").textContent = t; } };
+            const say = t => { const r = row(); if (r) { const m = r.querySelector(".pr-mark"); m.className = "pr-mark busy"; m.innerHTML = `<span class="sr">trwa</span>`; r.querySelector(".pr-txt").textContent = t; } };
             say("czekam…");
             try { await actions[s.key](s, g, say); } catch (e) { failed++; }
           }
@@ -229,7 +234,7 @@
           running = null;
           const after = await check(id);
           const left = after ? after.steps.filter(s => s.done === false && s.key !== "persist" && !s.manual && !(s.key === "rates" && s.home !== "PLN")).length : 0;
-          App.toast(stopped ? "Zatrzymano – pobrane zostaje" : !left ? "Gotowe – podróż przygotowana offline ✅" : `Gotowe częściowo – brakuje ${left} ${plural(left, "rzeczy", "rzeczy", "rzeczy")}, spróbuj ponownie`);
+          App.toast(stopped ? "Zatrzymano – pobrane zostaje" : !left ? "Gotowe – podróż przygotowana offline" : `Gotowe częściowo – brakuje ${left} ${plural(left, "rzeczy", "rzeczy", "rzeczy")}, spróbuj ponownie`);
           if (location.hash === `#/przygotuj/${id}`) App.render();
         };
       },
