@@ -151,7 +151,7 @@
   const partsHtml = at => parts(at).map(([v, u]) => `<div><b>${v}</b><span>${u}</span></div>`).join("");
 
   // karty na ekran główny: licznik + aktywne przypomnienia
-  async function homeCards() {
+  async function homeCards({ countdown = true } = {}) {
     const [trips, segs, files, dismissed] = await Promise.all([DB.all("trips"), DB.all("segments"), DB.all("files"), DB.getSetting("remDismissed", {})]);
     let html = "";
 
@@ -162,13 +162,13 @@
       <section class="rm-due" aria-label="Przypomnienia">
         ${due.slice(0, 4).map(r => `
           <div class="rm-row">
-            <span class="rm-bell" aria-hidden="true">🔔</span>
+            <span class="rm-bell" aria-hidden="true">${App.icon ? App.icon("bell") : "🔔"}</span>
             <a class="rm-txt" href="#${esc(r.href)}"><b>${esc(r.title)}</b><span>${esc(r.body)}</span></a>
-            <button type="button" class="rm-x" data-dismiss="${esc(`${r.id}@${r.at}`)}" aria-label="Ukryj przypomnienie">✕</button>
+            <button type="button" class="rm-x" data-dismiss="${esc(`${r.id}@${r.at}`)}" aria-label="Ukryj przypomnienie">${App.icon ? App.icon("close", "sm") : "✕"}</button>
           </div>`).join("")}
       </section>`;
 
-    const tg = target(trips, segs);
+    const tg = countdown ? target(trips, segs) : null; // ekran główny (redesign) ma własne odliczanie w karcie podróży
     if (tg) {
       const T = tg.seg ? App.Trips.typeOf(tg.seg) : null;
       const file = tg.seg ? files.filter(f => f.segmentId === tg.seg.id).sort((a, b) => (a.created || "").localeCompare(b.created || ""))[0] : null;
@@ -194,7 +194,7 @@
       html,
       segId: tg && tg.seg ? tg.seg.id : null,
       after(view) {
-        const el = view.querySelector("#cd-time");
+        const el = countdown ? view.querySelector("#cd-time") : null; // bez licznika: odliczanie należy do ekranu głównego (trips.js)
         if (el) timer = setInterval(() => { el.innerHTML = partsHtml(el.dataset.at); }, 1000);
         view.querySelectorAll("[data-dismiss]").forEach(b => b.onclick = async () => {
           const d = await DB.getSetting("remDismissed", {});

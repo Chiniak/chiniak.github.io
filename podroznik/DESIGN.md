@@ -48,8 +48,19 @@ Uwaga: teksty z emoji są kluczami tłumaczeń w `i18n-en.js` – zmieniając te
 Ruch: krótkie przejścia 0.12–0.25 s; `prefers-reduced-motion` wyłącza animacje.
 
 ## Etapy redesignu
-1. Design system ✔ (ten dokument) · 2. Podróże · 3. Bilety · 4. Plan · 5. Pakowanie · 6. Ustawienia · 7. ekrany dodatkowe · 8. szlif (animacje, dostępność, tablet, style z JS) · 9. testy całości.
+1. Design system ✔ (ten dokument) · 2. Podróże ✔ · 3. Bilety · 4. Plan · 5. Pakowanie · 6. Ustawienia · 7. ekrany dodatkowe · 8. szlif (animacje, dostępność, tablet, style z JS) · 9. testy całości.
 Makieta zatwierdzona przez właściciela: ekran Podróże – nagłówek z powitaniem, karta bieżącej podróży ze zdjęciem i odliczaniem,
 pasek postępu (spakowane / punkty planu / budżet), najbliższy bilet jako odcinek z QR, zadanie przed wyjazdem, nadchodzące
 podróże w poziomym rzędzie, szybkie akcje (Nowa podróż, Z Gmaila, Otwórz wspólną). Decyzje: ciemny turkus do tekstu,
 dwa kroje, zdjęcia bez motywów religijnych, tło ze zdjęć – nowi użytkownicy gładkie, istniejące ustawienie bez zmian.
+
+## Ekran Podróże (etap 2, `trips.js` – trasa `#/podroze`)
+- Nagłówek w trybie znaku: widok zwraca `brand: true` → `.topbar.brand` (ikona + „Podróżnik” małym krojem); akcja = statystyki.
+- `.hm-head` powitanie (Newsreader) + data · `.hm-hero` bieżąca/najbliższa podróż: okładka (`data-cover` → `.has-photo`)
+  albo gradient z koloru podróży (`--c`) z delikatnym wzorem; odliczanie `#cd-time` (co 15 s) do najbliższego odjazdu tej podróży
+  albo do dnia wyjazdu; `.cd-label` = „Najbliższa podróż” / „W trakcie”.
+- `.hm-stats` – spakowane (pasek), punkty w planie, wydatki (`App.Budget.summary`) – każdy prowadzi do swojej zakładki.
+- `.tk-stub` – najbliższy bilet (`App.Tickets.nearest()`): kod lotniska wyciągany z końca nazwy („Warszawa WAW”), część z QR → pełny ekran.
+- Przypomnienia (`App.Reminders.homeCards({ countdown: false })` – bez starego licznika) i karta Gmaila pod biletem.
+- `.hm-scroll` pozostałe trwające/nadchodzące (karty 4:3), `.hm-quick` szybkie akcje, archiwum jako `.list`.
+- Kolory podróży (`App.Trips.COLORS`) dopasowane do palety; stare zapisane kolory działają dalej.

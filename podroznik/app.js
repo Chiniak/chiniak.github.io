@@ -179,6 +179,7 @@
     if (typeof r === "string") r = { html: r };
     const title = r.title || TAB_TITLES[tab] || "Podróżnik";
     $("#title").textContent = title;
+    $(".topbar").classList.toggle("brand", !!r.brand); // ekran główny: mały znak „Podróżnik” zamiast dużego tytułu
     document.title = title === "Podróżnik" ? title : `${title} · Podróżnik`;
     const back = $("#back");
     back.hidden = !r.back;

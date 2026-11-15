@@ -45,8 +45,8 @@ const fs = require('fs'); const SP = process.argv[2];
   // future-only countdown: remove berlin
   await p.evaluate(async(b)=>{ for (const s of await DB.byIndex('segments','tripId',b)) await DB.del('segments',s.id); await DB.del('trips',b); }, ids.b);
   await p.goto(B+'#/bilety'); await p.goto(B+'#/podroze'); await p.waitForTimeout(500);
-  console.log('cd label 2:', (await p.textContent('.cd-label')).trim(), '|', (await p.textContent('#cd-time')).replace(/\s+/g,' ').trim(), '| actions:', (await p.textContent('.cd-actions')).replace(/\s+/g,' ').trim());
-  console.log('separate nearest ticket card shown:', await p.locator('.next-ticket').count());
+  console.log('cd label 2:', (await p.textContent('.cd-label')).trim(), '|', (await p.textContent('#cd-time')).replace(/\s+/g,' ').trim(), '| progress:', (await p.textContent('.hm-stats')).replace(/\s+/g,' ').trim());
+  console.log('nearest ticket stub shown:', await p.locator('.tk-stub').count(), '| QR link:', await p.getAttribute('.tk-stub-qr', 'href').catch(() => null));
   await shot('r-home2');
   // settings
   await p.goto(B+'#/ustawienia'); await p.waitForTimeout(400); await p.click('text=Przypomnienia i kalendarz'); await p.waitForTimeout(600);
