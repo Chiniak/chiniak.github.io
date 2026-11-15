@@ -504,7 +504,7 @@
           const match = q.trip || (trips.find(t => dates[0] && t.start <= dates[dates.length - 1] && t.end >= dates[0]) || {}).id || "";
           const dest = found.find(s => s.type !== "nocleg" && s.to);
           out.innerHTML = `
-            <h3 class="section">Znaleziono: ${found.length} ${plural(found.length, "pozycję", "pozycje", "pozycji")}</h3>
+            <h2 class="section">Znaleziono: ${found.length} ${plural(found.length, "pozycję", "pozycje", "pozycji")}</h2>
             ${found.map(card).join("")}
             <div class="card em-save">
               <label class="field"><span>Dodaj do podróży</span>

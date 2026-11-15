@@ -372,9 +372,9 @@
           <div class="list rm-master">
             ${sw("enabled", cfg.enabled, "<b>Przypomnienia włączone</b>")}
           </div>
-          <h3 class="section">Transport i noclegi</h3>
+          <h2 class="section">Transport i noclegi</h2>
           <div class="list rm-types">${typeRows}</div>
-          <h3 class="section">Pakowanie i plan</h3>
+          <h2 class="section">Pakowanie i plan</h2>
           <div class="list rm-other">
             <label class="rm-sel"><span>Nie spakowane rzeczy (o 18:00)</span>
               <select name="packDays">${opts([[0, "wył."], [1, "1 dzień przed"], [2, "2 dni przed"], [3, "3 dni przed"], [5, "5 dni przed"], [7, "tydzień przed"]], cfg.packDays)}</select></label>
@@ -385,15 +385,15 @@
           </div>
         </form>
 
-        <h3 class="section">Kalendarz</h3>
+        <h2 class="section">Kalendarz</h2>
         <div class="bg-cfg rm-cal">
-          <p class="small" style="margin-top:0">Plik .ics z podróżami, transportem, planem i zadaniami – razem z alarmami ustawionymi wyżej.
+          <p class="small">Plik .ics z podróżami, transportem, planem i zadaniami – razem z alarmami ustawionymi wyżej.
             Na telefonie wybierz aplikację Kalendarz (np. Samsung). Google Kalendarz importuje pliki na komputerze (calendar.google.com → Ustawienia → Importuj);
             na telefonie użyj przycisku „Dodaj do Google Kalendarza” na stronie lotu / pociągu.</p>
           <button type="button" class="btn primary wide" id="rm-ics" ${trips.length ? "" : "disabled"}>${App.icon("plan", "sm")} Eksportuj nadchodzące podróże (${trips.length})</button>
         </div>
 
-        <h3 class="section">Najbliższe przypomnienia</h3>
+        <h2 class="section">Najbliższe przypomnienia</h2>
         <div class="list rm-list">
           ${upcoming.length ? upcoming.map(r => `
             <a class="li rm-up" href="#${esc(r.href)}"><span class="li-ico" aria-hidden="true">${App.icon("bell")}</span><span class="li-main"><b>${esc(r.title)}</b><small>${esc(r.body)}</small></span>

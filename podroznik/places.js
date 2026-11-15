@@ -354,7 +354,7 @@
         <p class="mp-attr"><span class="mp-hint">Dotknij mapy, by zaznaczyć miejsce · pinezkę dwa razy, by otworzyć punkt.</span> ${navigator.onLine ? "" : "Offline: widać fragmenty mapy oglądane lub pobrane wcześniej. "}<span id="mp-attr-src"></span></p>
         ${canOpt ? `<button type="button" class="btn primary wide mp-opt" id="mp-opt">${App.icon("sparkle", "sm")} Ułóż najkrótszą trasę</button>
           <p class="f-hint mp-opt-hint">Układane są punkty bez godziny${hasXY(hotel) ? `, start z noclegu „${esc(hotel.name || "")}”` : ""}. Punkty z godziną zostają na swoim miejscu.</p>` : ""}
-        ${list ? `<h3 class="section">${sel === "pomysly" ? "Pomysły" : sel === "wszystko" ? "" : App.fmtDayLong(sel)}</h3><div class="list mp-list">${list}</div>` : ""}
+        ${list ? `<h2 class="section">${sel === "pomysly" ? "Pomysły" : sel === "wszystko" ? "" : App.fmtDayLong(sel)}</h2><div class="list mp-list">${list}</div>` : ""}
         ${noPlace ? `<p class="f-hint mp-noplace">${noPlace} ${plural(noPlace, "punkt nie ma", "punkty nie mają", "punktów nie ma")} wpisanego miejsca – dodaj je w punkcie, by pojawił się na mapie.</p>` : ""}
         <div class="list mp-tools">
           ${missing ? `<button type="button" class="li" id="mp-geo"><span class="li-ico">${App.icon("pin")}</span><span class="li-main"><b>Znajdź położenie ${missing} ${plural(missing, "miejsca", "miejsc", "miejsc")}</b><small>wyszukiwarka map · wymaga internetu</small></span>${App.icon("chev")}</button>` : ""}
@@ -368,7 +368,7 @@
           if (!document.querySelector('link[href="lib/leaflet.css"]')) {
             const l = document.createElement("link"); l.rel = "stylesheet"; l.href = "lib/leaflet.css"; document.head.appendChild(l);
           }
-        } catch (e) { el.innerHTML = `<p class="muted small" style="padding:12px">Nie udało się wczytać mapy.</p>`; return; }
+        } catch (e) { el.innerHTML = `<p class="muted small mp-fail">Nie udało się wczytać mapy.</p>`; return; }
         if (!el.isConnected) return;
         map = L.map(el, { zoomControl: true, attributionControl: false });
         const bounds = [];

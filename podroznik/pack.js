@@ -129,8 +129,8 @@
       return { pack, todo, done: pack.filter(i => i.status === "done").length, buy: pack.filter(i => i.status === "buy").length, tDone: todo.filter(i => i.status === "done").length };
     };
     const tabs = () => { const c = counts(); return `
-        <button type="button" role="tab" data-l="pack" aria-pressed="${mode === "pack"}"><span>Rzeczy</span> <small>${c.done}/${c.pack.length}</small></button>
-        <button type="button" role="tab" data-l="todo" aria-pressed="${mode === "todo"}"><span>Przed wyjazdem</span> <small>${c.tDone}/${c.todo.length}</small></button>`; };
+        <button type="button" data-l="pack" aria-pressed="${mode === "pack"}"><span>Rzeczy</span> <small>${c.done}/${c.pack.length}</small></button>
+        <button type="button" data-l="todo" aria-pressed="${mode === "todo"}"><span>Przed wyjazdem</span> <small>${c.tDone}/${c.todo.length}</small></button>`; };
 
     const catOptions = Object.entries(CATS).map(([k, C]) => `<option value="${k}">${C.icon} ${C.name}</option>`).join("");
     const addBar = `
@@ -243,7 +243,7 @@
       title: "Pakowanie",
       action: `<a class="icon-btn" href="#/podroze/${id}" aria-label="Podróż">${App.Plan.routeIcon}</a>`,
       html: `${head}<div id="pk-progress">${progress()}</div>
-        <div class="seg pk-tabs" role="tablist" id="pk-tabs">${tabs()}</div>
+        <div class="seg pk-tabs" id="pk-tabs">${tabs()}</div>
         <div id="pk-next">${nextTask()}</div>${addBar}<div id="pk-list">${listHtml()}</div>${tools}`,
       after(view) {
         const $ = s => view.querySelector(s);
@@ -328,8 +328,8 @@
       back: `#/pakowanie/${id}`,
       html: `<div id="tpl-list">
         <p class="muted small tpl-intro">Dotknij szablonu, by dodać jego rzeczy do listy „${esc(trip.name)}”. Możesz łączyć kilka – rzeczy, które już są, zostaną pominięte.</p>
-        ${own.length ? `<h3 class="section">Twoje szablony</h3><div class="list tpl-box">${own.map(t => card(t, true)).join("")}</div>` : ""}
-        <h3 class="section">Gotowe szablony</h3>
+        ${own.length ? `<h2 class="section">Twoje szablony</h2><div class="list tpl-box">${own.map(t => card(t, true)).join("")}</div>` : ""}
+        <h2 class="section">Gotowe szablony</h2>
         <div class="list tpl-box">${BUILTIN.map(t => card(t, false)).join("")}</div>
         <p class="muted small tpl-outro">Własny szablon zrobisz z dowolnej listy: „Zapisz jako szablon” pod listą pakowania.</p></div>`,
       after(view) {
@@ -376,10 +376,10 @@
               ? `<label class="field"><span>Termin (opcjonalnie)</span><input type="date" name="due" value="${esc(it.due || "")}"></label>`
               : `<label class="field"><span>Ilość (opcjonalnie)</span><input name="qty" maxlength="10" inputmode="numeric" placeholder="np. 3" value="${esc(it.qty || "")}"></label>`}
           </div>
-          ${isTodo ? "" : `<div class="fsec"><h3 class="section">Kategoria</h3><div class="type-chips" role="radiogroup" aria-label="Kategoria">${cats}</div></div>`}
-          <div class="fsec"><h3 class="section">Stan</h3>
+          ${isTodo ? "" : `<div class="fsec"><h2 class="section">Kategoria</h2><div class="type-chips" role="radiogroup" aria-label="Kategoria">${cats}</div></div>`}
+          <div class="fsec"><h2 class="section">Stan</h2>
             <fieldset class="field"><legend class="sr">Stan</legend><div class="pk-sts">${statusSeg}</div></fieldset></div>
-          <div class="fsec"><h3 class="section">Notatka</h3>
+          <div class="fsec"><h2 class="section">Notatka</h2>
             <label class="field"><span class="sr">Notatka</span><textarea name="note" rows="2" placeholder="opcjonalnie">${esc(it.note || "")}</textarea></label></div>
           <p class="error" id="err" hidden></p>
           <div class="f-actions">

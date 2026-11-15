@@ -33,7 +33,7 @@ const SP = process.argv[2];
   console.log('fun:', await p.textContent('.st-fun').catch(()=>'-'));
   await p.screenshot({ path: SP+'/s-after.png', fullPage: true });
   await p.click('.st-chip:has-text("2025")'); await p.waitForTimeout(600); console.log('2025:', await tiles());
-  await p.check('#st-plan'); await p.waitForTimeout(600); await p.click('.st-chip:has-text("Wszystkie")'); await p.waitForTimeout(600); console.log('with planned:', await tiles());
+  await p.click('label:has(#st-plan)'); await p.waitForTimeout(600); await p.click('.st-chip:has-text("Wszystkie")'); await p.waitForTimeout(600); console.log('with planned:', await tiles());
   // airports + km sanity
   console.log('WAW-LIS km:', await p.evaluate(async()=>{ const a=await App.Stats.airports(); return Math.round(App.Stats.km(a.get('WAW'), a.get('LIS'))); }));
   await p.emulateMedia({colorScheme:'dark'}); await p.click('.st-chip:has-text("2026")'); await p.waitForTimeout(600); await p.screenshot({ path: SP+'/s-dark.png' });

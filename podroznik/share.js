@@ -95,7 +95,7 @@
           ${nFiles ? `<label class="sw sh-sw"><input type="checkbox" id="sh-files"><span class="sw-ui" aria-hidden="true"></span><span>Dołącz bilety i zdjęcia (${nFiles}) – plik będzie większy</span></label>` : ""}
           <button type="button" class="btn primary wide" id="sh-file">${App.icon("share", "sm")} Wyślij podróż (plik)</button>
         </div>
-        <h3 class="section">Plan jako tekst</h3>
+        <h2 class="section">Plan jako tekst</h2>
         <div class="list">
           <button type="button" class="li" id="sh-text"><span class="li-ico sh-ico">${App.icon("list")}</span><span class="li-main"><b>Wyślij plan jako tekst</b><small>do wklejenia w wiadomość – loty, noclegi i plan dnia po dniu</small></span>${App.icon("chev")}</button>
         </div>

@@ -119,7 +119,7 @@
           <label><span class="sr">Za kogo</span><select name="split"><option value="">za wszystkich</option>${people.map(n => `<option value="${esc(n)}">tylko za: ${esc(n)}</option>`).join("")}</select></label>
         </div>` : "";
     const add = `
-      <h3 class="section">Dodaj wydatek</h3>
+      <h2 class="section">Dodaj wydatek</h2>
       <form class="bg-add" id="bg-add" autocomplete="off">
         <input name="title" maxlength="60" placeholder="Na co? np. kawa, muzeum" aria-label="Na co">
         <div class="bg-add-row bg-amt">
@@ -143,7 +143,7 @@
       const sum = rows.reduce((s, i) => s + (i.home || 0), 0);
       return `
         <div class="bg-day">
-          <h3 class="section bg-day-h"><span>${App.fmtDayLong(day)}</span><span>${money(sum, home)}</span></h3>
+          <h2 class="section bg-day-h"><span>${App.fmtDayLong(day)}</span><span>${money(sum, home)}</span></h2>
           <div class="list">${rows.map(i => `
             <a class="li bg-row" href="${i.kind === "seg" ? `#/odcinek/${i.id}` : `#/wydatek/${i.id}`}">
               ${i.kind === "seg" ? `<span class="li-ico bg-ico c-${i.cat}" aria-hidden="true">${i.ic}</span>` : catIco(i.cat)}
@@ -161,11 +161,11 @@
     return {
       title: "Budżet",
       back: `#/podroze/${id}`,
-      html: `${summaryCard}${cats ? `<h3 class="section">Kategorie</h3><div class="list bg-cats">${cats}</div>` : ""}
+      html: `${summaryCard}${cats ? `<h2 class="section">Kategorie</h2><div class="list bg-cats">${cats}</div>` : ""}
         ${people.length > 1 ? `<div class="list bg-split-link"><a class="li" href="#/rozliczenie/${id}"><span class="li-ico">${I("users")}</span><span class="li-main"><b>Rozliczenie</b><small>kto komu ile oddaje · ${people.length} ${plural(people.length, "osoba", "osoby", "osób")}</small></span>${I("chev")}</a></div>` : ""}
         ${add}
         <div id="bg-list">${list}</div>
-        <h3 class="section">Budżet i waluty</h3>
+        <h2 class="section">Budżet i waluty</h2>
         <form class="form bg-cfg" id="bg-cfg">
           <div class="grid2 price">
             <label class="field"><span>Budżet całej podróży</span><input name="budget" inputmode="decimal" value="${d.budget ? String(d.budget).replace(".", ",") : ""}" placeholder="np. 3000"></label>
@@ -246,10 +246,10 @@
             </div>
             <label class="field"><span>Dzień</span><input type="date" name="date" value="${esc(e.date)}"></label>
           </div>
-          <div class="fsec"><h3 class="section">Kategoria</h3>
+          <div class="fsec"><h2 class="section">Kategoria</h2>
             <div class="type-chips" role="radiogroup" aria-label="Kategoria">${Object.entries(CATS).map(([k, C]) => `
               <label class="type-chip"><input type="radio" name="cat" value="${k}" ${k === e.cat ? "checked" : ""}><span><b aria-hidden="true">${App.icon(C.ic, "sm")}</b>${C.name}</span></label>`).join("")}</div></div>
-          ${whoHtml ? `<div class="fsec"><h3 class="section">Podział</h3>${whoHtml}</div>` : ""}
+          ${whoHtml ? `<div class="fsec"><h2 class="section">Podział</h2>${whoHtml}</div>` : ""}
           <p class="error" id="err" hidden></p>
           <div class="f-actions">
             <button class="btn primary wide" type="submit">Zapisz</button>

@@ -15,7 +15,7 @@
       <span class="li-main"><b>${title}</b>${sub ? `<small>${sub}</small>` : ""}</span>
       <div class="set-body">${body}</div></div>`;
   const group = (name, rows, note = "") => `
-    <section class="set-group"><h3 class="section">${name}</h3><div class="list">${rows}</div>${note ? `<p class="set-note">${note}</p>` : ""}</section>`;
+    <section class="set-group"><h2 class="section">${name}</h2><div class="list">${rows}</div>${note ? `<p class="set-note">${note}</p>` : ""}</section>`;
 
   App.route(/^\/ustawienia$/, async () => {
     const theme = await DB.getSetting("theme", "auto");

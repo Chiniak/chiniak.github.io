@@ -132,9 +132,11 @@
     t._h = setTimeout(() => t.classList.remove("show"), 2200);
   };
 
+  // pusty stan: emoji z wywołania → ikona SVG w miękkim kółku (etap 8; nieznane emoji zostaje)
+  const EMPTY_IC = { "⚠️": "alert", "📊": "chart", "🗓️": "plan", "🗺️": "map", "🚕": "taxi", "🛂": "passport", "🤝": "users", "🧭": "compass", "🧳": "pack" };
   App.empty = (icon, title, text, extra = "") => `
     <div class="empty">
-      <div class="big" aria-hidden="true">${icon}</div>
+      ${EMPTY_IC[icon] && App.icon ? `<div class="empty-ic${icon === "⚠️" ? " warn" : ""}" aria-hidden="true">${App.icon(EMPTY_IC[icon], "lg")}</div>` : `<div class="big" aria-hidden="true">${icon}</div>`}
       <h2>${title}</h2>
       <p>${text}</p>
       ${extra}
@@ -150,6 +152,7 @@
 
   // r.cleanup z poprzedniego widoku (np. wyłączenie kamery, zwolnienie blokady ekranu)
   let cleanup = null, renderSeq = 0;
+  let lastPath = null;
   async function render() {
     const seq = ++renderSeq;
     if (cleanup) { try { cleanup(); } catch (e) { console.warn(e); } cleanup = null; }
@@ -188,6 +191,9 @@
     back.onclick = () => App.back(r.back);
     $("#action").innerHTML = r.action || "";
     view.innerHTML = r.html;
+    // krótkie wejście nowego ekranu (tylko przy zmianie ekranu, nie przy odświeżeniu tego samego); prefers-reduced-motion wyłącza
+    if (path !== lastPath) { view.classList.remove("v-in"); void view.offsetWidth; view.classList.add("v-in"); }
+    lastPath = path;
     if (r.after) r.after(view);
     // poziome paski wyboru (rodzaj, kategoria): zaznaczony element widoczny, nawet gdy jest na końcu listy
     view.querySelectorAll(".type-chips").forEach(bar => {

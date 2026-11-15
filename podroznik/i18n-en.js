@@ -658,4 +658,6 @@ self.I18N_EN = {
   "Wyślij plan jako tekst": "Send plan as text", "do wklejenia w wiadomość – loty, noclegi i plan dnia po dniu": "to paste into a message – flights, stays and the day-by-day plan",
   "Otwórz plik podróży": "Open a trip file", "Rezerwacja z maila": "Booking from an e-mail", "Wklej ze schowka": "Paste from clipboard", "Z pliku": "From file", "Odczytaj": "Read",
   "Dołącz bilety i zdjęcia ({}) – plik będzie większy": "Include tickets and photos ({}) – the file will be bigger",
+  /* etap 8 */
+  "To {}": "That's {}", "{} {} bez położenia": "{} {} without a location", "Uzupełnij położenie (internet)": "Fill in locations (internet)",
 };

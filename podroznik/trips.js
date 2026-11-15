@@ -153,7 +153,7 @@
             <h3>Zaplanuj pierwszą podróż</h3>
             <p>Dodaj wyjazd, a potem loty, pociągi i noclegi. Bilety, plan dnia i lista pakowania będą w jednym miejscu – także offline.</p>
           </section>
-          <h3 class="section">Zacznij</h3>${quickActions()}`,
+          <h2 class="section">Zacznij</h2>${quickActions()}`,
       };
     }
 
@@ -225,7 +225,7 @@
       const prov = s.plan ? [] : [s.carrier, s.number].filter(Boolean);
       const typeName = s.plan ? (App.Plan ? App.Plan.catOf(s.plan).name : "") : typeOf(s).name;
       ticketHtml = `
-        <div class="sec-h"><h3 class="section">Najbliższy bilet</h3><a href="#/bilety">Wszystkie</a></div>
+        <div class="sec-h"><h2 class="section">Najbliższy bilet</h2><a href="#/bilety">Wszystkie</a></div>
         <div class="tk-stub">
           <a class="tk-stub-main" href="${tk.href}">
             <span class="tk-prov">${ic(s.plan ? "ticket" : ICON_OF[s.type] || "compass", "sm")}<span>${esc(prov.length ? prov.join(" · ") : typeName)}</span><span class="chip accent">${tk.rel}</span></span>
@@ -259,11 +259,11 @@
 
     let html = head + heroHtml + statsHtml + ticketHtml + home.html + gmail;
     if (!hero) html += `<p class="muted hm-nothing">Brak zaplanowanych wyjazdów.</p>`;
-    if (rest.length) html += `<div class="sec-h"><h3 class="section">Nadchodzące</h3></div><div class="hm-scroll">${rest.map(tcard).join("")}</div>`;
-    html += `<h3 class="section">Szybkie akcje</h3>${quickActions()}`;
+    if (rest.length) html += `<div class="sec-h"><h2 class="section">Nadchodzące</h2></div><div class="hm-scroll">${rest.map(tcard).join("")}</div>`;
+    html += `<h2 class="section">Szybkie akcje</h2>${quickActions()}`;
     if (past.length) html += `
       <details class="archive">
-        <summary><h3 class="section">Archiwum <span class="muted">(${past.length})</span></h3></summary>
+        <summary><h2 class="section">Archiwum <span class="muted">(${past.length})</span></h2></summary>
         <div class="list">${past.map(trow).join("")}</div>
       </details>`;
 
@@ -291,7 +291,7 @@
     let newCover = null, dropCover = false, dropAuto = false, unpaint = null, previewUrl = null;
     const swatches = COLORS.map(c => `
       <label class="swatch" style="--c:${c}">
-        <input type="radio" name="color" value="${c}" ${c === v.color ? "checked" : ""}><span aria-label="kolor ${c}"></span>
+        <input type="radio" name="color" value="${c}" aria-label="kolor ${c}" ${c === v.color ? "checked" : ""}><span aria-hidden="true"></span>
       </label>`).join("");
 
     return {
@@ -305,14 +305,14 @@
             <label class="field"><span>Cel podróży</span>
               <input name="destination" maxlength="80" placeholder="np. Lizbona, Portugalia" value="${esc(v.destination)}"></label>
           </div>
-          <div class="fsec"><h3 class="section">Termin</h3>
+          <div class="fsec"><h2 class="section">Termin</h2>
             <div class="grid2">
               <label class="field"><span>Od</span><input type="date" name="start" required value="${esc(v.start)}"></label>
               <label class="field"><span>Do</span><input type="date" name="end" required value="${esc(v.end)}"></label>
             </div>
             <p class="f-hint" id="tf-days" aria-live="polite"></p>
           </div>
-          <div class="fsec"><h3 class="section">Wygląd</h3>
+          <div class="fsec"><h2 class="section">Wygląd</h2>
             <div class="field"><span>Okładka</span>
               <div class="cover-pick hm-hero" id="cover-box" data-cover="${t ? t.id : ""}" style="--c:${esc(v.color || COLORS[0])}">
                 <div class="hm-hero-body"><span class="hm-dest" id="cp-dest">${esc(v.destination)}</span><h2 id="cp-name">${esc(v.name) || "Nowa podróż"}</h2></div>
@@ -325,7 +325,7 @@
               ${auto ? `<small class="f-hint" id="cover-auto-txt">Zdjęcie celu dobrane automatycznie · ${esc(auto.credit)}</small>` : `<small class="f-hint">Bez zdjęcia okładka ma kolor podróży.</small>`}</div>
             <fieldset class="field"><legend>Kolor</legend><div class="swatches">${swatches}</div></fieldset>
           </div>
-          <div class="fsec"><h3 class="section">Notatka</h3>
+          <div class="fsec"><h2 class="section">Notatka</h2>
             <label class="field"><span class="sr">Notatka</span>
               <textarea name="note" rows="3" placeholder="np. wiza, ubezpieczenie, kontakt do hotelu">${esc(v.note)}</textarea></label>
           </div>
@@ -565,9 +565,9 @@
       back: "#/podroze",
       action: `<a class="icon-btn" href="#/podroze/${id}/edytuj" aria-label="Edytuj podróż">${ic("edit")}</a>`,
       html: head + stats + tools + (wx && wx.data ? App.Weather.strip(wx.data, t) : "") +
-        `<div class="sec-h td-sec"><h3 class="section">Trasa i noclegi</h3>${nSeg ? `<span class="chip">${nSeg}</span>` : ""}</div>` +
+        `<div class="sec-h td-sec"><h2 class="section">Trasa i noclegi</h2>${nSeg ? `<span class="chip">${nSeg}</span>` : ""}</div>` +
         (timeline || App.empty("🗺️", "Pusta oś czasu", "Dodaj pierwszy lot, pociąg, autobus albo nocleg – wybierz poniżej.")) +
-        `<h3 class="section">Dodaj do podróży</h3><div class="type-grid">${typeButtons}</div>
+        `<h2 class="section">Dodaj do podróży</h2><div class="type-grid">${typeButtons}</div>
          <div class="list td-tools td-mail">
            ${row(`#/wklej?trip=${id}`, "mail", "Z maila", "potwierdzenie lotu, pociągu, hotelu, PDF, .ics")}
          </div>`,
@@ -596,7 +596,7 @@
       }
       return h;
     };
-    const sec = (title, body) => `<div class="fsec"><h3 class="section">${title}</h3>${body}</div>`;
+    const sec = (title, body) => `<div class="fsec"><h2 class="section">${title}</h2>${body}</div>`;
     const where = T.route === false
       ? input("name", "Nazwa obiektu", "np. Hotel Avenida", "required maxlength=\"100\"") + input("address", "Adres", "ulica, miasto")
       : input("from", T.from, T.fromPh || "", "maxlength=\"100\"") + input("to", T.to, T.toPh || "", "maxlength=\"100\"");

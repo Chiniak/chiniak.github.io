@@ -145,7 +145,7 @@
       </section>`;
     const off = `
       ${hero(false, `Po włączeniu aplikacja przy otwarciu poprosi o PIN (4–6 cyfr)${bioOk ? " albo odcisk palca" : ""}. Chroni bilety i dane rezerwacji, gdy ktoś inny weźmie telefon.`)}
-      <h3 class="section">Ustaw PIN</h3>
+      <h2 class="section">Ustaw PIN</h2>
       <form id="lk-set" class="form bg-cfg" novalidate>
         ${pinField("p1", "Nowy PIN (4–6 cyfr)")}
         ${pinField("p2", "Powtórz PIN")}
@@ -156,13 +156,13 @@
 
     const on = cur ? `
       ${hero(true, "Blokada chroni przed podejrzeniem danych w telefonie. Dane w pamięci przeglądarki nie są szyfrowane.")}
-      <h3 class="section">Ustawienia</h3>
+      <h2 class="section">Ustawienia</h2>
       <form id="lk-opts" class="list lk-opts">
         <label class="li set-ctl lk-row"><span class="li-ico">${App.icon("clock")}</span><span class="li-main"><b>Blokuj po wyjściu z aplikacji</b></span>
           <select name="timeout">${TIMEOUTS.map(([v, n]) => `<option value="${v}" ${cur.timeout === v ? "selected" : ""}>${n}</option>`).join("")}</select></label>
         ${bioOk ? `<label class="li lk-row sw"><span class="li-ico">${App.icon("shield")}</span><span class="li-main"><b>Odblokowanie odciskiem palca</b></span><input type="checkbox" name="bio" ${cur.bio ? "checked" : ""}><span class="sw-ui" aria-hidden="true"></span></label>` : ""}
       </form>
-      <h3 class="section">Zmień PIN albo wyłącz</h3>
+      <h2 class="section">Zmień PIN albo wyłącz</h2>
       <form id="lk-change" class="form bg-cfg" novalidate>
         ${pinField("old", "Obecny PIN")}
         ${pinField("p1", "Nowy PIN (zostaw puste, by tylko wyłączyć)").replace(" required", "")}

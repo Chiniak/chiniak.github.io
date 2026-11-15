@@ -163,7 +163,7 @@
         </section>
         ${changed ? `<p class="td-note bk-warn">${App.icon("alert", "sm")}<span>Od ostatniej kopii doszły zmiany (podróże, bilety, plan lub dokumenty) – zrób nową.</span></p>` : ""}
 
-        <h3 class="section">Zrób kopię</h3>
+        <h2 class="section">Zrób kopię</h2>
         <form id="bk-export" class="form bg-cfg">
           <label class="field"><span>Hasło do pliku (opcjonalnie)</span>
             <input type="password" name="pw" autocomplete="new-password" placeholder="zalecane – kopia trafi poza telefon"></label>
@@ -175,7 +175,7 @@
           Na telefonie otworzy się menu „Udostępnij” – wybierz np. <b>Dysk Google</b>, mail do siebie albo „Zapisz w Plikach”.
           Plik bez hasła zawiera Twoje bilety i dane rezerwacji – trzymaj go w bezpiecznym miejscu. <b>Hasła nie da się odzyskać.</b></p>
 
-        <h3 class="section">Na wypadek zgubienia telefonu</h3>
+        <h2 class="section">Na wypadek zgubienia telefonu</h2>
         <div class="list bk-tips">
           <ol>
             <li><b>Przed wyjazdem</b> zapisz kopię z hasłem na <b>Dysku Google</b> albo wyślij <b>mailem do siebie</b> – dostaniesz się do niej z każdego telefonu czy komputera.</li>
@@ -185,7 +185,7 @@
           </ol>
         </div>
 
-        <h3 class="section">Przywróć z kopii</h3>
+        <h2 class="section">Przywróć z kopii</h2>
         <div class="bg-cfg bk-restore">
           <p class="f-hint bk-r-hint">Np. po zmianie telefonu albo wyczyszczeniu danych przeglądarki.</p>
           <label class="btn wide">${App.icon("doc", "sm")} Wybierz plik kopii (.json)<input type="file" id="bk-file" accept=".json,application/json" hidden></label>

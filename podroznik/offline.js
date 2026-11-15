@@ -165,9 +165,9 @@
           ${free != null ? `<div class="hm-stat"><small>Wolne miejsce</small><b>${free > 2 ** 30 ? `${(free / 2 ** 30).toFixed(1).replace(".", ",")} GB` : `${Math.round(free / 2 ** 20)} MB`}</b></div>` : ""}
           ${meta && meta.at ? `<div class="hm-stat"><small>Ostatnio</small><b>${App.fmtDay(meta.at.slice(0, 10))}</b></div>` : ""}
         </div>
-        ${areas.length ? `<h3 class="section">Obszary</h3><form id="of-form" class="list of-list">${rows}</form>
+        ${areas.length ? `<h2 class="section">Obszary</h2><form id="of-form" class="list of-list">${rows}</form>
           <button type="button" class="btn primary wide of-go" id="of-go">${App.icon("download", "sm")} Pobierz zaznaczone</button>
-          <div class="of-prog" id="of-prog" hidden><div class="bar"><i id="of-bar" style="width:0"></i></div><p class="muted small" id="of-txt"></p>
+          <div class="of-prog" id="of-prog" hidden><div class="bar"><i id="of-bar"></i></div><p class="muted small" id="of-txt"></p>
             <button type="button" class="btn wide" id="of-stop">Zatrzymaj</button></div>`
         : App.empty("🗺️", "Brak miejsc do pobrania", "Dodaj noclegi lub punkty planu z położeniem (albo cel podróży), potem wróć tutaj. Możesz też otworzyć mapę, ustawić widok i wybrać „Mapa offline”.")}
         ${have.size ? `<button type="button" class="btn danger wide" id="of-del">${App.icon("trash", "sm")} Usuń mapę offline tej podróży</button>` : ""}

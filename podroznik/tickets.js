@@ -402,7 +402,7 @@
       const prov = s.plan ? "" : [s.carrier, s.number].filter(Boolean).join(" · ");
       const seat = segSeat(s, false);
       html += `
-        <h3 class="section">Najbliższy</h3>
+        <h2 class="section">Najbliższy</h2>
         <article class="wl-feature">
           <div class="wl-f-top">
             <span class="wl-type">${tic(s, "sm")}<span>${esc(typeName(s))}</span></span>
@@ -431,10 +431,10 @@
           ${ic("chev")}
         </a>`;
     };
-    if (upcoming.length > 1) html += `<h3 class="section">Nadchodzące</h3><div class="list">${upcoming.slice(1).map(row).join("")}</div>`;
+    if (upcoming.length > 1) html += `<h2 class="section">Nadchodzące</h2><div class="list">${upcoming.slice(1).map(row).join("")}</div>`;
     if (past.length) html += `
       <details class="archive">
-        <summary><h3 class="section">Wykorzystane <span class="muted">(${past.length})</span></h3></summary>
+        <summary><h2 class="section">Wykorzystane <span class="muted">(${past.length})</span></h2></summary>
         <div class="list wl-past">${past.map(row).join("")}</div>
       </details>`;
     return { html };
@@ -509,7 +509,7 @@
         </section>
         ${actions ? `<div class="list jr-actions">${actions}</div>` : ""}
 
-        <h3 class="section">Bilety</h3>
+        <h2 class="section">Bilety</h2>
         ${files.length ? `<div class="tk-grid">${tiles}</div>` : `<p class="muted small">Dodaj zdjęcie, zrzut ekranu, PDF lub kartę .pkpass (Apple Wallet) biletu albo zeskanuj jego kod – będzie dostępny bez internetu.</p>`}
         <div class="add-row">
           <a class="btn" href="#/skanuj/${id}">${ic("scan")} Skanuj kod</a>

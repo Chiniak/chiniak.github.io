@@ -196,7 +196,7 @@
         ${busy ? `<button type="button" class="btn wide" id="pr-stop">Zatrzymaj</button>`
           : todo.length ? `<button type="button" class="btn primary wide" id="pr-go">${App.icon("download", "sm")} Przygotuj wszystko (${todo.length})</button>`
           : `<p class="pr-ok">${App.icon("check", "sm")} Wszystko gotowe do podróży bez internetu.</p>${askPersist ? `<button type="button" class="btn wide" id="pr-persist">${App.icon("shield", "sm")} Włącz ochronę danych</button>` : ""}`}
-        <h3 class="section">Lista kontrolna</h3>
+        <h2 class="section">Lista kontrolna</h2>
         <div class="list pr-list">${rows}</div>
         ${steps.find(s => s.key === "backup" && !s.done) ? `<a class="btn wide pr-backup" href="#/ustawienia/kopia?wroc=/przygotuj/${id}">${App.icon("cloud", "sm")} Zrób kopię poza telefonem</a>
           <p class="f-hint pr-hint">Kopię zapisz sam (Dysk Google, mail do siebie) – najlepiej na końcu, gdy wszystko jest już pobrane. Zgubisz telefon – wczytasz ją na innym.</p>` : ""}
