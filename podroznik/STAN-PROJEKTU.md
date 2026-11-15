@@ -23,7 +23,7 @@ Ostatnia aktualizacja: 15 listopada 2026 (noc) – scalone PR #1–#27. **APK te
   wysyłać przez SendUserFile (display: attach), nie commitować. Ostatnie wysłane: **2.4.0 (versionCode 8)** – etapy 1–4 + zdjęcia celu.
   Ostatnie wysłane APK: **2.6.0 / versionCode 10** (cały redesign). Przy następnym podbij versionCode/versionName w `build.gradle` **i** `App.VERSION` w app.js (np. 2.7.0 / 11). Etapy 3–4 są w APK 2.4.0 (czeka na ocenę właściciela).
 - Właściciel gra czasem w Tibię – prosił, żeby **nie otwierać mu żadnych okien** (bez podglądów/artefaktów otwieranych automatycznie; pliki tylko jako załącznik).
-- **Na start następnej sesji:** jeśli właściciel napisze „scalaj” – scal PR #28 (etap 9), potem gałąź od main. Redesign skończony – zapytaj właściciela o wrażenia z APK 2.6.0 i co dalej. Po scaleniu kolejnego PR: `git checkout -B claude/travel-planning-app-tl9mvf origin/main`.
+- **Na start następnej sesji:** jeśli właściciel napisze „scalaj” – scal PR #28 (etap 9), potem gałąź od main. Redesign skończony – zapytaj właściciela o wrażenia z APK 2.6.0 i co dalej. **Uwaga:** końcowa pełna seria testów etapu 9 była w toku, gdy właściciel zrobił /clear – przed scaleniem PR #28 uruchom ją jeszcze raz (serwer `python3 -m http.server 8765` w tle z limitem 2 h). Po scaleniu kolejnego PR: `git checkout -B claude/travel-planning-app-tl9mvf origin/main`.
   Etap 7 podzielony na PR: 7a ✔ szczegóły podróży + formularze; 7b ✔ mapa, Odkrywaj,
   karty dla kierowcy, rozmówki, offline; 7c ✔ budżet, rozliczenie, dokumenty; 7d ✔ kopia, PIN, Gmail, przypomnienia, okna/toasty).
   Wersja w „O aplikacji” = `App.VERSION` w app.js (właściciel 15.11 wybrał numer APK; teraz **2.6.0**, build.gradle versionCode 10 / 2.6.0 – podbijaj oba razem).
