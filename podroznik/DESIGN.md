@@ -48,7 +48,7 @@ Uwaga: teksty z emoji są kluczami tłumaczeń w `i18n-en.js` – zmieniając te
 Ruch: krótkie przejścia 0.12–0.25 s; `prefers-reduced-motion` wyłącza animacje.
 
 ## Etapy redesignu
-1. Design system ✔ (ten dokument) · 2. Podróże ✔ · 3. Bilety ✔ · 4. Plan ✔ · 5. Pakowanie ✔ · 6. Ustawienia · 7. ekrany dodatkowe · 8. szlif (animacje, dostępność, tablet, style z JS) · 9. testy całości.
+1. Design system ✔ (ten dokument) · 2. Podróże ✔ · 3. Bilety ✔ · 4. Plan ✔ · 5. Pakowanie ✔ · 6. Ustawienia ✔ · 7. ekrany dodatkowe · 8. szlif (animacje, dostępność, tablet, style z JS) · 9. testy całości.
 Makieta zatwierdzona przez właściciela: ekran Podróże – nagłówek z powitaniem, karta bieżącej podróży ze zdjęciem i odliczaniem,
 pasek postępu (spakowane / punkty planu / budżet), najbliższy bilet jako odcinek z QR, zadanie przed wyjazdem, nadchodzące
 podróże w poziomym rzędzie, szybkie akcje (Nowa podróż, Z Gmaila, Otwórz wspólną). Decyzje: ciemny turkus do tekstu,
@@ -112,3 +112,13 @@ dwa kroje, zdjęcia bez motywów religijnych, tło ze zdjęć – nowi użytkown
 - Pod listą: przełącznik `.sw` „Ukryj spakowane” (`#pk-hide`) i lista `.list` – Szablony (`#pk-tpl`), Zapisz jako szablon
   (`#pk-save`), Odznacz wszystko (`#pk-reset`); `button.li` = wiersz listy jako przycisk.
 - Szablony: dwie `.list.tpl-box` (Twoje / Gotowe), usuwanie ikoną kosza.
+
+## Ustawienia (etap 6, `settings.js` – trasa `#/ustawienia`)
+- Ekran przeniesiony z `app.js` do `settings.js` (motyw przez `App.applyTheme`). Na górze `.set-head`: ikona aplikacji,
+  „Podróżnik” (Newsreader), liczba podróży · „dane tylko w tym telefonie”.
+- Grupy `.set-group` = etykieta sekcji + `.list`: **Wygląd** (motyw, tło ze zdjęć, język), **Podróżowanie** (nawigacja i mapy
+  z poradą o Chinach / Organic Maps, przypomnienia), **Bezpieczeństwo** (blokada PIN), **Dane** (kopia zapasowa, dane w telefonie
+  z paskiem zajętości), **Integracje** (Gmail – tylko gdy dostępny, APK – tylko w przeglądarce), **O aplikacji** (wersja `#app-version`, tryb offline).
+- Wiersz-link: `.li` z `.li-ico` (turkusowe tło), tytuł, opis, chip stanu (`ok` / `warn`), strzałka. Wiersz z kontrolką `.set-ctl`:
+  przełącznik `.seg` lub lista pod tytułem (`.set-body`, wcięcie 48 px, na ≤ 380 px bez wcięcia). `.seg` z dwoma przyciskami = dwie kolumny.
+- Ostrzeżenia: brak kopii / stara kopia → chip „zrób kopię” i ikona w kolorze ostrzeżenia; powiadomienia wyłączone → chip „wył.”.

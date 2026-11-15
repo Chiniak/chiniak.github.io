@@ -1238,3 +1238,34 @@ button.li { width: 100%; border: 0; border-top: 1px solid var(--line); backgroun
 .tpl-txt b { font-weight: 500; }
 .tpl-del { flex: none; width: 52px; display: grid; place-items: center; border: 0; background: transparent; color: var(--muted); cursor: pointer; }
 .tpl-del .ic { width: 20px; height: 20px; }
+
+/* ---------- Ustawienia (redesign etap 6) ---------- */
+.set-head { display: flex; align-items: center; gap: 14px; margin: 2px 2px 6px; }
+.set-logo { flex: none; width: 52px; height: 52px; border-radius: 16px; box-shadow: var(--shadow); }
+.set-head h2 { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: var(--fs-2xl); line-height: 1.1; }
+.set-head p { margin: 2px 0 0; color: var(--muted); font-size: var(--fs-sm); }
+.set-group .section { margin-top: 26px; }
+.set-group .li { min-height: 60px; }
+.set-group .li-ico { background: var(--accent-soft); color: var(--accent); }
+.set-group .li-main small { overflow-wrap: anywhere; }
+.set-group .li > .chip { flex: none; }
+.set-group .li[data-warn] .li-ico { background: var(--warn-soft); color: var(--warn); }
+.set-ctl, .set-storage { flex-wrap: wrap; row-gap: 10px; padding-bottom: 14px; }
+.set-body { flex-basis: 100%; min-width: 0; padding-left: 48px; }
+.set-body:empty { display: none; }
+.set-body .seg { margin: 0; }
+.set-field { margin: 10px 0 0; }
+.set-field > span { font-size: var(--fs-sm); }
+.set-body .seg + .set-field { margin-top: 12px; }
+.set-info { margin-top: 10px; font-size: var(--fs-sm); color: var(--muted); overflow-wrap: anywhere; }
+.set-info:empty { display: none; }
+.set-btn { margin-top: 10px; min-height: 40px; font-size: var(--fs-sm); }
+.set-btn .ic { width: 18px; height: 18px; }
+.set-kv { display: flex; justify-content: space-between; gap: 12px; padding-top: 8px; font-size: var(--fs-sm); color: var(--muted); }
+.set-kv b { color: var(--text); font-weight: 600; text-align: right; }
+.set-body .bar { margin-top: 2px; }
+.set-val { flex: 0 1 auto; max-width: 55%; font-weight: 600; font-size: var(--fs-sm); color: var(--muted); text-align: right; }
+.set-note { margin: 8px 4px 0; font-size: var(--fs-sm); color: var(--muted); line-height: 1.5; }
+.set-note b, .set-info b { color: var(--text); font-weight: 600; }
+@media (max-width: 380px) { .set-body { padding-left: 0; } }
+.seg:has(> :nth-child(2):last-child) { grid-template-columns: 1fr 1fr; }
