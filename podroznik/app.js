@@ -334,6 +334,11 @@
     if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
     if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(e => console.warn("SW:", e));
     window.addEventListener("hashchange", () => { navCount++; render(); });
+    // linia pod górnym paskiem dopiero po przewinięciu (czystszy nagłówek na górze ekranu)
+    const bar = $(".topbar");
+    const onScroll = () => bar.classList.toggle("scrolled", window.scrollY > 4);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
     window.addEventListener("online", updateOnline);
     window.addEventListener("offline", updateOnline);
     updateOnline();
