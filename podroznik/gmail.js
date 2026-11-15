@@ -16,7 +16,7 @@
   const API = "https://gmail.googleapis.com/gmail/v1/users/me";
   // Identyfikator klienta „Web” z Google Cloud (publiczny – to nie jest hasło). Pusty = w przeglądarce Gmail niedostępny.
   const WEB_CLIENT_ID = "";
-  const SCAN_EVERY = 6 * 3600e3, MAX_MSGS = 120, DAYS_BACK = 400;
+  const SCAN_EVERY = 6 * 3600e3, MAX_MSGS = 100, DAYS_BACK = 400;
 
   const N = () => window.PodroznikNative || {};
   const plugin = () => N().isNative && window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.GoogleAuth;
@@ -29,7 +29,7 @@
     "getyourguide", "klook", "viator", "tiqets", "musement", "headout", "kkday", "civitatis", "eventim", "ticketmaster", "ebilet", "going.",
     "opentable", "thefork", "quandoo", "resy", "baolau", "laos-rail", "12306"];
   const SUBJ = ["rezerwacj", "potwierdzeni", "bilet", "booking", "reservation", "confirmation", "confirmed", "itinerary", "e-ticket", "eticket",
-    "ticket", "voucher", "boarding", "check-in", "odprawa", "zamówieni", "order", "buchung", "reserva", "tour", "wycieczk"];
+    "ticket", "voucher", "boarding", "buchung", "reserva", "wycieczk"];
   const query = () => `newer_than:${DAYS_BACK}d -in:spam -in:trash -in:chats (from:(${FROM.join(" OR ")}) OR subject:(${SUBJ.join(" OR ")}))`;
 
   /* ---------- token dostępu ---------- */
@@ -69,16 +69,30 @@
     });
   }
 
+  /* tempo: Google ma limit zapytań na minutę na użytkownika (od 2026 niższy) – zapytania po kolei, z odstępem;
+     po „quota exceeded / rate limit” czekamy i próbujemy dalej (PACE.tries razy), zamiast przerywać */
+  const PACE = { gap: 400, wait: 65e3, tries: 4 };
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  let nextAt = 0, onWait = null;
   async function api(path, interactive) {
-    const go = async () => fetch(API + path, { headers: { Authorization: `Bearer ${await token(interactive)}` } });
-    let res = await go();
-    if (res.status === 401) { tok = null; res = await go(); }
-    if (!res.ok) {
-      let msg = `Gmail: błąd ${res.status}`;
-      try { const j = await res.json(); if (j.error && j.error.message) msg = `Gmail: ${j.error.message}`; } catch (e) { /* bez treści */ }
-      throw Object.assign(new Error(msg), { status: res.status });
+    for (let attempt = 0, auth = 0; ; attempt++) {
+      const now = Date.now(), at = Math.max(now, nextAt);
+      nextAt = at + PACE.gap;
+      if (at > now) await sleep(at - now);
+      const res = await fetch(API + path, { headers: { Authorization: `Bearer ${await token(interactive)}` } });
+      if (res.ok) return res.json();
+      if (res.status === 401 && !auth++) { tok = null; continue; }
+      let msg = `Gmail: błąd ${res.status}`, reason = "";
+      try { const j = await res.json(); if (j.error) { msg = `Gmail: ${j.error.message || res.status}`; reason = ((j.error.errors || [])[0] || {}).reason || j.error.status || ""; } } catch (e) { /* bez treści */ }
+      const quota = res.status === 429 || (res.status === 403 && /rate|quota|RESOURCE_EXHAUSTED/i.test(`${reason} ${msg}`));
+      if (quota && attempt < PACE.tries) {
+        const w = (+res.headers.get("Retry-After") || 0) * 1000 || PACE.wait;
+        nextAt = Date.now() + w;
+        onWait && onWait(Math.round(w / 1000));
+        continue;
+      }
+      throw Object.assign(new Error(quota ? "Google chwilowo ogranicza liczbę zapytań do Gmaila – reszta maili przy następnym sprawdzeniu" : msg), { status: res.status, quota });
     }
-    return res.json();
   }
 
   /* ---------- treść maila ---------- */
@@ -175,38 +189,44 @@
       if (!cfg) throw new Error("Najpierw połącz konto Google");
       const seen = await DB.getSetting("gmailSeen", {});
       const ids = [];
-      let page = "";
+      let page = "", done = 0, total = 0;
+      onWait = secs => onProgress && onProgress(done, total, secs);
       do {
         const r = await api(`/messages?maxResults=100&q=${encodeURIComponent(query())}${page ? `&pageToken=${page}` : ""}`, interactive);
         (r.messages || []).forEach(m => ids.push(m.id));
         page = r.nextPageToken;
       } while (page && ids.length < MAX_MSGS);
       const todo = ids.slice(0, MAX_MSGS).filter(id => !seen[id]);
-      let done = 0, added = 0;
-      const worker = async () => {
-        while (todo.length) {
-          const id = todo.shift();
+      total = todo.length;
+      let added = 0, stop = null;
+      // po kolei (limit Google); postęp zapisywany co 10 maili – przerwane sprawdzanie nie traci przeczytanych
+      try {
+        for (const id of todo) {
           try {
             const msg = await api(`/messages/${id}?format=full`);
             seen[id] = await extract(msg);
             if (seen[id].s === "new") added++;
-          } catch (e) { if (e.status === 401 || e.status === 403) throw e; console.warn("gmail msg:", e); }
+          } catch (e) {
+            if (e.quota || e.status === 401 || e.status === 403) { stop = e; break; }
+            console.warn("gmail msg:", e);
+          }
           done++;
-          onProgress && onProgress(done, done + todo.length);
+          onProgress && onProgress(done, total);
+          if (done % 10 === 0) await DB.setSetting("gmailSeen", seen);
         }
-      };
-      await Promise.all([worker(), worker(), worker()]);
+      } finally { onWait = null; }
       await markExisting(seen);
       await DB.setSetting("gmailSeen", seen);
-      await DB.setSetting("gmail", { ...cfg, lastScan: Date.now(), error: "" });
-      return { checked: done, found: added };
+      if (stop && !stop.quota) throw stop;
+      await DB.setSetting("gmail", { ...cfg, lastScan: Date.now(), partial: !!stop, error: stop ? stop.message : "" });
+      return { checked: done, found: added, partial: !!stop, left: total - done };
     })();
     try { return await scanning; }
     catch (e) {
       const cfg = await DB.getSetting("gmail", null);
-      if (cfg) await DB.setSetting("gmail", { ...cfg, error: e.message || String(e) });
+      if (cfg) await DB.setSetting("gmail", { ...cfg, error: e.message || String(e), ...(e.quota ? { lastScan: Date.now(), partial: true } : {}) });
       throw e;
-    } finally { scanning = null; }
+    } finally { scanning = null; onWait = null; }
   }
 
   /* to, co już jest w podróżach, nie jest proponowane drugi raz */
@@ -320,7 +340,8 @@
   async function auto() {
     if (!plugin() || !navigator.onLine) return;
     const cfg = await DB.getSetting("gmail", null);
-    if (!cfg || Date.now() - (cfg.lastScan || 0) < SCAN_EVERY) return;
+    // przerwane przez limit Google – ponownie po 10 min, inaczej co 6 h
+    if (!cfg || Date.now() - (cfg.lastScan || 0) < (cfg.partial ? 10 * 60e3 : SCAN_EVERY)) return;
     try {
       const r = await scan({ interactive: false });
       if (r.found && /^#\/podroze\/?$|^#?$/.test(location.hash)) App.render && App.render();
@@ -459,8 +480,11 @@
         async function runScan() {
           scanBtn.disabled = true; prog.textContent = "Szukam maili z rezerwacjami…";
           try {
-            const r = await scan({ interactive: true, onProgress: (d, n) => { prog.textContent = `Czytam maile… ${d}/${n}`; } });
-            App.toast(r.found ? `Nowe propozycje: ${r.found}` : "Brak nowych rezerwacji w mailach");
+            const r = await scan({ interactive: true, onProgress: (d, n, wait) => {
+              prog.textContent = wait ? `Google ogranicza tempo – czekam ${wait} s i czytam dalej (${d}/${n})` : `Czytam maile… ${d}/${n}`;
+              if (self.I18N) prog.textContent = I18N.tr(prog.textContent);
+            } });
+            App.toast(r.partial ? `Przeczytano ${r.checked} maili, reszta (${r.left}) przy następnym sprawdzeniu` : r.found ? `Nowe propozycje: ${r.found}` : "Brak nowych rezerwacji w mailach");
             location.replace(`#/gmail${past ? "?wczesniej=1" : ""}`);
             App.render && App.render();
           } catch (e) {
@@ -515,7 +539,7 @@
     };
   });
 
-  App.Gmail = { available, scan, proposals, newCount, homeCard, auto, connect, disconnect, extract, query, SCOPE };
+  App.Gmail = { PACE, available, scan, proposals, newCount, homeCard, auto, connect, disconnect, extract, query, SCOPE };
   // pierwsze sprawdzenie chwilę po starcie (nie spowalnia otwierania aplikacji)
   setTimeout(() => auto(), 4000);
 })();

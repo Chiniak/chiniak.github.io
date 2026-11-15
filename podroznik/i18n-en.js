@@ -578,4 +578,7 @@ self.I18N_EN = {
   "Nie udało się odczytać adresu e-mail": "Couldn't read the e-mail address", "Brak połączenia z Google": "No connection to Google", "Potrzebne logowanie": "Sign-in needed",
   "Aplikacja nie jest zarejestrowana w Google Cloud (pakiet + odcisk SHA-1)": "The app isn't registered in Google Cloud (package + SHA-1 fingerprint)",
   "Potrzebna zgoda użytkownika": "User consent needed", "Brak internetu": "No internet",
+  "Google ogranicza tempo – czekam {} s i czytam dalej ({}/{})": "Google is limiting the pace – waiting {} s, then reading on ({}/{})",
+  "Przeczytano {} maili, reszta ({}) przy następnym sprawdzeniu": "Read {} e-mails, the rest ({}) at the next check",
+  "Google chwilowo ogranicza liczbę zapytań do Gmaila – reszta maili przy następnym sprawdzeniu": "Google is temporarily limiting Gmail requests – the remaining e-mails at the next check",
 };
