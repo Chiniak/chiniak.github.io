@@ -1,6 +1,29 @@
 # Podróżnik – stan projektu (do kontynuacji w nowej sesji)
 
-Ostatnia aktualizacja: 15 listopada 2026 (koniec sesji) – scalone PR #1–#17 (powiadomienia w aplikacji, APK 2.2.0). Aplikacja na Androida (Capacitor, `podroznik-app/`) + „📬 Z Gmaila” działają na telefonie właściciela (2.1.2 potwierdzone). Zacznij od przeczytania tego pliku, potem `PLAN.md` i `DO-SPRAWDZENIA.md`.
+Ostatnia aktualizacja: 15 listopada 2026 (wieczór) – scalone PR #1–#20. **TRWA REDESIGN „Premium Light” (9 etapów) – zrobione etapy 1–3, NASTĘPNY: ETAP 4 – PLAN.** Zasady wyglądu, tokeny, decyzje właściciela i opis zrobionych ekranów: **`DESIGN.md` – przeczytaj przed każdą zmianą wyglądu.** Zacznij od tego pliku (sekcja „REDESIGN – TU ZACZNIJ” niżej), potem `DESIGN.md`, `PLAN.md` i `DO-SPRAWDZENIA.md`.
+
+## REDESIGN „Premium Light” – TU ZACZNIJ
+- Właściciel 15.11 przysłał pełną specyfikację redesignu (premium, jasny minimalizm, styl magazynu podróżniczego) i zatwierdził
+  projekt (makieta + plan etapów; artefakt „Podróżnik Premium Light” na claude.ai – kopia zasad jest w `DESIGN.md`).
+- Etapy: 1 design system ✔ (PR #18) · 2 ekran Podróże ✔ (PR #18) + automatyczne zdjęcia celu ✔ (PR #19, `covers.js`, t41)
+  · 3 Bilety ✔ (PR #20) · **4 Plan** · 5 Pakowanie · 6 Ustawienia · 7 ekrany dodatkowe (~25: formularze, szczegóły podróży,
+  mapa, Odkrywaj, budżet, rozliczenie, dokumenty, kopia, karty dla kierowcy, rozmówki, offline, Gmail, PIN, okna) ·
+  8 szlif (animacje, dostępność, tablet, usunięcie ~50 stylów `style="…"` z JS, skalowanie czcionki) · 9 testy całości.
+- Specyfikacja etapu 4 (Plan): osobisty asystent podróży – zakres dat, dzień po dniu, czysta pionowa oś czasu, każdy dzień
+  z wyraźną strukturą; karty punktów: zdjęcie, nazwa, adres, godzina, notatka, kategoria, mapa; szybki dostęp do: mapa
+  i trasa, Odkrywaj, karty dla kierowcy, import z biletu/screena; pomysły bez dnia wyraźnie oddzielone; przeciąganie zostaje (t5, t6).
+  Dalej: Pakowanie – postęp, licznik, zadania przed wyjazdem, kategorie z licznikiem, separatory zamiast ciężkich kart,
+  szablony/zakupy/zadania zostają; Ustawienia – grupy Wygląd / Podróżowanie / Bezpieczeństwo / Dane / Integracje / O aplikacji.
+- Sposób pracy (właściciel to akceptuje): jeden etap = jeden PR; przed PR pełna seria testów (w tle, ~15 min, serwer
+  `python3 -m http.server 8765` w katalogu repo; t3 wymaga `python3 podroznik-testy/make-cam.py`; t11 bywa wolny przy
+  obciążeniu – powtórzyć), zrzuty jasny/ciemny/EN/360 px, podbić `CACHE` w `sw.js` (teraz **`podroznik-v45`**), nowe teksty
+  do `i18n-en.js` (t26), `node podroznik-app/scripts/copy-web.js`. Po scaleniu: `git checkout -B claude/travel-planning-app-tl9mvf origin/main`.
+- Właściciel prosi o scalanie sam w czacie („scalaj”) – wtedy scal PR przez GitHub (merge), potem gałąź od nowa od main.
+- APK testowe: `cd podroznik-app && npm run apk` (SDK w /opt/android-sdk już jest), wynik `android/app/build/outputs/apk/debug/app-debug.apk`,
+  wysyłać przez SendUserFile (display: attach), nie commitować. Ostatnie wysłane: **2.3.0 (versionCode 7)** – etapy 1–2 + zdjęcia celu.
+  Przy następnym APK podbij versionCode/versionName w `podroznik-app/android/app/build.gradle`. Etap 3 jeszcze nie był w APK.
+- Właściciel gra czasem w Tibię – prosił, żeby **nie otwierać mu żadnych okien** (bez podglądów/artefaktów otwieranych automatycznie; pliki tylko jako załącznik).
+- Czeka na ocenę właściciela na telefonie: APK 2.3.0 (wygląd, ekran Podróże, zdjęcia celu – czy filtr nie przepuszcza świątyń).
 
 ## Gdzie co jest
 - Repozytorium: `chiniak/chiniak.github.io`, gałąź **`claude/travel-planning-app-tl9mvf`**
