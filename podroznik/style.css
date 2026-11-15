@@ -1529,7 +1529,7 @@ button.li { font-weight: 400; }
 .doc-big-num { font-family: ui-monospace, Menlo, monospace; font-size: var(--fs-2xl); font-weight: 600; letter-spacing: .08em; margin: 8px 0 4px; overflow-wrap: anywhere; user-select: all; }
 .doc-bar { height: 4px; margin-top: 12px; }
 .doc-head.st-soon .doc-bar > i { background: var(--warn-fill); }
-.doc-head + .doc-warn, .doc-warn + .doc-warn { padding: 10px 12px; border-radius: var(--r-ctl); background: var(--warn-soft); margin: 0 0 10px; }
+.doc-head ~ .doc-warn { padding: 10px 12px; border-radius: var(--r-ctl); background: var(--warn-soft); margin: 0 0 10px; }
 .doc-head ~ .doc-warn.err { background: var(--err-soft); }
 .doc-copy { margin-bottom: 12px; }
 .doc-facts { margin: 0; padding: 0; }
