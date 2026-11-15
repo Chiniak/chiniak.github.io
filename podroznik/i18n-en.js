@@ -55,7 +55,7 @@ self.I18N_EN = {
   "jeszcze nie zrobiona": "not made yet", "ostatnia dziś": "last one today", "ostatnia {} {} temu": "last one {} {} ago",
   "Aplikacja na Androida": "Android app", "– pobierz APK (430 KB)": "– download the APK (430 KB)", "O aplikacji": "About",
   "Wersja": "Version", "Tryb offline": "Offline mode", "uruchomi się po ponownym otwarciu": "starts after reopening",
-  "1.2 · etapy 0–11": "1.2 · stages 0–11", "Odcinki i noclegi": "Segments and stays", "Pliki biletów": "Ticket files",
+  "Odcinki i noclegi": "Segments and stays", "Pliki biletów": "Ticket files",
   "Zajęte": "Used", "Ochrona przed usunięciem": "Protected from deletion", "{} z {}": "{} of {}",
   "Język": "Language", "Język / Language": "Language / Język", "Automatycznie (język telefonu)": "Automatic (phone language)",
 
