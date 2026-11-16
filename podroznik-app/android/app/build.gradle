@@ -7,8 +7,8 @@ android {
         applicationId "io.github.chiniak.podroznik"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 14
-        versionName "2.10.0"
+        versionCode 15
+        versionName "2.11.0"
         resValue "string", "app_name", "Podróżnik"
         resValue "string", "title_activity_main", "Podróżnik"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -26,6 +26,21 @@ android {
             keyAlias "test"
             keyPassword "podroznik-test"
         }
+        // prawdziwy klucz (wersja docelowa) – NIGDY w repozytorium; ścieżka i hasło w android/keystore.properties
+        // (plik w .gitignore) albo w zmiennych PODROZNIK_KEYSTORE / PODROZNIK_KEY_PASSWORD
+        release {
+            def props = new Properties()
+            def pf = rootProject.file("keystore.properties")
+            if (pf.exists()) pf.withInputStream { props.load(it) }
+            def store = props.getProperty("storeFile") ?: System.getenv("PODROZNIK_KEYSTORE")
+            def pass = props.getProperty("password") ?: System.getenv("PODROZNIK_KEY_PASSWORD")
+            if (store && pass) {
+                storeFile file(store)
+                storePassword pass
+                keyAlias props.getProperty("keyAlias") ?: "podroznik"
+                keyPassword pass
+            }
+        }
     }
     buildTypes {
         // wersja testowa: instaluje się obok obecnego Podróżnika (inny pakiet, inna nazwa)
@@ -38,6 +53,7 @@ android {
         }
         release {
             minifyEnabled false
+            if (signingConfigs.release.storeFile) signingConfig signingConfigs.release
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }

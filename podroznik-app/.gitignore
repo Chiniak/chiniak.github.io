@@ -11,3 +11,4 @@ android/app/src/main/assets/capacitor.plugins.json
 *.keystore
 *.jks
 !android/app/podroznik-test.keystore
+android/keystore.properties
