@@ -137,6 +137,8 @@
       </div>`;
   };
 
+  // kafelek „Wydatki”: pełne złote bez groszy, waluta mniejsza – żeby kwota mieściła się w 1/3 szerokości (zgłoszone 16.11: „1313,60 P…”)
+  const tileMoney = (n, cur) => `${Math.round(n).toLocaleString(self.I18N ? I18N.locale : "pl-PL")}<span> ${cur}</span>`;
   App.route(/^\/podroze$/, async () => {
     const [trips, segs] = await Promise.all([DB.all("trips"), DB.all("segments")]);
     const segsOf = {};
@@ -210,7 +212,7 @@
           <a class="hm-stat" href="#/plan/${hero.id}"><small>W planie</small>
             <b>${planned}<span> ${plural(planned, "punkt", "punkty", "punktów")}</span></b></a>
           <a class="hm-stat" href="#/budzet/${hero.id}"><small>Wydatki</small>
-            ${bud && bud.spent ? `<b>${App.Budget.money(bud.spent, bud.home)}</b>` : `<b class="hm-none">Budżet</b>`}</a>
+            ${bud && bud.spent ? `<b>${tileMoney(bud.spent, bud.home)}</b>` : `<b class="hm-none">Budżet</b>`}</a>
         </div>`;
     }
 
@@ -539,7 +541,7 @@
           ${pk && pk.total ? `<b>${pk.done}<span> / ${pk.total}</span></b><span class="bar"><i style="width:${ppct}%"></i></span>` : `<b class="hm-none">Dodaj listę</b>`}
           ${pk && pk.todo ? `<em>zadania ${pk.todoDone}/${pk.todo}</em>` : ""}</a>
         ${App.Budget ? `<a class="hm-stat${over ? " over" : ""}" href="#/budzet/${t.id}"><small>Wydatki</small>
-          ${bg && bg.spent ? `<b>${App.Budget.money(bg.spent, bg.home)}</b>` : `<b class="hm-none">Budżet</b>`}
+          ${bg && bg.spent ? `<b>${tileMoney(bg.spent, bg.home)}</b>` : `<b class="hm-none">Budżet</b>`}
           ${bg && bg.budget ? `<em>${over ? "ponad budżet" : `z ${App.Budget.money(bg.budget, bg.home)}`}</em>` : ""}</a>` : ""}
       </div>`;
 
