@@ -190,6 +190,11 @@ Adres (po scaleniu pull requesta): https://chiniak.github.io/podroznik/
 - [ ] Po scaleniu: przełączanie zakładek nie zmienia tła; nowe zdjęcie po ponownym uruchomieniu aplikacji
 - [ ] Ustawienia → Tło → „Nowe zdjęcie”: przy uruchomieniu / co 10 minut / raz dziennie / przy każdej zmianie ekranu
 
+## Dziennik podróży (APK 2.10.0)
+- ⬜ Wpis z ekranu Dziś („Jak minął dzień?”): nastrój, tekst, zdjęcia z aparatu i z galerii
+- ⬜ Lista dni w dzienniku, „Zapisz dziennik ze zdjęciami” (plik HTML otwiera się w przeglądarce), „Udostępnij jako tekst”
+- ⬜ Przypomnienie o 21:00 w dzień podróży bez wpisu
+
 ## Przelicznik walut (APK 2.9.0)
 - ⬜ Waluty podróży rozpoznane (np. VND, THB, USD w Kambodży); „Pobierz aktualne kursy NBP” z internetem
 - ⬜ Bez internetu (tryb samolotowy): przeliczanie działa, ściąga banknotów, liczenie „120000+35000”

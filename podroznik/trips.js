@@ -391,7 +391,7 @@
         if (del) del.addEventListener("click", async () => {
           const segs = await DB.byIndex("segments", "tripId", t.id);
           if (!confirm(`Usunąć podróż „${t.name}”${segs.length ? ` razem z ${segs.length} ${plural(segs.length, "odcinkiem", "odcinkami", "odcinkami")}` : ""}? Tego nie da się cofnąć.`)) return;
-          for (const store of ["segments", "files", "planItems", "packItems", "reminders", "expenses"]) {
+          for (const store of ["segments", "files", "planItems", "packItems", "reminders", "expenses", "journal", "journalPhotos"]) {
             for (const r of await DB.byIndex(store, "tripId", t.id)) await DB.del(store, r.id);
           }
           await DB.del("trips", t.id);
@@ -544,6 +544,7 @@
       </div>`;
 
     // C: narzędzia
+    const jr = App.Journal && t.start <= today ? await App.Journal.summary(id) : null;
     const row = (href, icon, title, desc, extra = "") => `
       <${href ? `a href="${href}"` : `button type="button"`} class="li td-link"${extra}>
         <span class="li-ico">${ic(icon)}</span>
@@ -553,6 +554,7 @@
       <div class="list td-tools">
         ${row(`#/plan/${t.id}`, "plan", "Plan dnia po dniu", "zwiedzanie, jedzenie, mapa")}
         ${t.end >= today ? row(`#/przygotuj/${t.id}`, "cloud", "Przygotuj offline", "mapa, karty, zdjęcia, kursy na zapas") : ""}
+        ${t.start <= today ? row(`#/dziennik/${t.id}`, "edit", "Dziennik podróży", jr && (jr.days || jr.photos) ? `${jr.days} ${plural(jr.days, "dzień opisany", "dni opisane", "dni opisanych")} · ${jr.photos} ${plural(jr.photos, "zdjęcie", "zdjęcia", "zdjęć")}` : "wspomnienia i zdjęcia z każdego dnia") : ""}
         ${row(`#/waluty/${t.id}`, "currency", "Przelicznik walut", "działa offline, kursy na drogę")}
         ${row(`#/udostepnij/${t.id}`, "users", "Udostępnij", "wspólna podróż, plan jako tekst")}
         ${row(null, "bell", "Do kalendarza", "plik .ics z przypomnieniami", ` id="ics-trip"`)}
