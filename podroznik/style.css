@@ -1795,3 +1795,61 @@ button.li { font-weight: 400; }
 .set-link { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; padding: 0; border: 0; background: none; color: var(--accent); font: inherit; font-weight: 600; cursor: pointer; }
 .set-link .ic { width: 16px; height: 16px; }
 @media (max-width: 380px) { .set-bg .set-body { padding-left: 0; } }
+/* ---------- dziennik podróży (journal.js) ---------- */
+.jr-head { margin: 2px 2px 14px; }
+.jr-head h2 { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: var(--fs-3xl); line-height: 1.1; overflow-wrap: anywhere; }
+.jr-head p { margin: 4px 0 0; color: var(--muted); font-size: var(--fs-sm); }
+.jr-list { display: flex; flex-direction: column; gap: 10px; }
+.jr-day { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); color: inherit; text-decoration: none; }
+.jr-day.is-today { box-shadow: var(--shadow); }
+.jr-day.is-empty { background: transparent; border-style: dashed; }
+.jr-day-h { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.jr-n { font-size: var(--fs-cap); font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--accent); }
+.jr-day-h b { font-family: var(--font-display); font-weight: 500; font-size: var(--fs-lg); }
+.jr-day-h b::first-letter { text-transform: uppercase; }
+.jr-mood { margin-left: auto; font-size: var(--fs-xl); line-height: 1; }
+.jr-txt { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-line; font-size: var(--fs-body); }
+.jr-add { display: flex; align-items: center; gap: 6px; color: var(--accent); font-size: var(--fs-sm); font-weight: 600; }
+.jr-thumbs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; position: relative; }
+.jr-thumbs img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--r-sm); background: var(--surface-2); }
+.jr-more { position: absolute; right: 0; bottom: 0; width: calc(25% - 4.5px); aspect-ratio: 1; display: grid; place-items: center; border-radius: var(--r-sm); background: rgba(0,0,0,.45); color: #fff; font-weight: 600; }
+.jr-tools { margin-top: 16px; }
+.jr-tools button.li { width: 100%; border-left: 0; border-right: 0; border-bottom: 0; background: none; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.jr-tools button.li:first-child { border-top: 0; }
+.jr-tools .li-ico, .dz-journal .li-ico { background: var(--accent-soft); color: var(--accent); }
+.jr-dhead { margin-bottom: 10px; }
+.jr-moods { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.jr-mood-opt input { position: absolute; opacity: 0; pointer-events: none; }
+.jr-mood-opt span { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 2px; border-radius: var(--r-ctl); border: 1px solid var(--line); background: var(--surface); cursor: pointer; }
+.jr-mood-opt b { font-size: var(--fs-2xl); line-height: 1.1; font-weight: 400; filter: grayscale(.6); opacity: .75; }
+.jr-mood-opt small { font-size: min(var(--fs-cap), 3vw); color: var(--muted); white-space: nowrap; }
+.jr-mood-opt input:checked + span { background: var(--accent-soft); border-color: var(--accent-fill); }
+.jr-mood-opt input:checked + span b { filter: none; opacity: 1; }
+.jr-mood-opt input:checked + span small { color: var(--accent); font-weight: 600; }
+.jr-mood-opt input:focus-visible + span { outline: 2px solid var(--text); outline-offset: 2px; }
+.jr-text textarea { display: block; width: 100%; margin-top: 12px; min-height: 180px; padding: 14px 16px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface); color: var(--text); font-family: var(--font-display); font-size: var(--fs-lg); line-height: 1.55; resize: vertical; box-sizing: border-box; }
+.jr-text textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.jr-saved { min-height: 18px; margin: 4px 4px 0; font-size: var(--fs-cap); color: var(--muted); text-align: right; }
+.jr-photos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.jr-ph { position: relative; display: block; aspect-ratio: 1; padding: 0; border: 0; border-radius: var(--r-sm); overflow: hidden; background: var(--surface-2); cursor: pointer; }
+.jr-ph img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.jr-ph-add { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border: 1px dashed var(--line); background: transparent; color: var(--accent); font-size: var(--fs-cap); font-weight: 600; text-align: center; }
+.jr-ph-add .ic { width: 24px; height: 24px; }
+.jr-facts { margin-top: 16px; padding: 4px 14px; border-radius: var(--radius); background: var(--surface-2); }
+.jr-facts summary { display: flex; align-items: center; gap: 8px; min-height: 44px; list-style: none; cursor: pointer; font-size: var(--fs-sm); font-weight: 600; color: var(--muted); }
+.jr-facts summary::-webkit-details-marker { display: none; }
+.jr-facts summary .pl-sum-chev { margin-left: auto; transition: transform .15s; }
+.jr-facts[open] summary .pl-sum-chev { transform: rotate(90deg); }
+.jr-facts ul { margin: 0; padding: 0 0 10px; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.jr-facts li { display: flex; align-items: center; gap: 8px; font-size: var(--fs-sm); }
+.jr-facts li b { width: 44px; flex: none; font-variant-numeric: tabular-nums; display: inline-flex; }
+.jr-facts li > span:last-child { min-width: 0; overflow-wrap: anywhere; }
+.jr-viewer { position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column; background: #000; }
+.jr-viewer[hidden] { display: none; }
+.jr-viewer img { flex: 1; min-height: 0; width: 100%; object-fit: contain; }
+.jr-viewer-bar { display: flex; gap: 8px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); }
+.jr-viewer-bar .btn { flex: 1; background: #222; color: #fff; border-color: #333; }
+.dz-journal { display: flex; align-items: center; gap: 12px; margin-top: 16px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); color: inherit; text-decoration: none; }
+.dz-journal .li-ico { font-size: var(--fs-xl); }
+.dz-journal > .ic:last-child { width: 18px; height: 18px; color: var(--faint); }
+.dz-journal small { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }

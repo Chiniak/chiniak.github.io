@@ -179,6 +179,19 @@
         </form>`;
     }
 
+    // ---------- dziennik (journal.js) – dziś albo dzień z przeszłości ----------
+    if (App.Journal && day <= today) {
+      const je = await App.Journal.entry(id, day), jm = je && App.Journal.moodOf(je.mood), jt = je && (je.text || "").trim();
+      const nPh = (await DB.byIndex("journalPhotos", "tripId", id)).filter(p => p.date === day).length;
+      html += `
+        <a class="dz-journal" href="#/dziennik/${id}/${day}">
+          <span class="li-ico" aria-hidden="true">${jm ? jm[1] : I("edit")}</span>
+          <span class="li-main"><b>${jt || jm || nPh ? "Dziennik" : isToday ? "Jak minął dzień?" : "Dziennik tego dnia"}</b>
+            <small>${jt ? esc(jt.slice(0, 90)) + (jt.length > 90 ? "…" : "") : nPh ? `${nPh} ${plural(nPh, "zdjęcie", "zdjęcia", "zdjęć")}` : "zapisz wspomnienia i zdjęcia"}</small></span>
+          ${I("chev")}
+        </a>`;
+    }
+
     // ---------- skróty ----------
     const tool = (href, ico, name) => `<a class="plan-link pl-tool" href="${href}"><i aria-hidden="true">${I(ico)}</i><span>${name}</span></a>`;
     html += `<div class="pl-tools dz-tools">

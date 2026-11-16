@@ -237,6 +237,15 @@ dwa kroje, zdjęcia bez motywów religijnych, tło ze zdjęć – nowi użytkown
   „+ Dodaj walutę”, uwaga o kursie średnim. Wejścia: kafelek „Waluty” na ekranie Dziś (kafelki 3 × 2), wiersz w podróży, link w budżecie,
   krok „Kursy walut” w Przygotuj offline.
 
+## Dziennik podróży (`journal.js`)
+- Lista `#/dziennik/:id` (tytuł „Dziennik”): nazwa podróży w Newsreader + „N dni opisanych z M · K zdjęć”; karty dni `.jr-day` od najnowszego
+  (etykieta „DZIŚ · DZIEŃ N” w turkusie, data w Newsreader, nastrój emoji po prawej, 3 linie tekstu, miniatury 4 w rzędzie + „+N”);
+  dzień pusty = przerywana ramka i „Dopisz wspomnienie”; dziś z cieniem. Pod listą `.list.jr-tools`: pamiątka HTML ze zdjęciami, tekst.
+- Dzień `#/dziennik/:id/:data`: nagłówek jak na ekranie Dziś (strzałki, „DZIEŃ N Z M”), nastrój `.jr-moods` – 5 kafelków (emoji wyszarzone,
+  wybrane w kolorze na `--accent-soft`), tekst w Newsreader 17 px (`.jr-text`, zapis po 0,7 s i przy wyjściu, „Zapisane”), zdjęcia `.jr-photos`
+  3 w rzędzie + kafelek „Dodaj zdjęcia” (przerywana ramka), podgląd `.jr-viewer` czarny pełny ekran, „Co było w planie – podpowiedź”
+  `.jr-facts` (szare `details`, rozwinięte, gdy brak tekstu). Na ekranie Dziś karta `.dz-journal` („Jak minął dzień?” / fragment wpisu).
+
 ## Testy całości (etap 9)
 - Przegląd automatyczny: 38 ekranów × 5 wariantów (jasny, ciemny, angielski, 360 px, tablet 1024 px) – bez błędów JS w konsoli,
   bez elementów wychodzących poza ekran, bez poziomego przewijania; zrzuty obejrzane ręcznie.

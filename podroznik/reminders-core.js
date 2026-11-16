@@ -44,6 +44,7 @@
     packDays: 2,   // przypomnienie o pakowaniu N dni przed wyjazdem o 18:00 (0 = wył.)
     todos: true,   // zadania „przed wyjazdem” z terminem – o 9:00 w dniu terminu
     plan: 0,       // punkty planu z godziną – minut przed (0 = wył.)
+    journal: true, // dziennik – o 21:00 w dni podróży, gdy dzień nie jest jeszcze opisany
     visa: true,    // wizy i zezwolenia (visas.js) – N dni przed przylotem do kraju, o 10:00
     backup: true,  // kopia zapasowa poza telefonem – 3 dni przed wyjazdem o 18:00, jeśli od ostatniej kopii coś się zmieniło
   };
@@ -51,7 +52,7 @@
   function config(saved) {
     const c = JSON.parse(JSON.stringify(DEFAULTS));
     if (!saved) return c;
-    for (const k of ["enabled", "packDays", "todos", "plan", "backup", "visa"]) if (k in saved) c[k] = saved[k];
+    for (const k of ["enabled", "packDays", "todos", "plan", "backup", "visa", "journal"]) if (k in saved) c[k] = saved[k];
     if (saved.types) for (const t in c.types) Object.assign(c.types[t], saved.types[t] || {});
     return c;
   }
@@ -140,6 +141,17 @@
           title: `${name} traci ważność ${leftTxt}`, body: `Ważny do ${fmtDay(d.expires)}. Sprawdź, ile trwa wyrobienie nowego.` });
       }
     }
+    // dziennik: wieczorem w dni podróży, jeśli dzień nie ma jeszcze wpisu (journal.js; zdjęć tu nie czytamy – osobny magazyn)
+    if (cfg.journal && data.journal) for (const t of data.trips) {
+      if (t.end < now.slice(0, 10)) continue;
+      const done = new Set(data.journal.filter(e => e.tripId === t.id && ((e.text || "").trim() || e.mood)).map(e => e.date));
+      for (let d = t.start; d <= t.end; d = fmtLocal(new Date(parse(d).getTime() + 86400000 * 1.5)).slice(0, 10)) {
+        if (done.has(d)) continue;
+        const next = fmtLocal(new Date(parse(d).getTime() + 86400000 * 1.5)).slice(0, 10);
+        out.push({ id: `journal:${t.id}:${d}`, tripId: t.id, href: `/dziennik/${t.id}/${d}`, at: `${d}T21:00`, eventAt: `${next}T10:00`,
+          title: "Jak minął dzień?", body: `Zapisz kilka zdań i zdjęcia w dzienniku – „${t.name}”.` });
+      }
+    }
     // wizy i zezwolenia na wjazd (visas.js; w service workerze wczytany przez importScripts)
     if (cfg.visa && root.Visas) out.push(...root.Visas.reminders(data, now.slice(0, 10)));
     return out.sort((a, b) => a.at.localeCompare(b.at));
@@ -148,7 +160,7 @@
   // najnowsza zmiana danych (ISO) – podróże, odcinki, bilety, plan, dokumenty, wydatki (pakowanie pomijamy – zmienia się ciągle)
   function newestChange(data) {
     let max = "";
-    for (const k of ["trips", "segments", "files", "planItems", "docs", "expenses"])
+    for (const k of ["trips", "segments", "files", "planItems", "docs", "expenses", "journal"])
       for (const r of data[k] || []) { const u = r.updated || r.created || ""; if (u > max) max = u; }
     return max;
   }
@@ -172,11 +184,11 @@
 
   async function load() {
     if (root.Visas) await root.Visas.ready(); // lista lotnisk (kraj przylotu)
-    const [trips, segments, packItems, planItems, docs, files, expenses, saved, lastBackup] = await Promise.all([
-      DB.all("trips"), DB.all("segments"), DB.all("packItems"), DB.all("planItems"), DB.all("docs"), DB.all("files"), DB.all("expenses"),
+    const [trips, segments, packItems, planItems, docs, files, expenses, journal, saved, lastBackup] = await Promise.all([
+      DB.all("trips"), DB.all("segments"), DB.all("packItems"), DB.all("planItems"), DB.all("docs"), DB.all("files"), DB.all("expenses"), DB.all("journal"),
       DB.getSetting("reminders", null), DB.getSetting("lastBackup", null)]);
     const cfg = config(saved);
-    return { cfg, list: cfg.enabled ? compute({ trips, segments, packItems, planItems, docs, files, expenses, lastBackup }, cfg) : [] };
+    return { cfg, list: cfg.enabled ? compute({ trips, segments, packItems, planItems, docs, files, expenses, journal, lastBackup }, cfg) : [] };
   }
 
   // pokazuje przypomnienia, których czas właśnie minął (i jeszcze nie były pokazane); zwraca wszystkie aktywne
