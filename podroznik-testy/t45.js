@@ -99,6 +99,7 @@ const SP = process.argv[2];
   if (dl) {
     const f = path.join(SP, await dl.suggestedFilename()); await dl.saveAs(f);
     const html = require('fs').readFileSync(f, 'utf8');
+    require('fs').unlinkSync(f); // plik testowy – nie zostawiamy w repozytorium
     ok(/^dziennik-gruzja\.html$/.test(dl.suggestedFilename()) && /Rano spacer/.test(html) && /Pociąg do Batumi/.test(html) && (html.match(/<img src="data:image\/jpeg/g) || []).length === 1 && /😍/.test(html), 'pamiątka HTML: tekst, nastrój, zdjęcie wbudowane');
   } else ok(false, 'pamiątka HTML: brak pobrania');
   // tekst (schowek)
