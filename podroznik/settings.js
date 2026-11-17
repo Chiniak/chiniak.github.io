@@ -15,6 +15,14 @@
   App.route(/^\/ustawienia$/, async () => {
     const theme = await DB.getSetting("theme", "auto");
     const startScreen = App.Today ? await App.Today.startScreen() : "podroze";
+    // obywatelstwo – do wiz (visas.js); lista paszportów z bazy światowej
+    let cit = "PL", citOpts = [["PL", "Polska"]];
+    if (self.Visas) {
+      await Visas.ready();
+      cit = Visas.citizen();
+      const all = self.VISA_WORLD ? Object.keys(VISA_WORLD.rows) : ["PL"];
+      citOpts = all.map(cc => [cc, Visas.name(cc)]).sort((a, b) => a[1].localeCompare(b[1], self.I18N && I18N.lang === "en" ? "en" : "pl"));
+    }
     const [last, lock] = await Promise.all([DB.getSetting("lastBackup", null), DB.getSetting("lock", null)]);
     const age = last ? Math.floor((Date.now() - new Date(last.at)) / 86400000) : null;
     const backupTxt = !last ? "jeszcze nie zrobiona" : age === 0 ? "ostatnia dziś" : `ostatnia ${age} ${App.plural(age, "dzień", "dni", "dni")} temu`;
@@ -50,6 +58,7 @@
     const travel = group("Podróżowanie",
       pick("navigate", "Nawigacja", "nav-app", [["google", "Mapy Google"], ["geo", "Inna aplikacja"], ["amap", "Amap (Chiny)"]], App.navApp,
         App.navApp === "geo" ? "np. Organic Maps – mapy offline" : App.navApp === "amap" ? "高德 – w Chinach Google nie działa" : "") +
+      pick("passport", "Obywatelstwo", "cit-sel", citOpts, cit, "paszport – do informacji o wizach") +
       pick("trips", "Start w trakcie podróży", "start-sel", [["dzis", "Dziś"], ["podroze", "Podróże"]], startScreen) +
       link("#/ustawienia/przypomnienia", "bell", "Przypomnienia i kalendarz", notifyOn ? "powiadomienia włączone" : "ustaw powiadomienia",
         notifyOn ? "" : chip("wył.", "warn")));
@@ -79,6 +88,13 @@
           location.reload(); // tłumaczenie całego ekranu od nowa
         };
         v.querySelector("#nav-app").onchange = async e => { App.navApp = e.target.value; await DB.setSetting("navApp", App.navApp); App.toast("Zapisano"); App.render(); };
+        const citSel = v.querySelector("#cit-sel");
+        if (citSel) citSel.onchange = async e => {
+          await DB.setSetting("citizenship", e.target.value);
+          if (self.Visas) Visas.setCitizen(e.target.value);
+          if (App.Reminders && App.Reminders.syncNative) App.Reminders.syncNative();
+          App.toast("Zapisano");
+        };
         v.querySelector("#start-sel").onchange = async e => { await DB.setSetting("startScreen", e.target.value); App.toast("Zapisano"); };
         showStorage(v);
         const bgInfo = async () => {

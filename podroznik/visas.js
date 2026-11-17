@@ -1,4 +1,7 @@
-/* Podróżnik – wizy i zezwolenia na wjazd (polski paszport).
+/* Podróżnik – wizy i zezwolenia na wjazd.
+   Obywatelstwo z ustawienia „citizenship” (domyślnie PL). Polski paszport: ręczna tabela D (sprawdzona, z linkami i wyjątkami czasowymi),
+   kraje spoza D – z bazy światowej. Inne paszporty: baza światowa lib/visa-world.js (Passport Index, MIT), a nazwy zezwoleń i oficjalne
+   strony brane z D, gdy rodzaj się zgadza (ESTA, eTA, TDAC…). Obywatele UE/EOG w krajach UE – „eu” (dowód osobisty).
    Ten plik działa i w aplikacji, i w service workerze (przypomnienia w tle) – bez DOM i bez App.
    Kraje podróży (offline): lotniska przylotu i wylotu (kody IATA, lib/airports.js), cel i nazwa podróży, noclegi (nazwa, adres),
    stacje / porty innych odcinków, miejsca z planu – po nazwach krajów (pl, en) i większych miast. Przesiadka (< 24 h na lotnisku,
@@ -79,6 +82,37 @@
   };
   for (const cc of "AT BE BG HR CY CZ DK EE FI FR DE GR HU IE IT LV LT LU MT NL PT RO SK SI ES SE IS LI NO CH AD MC SM VA PF NC".split(" ")) D[cc] = ["eu", 0];
   const HOME = "PL";
+  const EU_SET = new Set("AT BE BG HR CY CZ DK EE FI FR DE GR HU IE IT LV LT LU MT NL PT RO SK SI ES SE IS LI NO CH PL".split(" "));
+  let CIT = HOME; // obywatelstwo (paszport) – ustawia ready() z DB albo setCitizen()
+  const setCitizen = cc => { cc = String(cc || HOME).toUpperCase(); if (cc !== CIT) { CIT = cc; matcher = null; } };
+  const citizen = () => CIT;
+
+  /* baza światowa (lib/visa-world.js) → wiersz w formacie D */
+  let WORLD = null;
+  function world() {
+    if (WORLD) return WORLD;
+    const W = root.VISA_WORLD;
+    if (!W) return null;
+    const dest = W.dest.split(","), rows = {};
+    WORLD = { dest, rows, has: cc => dest.includes(cc), row(p, cc) {
+      if (!rows[p]) { const r = W.rows[p]; if (!r) return null; rows[p] = Object.fromEntries(r.split(",").map((t, i) => [dest[i], t])); }
+      return rows[p][cc];
+    } };
+    return WORLD;
+  }
+  const W_KIND = { f: "free", o: "voa", t: "eta", e: "evisa", r: "visa", n: "check" };
+  function rowFor(cc) {
+    if (CIT === HOME && D[cc]) return D[cc];
+    if (EU_SET.has(CIT) && (EU_SET.has(cc) || (D[cc] && D[cc][0] === "eu"))) return ["eu", 0];
+    const w = world(), tok = w && w.row(CIT, cc);
+    if (!tok || tok === "-") return null;
+    const days = /^\d+$/.test(tok) ? +tok : 0, kind = days ? "free" : W_KIND[tok] || "check";
+    const d = CIT === HOME ? null : D[cc]; // nazwa zezwolenia i oficjalna strona z polskiej tabeli, gdy pasuje
+    if (tok === "n") return ["check", 0, "brak wjazdu dla tego paszportu"];
+    if (d && kind === "free" && d[0] === "form") return ["form", days, d[2], d[3]];
+    if (d && d[0] === kind && kind !== "free") return [kind, days, d[2] || "", d[3] || "", "", kind === "eta" && !!d[5]];
+    return [kind, days];
+  }
 
   // ile dni przed przylotem przypomnieć (i jeszcze raz bliżej)
   const LEAD = { eta: [30, 7], evisa: [45, 14], visa: [75, 30], voa: [14], form: [3], check: [30, 7] };
@@ -107,7 +141,8 @@
     KZ: "almaty|astana", RU: "moskwa|moscow|petersburg", BY: "minsk|bialorus", UA: "kijow|kyiv|lwow|lviv|odessa", SC: "mahe|praslin|la digue",
     CV: "cabo verde|cape verde|zielonego przyladka", MU: "mauritius", IS: "reykjavik", NO: "oslo|bergen|tromso",
   };
-  const NO_EN = new Set(["GE", "JO"]); // „Georgia” = też stan USA, „Jordan” = imię
+  const NO_EN = new Set(["GE", "JO", "TD"]); // „Georgia” = też stan USA, „Jordan” = imię, „Chad” = imię
+  const NO_TEXT = new Set(["ML", "DM"]); // „Mali” = „mali” (mały), „Dominika” = imię – tylko z lotnisk albo ręcznie
   const norm = s => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/ł/g, "l").replace(/Ł/g, "L").toLowerCase();
   let dnPl = null, dnEn = null;
   try { dnPl = new Intl.DisplayNames(["pl"], { type: "region" }); dnEn = new Intl.DisplayNames(["en"], { type: "region" }); } catch (e) { /* stara przeglądarka */ }
@@ -120,7 +155,9 @@
   function textCountries(text) {
     if (!matcher) {
       matcher = [];
-      for (const cc of Object.keys(D).concat(HOME)) {
+      const w = world(), all = new Set(Object.keys(D).concat(HOME, w ? w.dest : []));
+      for (const cc of all) {
+        if (NO_TEXT.has(cc)) continue;
         const words = new Set((ALIAS[cc] || "").split("|").filter(Boolean));
         if (dnPl) { words.add(norm(name(cc, "pl"))); if (!NO_EN.has(cc)) words.add(norm(name(cc, "en"))); }
         if (NAME_FIX[cc]) words.add(norm(NAME_FIX[cc]));
@@ -147,13 +184,18 @@
     for (let i = m.length - 1; i >= 0; i--) if (AIR.has(m[i])) return AIR.get(m[i]);
     return null;
   }
+  const load = src => new Promise(res => {
+    const el = document.createElement("script");
+    el.src = src; el.onload = res; el.onerror = res;
+    document.head.appendChild(el);
+  });
   async function ready() {
-    if (root.AIRPORT_DATA || typeof document === "undefined") return;
-    await new Promise(res => {
-      const el = document.createElement("script");
-      el.src = "lib/airports.js"; el.onload = res; el.onerror = res;
-      document.head.appendChild(el);
-    });
+    try { if (root.DB) setCitizen(await DB.getSetting("citizenship", HOME)); } catch (e) { /* zostaje PL */ }
+    if (typeof document === "undefined") return; // service worker – pliki z importScripts
+    const todo = [];
+    if (!root.AIRPORT_DATA) todo.push(load("lib/airports.js"));
+    if (!root.VISA_WORLD) todo.push(load("lib/visa-world.js").then(() => { matcher = null; }));
+    await Promise.all(todo);
   }
 
   const day = s => String(s || "").slice(0, 10);
@@ -166,7 +208,7 @@
   function detect(trip, segs = [], items = []) {
     const seen = {};
     const note = (cc, at, how) => {
-      if (!cc || cc === HOME) return;
+      if (!cc || cc === CIT) return;
       const s = seen[cc] || (seen[cc] = { arrive: null, leave: null, text: false, stay: false, air: false });
       if (at && (!s.arrive || at < s.arrive)) s.arrive = at;
       s[how] = true;
@@ -206,7 +248,7 @@
     const out = [];
     for (const [cc, s] of Object.entries(seen)) {
       if ((V.skip || []).includes(cc)) continue;
-      const row = D[cc];
+      const row = rowFor(cc);
       if (!row) { out.push({ cc, name: name(cc), kind: "unknown", arrive: s.arrive || trip.start, manual: (V.add || []).includes(cc) }); continue; }
       const [kind, days, permit = "", url = "", until = "", transitNeeds = false] = row;
       if (kind === "eu") continue;
@@ -262,5 +304,12 @@
     return out;
   }
 
-  root.Visas = { detect, countries, D, AS_OF, MSZ, LEAD, KIND_TXT, analyze, needsAction, reminders, textCountries, name, ready, airCC };
+  // kraje do ręcznego dodania w podróży (bez UE dla obywateli UE i bez własnego kraju)
+  function addable() {
+    const w = world();
+    return [...new Set(Object.keys(D).concat(w ? w.dest : []))].filter(cc => cc !== CIT && rowFor(cc) && rowFor(cc)[0] !== "eu");
+  }
+  const worldAsOf = () => (root.VISA_WORLD && root.VISA_WORLD.asOf) || "";
+
+  root.Visas = { detect, countries, D, AS_OF, setCitizen, citizen, rowFor, addable, worldAsOf, EU_SET, MSZ, LEAD, KIND_TXT, analyze, needsAction, reminders, textCountries, name, ready, airCC };
 })(self);

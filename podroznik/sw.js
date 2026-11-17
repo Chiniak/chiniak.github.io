@@ -2,9 +2,9 @@
    Pliki aplikacji: najpierw sieć (aktualizacje od razu), zapisana kopia gdy brak internetu.
    Przy każdej zmianie plików podbij numer CACHE. Dane użytkownika są w IndexedDB, nie tutaj. */
 // baza i wyliczanie przypomnień – do sprawdzania w tle (Periodic Background Sync)
-importScripts("i18n-en.js", "i18n.js", "db.js", "lib/airports.js", "visas.js", "reminders-core.js");
+importScripts("i18n-en.js", "i18n.js", "db.js", "lib/airports.js", "lib/visa-world.js", "visas.js", "reminders-core.js");
 
-const CACHE = "podroznik-v62";
+const CACHE = "podroznik-v63";
 const APP = [
   "./", "./index.html", "./style.css", "./i18n-en.js", "./i18n.js", "./native.js", "./db.js", "./app.js", "./trips.js", "./manifest.webmanifest",
   "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png", "./tickets.js", "./plan.js", "./pack.js", "./reminders-core.js", "./reminders.js", "./backup.js", "./lock.js", "./docs.js", "./budget.js", "./stats.js", "./weather.js", "./email.js", "./places.js", "./discover.js", "./split.js", "./share.js", "./offline.js", "./phrases.js", "./photos.js", "./backdrop.js", "./prep.js", "./ocr.js", "./gmail.js", "./icons.js", "./covers.js", "./settings.js", "./dzis.js", "./visas.js", "./waluty.js", "./journal.js",
@@ -12,7 +12,7 @@ const APP = [
   "./lib/fonts/plus-jakarta-sans-latin-wght-normal.woff2", "./lib/fonts/plus-jakarta-sans-latin-ext-wght-normal.woff2", "./lib/fonts/plus-jakarta-sans-vietnamese-wght-normal.woff2",
   "./lib/fonts/newsreader-latin-500-normal.woff2", "./lib/fonts/newsreader-latin-ext-500-normal.woff2", "./lib/fonts/newsreader-vietnamese-500-normal.woff2",
   // biblioteki do biletów – od razu w pamięci, żeby działały offline także za pierwszym razem
-  "./lib/pdf.min.js", "./lib/pdf.worker.min.js", "./lib/bwip-js.min.js", "./lib/zxing.min.js", "./lib/airports.js", "./lib/world.js", "./lib/leaflet.js", "./lib/leaflet.css", "./lib/images/layers.png", "./lib/images/layers-2x.png",
+  "./lib/pdf.min.js", "./lib/pdf.worker.min.js", "./lib/bwip-js.min.js", "./lib/zxing.min.js", "./lib/airports.js", "./lib/visa-world.js", "./lib/world.js", "./lib/leaflet.js", "./lib/leaflet.css", "./lib/images/layers.png", "./lib/images/layers-2x.png",
 ];
 
 self.addEventListener("install", e => {

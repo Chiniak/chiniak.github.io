@@ -598,14 +598,15 @@
   async function visaPanel(t, segs, plan) {
     await Visas.ready();
     const list = Visas.analyze(t, segs, plan, await DB.all("docs"));
+    const cit = Visas.citizen();
     const daysTxt = n => `${n} ${plural(n, "dzień", "dni", "dni")}`;
     const info = v => {
       const p = v.permit;
       return {
-        free: `Bez wizy do ${daysTxt(v.days)}`,
-        form: `Bez wizy do ${daysTxt(v.days)} · ${p} – online najwcześniej 3 dni przed przylotem`,
-        eta: `${p} – złóż online przed wylotem${v.transit ? " · także przy samej przesiadce" : ""}`,
-        evisa: `${p} – złóż online z wyprzedzeniem`,
+        free: v.days ? `Bez wizy do ${daysTxt(v.days)}` : "Bez wizy",
+        form: `${v.days ? `Bez wizy do ${daysTxt(v.days)}` : "Bez wizy"} · ${p} – online najwcześniej 3 dni przed przylotem`,
+        eta: `${p || "Zezwolenie elektroniczne"} – złóż online przed wylotem${v.transit ? " · także przy samej przesiadce" : ""}`,
+        evisa: `${p || "E-wiza"} – złóż online z wyprzedzeniem`,
         voa: `Wiza na lotnisku albo wcześniej online${p ? ` (${p})` : ""}`,
         visa: `${p || "Wiza z ambasady"} – zacznij załatwiać wcześnie`,
         check: `Zasady czasowe albo niepewne${p ? ` (${p})` : ""} – sprawdź przed wyjazdem`,
@@ -637,16 +638,20 @@
           </span>
         </div>`;
     }).join("");
-    const opts = Object.keys(Visas.D).filter(cc => Visas.D[cc][0] !== "eu" && !list.some(v => v.cc === cc))
+    const opts = Visas.addable().filter(cc => !list.some(v => v.cc === cc))
       .map(cc => [cc, Visas.name(cc)]).sort((a, b) => a[1].localeCompare(b[1], "pl"))
       .map(([cc, n]) => `<option value="${cc}">${esc(n)}</option>`).join("");
     const todo = list.filter(Visas.needsAction).length;
     return `
       <div class="sec-h td-sec"><h2 class="section">Wjazd i wizy</h2>${todo ? `<span class="chip warn">${todo} do zrobienia</span>` : list.length ? `<span class="chip ok">w porządku</span>` : ""}</div>
-      ${rows ? `<div class="list vz-list">${rows}</div>` : `<p class="f-hint vz-none">Nie rozpoznano kraju poza Unią Europejską – dodaj go niżej, jeśli trzeba.</p>`}
+      ${rows ? `<div class="list vz-list">${rows}</div>` : `<p class="f-hint vz-none">${Visas.EU_SET.has(cit) ? "Nie rozpoznano kraju poza Unią Europejską – dodaj go niżej, jeśli trzeba." : "Nie rozpoznano kraju podróży – dodaj go niżej, jeśli trzeba."}</p>`}
       <label class="vz-add"><span class="sr">Dodaj kraj</span><select id="vz-add"><option value="">+ Dodaj kraj</option>${opts}</select></label>
-      <p class="vz-src">${ic("info", "sm")}<span>Polski paszport, dane orientacyjne (stan: ${Visas.AS_OF}). Przepisy się zmieniają – przed wyjazdem sprawdź
-        <a href="${Visas.MSZ}" target="_blank" rel="noopener">MSZ: Informacje dla podróżujących</a>. Wnioski składaj tylko na oficjalnych stronach.</span></p>`;
+      ${cit === "PL" ? `<p class="vz-src">${ic("info", "sm")}<span>Polski paszport, dane orientacyjne (stan: ${Visas.AS_OF}). Przepisy się zmieniają – przed wyjazdem sprawdź
+        <a href="${Visas.MSZ}" target="_blank" rel="noopener">MSZ: Informacje dla podróżujących</a>. Wnioski składaj tylko na oficjalnych stronach.
+        <a href="#/ustawienia">Inne obywatelstwo?</a></span></p>`
+      : `<p class="vz-src">${ic("info", "sm")}<span>Paszport: <b translate="no">${esc(Visas.name(cit))}</b>. Dane orientacyjne z Passport Index (stan: ${dmy(Visas.worldAsOf() || "2026-02-17")}).
+        Przepisy się zmieniają – przed wyjazdem sprawdź na stronie MSZ swojego kraju albo ambasady kraju docelowego. Wnioski składaj tylko na oficjalnych stronach.
+        <a href="#/ustawienia">Zmień obywatelstwo</a></span></p>`}`;
   }
   function bindVisas(view, t) {
     const save = async fn => {

@@ -753,4 +753,15 @@ self.I18N_EN = {
   "Zapisz kilka zdań i zdjęcia w dzienniku – „{}”.": "Write a few lines and add photos to the journal – “{}”.",
   "Poprzedni dzień: {}": "Previous day: {}",
   "Polityka prywatności": "Privacy Policy", "dane zostają na telefonie": "your data stays on the phone",
+  "Obywatelstwo": "Citizenship", "paszport – do informacji o wizach": "passport – for visa information",
+  "Bez wizy": "No visa", "Bez wizy · {} – online najwcześniej 3 dni przed przylotem": "No visa · {} – online no earlier than 3 days before arrival",
+  "E-wiza – złóż online z wyprzedzeniem": "E-visa – apply online well in advance",
+  "Zezwolenie elektroniczne – złóż online przed wylotem": "Electronic authorisation – apply online before departure",
+  "Zezwolenie elektroniczne – złóż online przed wylotem · także przy samej przesiadce": "Electronic authorisation – apply online before departure · also for a transit only",
+  "Nie rozpoznano kraju podróży – dodaj go niżej, jeśli trzeba.": "No destination country recognised – add it below if needed.",
+  "Inne obywatelstwo?": "Different citizenship?", "Paszport:": "Passport:", "Zmień obywatelstwo": "Change citizenship",
+  ". Dane orientacyjne z Passport Index (stan: {}). Przepisy się zmieniają – przed wyjazdem sprawdź na stronie MSZ swojego kraju albo ambasady kraju docelowego. Wnioski składaj tylko na oficjalnych stronach.":
+    ". Approximate data from Passport Index (as of {}). Rules change – before you go, check your foreign ministry's or the destination embassy's website. Apply only on official websites.",
+  "brak wjazdu dla tego paszportu": "no entry for this passport",
+  "Zasady czasowe albo niepewne (brak wjazdu dla tego paszportu) – sprawdź przed wyjazdem": "Temporary or uncertain rules (no entry for this passport) – check before you go",
 };
