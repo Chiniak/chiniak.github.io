@@ -752,4 +752,5 @@ self.I18N_EN = {
   "Dziennik – o 21:00 w dni podróży, jeśli dzień nie jest opisany": "Journal – at 9 pm on trip days if the day isn't written yet",
   "Zapisz kilka zdań i zdjęcia w dzienniku – „{}”.": "Write a few lines and add photos to the journal – “{}”.",
   "Poprzedni dzień: {}": "Previous day: {}",
+  "Polityka prywatności": "Privacy Policy", "dane zostają na telefonie": "your data stays on the phone",
 };

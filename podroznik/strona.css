@@ -1,0 +1,31 @@
+/* strona o aplikacji i polityka prywatności (poza aplikacją; nie trafia do APK) */
+@font-face { font-family: "Jakarta"; src: url("lib/fonts/plus-jakarta-sans-latin-wght-normal.woff2") format("woff2"); font-weight: 200 800; font-display: swap; }
+:root { --bg: #F7F8F6; --surface: #fff; --text: #202B2B; --muted: #5F6C68; --line: #E8EEEB; --accent: #177670; --fill: #43BDB5; --ink: #0E3532; --soft: #EAF7F5; color-scheme: light dark; }
+@media (prefers-color-scheme: dark) { :root { --bg: #111716; --surface: #182120; --text: #E7EEEC; --muted: #9AAAA6; --line: #26302E; --accent: #6FD3CB; --soft: #1C2B29; } }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.6 "Jakarta", system-ui, sans-serif; }
+a { color: var(--accent); }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; max-width: 920px; margin: 0 auto; padding: 16px; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; color: var(--text); text-decoration: none; }
+.brand img { border-radius: 8px; }
+main { max-width: 920px; margin: 0 auto; padding: 0 16px 32px; }
+article { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 8px 22px 22px; margin: 12px 0; }
+h1 { font-size: 30px; line-height: 1.2; margin: 18px 0 6px; }
+h2 { font-size: 19px; margin: 26px 0 6px; }
+.meta { color: var(--muted); font-size: 14px; }
+code { background: var(--soft); padding: 1px 6px; border-radius: 6px; font-size: .9em; word-break: break-all; }
+.callout { background: var(--soft); border-left: 4px solid var(--fill); padding: 12px 14px; border-radius: 8px; }
+hr { border: 0; height: 1px; background: var(--line); margin: 24px 0; }
+footer { text-align: center; color: var(--muted); font-size: 14px; padding: 8px 16px 32px; }
+.hero { text-align: center; padding: 24px 0 8px; }
+.hero h1 { font-size: 40px; }
+.hero p { max-width: 640px; margin: 8px auto; color: var(--muted); font-size: 18px; }
+.cta { display: inline-block; margin: 14px 6px 0; padding: 12px 22px; border-radius: 999px; background: var(--fill); color: var(--ink); font-weight: 700; text-decoration: none; }
+.cta.alt { background: var(--surface); border: 1px solid var(--line); color: var(--text); }
+.shots { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin: 26px 0; }
+.shots figure { margin: 0; }
+.shots img { width: 100%; height: auto; border-radius: 18px; border: 1px solid var(--line); display: block; }
+.shots figcaption { text-align: center; color: var(--muted); font-size: 14px; margin-top: 6px; }
+.feats { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; padding: 0; list-style: none; }
+.feats li { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+.feats b { display: block; margin-bottom: 2px; }

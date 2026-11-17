@@ -64,6 +64,8 @@
         gmailCfg ? `<span translate="no">${esc(gmailCfg.email)}</span>` : "propozycje z maili", gmailCfg ? chip("połączone", "ok") : "") : "") +
       (inApk ? "" : `<a class="li" href="Podroznik.apk" download><span class="li-ico" aria-hidden="true">${icon("download")}</span>
         <span class="li-main"><b>Aplikacja na Androida</b><small>pobierz APK</small></span>${icon("chev")}</a>`) +
+      `<a class="li" href="https://chiniak.github.io/podroznik/prywatnosc.html" target="_blank" rel="noopener"><span class="li-ico" aria-hidden="true">${icon("shield")}</span>
+        <span class="li-main"><b>Polityka prywatności</b><small>dane zostają na telefonie</small></span>${icon("chev")}</a>` +
       `<div class="li"><span class="li-ico" aria-hidden="true">${icon("info")}</span>
         <span class="li-main"><b>Podróżnik <span id="app-version">${App.VERSION}</span></b><small id="storage">Sprawdzam…</small></span></div>`);
 
