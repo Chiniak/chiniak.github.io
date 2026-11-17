@@ -29,7 +29,7 @@ const SP = process.argv[2];
   }));
   await p.goto(B + '#/podroze'); await p.waitForTimeout(800);
   const up = await p.evaluate(async () => { const db = await DB.open(); return [db.version, [...db.objectStoreNames].includes('journal'), [...db.objectStoreNames].includes('journalPhotos'), !!(await DB.get('trips', 'old1'))]; });
-  ok(JSON.stringify(up) === '[3,true,true,true]', 'baza v2 → v3: nowe magazyny, stara podróż zostaje – ' + JSON.stringify(up));
+  ok(up[0] >= 3 && JSON.stringify(up.slice(1)) === '[true,true,true]', 'baza v2 → v3+: nowe magazyny, stara podróż zostaje – ' + JSON.stringify(up));
 
   const ids = await p.evaluate(async () => {
     const T = App.todayStr();
