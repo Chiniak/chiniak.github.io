@@ -1927,3 +1927,11 @@ button.li { font-weight: 400; }
 .rz-name { display: flex; gap: 8px; align-items: flex-end; margin: var(--s4) 0; }
 .rz-name .field { flex: 1; }
 .rz-alt { margin-top: var(--s4); }
+
+/* Plan: trasa dnia + „Ułóż trasę” (optymalizacja kolejności punktów) */
+.pl-route { display: flex; align-items: center; gap: 10px; margin: 10px 2px 0; padding: 8px 8px 8px 12px; border-radius: 12px; background: var(--surface-2); font-size: var(--fs-sm); color: var(--muted); }
+.pl-route-t { flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0; font-variant-numeric: tabular-nums; }
+.pl-route-t svg { flex: none; }
+.pl-route .btn { min-height: 36px; padding: 6px 12px; font-size: var(--fs-sm); flex: none; }
+.pl-route.is-done { background: var(--accent-soft, var(--surface-2)); color: var(--text); }
+.pl-route-x { flex: none; }

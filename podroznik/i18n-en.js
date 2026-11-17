@@ -810,4 +810,10 @@ self.I18N_EN = {
   "Mam link zaproszenia": "I have an invitation link", "dołącz do wspólnego planowania na żywo": "join live planning together",
   " To podróż wspólna – zniknie tylko u Ciebie, u innych zostanie.": " This is a shared trip – it disappears only for you, the others keep it.",
   "Ktoś": "Someone", "zaczyna wspólne planowanie": "starts planning together", "dołącza do podróży": "joins the trip", "opuszcza wspólną podróż": "leaves the shared trip",
+  "Trasa dnia z noclegu i z powrotem: ok. {}": "Day route from the stay and back: approx. {}", "Trasa dnia: ok. {}": "Day route: approx. {}",
+  "Ułóż trasę": "Optimize route", "Punkty z godziną zostają na swoim miejscu": "Items with a time stay in place",
+  "Trasa krótsza o {}: było {}, jest {}": "Route shorter by {}: was {}, now {}", "Ta kolejność jest już najkrótsza · {}": "This order is already the shortest · {}",
+  "Cofnij": "Undo", "Przywrócono poprzednią kolejność": "Previous order restored",
+  "za mało punktów bez godziny": "not enough items without a time", "brak punktów bez godziny z położeniem": "no items without a time that have a location",
+  ", start z noclegu „{}” i powrót do niego": ", starting from the stay “{}” and returning to it",
 };

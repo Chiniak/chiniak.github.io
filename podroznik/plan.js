@@ -227,6 +227,27 @@
         ${it.note ? `<div class="pl-note">${esc(it.note)}</div>` : ""}
       </a>`;
 
+    // trasa dnia: długość + „Ułóż trasę” (places.js); po ułożeniu – wynik i „Cofnij”, dopóki kolejność się nie zmieni
+    const kmTxt = k => App.Places.fmtDist(k / 1.3);
+    if (lastOpt && (lastOpt.tripId !== id || items.filter(i => i.date === lastOpt.day).sort(byOrder).map(i => i.id).join() !== lastOpt.ids.join())) lastOpt = null;
+    const routeBar = (day, dayItems) => {
+      if (!P) return "";
+      const hotel = P.hotelFor(segs, day), h = P.hasXY(hotel) ? hotel : null;
+      const located = dayItems.filter(P.hasXY).length;
+      if (located + (h ? 1 : 0) < 2) return "";
+      const canOpt = dayItems.filter(i => !i.time && P.hasXY(i)).length >= 2;
+      if (lastOpt && lastOpt.day === day) return `
+          <div class="pl-route is-done" role="status">
+            <span class="pl-route-t">${App.icon("sparkle", "sm")}<span>${lastOpt.saved >= 0.05 ? `Trasa krótsza o ${kmTxt(lastOpt.saved)}: było ${kmTxt(lastOpt.before)}, jest ${kmTxt(lastOpt.after)}` : `Ta kolejność jest już najkrótsza · ${kmTxt(lastOpt.after)}`}</span></span>
+            ${lastOpt.saved >= 0.05 ? `<button type="button" class="btn small pl-route-undo" data-undo="${day}">Cofnij</button>` : `<button type="button" class="icon-btn pl-route-x" data-undo="${day}" aria-label="Zamknij">${App.icon("close")}</button>`}
+          </div>`;
+      return `
+          <div class="pl-route">
+            <span class="pl-route-t">${App.icon("walk", "sm")}<span>Trasa dnia${h ? " z noclegu i z powrotem" : ""}: ok. ${kmTxt(P.routeKm(dayItems, h) * 1.3)}</span></span>
+            ${canOpt ? `<button type="button" class="btn small pl-route-opt" data-opt="${day}" title="Punkty z godziną zostają na swoim miejscu">${App.icon("sparkle", "sm")} Ułóż trasę</button>` : ""}
+          </div>`;
+    };
+
     const costs = {};
     let daysHtml = "", pastHtml = "", pastN = 0;
     for (const day of allDays) {
@@ -281,6 +302,7 @@
             <a class="icon-btn pl-add" href="#/plan/${id}/nowy?d=${day}" aria-label="Dodaj punkt: ${App.fmtDay(day)}">${App.icon("plus")}</a>
           </div>
           <div class="pl-list">${rows || `<a class="pl-empty" href="#/plan/${id}/nowy?d=${day}">+ Dodaj punkt planu</a>`}</div>
+          ${routeBar(day, dayItems)}
           ${costTxt ? `<div class="pl-cost">Koszty dnia: ${costTxt}</div>` : ""}
         </section>`;
       // w trakcie podróży minione dni chowamy, żeby dzisiejszy plan był od razu pod kartą „Dziś”
@@ -358,6 +380,21 @@
         };
         // zdjęcia miejsc: dociągane w tle (Wikipedia) i wstawiane bez przeładowania ekranu
         if (App.Photos) App.Photos.fill(items, (it, ph) => { if (view.isConnected) App.Photos.paint(view, it, ph); });
+        view.querySelectorAll("[data-opt]").forEach(b => b.onclick = async () => {
+          b.disabled = true;
+          const day = b.dataset.opt;
+          const r = await App.Places.optimizeDay(id, day);
+          if (r.reason) { App.toast(r.reason); b.disabled = false; return; }
+          lastOpt = { tripId: id, day, ...r };
+          if (r.moved && navigator.vibrate) navigator.vibrate(20);
+          App.render();
+        });
+        view.querySelectorAll("[data-undo]").forEach(b => b.onclick = async () => {
+          const o = lastOpt;
+          lastOpt = null;
+          if (o && o.saved >= 0.05) { await App.Places.restoreOrder(o.prev); App.toast("Przywrócono poprzednią kolejność"); }
+          App.render();
+        });
         view.querySelectorAll("[data-move]").forEach(sel2 => sel2.onchange = async () => {
           if (!sel2.value) return;
           const it = await DB.get("planItems", sel2.dataset.move);
@@ -370,6 +407,8 @@
       cleanup() { clearInterval(timer); },
     };
   });
+
+  let lastOpt = null; // ostatnie „Ułóż trasę” w planie: { tripId, day, prev, ids, before, after, saved }
 
   /* ---------- przeciąganie punktów w obrębie dnia ---------- */
   function enableDrag(handle) {
