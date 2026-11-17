@@ -1,12 +1,12 @@
 /* Podróżnik – baza danych w telefonie (IndexedDB).
-   Wersja 1: magazyny etapów 0–6. Wersja 2 (etap 8): dokumenty i wydatki. Wersja 3: dziennik podróży (wpisy i zdjęcia osobno)
+   Wersja 1: magazyny etapów 0–6. Wersja 2 (etap 8): dokumenty i wydatki. Wersja 3: dziennik podróży (wpisy i zdjęcia osobno). Wersja 4: wspólna podróż (czat, głosy na pomysły, uczestnicy). Wersja 5: przewodniki Wikivoyage offline
    – brakujące magazyny są dokładane, dane zostają.
    Użycie: await DB.put("trips", {...}); await DB.get("trips", id); await DB.all("trips");
            await DB.byIndex("segments", "tripId", id); await DB.del("trips", id);
            await DB.getSetting("theme", "auto"); await DB.setSetting("theme", "dark"); */
 (function () {
   const NAME = "podroznik";
-  const VERSION = 3;
+  const VERSION = 5;
 
   // magazyn -> indeksy (pole, po którym można szybko wyszukiwać)
   const STORES = {
@@ -21,7 +21,13 @@
     expenses:  ["tripId", "date"],             // wydatki w podróży (etap 8)
     journal:   ["tripId", "date"],             // dziennik: wpis dnia { tripId, date, text, mood } (bez zdjęć – lekki, także dla service workera)
     journalPhotos: ["tripId", "date"],         // dziennik: zdjęcia dnia { tripId, date, blob }
+    chat:      ["tripId"],                     // wspólna podróż: wiadomości { tripId, at, by, name, text, ideaId? }
+    votes:     ["tripId"],                     // wspólna podróż: głos na pomysł { id: pomysł:osoba, tripId, ideaId, by, v }
+    members:   ["tripId"],                     // wspólna podróż: uczestnicy { id: tripId:osoba, tripId, by, name }
+    guides:    [],                             // przewodniki Wikivoyage { id: "pl:Kraków", lang, title, sections, listings, tripIds } – tylko w telefonie
   };
+
+  const LOCAL_ONLY = new Set(["guides"]);
 
   let opening = null;
   function open() {
@@ -65,20 +71,31 @@
 
   const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
 
+  // obserwatorzy zmian (sync.js – wspólna podróż): fn(store, rekord, usunięty?) po DB.put / DB.del
+  const watchers = [];
+  const notify = (store, rec, deleted) => { for (const fn of watchers) try { fn(store, rec, deleted); } catch (e) { console.warn(e); } };
+
   const DB = {
     open,
+    watch: fn => watchers.push(fn),
     uid,
-    stores: Object.keys(STORES).concat("settings"),
+    stores: Object.keys(STORES).filter(s => !LOCAL_ONLY.has(s)).concat("settings"), // do kopii zapasowej (bez przewodników – można je pobrać ponownie)
     async put(store, obj) {
       const now = new Date().toISOString();
       const rec = { ...obj, id: obj.id || uid(), updated: now, created: obj.created || now };
       await tx(store, "readwrite", s => s.put(rec));
+      if (watchers.length) notify(store, rec, false);
       return rec;
     },
     get: (store, id) => tx(store, "readonly", s => s.get(id)),
     all: (store) => tx(store, "readonly", s => s.getAll()),
     byIndex: (store, index, value) => tx(store, "readonly", s => s.index(index).getAll(value)),
-    del: (store, id) => tx(store, "readwrite", s => s.delete(id)),
+    async del(store, id) {
+      const old = watchers.length && store !== "settings" ? await tx(store, "readonly", s => s.get(id)) : null;
+      await tx(store, "readwrite", s => s.delete(id));
+      if (old) notify(store, old, true);
+    },
+    delRaw: (store, id) => tx(store, "readwrite", s => s.delete(id)), // usunięcie bez powiadamiania (zmiana od innej osoby)
     count: (store) => tx(store, "readonly", s => s.count()),
     // zapis bez zmiany dat (przywracanie kopii zapasowej)
     putRaw: (store, obj) => tx(store, "readwrite", s => s.put(obj)),

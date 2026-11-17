@@ -113,15 +113,15 @@
   }
   const hasXY = p => p && p.lat != null && p.lon != null && isFinite(p.lat) && isFinite(p.lon);
 
-  /* ---------- najkrótsza trasa: najbliższy sąsiad + poprawki 2-opt (ścieżka otwarta, opcjonalny start) ---------- */
-  function shortestOrder(points, start) {
+  /* ---------- najkrótsza trasa: najbliższy sąsiad + poprawki 2-opt (opcjonalny stały start i koniec) ---------- */
+  function shortestOrder(points, start, end) {
     const n = points.length;
     if (n < 2) return points.map((_, i) => i);
-    const d = (i, j) => km(points[i], points[j]);
-    const fromStart = i => start ? km(start, points[i]) : 0;
-    const length = ord => ord.reduce((s, x, i) => s + (i ? d(ord[i - 1], x) : fromStart(x)), 0);
-    let best = null;
-    // bez noclegu: spróbuj zacząć od każdego punktu
+    const D = points.map(a => points.map(b => km(a, b)));
+    const S = points.map(p => start ? km(start, p) : 0), E = points.map(p => end ? km(p, end) : 0);
+    const length = ord => ord.reduce((s, x, i) => s + (i ? D[ord[i - 1]][x] : S[x]), 0) + E[ord[n - 1]];
+    let best = null, bestLen = Infinity;
+    // bez stałego startu: spróbuj zacząć od każdego punktu
     for (const first of start ? [-1] : points.map((_, i) => i)) {
       const left = new Set(points.map((_, i) => i));
       const ord = [];
@@ -129,19 +129,20 @@
       if (first >= 0) { ord.push(first); left.delete(first); }
       while (left.size) {
         let pick = null, pd = Infinity;
-        for (const j of left) { const v = cur < 0 ? fromStart(j) : d(cur, j); if (v < pd) { pd = v; pick = j; } }
+        for (const j of left) { const v = cur < 0 ? S[j] : D[cur][j]; if (v < pd) { pd = v; pick = j; } }
         ord.push(pick); left.delete(pick); cur = pick;
       }
       // 2-opt: odwracanie fragmentów, dopóki trasa się skraca
-      let improved = true, guard = 0;
+      let len = length(ord), improved = true, guard = 0;
       while (improved && guard++ < 200) {
         improved = false;
         for (let i = 0; i < n - 1; i++) for (let k = i + 1; k < n; k++) {
           const cand = ord.slice(0, i).concat(ord.slice(i, k + 1).reverse(), ord.slice(k + 1));
-          if (length(cand) + 1e-9 < length(ord)) { ord.splice(0, n, ...cand); improved = true; }
+          const cl = length(cand);
+          if (cl + 1e-9 < len) { ord.splice(0, n, ...cand); len = cl; improved = true; }
         }
       }
-      if (!best || length(ord) < length(best)) best = ord.slice();
+      if (len < bestLen) { best = ord.slice(); bestLen = len; }
     }
     return best;
   }
@@ -153,22 +154,54 @@
       || stays.find(s => (s.arrive || "").slice(0, 10) === day) || null;
   }
 
-  // ułóż punkty dnia: przestawiane są tylko punkty bez godziny i z położeniem (punkty z godziną zostają na miejscu)
-  async function optimizeDay(tripId, day) {
+  // długość trasy dnia (km w linii prostej): nocleg → punkty z położeniem po kolei → powrót do noclegu
+  function routeKm(list, hotel) {
+    const pts = (hasXY(hotel) ? [hotel] : []).concat(list.filter(hasXY), hasXY(hotel) && list.some(hasXY) ? [hotel] : []);
+    return pts.reduce((s, p, i) => s + (i ? km(pts[i - 1], p) : 0), 0);
+  }
+
+  /* ułóż punkty dnia. Przestawiane są tylko punkty bez godziny i z położeniem; punkty z godziną (i te bez położenia)
+     zostają na swoim miejscu. Odcinki między punktami z godziną układane są osobno: start w poprzednim punkcie
+     z godziną (rano – nocleg), koniec w następnym (wieczorem – powrót do noclegu).
+     { dry: true } – tylko policz. Wynik: { moved, before, after, saved (km drogą), prev: [[id, order]], ids } */
+  async function optimizeDay(tripId, day, { dry = false } = {}) {
     const [items, segs] = await Promise.all([DB.byIndex("planItems", "tripId", tripId), DB.byIndex("segments", "tripId", tripId)]);
     const list = items.filter(i => i.date === day).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-    const slots = [], movable = [];
-    list.forEach((it, i) => { if (!it.time && hasXY(it)) { slots.push(i); movable.push(it); } });
-    if (movable.length < 2) return { moved: 0, reason: movable.length ? "za mało punktów bez godziny" : "brak punktów bez godziny z położeniem" };
-    const h = hotelFor(segs, day);
-    const before = movable.map((p, i) => (i ? km(movable[i - 1], p) : 0)).reduce((a, b) => a + b, 0) + (hasXY(h) ? km(h, movable[0]) : 0);
-    const ord = shortestOrder(movable, hasXY(h) ? h : null);
-    const sorted = ord.map(i => movable[i]);
-    const after = sorted.map((p, i) => (i ? km(sorted[i - 1], p) : 0)).reduce((a, b) => a + b, 0) + (hasXY(h) ? km(h, sorted[0]) : 0);
-    slots.forEach((pos, k) => { list[pos] = sorted[k]; });
+    const mov = it => !it.time && hasXY(it);
+    const nMov = list.filter(mov).length;
+    if (nMov < 2) return { moved: 0, reason: nMov ? "za mało punktów bez godziny" : "brak punktów bez godziny z położeniem" };
+    const h = hasXY(hotelFor(segs, day)) ? hotelFor(segs, day) : null;
+    const prev = list.map(it => [it.id, it.order]);
+    const out = list.slice();
+    let i = 0;
+    while (i < list.length) {
+      if (list[i].time) { i++; continue; }
+      let j = i; while (j < list.length && !list[j].time) j++; // odcinek [i, j) bez godzin
+      const slots = [], pts = [];
+      for (let k = i; k < j; k++) if (mov(list[k])) { slots.push(k); pts.push(list[k]); }
+      if (pts.length >= 2) {
+        const before = list.slice(0, i).reverse().find(x => x.time);
+        const after = list.slice(j).find(x => x.time);
+        const start = before ? (hasXY(before) ? before : null) : h;
+        const end = after ? (hasXY(after) ? after : null) : h;
+        shortestOrder(pts, start, end).forEach((o, k) => { out[slots[k]] = pts[o]; });
+      }
+      i = j;
+    }
+    const kmBefore = routeKm(list, h), kmAfter = routeKm(out, h);
+    // nie zmieniaj kolejności, jeśli nowa nie jest wyraźnie krótsza (np. równe odległości)
+    const better = kmAfter < kmBefore - 0.005;
+    const ids = (better ? out : list).map(x => x.id);
     let moved = 0;
-    for (let i = 0; i < list.length; i++) if (list[i].order !== i) { await DB.put("planItems", { ...list[i], order: i }); moved++; }
-    return { moved, saved: Math.max(0, before - after) * 1.3 };
+    if (better) for (let k = 0; k < out.length; k++) if (out[k].order !== k || list[k] !== out[k]) {
+      if (out[k] !== list[k]) moved++;
+      if (!dry) await DB.put("planItems", { ...out[k], order: k });
+    }
+    return { moved, before: kmBefore * 1.3, after: (better ? kmAfter : kmBefore) * 1.3, saved: better ? (kmBefore - kmAfter) * 1.3 : 0, prev, ids, hotel: !!h };
+  }
+  // cofnięcie ułożenia: przywróć zapamiętaną kolejność
+  async function restoreOrder(prev) {
+    for (const [id, order] of prev) { const it = await DB.get("planItems", id); if (it && it.order !== order) await DB.put("planItems", { ...it, order }); }
   }
 
   /* ---------- znajdowanie położenia punktów i noclegów (internet) ---------- */
@@ -353,7 +386,7 @@
         <div class="mp-card"><div id="mp-map" class="mp-map" role="application" aria-label="Mapa punktów planu"></div></div>
         <p class="mp-attr"><span class="mp-hint">Dotknij mapy, by zaznaczyć miejsce · pinezkę dwa razy, by otworzyć punkt.</span> ${navigator.onLine ? "" : "Offline: widać fragmenty mapy oglądane lub pobrane wcześniej. "}<span id="mp-attr-src"></span></p>
         ${canOpt ? `<button type="button" class="btn primary wide mp-opt" id="mp-opt">${App.icon("sparkle", "sm")} Ułóż najkrótszą trasę</button>
-          <p class="f-hint mp-opt-hint">Układane są punkty bez godziny${hasXY(hotel) ? `, start z noclegu „${esc(hotel.name || "")}”` : ""}. Punkty z godziną zostają na swoim miejscu.</p>` : ""}
+          <p class="f-hint mp-opt-hint">Układane są punkty bez godziny${hasXY(hotel) ? `, start z noclegu „${esc(hotel.name || "")}” i powrót do niego` : ""}. Punkty z godziną zostają na swoim miejscu.</p>` : ""}
         ${list ? `<h2 class="section">${sel === "pomysly" ? "Pomysły" : sel === "wszystko" ? "" : App.fmtDayLong(sel)}</h2><div class="list mp-list">${list}</div>` : ""}
         ${noPlace ? `<p class="f-hint mp-noplace">${noPlace} ${plural(noPlace, "punkt nie ma", "punkty nie mają", "punktów nie ma")} wpisanego miejsca – dodaj je w punkcie, by pojawił się na mapie.</p>` : ""}
         <div class="list mp-tools">
@@ -561,5 +594,5 @@
     };
   });
 
-  App.Places = { osm, LAYERS, search, reverse, center, km, leg, fmtDist, hasXY, coordsIn, shortestOrder, optimizeDay, locateMissing, hotelFor, searchBox, bindSearch, DAY_COLORS };
+  App.Places = { osm, LAYERS, search, reverse, center, km, leg, fmtDist, hasXY, coordsIn, shortestOrder, optimizeDay, restoreOrder, routeKm, locateMissing, hotelFor, searchBox, bindSearch, DAY_COLORS };
 })();

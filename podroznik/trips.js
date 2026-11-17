@@ -392,10 +392,13 @@
         const del = view.querySelector("#del");
         if (del) del.addEventListener("click", async () => {
           const segs = await DB.byIndex("segments", "tripId", t.id);
-          if (!confirm(`Usunąć podróż „${t.name}”${segs.length ? ` razem z ${segs.length} ${plural(segs.length, "odcinkiem", "odcinkami", "odcinkami")}` : ""}? Tego nie da się cofnąć.`)) return;
-          for (const store of ["segments", "files", "planItems", "packItems", "reminders", "expenses", "journal", "journalPhotos"]) {
+          const shared = App.Sync && await App.Sync.isShared(t.id);
+          if (!confirm(`Usunąć podróż „${t.name}”${segs.length ? ` razem z ${segs.length} ${plural(segs.length, "odcinkiem", "odcinkami", "odcinkami")}` : ""}? Tego nie da się cofnąć.${shared ? " To podróż wspólna – zniknie tylko u Ciebie, u innych zostanie." : ""}`)) return;
+          if (shared) await App.Sync.leave(t.id); // najpierw wyjście, żeby usuwanie nie poszło do innych
+          for (const store of ["segments", "files", "planItems", "packItems", "reminders", "expenses", "journal", "journalPhotos", "chat", "votes", "members"]) {
             for (const r of await DB.byIndex(store, "tripId", t.id)) await DB.del(store, r.id);
           }
+          if (App.Guide) await App.Guide.detachAll(t.id);
           await DB.del("trips", t.id);
           if (self.caches) caches.delete(`mapa-offline-${t.id}`).catch(() => {}); // pobrana mapa offline tej podróży
           App.toast("Podróż usunięta");
@@ -547,6 +550,8 @@
 
     // C: narzędzia
     const jr = App.Journal && t.start <= today ? await App.Journal.summary(id) : null;
+    const guides = App.Guide ? await App.Guide.forTrip(id) : [];
+    const shared = App.Sync ? await App.Sync.isShared(id) : false, unread = shared ? await App.Sync.unread(id) : 0;
     const row = (href, icon, title, desc, extra = "") => `
       <${href ? `a href="${href}"` : `button type="button"`} class="li td-link"${extra}>
         <span class="li-ico">${ic(icon)}</span>
@@ -557,8 +562,10 @@
         ${row(`#/plan/${t.id}`, "plan", "Plan dnia po dniu", "zwiedzanie, jedzenie, mapa")}
         ${t.end >= today ? row(`#/przygotuj/${t.id}`, "cloud", "Przygotuj offline", "mapa, karty, zdjęcia, kursy na zapas") : ""}
         ${t.start <= today ? row(`#/dziennik/${t.id}`, "edit", "Dziennik podróży", jr && (jr.days || jr.photos) ? `${jr.days} ${plural(jr.days, "dzień opisany", "dni opisane", "dni opisanych")} · ${jr.photos} ${plural(jr.photos, "zdjęcie", "zdjęcia", "zdjęć")}` : "wspomnienia i zdjęcia z każdego dnia") : ""}
+        ${App.Guide ? row(`#/przewodnik/${t.id}`, "compass", "Przewodnik", guides.length ? `${guides.map(g => esc(g.title)).join(", ")} · offline` : "Wikivoyage: co zobaczyć, jedzenie, dojazd – offline") : ""}
         ${row(`#/waluty/${t.id}`, "currency", "Przelicznik walut", "działa offline, kursy na drogę")}
-        ${row(`#/udostepnij/${t.id}`, "users", "Udostępnij", "wspólna podróż, plan jako tekst")}
+        ${App.Sync ? row(`#/razem/${t.id}`, "chat", "Razem", shared ? `czat i pomysły${unread ? ` · <b class="rz-new">${unread} ${plural(unread, "nowa wiadomość", "nowe wiadomości", "nowych wiadomości")}</b>` : ""}` : "planujcie wspólnie – czat, pomysły, zmiany na żywo") : ""}
+        ${row(`#/udostepnij/${t.id}`, "share", "Wyślij podróż", "jako plik albo plan w wiadomości")}
         ${row(null, "bell", "Do kalendarza", "plik .ics z przypomnieniami", ` id="ics-trip"`)}
       </div>`;
 
@@ -598,14 +605,15 @@
   async function visaPanel(t, segs, plan) {
     await Visas.ready();
     const list = Visas.analyze(t, segs, plan, await DB.all("docs"));
+    const cit = Visas.citizen();
     const daysTxt = n => `${n} ${plural(n, "dzień", "dni", "dni")}`;
     const info = v => {
       const p = v.permit;
       return {
-        free: `Bez wizy do ${daysTxt(v.days)}`,
-        form: `Bez wizy do ${daysTxt(v.days)} · ${p} – online najwcześniej 3 dni przed przylotem`,
-        eta: `${p} – złóż online przed wylotem${v.transit ? " · także przy samej przesiadce" : ""}`,
-        evisa: `${p} – złóż online z wyprzedzeniem`,
+        free: v.days ? `Bez wizy do ${daysTxt(v.days)}` : "Bez wizy",
+        form: `${v.days ? `Bez wizy do ${daysTxt(v.days)}` : "Bez wizy"} · ${p} – online najwcześniej 3 dni przed przylotem`,
+        eta: `${p || "Zezwolenie elektroniczne"} – złóż online przed wylotem${v.transit ? " · także przy samej przesiadce" : ""}`,
+        evisa: `${p || "E-wiza"} – złóż online z wyprzedzeniem`,
         voa: `Wiza na lotnisku albo wcześniej online${p ? ` (${p})` : ""}`,
         visa: `${p || "Wiza z ambasady"} – zacznij załatwiać wcześnie`,
         check: `Zasady czasowe albo niepewne${p ? ` (${p})` : ""} – sprawdź przed wyjazdem`,
@@ -637,16 +645,20 @@
           </span>
         </div>`;
     }).join("");
-    const opts = Object.keys(Visas.D).filter(cc => Visas.D[cc][0] !== "eu" && !list.some(v => v.cc === cc))
+    const opts = Visas.addable().filter(cc => !list.some(v => v.cc === cc))
       .map(cc => [cc, Visas.name(cc)]).sort((a, b) => a[1].localeCompare(b[1], "pl"))
       .map(([cc, n]) => `<option value="${cc}">${esc(n)}</option>`).join("");
     const todo = list.filter(Visas.needsAction).length;
     return `
       <div class="sec-h td-sec"><h2 class="section">Wjazd i wizy</h2>${todo ? `<span class="chip warn">${todo} do zrobienia</span>` : list.length ? `<span class="chip ok">w porządku</span>` : ""}</div>
-      ${rows ? `<div class="list vz-list">${rows}</div>` : `<p class="f-hint vz-none">Nie rozpoznano kraju poza Unią Europejską – dodaj go niżej, jeśli trzeba.</p>`}
+      ${rows ? `<div class="list vz-list">${rows}</div>` : `<p class="f-hint vz-none">${Visas.EU_SET.has(cit) ? "Nie rozpoznano kraju poza Unią Europejską – dodaj go niżej, jeśli trzeba." : "Nie rozpoznano kraju podróży – dodaj go niżej, jeśli trzeba."}</p>`}
       <label class="vz-add"><span class="sr">Dodaj kraj</span><select id="vz-add"><option value="">+ Dodaj kraj</option>${opts}</select></label>
-      <p class="vz-src">${ic("info", "sm")}<span>Polski paszport, dane orientacyjne (stan: ${Visas.AS_OF}). Przepisy się zmieniają – przed wyjazdem sprawdź
-        <a href="${Visas.MSZ}" target="_blank" rel="noopener">MSZ: Informacje dla podróżujących</a>. Wnioski składaj tylko na oficjalnych stronach.</span></p>`;
+      ${cit === "PL" ? `<p class="vz-src">${ic("info", "sm")}<span>Polski paszport, dane orientacyjne (stan: ${Visas.AS_OF}). Przepisy się zmieniają – przed wyjazdem sprawdź
+        <a href="${Visas.MSZ}" target="_blank" rel="noopener">MSZ: Informacje dla podróżujących</a>. Wnioski składaj tylko na oficjalnych stronach.
+        <a href="#/ustawienia">Inne obywatelstwo?</a></span></p>`
+      : `<p class="vz-src">${ic("info", "sm")}<span>Paszport: <b translate="no">${esc(Visas.name(cit))}</b>. Dane orientacyjne z Passport Index (stan: ${dmy(Visas.worldAsOf() || "2026-02-17")}).
+        Przepisy się zmieniają – przed wyjazdem sprawdź na stronie MSZ swojego kraju albo ambasady kraju docelowego. Wnioski składaj tylko na oficjalnych stronach.
+        <a href="#/ustawienia">Zmień obywatelstwo</a></span></p>`}`;
   }
   function bindVisas(view, t) {
     const save = async fn => {

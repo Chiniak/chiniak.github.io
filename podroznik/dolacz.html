@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Dołącz do podróży · Podróżnik</title>
+  <style>body{margin:0;font:16px/1.5 system-ui,sans-serif;background:#F7F8F6;color:#202B2B;display:grid;place-items:center;min-height:100vh;padding:16px;box-sizing:border-box}
+  @media (prefers-color-scheme:dark){body{background:#101615;color:#E6ECEA}}</style>
+</head>
+<body>
+  <p>Otwieram Podróżnika…</p>
+  <script>
+    // link zaproszenia: dolacz.html#POKOJ.KLUCZ – część po # (klucz) nigdy nie trafia do serwera.
+    // W aplikacji na Androida ten adres otwiera od razu aplikację; w przeglądarce przechodzimy do wersji internetowej.
+    location.replace("./#/dolacz/" + location.hash.slice(1).replace(/[^\w.-]/g, ""));
+  </script>
+</body>
+</html>
