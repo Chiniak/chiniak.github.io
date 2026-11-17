@@ -398,6 +398,7 @@
           for (const store of ["segments", "files", "planItems", "packItems", "reminders", "expenses", "journal", "journalPhotos", "chat", "votes", "members"]) {
             for (const r of await DB.byIndex(store, "tripId", t.id)) await DB.del(store, r.id);
           }
+          if (App.Guide) await App.Guide.detachAll(t.id);
           await DB.del("trips", t.id);
           if (self.caches) caches.delete(`mapa-offline-${t.id}`).catch(() => {}); // pobrana mapa offline tej podróży
           App.toast("Podróż usunięta");
@@ -549,6 +550,7 @@
 
     // C: narzędzia
     const jr = App.Journal && t.start <= today ? await App.Journal.summary(id) : null;
+    const guides = App.Guide ? await App.Guide.forTrip(id) : [];
     const shared = App.Sync ? await App.Sync.isShared(id) : false, unread = shared ? await App.Sync.unread(id) : 0;
     const row = (href, icon, title, desc, extra = "") => `
       <${href ? `a href="${href}"` : `button type="button"`} class="li td-link"${extra}>
@@ -560,6 +562,7 @@
         ${row(`#/plan/${t.id}`, "plan", "Plan dnia po dniu", "zwiedzanie, jedzenie, mapa")}
         ${t.end >= today ? row(`#/przygotuj/${t.id}`, "cloud", "Przygotuj offline", "mapa, karty, zdjęcia, kursy na zapas") : ""}
         ${t.start <= today ? row(`#/dziennik/${t.id}`, "edit", "Dziennik podróży", jr && (jr.days || jr.photos) ? `${jr.days} ${plural(jr.days, "dzień opisany", "dni opisane", "dni opisanych")} · ${jr.photos} ${plural(jr.photos, "zdjęcie", "zdjęcia", "zdjęć")}` : "wspomnienia i zdjęcia z każdego dnia") : ""}
+        ${App.Guide ? row(`#/przewodnik/${t.id}`, "compass", "Przewodnik", guides.length ? `${guides.map(g => esc(g.title)).join(", ")} · offline` : "Wikivoyage: co zobaczyć, jedzenie, dojazd – offline") : ""}
         ${row(`#/waluty/${t.id}`, "currency", "Przelicznik walut", "działa offline, kursy na drogę")}
         ${App.Sync ? row(`#/razem/${t.id}`, "chat", "Razem", shared ? `czat i pomysły${unread ? ` · <b class="rz-new">${unread} ${plural(unread, "nowa wiadomość", "nowe wiadomości", "nowych wiadomości")}</b>` : ""}` : "planujcie wspólnie – czat, pomysły, zmiany na żywo") : ""}
         ${row(`#/udostepnij/${t.id}`, "share", "Wyślij podróż", "jako plik albo plan w wiadomości")}

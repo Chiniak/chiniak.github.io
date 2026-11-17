@@ -1935,3 +1935,61 @@ button.li { font-weight: 400; }
 .pl-route .btn { min-height: 36px; padding: 6px 12px; font-size: var(--fs-sm); flex: none; }
 .pl-route.is-done { background: var(--accent-soft, var(--surface-2)); color: var(--text); }
 .pl-route-x { flex: none; }
+
+/* Przewodnik Wikivoyage offline (guide.js) */
+.gd-intro { text-align: center; padding: 12px 8px 18px; }
+.gd-intro h2 { margin: 0 0 6px; }
+.gd-intro p { margin: 0; }
+.gd-search, .gd-find { margin: 4px 0 10px; }
+.gd-sug, .gd-lang { margin-top: 2px; }
+.gd-sug .st-chip { cursor: pointer; font: inherit; font-size: var(--fs-sm); }
+.gd-wait, .gd-err { margin: 14px 2px; }
+.gd-err { color: var(--err-text); }
+.gd-hit .li-main small { white-space: normal; }
+.gd-other { margin-top: 12px; }
+.gd-back { margin: 16px 2px 0; }
+.gd-lic { margin-top: 18px; }
+.gd-chips { margin-bottom: 8px; }
+.gd-head h2 { margin: 0 0 4px; }
+.gd-head p { margin: 0 0 4px; }
+.gd-count { color: var(--muted); }
+.gd-found:empty { display: none; }
+.gd-found { margin: -2px 2px 8px; }
+.gd-text { line-height: 1.55; overflow-wrap: anywhere; }
+.gd-text p { margin: 0 0 10px; }
+.gd-text ul, .gd-text ol { margin: 0 0 10px; padding-left: 22px; }
+.gd-text li { margin: 0 0 6px; }
+.gd-text dl { margin: 0 0 10px; }
+.gd-text dd { margin: 0 0 6px 12px; }
+.gd-text h3, .gd-text h4, .gd-text h5 { font-family: inherit; font-size: var(--fs-md, 1.05rem); margin: 18px 0 8px; }
+.gd-text h4, .gd-text h5 { font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.gd-text table { border-collapse: collapse; font-size: var(--fs-sm); margin: 0 0 12px; display: block; overflow-x: auto; max-width: 100%; }
+.gd-text td, .gd-text th { border: 1px solid var(--line); padding: 4px 8px; text-align: left; vertical-align: top; }
+.gd-text a { color: var(--accent); }
+.gd-text .gd-rel { font-size: var(--fs-sm); color: var(--muted); }
+.gd-wv { text-decoration: underline dotted; text-underline-offset: 3px; }
+.gd-lead { margin: 6px 2px 14px; }
+.gd-sec { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); margin: 0 0 8px; }
+.gd-sec > summary { list-style: none; display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 6px 14px; cursor: pointer; font-weight: 600; }
+.gd-sec > summary::-webkit-details-marker { display: none; }
+.gd-sec[open] > summary .pl-sum-chev { transform: rotate(-90deg); }
+.gd-sec-ic { width: 34px; height: 34px; flex: none; border-radius: var(--r-sm); display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); }
+.gd-sec-t { min-width: 0; }
+.gd-sec > .gd-text { padding: 2px 14px 12px; }
+.gd-li { background: var(--surface-2); border-radius: 12px; padding: 10px 12px; margin: 8px 0 10px; list-style: none; }
+.gd-text li:has(> .gd-li:only-child) { list-style: none; margin-left: -22px; }
+.gd-li-h { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.gd-li-ic { color: var(--accent); align-self: center; display: grid; }
+.gd-li-meta { margin-top: 6px; font-size: var(--fs-sm); color: var(--muted); display: grid; gap: 3px; }
+.gd-li-meta > div { display: flex; gap: 6px; align-items: flex-start; }
+.gd-li-meta .ic { flex: none; margin-top: 2px; }
+.gd-li-d { margin: 6px 0 0 !important; font-size: var(--fs-sm); }
+.gd-li-acts { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
+.gd-li-acts .btn { min-height: 40px; padding: 0 12px; font-size: var(--fs-sm); }
+.gd-add.done { color: var(--accent); background: var(--accent-soft); border-color: transparent; }
+.gd-www { margin-left: auto; }
+mark.gd-mark { background: var(--accent-soft); color: inherit; border-radius: 3px; box-shadow: 0 0 0 2px var(--accent-soft); }
+.gd-foot { margin: 18px 0 8px; display: grid; gap: 8px; }
+.gd-foot .f-hint { margin-top: 4px; }
+.gd-foot .f-hint a { color: var(--accent); }
+.gd-li-h .muted { flex-basis: 100%; font-size: var(--fs-sm); font-weight: 400; }
