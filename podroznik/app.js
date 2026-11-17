@@ -8,7 +8,7 @@
 
   /* ---------- pomocniki ---------- */
   // wersja aplikacji – ta sama co versionName APK (podroznik-app/android/app/build.gradle); podbijaj razem
-  App.VERSION = "2.12.0";
+  App.VERSION = "2.13.0";
   App.esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const pad = n => String(n).padStart(2, "0");
   App.todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
@@ -163,7 +163,7 @@
     for (const [re, fn] of routes) { match = path.match(re); if (match) { handler = fn; break; } }
     if (!handler) { location.replace("#/podroze"); return; }
 
-    const TAB_OF = { odcinek: "podroze", bilet: "bilety", skanuj: "bilety", punkt: "plan", rzecz: "pakowanie", dokumenty: "bilety", dokument: "bilety", budzet: "podroze", wydatek: "podroze", statystyki: "podroze", wklej: "podroze", mapa: "plan", odkrywaj: "plan", rozliczenie: "podroze", udostepnij: "podroze", "mapa-offline": "plan", karty: "plan", przygotuj: "podroze", dzis: "podroze", waluty: "podroze", dziennik: "podroze" };
+    const TAB_OF = { odcinek: "podroze", bilet: "bilety", skanuj: "bilety", punkt: "plan", rzecz: "pakowanie", dokumenty: "bilety", dokument: "bilety", budzet: "podroze", wydatek: "podroze", statystyki: "podroze", wklej: "podroze", mapa: "plan", odkrywaj: "plan", rozliczenie: "podroze", udostepnij: "podroze", "mapa-offline": "plan", karty: "plan", przygotuj: "podroze", dzis: "podroze", waluty: "podroze", dziennik: "podroze", razem: "podroze", dolacz: "podroze" };
     const first = path.split("/")[1];
     const tab = TAB_OF[first] || first;
     document.querySelectorAll(".tabbar a").forEach(a => {

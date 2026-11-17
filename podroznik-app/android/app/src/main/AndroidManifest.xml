@@ -22,6 +22,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- link zaproszenia do wspólnej podróży (https://chiniak.github.io/podroznik/dolacz.html#…) otwiera aplikację;
+                 weryfikacja przez .well-known/assetlinks.json (ten sam pakiet i klucz) -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="chiniak.github.io" android:pathPrefix="/podroznik/dolacz" />
+            </intent-filter>
+
         </activity>
 
         <provider

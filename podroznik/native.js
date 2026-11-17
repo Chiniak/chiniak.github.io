@@ -2,7 +2,8 @@
    W przeglądarce i w starym APK (TWA) nic nie robi.
    W aplikacji (podroznik-app/) zastępuje to, czego WebView nie umie:
    - navigator.share / canShare z plikami (kopia zapasowa, .ics, podróż, rozliczenie) → wtyczka Share,
-   - otwieranie plików z blob: (np. skan PDF w Dokumentach) → zapis w pamięci podręcznej i „Otwórz w…”. */
+   - otwieranie plików z blob: (np. skan PDF w Dokumentach) → zapis w pamięci podręcznej i „Otwórz w…”,
+   - link zaproszenia do wspólnej podróży otwarty z WhatsAppa itp. → wtyczka App (appUrlOpen). */
 (function () {
   "use strict";
   const C = window.Capacitor;
@@ -12,6 +13,16 @@
   document.documentElement.classList.add("native-app");
 
   const P = C.Plugins;
+
+  // link zaproszenia otwarty w aplikacji (intent-filter w AndroidManifest): dolacz.html#POKOJ.KLUCZ → ekran „Dołącz”
+  const openLink = url => {
+    const m = /\/podroznik\/dolacz(?:\.html)?#([\w-]+\.[\w-]+)/.exec(String(url || ""));
+    if (m) location.hash = `#/dolacz/${m[1]}`;
+  };
+  if (P.App) {
+    P.App.addListener("appUrlOpen", e => openLink(e.url));
+    P.App.getLaunchUrl().then(r => r && openLink(r.url)).catch(() => {});
+  }
   const abort = () => new DOMException("Share canceled", "AbortError");
   const isCancel = e => /cancel/i.test(String(e && (e.message || e.errorMessage || e)));
 

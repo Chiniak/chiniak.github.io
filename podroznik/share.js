@@ -129,6 +129,7 @@
           a jeśli już ją masz – dołączą się zmiany (nowsza wersja każdej pozycji wygrywa).</p></div>
       </section>
       <label class="btn primary wide">${App.icon("doc", "sm")} Wybierz plik<input type="file" id="sh-in" accept="application/json,.json" hidden></label>
+      ${App.Sync && App.Sync.configured() ? `<div class="list rz-alt"><a class="li" href="#/dolacz"><span class="li-ico">${App.icon("users")}</span><span class="li-main"><b>Mam link zaproszenia</b><small>dołącz do wspólnego planowania na żywo</small></span>${App.icon("chev")}</a></div>` : ""}
       <p class="error" id="err" hidden></p>`,
     after(view) {
       view.querySelector("#sh-in").onchange = async e => {

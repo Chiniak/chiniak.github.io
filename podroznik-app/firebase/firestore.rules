@@ -1,0 +1,21 @@
+rules_version = '2';
+// Podróżnik – reguły Firestore dla wspólnego planowania (podroznik/sync.js).
+// Dane są zaszyfrowane w telefonie (AES-256-GCM, klucz tylko w linku zaproszenia) – serwer przechowuje sam szyfr.
+// Operacje można tylko dopisywać: nikt (także właściciel linku) nie zmieni ani nie usunie cudzych zapisów.
+// Odczyt tylko pojedynczego pokoju, którego losowy identyfikator jest w linku – nie da się wylistować pokoi.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /rooms/{room}/ops/{op} {
+      allow list, get: if request.auth != null;
+      allow create: if request.auth != null
+        && room.size() >= 16 && room.size() <= 32
+        && request.resource.data.keys().hasOnly(['by', 't', 'c', 'v'])
+        && request.resource.data.by == request.auth.uid
+        && request.resource.data.t == request.time
+        && request.resource.data.c is string
+        && request.resource.data.c.size() < 200000
+        && request.resource.data.v == 1;
+      allow update, delete: if false;
+    }
+  }
+}

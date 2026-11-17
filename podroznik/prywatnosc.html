@@ -20,7 +20,7 @@
 <p class="meta">Aplikacja <b>Podróżnik</b> (Android: <code>io.github.chiniak.podroznik</code>, strona: chiniak.github.io/podroznik) · obowiązuje od 17 listopada 2026</p>
 
 <h2>Najkrócej</h2>
-<p>Podróżnik to planer podróży, który działa <b>na Twoim telefonie</b>. Nie mamy serwera, kont użytkowników ani reklam. Twoje podróże, bilety, wydatki, dziennik i dane z Gmaila zostają w pamięci urządzenia i nie są nam wysyłane, sprzedawane ani udostępniane.</p>
+<p>Podróżnik to planer podróży, który działa <b>na Twoim telefonie</b>. Nie mamy własnego serwera, kont użytkowników ani reklam. Twoje podróże, bilety, wydatki, dziennik i dane z Gmaila zostają w pamięci urządzenia i nie są nam wysyłane, sprzedawane ani udostępniane. Wyjątek, który sam włączasz: <a href="#razem-pl">wspólne planowanie</a> – wtedy zmiany podróży idą do pozostałych uczestników przez serwer Google Firebase, <b>zaszyfrowane</b> kluczem, którego serwer nie zna.</p>
 
 <h2>Jakie dane przetwarza aplikacja</h2>
 <ul>
@@ -54,12 +54,21 @@
 </ul>
 
 <h2>Udostępnianie</h2>
-<p>Dane opuszczają telefon tylko wtedy, gdy sam to zrobisz – np. udostępnisz plan, bilet, rozliczenie albo pamiątkę z dziennika przez systemowe „Udostępnij”, albo zapiszesz plik kopii zapasowej.</p>
+<p>Dane opuszczają telefon tylko wtedy, gdy sam to zrobisz – np. udostępnisz plan, bilet, rozliczenie albo pamiątkę z dziennika przez systemowe „Udostępnij”, zapiszesz plik kopii zapasowej albo włączysz wspólne planowanie.</p>
+
+<h2 id="razem-pl">Wspólne planowanie (Razem)</h2>
+<ul>
+  <li><b>Kiedy:</b> tylko gdy w podróży wybierzesz „Razem → Zaproś do wspólnego planowania” albo dołączysz z linku zaproszenia. Bez tego nic nie jest wysyłane.</li>
+  <li><b>Co:</b> dane tej jednej podróży – nazwa, daty, odcinki (loty, pociągi, noclegi), plan dnia i pomysły, lista pakowania, wydatki, wiadomości czatu, głosy i imię, które podasz. <b>Nie</b> są wysyłane: bilety i ich pliki, zdjęcia, dziennik, dokumenty, przypomnienia ani <b>żadne dane z Gmaila</b> (nawet jeśli podróż do niej dodano z maila, wysyłane są tylko pola podróży, które widzisz w aplikacji, nie maile).</li>
+  <li><b>Jak:</b> każda zmiana jest szyfrowana w telefonie (AES-256-GCM). Klucz jest tylko w linku zaproszenia (w części po znaku #, której przeglądarka nie wysyła do żadnego serwera). Zaszyfrowane zmiany są przechowywane w Google Firebase (Cloud Firestore, region UE) – Google i my widzimy tylko szyfr, czas zapisu i losowy, anonimowy identyfikator urządzenia (Firebase Authentication, logowanie anonimowe – bez e-maila i hasła).</li>
+  <li><b>Kto widzi:</b> osoby, którym wyślesz link. Każdy z linkiem może oglądać i zmieniać podróż, więc wysyłaj go tylko współtowarzyszom.</li>
+  <li><b>Usuwanie:</b> „Opuść wspólną podróż” albo usunięcie podróży kończy wysyłanie i odbieranie zmian na Twoim telefonie. Zaszyfrowane wpisy na serwerze bez klucza są nieczytelne; na prośbę (kontakt niżej) usuniemy wszystkie wpisy danej podróży z serwera.</li>
+</ul>
 
 <h2>Bezpieczeństwo i usuwanie danych</h2>
 <ul>
   <li>Dane są w prywatnej pamięci aplikacji, chronionej przez system Android. Możesz dodatkowo włączyć blokadę PIN-em, a kopię zapasową zaszyfrować hasłem.</li>
-  <li>Połączenia z usługami zewnętrznymi i z Gmail API są szyfrowane (HTTPS).</li>
+  <li>Połączenia z usługami zewnętrznymi, z Gmail API i z Firebase są szyfrowane (HTTPS); dane wspólnej podróży są dodatkowo szyfrowane end-to-end.</li>
   <li>Usunięcie podróży usuwa jej bilety, plan, wydatki i dziennik. Odinstalowanie aplikacji albo „Wyczyść dane” w ustawieniach Androida usuwa wszystko.</li>
 </ul>
 
@@ -77,7 +86,7 @@
 <p class="meta"><b>Podróżnik</b> app (Android: <code>io.github.chiniak.podroznik</code>, web: chiniak.github.io/podroznik) · effective 17 November 2026</p>
 
 <h2>In short</h2>
-<p>Podróżnik is a travel planner that runs <b>on your phone</b>. There is no server, no user account and no advertising. Your trips, tickets, expenses, journal and Gmail data stay in the device's storage and are never sent to us, sold or shared.</p>
+<p>Podróżnik is a travel planner that runs <b>on your phone</b>. We have no server of our own, no user accounts and no advertising. Your trips, tickets, expenses, journal and Gmail data stay in the device's storage and are never sent to us, sold or shared. The one exception, which you switch on yourself: <a href="#together-en">planning together</a> – then a trip's changes go to the other participants through Google Firebase, <b>encrypted</b> with a key the server does not know.</p>
 
 <h2>Data the app processes</h2>
 <ul>
@@ -111,12 +120,21 @@
 </ul>
 
 <h2>Sharing</h2>
-<p>Data leaves the phone only when you do it yourself – e.g. share a plan, ticket, settlement or journal keepsake via the system "Share" sheet, or save a backup file.</p>
+<p>Data leaves the phone only when you do it yourself – e.g. share a plan, ticket, settlement or journal keepsake via the system "Share" sheet, save a backup file or turn on planning together.</p>
+
+<h2 id="together-en">Planning together (Together)</h2>
+<ul>
+  <li><b>When:</b> only when you choose "Together → Invite to plan together" in a trip or join from an invitation link. Otherwise nothing is sent.</li>
+  <li><b>What:</b> the data of that one trip – name, dates, segments (flights, trains, stays), day plan and ideas, packing list, expenses, chat messages, votes and the name you enter. <b>Not</b> sent: tickets and their files, photos, the journal, documents, reminders or <b>any Gmail data</b> (even if an item was added from an e-mail, only the trip fields you see in the app are sent, never e-mails).</li>
+  <li><b>How:</b> every change is encrypted on the phone (AES-256-GCM). The key exists only in the invitation link (in the part after #, which browsers never send to any server). Encrypted changes are stored in Google Firebase (Cloud Firestore, EU region) – Google and we see only ciphertext, the time of writing and a random anonymous device identifier (Firebase Authentication, anonymous sign-in – no e-mail or password).</li>
+  <li><b>Who can see it:</b> the people you send the link to. Anyone with the link can view and change the trip, so share it only with your travel companions.</li>
+  <li><b>Deletion:</b> "Leave the shared trip" or deleting the trip stops sending and receiving changes on your phone. Encrypted entries on the server are unreadable without the key; on request (contact below) we will delete all entries of a trip from the server.</li>
+</ul>
 
 <h2>Security and deletion</h2>
 <ul>
   <li>Data is kept in the app's private storage, protected by Android. You can also enable a PIN lock and encrypt backups with a password.</li>
-  <li>Connections to third-party services and the Gmail API are encrypted (HTTPS).</li>
+  <li>Connections to third-party services, the Gmail API and Firebase are encrypted (HTTPS); shared-trip data is additionally end-to-end encrypted.</li>
   <li>Deleting a trip deletes its tickets, plan, expenses and journal. Uninstalling the app or "Clear data" in Android settings deletes everything.</li>
 </ul>
 

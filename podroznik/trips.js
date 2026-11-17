@@ -392,8 +392,10 @@
         const del = view.querySelector("#del");
         if (del) del.addEventListener("click", async () => {
           const segs = await DB.byIndex("segments", "tripId", t.id);
-          if (!confirm(`Usunąć podróż „${t.name}”${segs.length ? ` razem z ${segs.length} ${plural(segs.length, "odcinkiem", "odcinkami", "odcinkami")}` : ""}? Tego nie da się cofnąć.`)) return;
-          for (const store of ["segments", "files", "planItems", "packItems", "reminders", "expenses", "journal", "journalPhotos"]) {
+          const shared = App.Sync && await App.Sync.isShared(t.id);
+          if (!confirm(`Usunąć podróż „${t.name}”${segs.length ? ` razem z ${segs.length} ${plural(segs.length, "odcinkiem", "odcinkami", "odcinkami")}` : ""}? Tego nie da się cofnąć.${shared ? " To podróż wspólna – zniknie tylko u Ciebie, u innych zostanie." : ""}`)) return;
+          if (shared) await App.Sync.leave(t.id); // najpierw wyjście, żeby usuwanie nie poszło do innych
+          for (const store of ["segments", "files", "planItems", "packItems", "reminders", "expenses", "journal", "journalPhotos", "chat", "votes", "members"]) {
             for (const r of await DB.byIndex(store, "tripId", t.id)) await DB.del(store, r.id);
           }
           await DB.del("trips", t.id);
@@ -547,6 +549,7 @@
 
     // C: narzędzia
     const jr = App.Journal && t.start <= today ? await App.Journal.summary(id) : null;
+    const shared = App.Sync ? await App.Sync.isShared(id) : false, unread = shared ? await App.Sync.unread(id) : 0;
     const row = (href, icon, title, desc, extra = "") => `
       <${href ? `a href="${href}"` : `button type="button"`} class="li td-link"${extra}>
         <span class="li-ico">${ic(icon)}</span>
@@ -558,7 +561,8 @@
         ${t.end >= today ? row(`#/przygotuj/${t.id}`, "cloud", "Przygotuj offline", "mapa, karty, zdjęcia, kursy na zapas") : ""}
         ${t.start <= today ? row(`#/dziennik/${t.id}`, "edit", "Dziennik podróży", jr && (jr.days || jr.photos) ? `${jr.days} ${plural(jr.days, "dzień opisany", "dni opisane", "dni opisanych")} · ${jr.photos} ${plural(jr.photos, "zdjęcie", "zdjęcia", "zdjęć")}` : "wspomnienia i zdjęcia z każdego dnia") : ""}
         ${row(`#/waluty/${t.id}`, "currency", "Przelicznik walut", "działa offline, kursy na drogę")}
-        ${row(`#/udostepnij/${t.id}`, "users", "Udostępnij", "wspólna podróż, plan jako tekst")}
+        ${App.Sync ? row(`#/razem/${t.id}`, "chat", "Razem", shared ? `czat i pomysły${unread ? ` · <b class="rz-new">${unread} ${plural(unread, "nowa wiadomość", "nowe wiadomości", "nowych wiadomości")}</b>` : ""}` : "planujcie wspólnie – czat, pomysły, zmiany na żywo") : ""}
+        ${row(`#/udostepnij/${t.id}`, "share", "Wyślij podróż", "jako plik albo plan w wiadomości")}
         ${row(null, "bell", "Do kalendarza", "plik .ics z przypomnieniami", ` id="ics-trip"`)}
       </div>`;
 
