@@ -343,6 +343,13 @@
     const sum = Object.entries(costs).map(([c, v]) => money(v, c)).join(" + ");
     if (sum) html += `<p class="pl-total">Koszty planu razem: <b>${sum}</b> <span class="muted">(bez transportu i noclegów)</span></p>`;
 
+    // na dole: wyczyszczenie planu (punkty i pomysły) albo usunięcie całej podróży
+    html += `
+      <div class="pl-danger">
+        ${items.length ? `<button type="button" class="btn danger" id="pl-clear">${App.icon("trash", "sm")} <span>Wyczyść plan</span></button>` : ""}
+        <button type="button" class="btn danger" id="pl-deltrip">${App.icon("trash", "sm")} <span>Usuń całą podróż</span></button>
+      </div>`;
+
     let timer = null;
     return {
       title: "Plan",
@@ -380,6 +387,22 @@
         };
         // zdjęcia miejsc: dociągane w tle (Wikipedia) i wstawiane bez przeładowania ekranu
         if (App.Photos) App.Photos.fill(items, (it, ph) => { if (view.isConnected) App.Photos.paint(view, it, ph); });
+        const clr = view.querySelector("#pl-clear");
+        if (clr) clr.onclick = async () => {
+          const n = items.length;
+          if (!confirm(`Usunąć wszystkie punkty planu i pomysły z podróży „${trip.name}” (${n})? Loty, pociągi i noclegi zostają. Tego nie da się cofnąć.`)) return;
+          const tk = await DB.byIndex("files", "tripId", id);
+          for (const f of tk) if (String(f.segmentId).startsWith("p:")) await DB.del("files", f.id); // bilety przypięte do punktów
+          for (const it of items) await DB.del("planItems", it.id);
+          lastOpt = null;
+          App.toast("Plan wyczyszczony");
+          App.render();
+        };
+        view.querySelector("#pl-deltrip").onclick = async () => {
+          if (!App.Trips || !App.Trips.removeTrip || !(await App.Trips.removeTrip(trip))) return;
+          DB.setSetting("planTrip", "");
+          location.replace("#/plan");
+        };
         view.querySelectorAll("[data-opt]").forEach(b => b.onclick = async () => {
           b.disabled = true;
           const day = b.dataset.opt;

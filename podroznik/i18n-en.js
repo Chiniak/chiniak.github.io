@@ -834,4 +834,6 @@ self.I18N_EN = {
   "Artykułu już nie ma w Wikivoyage": "The article is no longer on Wikivoyage", "Usunięto przewodnik": "Guide deleted",
   "Usunąć przewodnik „{}” z tej podróży? Dodane pomysły zostają.": "Delete the guide “{}” from this trip? Added ideas stay.",
   "Wikivoyage: co zobaczyć, jedzenie, dojazd – offline": "Wikivoyage: what to see, food, getting there – offline", "{} · offline": "{} · offline",
+  "Wyczyść plan": "Clear plan", "Usuń całą podróż": "Delete the whole trip", "Plan wyczyszczony": "Plan cleared",
+  "Usunąć wszystkie punkty planu i pomysły z podróży „{}” ({})? Loty, pociągi i noclegi zostają. Tego nie da się cofnąć.": "Delete all plan items and ideas from the trip “{}” ({})? Flights, trains and stays remain. This cannot be undone.",
 };

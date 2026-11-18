@@ -1993,3 +1993,7 @@ mark.gd-mark { background: var(--accent-soft); color: inherit; border-radius: 3p
 .gd-foot .f-hint { margin-top: 4px; }
 .gd-foot .f-hint a { color: var(--accent); }
 .gd-li-h .muted { flex-basis: 100%; font-size: var(--fs-sm); font-weight: 400; }
+
+/* Plan: wyczyść plan / usuń podróż (na samym dole) */
+.pl-danger { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 12px; margin: 28px 0 8px; padding-top: 14px; border-top: 1px solid var(--line); }
+.pl-danger .btn { min-height: 44px; font-size: var(--fs-sm); }

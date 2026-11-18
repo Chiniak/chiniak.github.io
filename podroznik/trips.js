@@ -391,18 +391,7 @@
         });
         const del = view.querySelector("#del");
         if (del) del.addEventListener("click", async () => {
-          const segs = await DB.byIndex("segments", "tripId", t.id);
-          const shared = App.Sync && await App.Sync.isShared(t.id);
-          if (!confirm(`Usunąć podróż „${t.name}”${segs.length ? ` razem z ${segs.length} ${plural(segs.length, "odcinkiem", "odcinkami", "odcinkami")}` : ""}? Tego nie da się cofnąć.${shared ? " To podróż wspólna – zniknie tylko u Ciebie, u innych zostanie." : ""}`)) return;
-          if (shared) await App.Sync.leave(t.id); // najpierw wyjście, żeby usuwanie nie poszło do innych
-          for (const store of ["segments", "files", "planItems", "packItems", "reminders", "expenses", "journal", "journalPhotos", "chat", "votes", "members"]) {
-            for (const r of await DB.byIndex(store, "tripId", t.id)) await DB.del(store, r.id);
-          }
-          if (App.Guide) await App.Guide.detachAll(t.id);
-          await DB.del("trips", t.id);
-          if (self.caches) caches.delete(`mapa-offline-${t.id}`).catch(() => {}); // pobrana mapa offline tej podróży
-          App.toast("Podróż usunięta");
-          location.replace("#/podroze");
+          if (await removeTrip(t)) location.replace("#/podroze");
         });
       },
       cleanup() { if (unpaint) unpaint(); if (previewUrl) URL.revokeObjectURL(previewUrl); },
@@ -811,5 +800,22 @@
   App.route(/^\/odcinek\/([\w-]+)\/edytuj$/, ([segId]) => segForm({ segId }));
 
   // wspólne elementy dla biletów (tickets.js)
-  App.Trips = { TYPES, typeOf, chips, status, COLORS, bySegTime, editIcon, plusIcon };
+  // usunięcie całej podróży (z pytaniem); true, gdy usunięta
+  async function removeTrip(t) {
+    const segs = await DB.byIndex("segments", "tripId", t.id);
+    const shared = App.Sync && await App.Sync.isShared(t.id);
+    if (!confirm(`Usunąć podróż „${t.name}”${segs.length ? ` razem z ${segs.length} ${plural(segs.length, "odcinkiem", "odcinkami", "odcinkami")}` : ""}? Tego nie da się cofnąć.${shared ? " To podróż wspólna – zniknie tylko u Ciebie, u innych zostanie." : ""}`)) return false;
+    if (shared) await App.Sync.leave(t.id); // najpierw wyjście, żeby usuwanie nie poszło do innych
+    for (const store of ["segments", "files", "planItems", "packItems", "reminders", "expenses", "journal", "journalPhotos", "chat", "votes", "members"]) {
+      for (const r of await DB.byIndex(store, "tripId", t.id)) await DB.del(store, r.id);
+    }
+    if (App.Guide) await App.Guide.detachAll(t.id);
+    await DB.del("trips", t.id);
+    if (self.caches) caches.delete(`mapa-offline-${t.id}`).catch(() => {}); // pobrana mapa offline tej podróży
+    if (App.Reminders && App.Reminders.syncNative) Promise.resolve(App.Reminders.syncNative()).catch(() => {}); // powiadomienia usuniętej podróży
+    App.toast("Podróż usunięta");
+    return true;
+  }
+
+  App.Trips = { removeTrip, TYPES, typeOf, chips, status, COLORS, bySegTime, editIcon, plusIcon };
 })();
