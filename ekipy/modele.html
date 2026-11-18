@@ -35,9 +35,19 @@ li b{color:#fff}
 </head>
 <body>
 <main>
-<h1>Ekipy – nowe modele postaci</h1>
+<h1>Ekipy – nowe modele postaci (wersja 2)</h1>
 <p class="lead">Pięć klas, każda z detalami wynikającymi z jej roli i sprzętu w grze. Modele mają ten sam układ części co obecne postacie (nogi, tułów, ramię z bronią), więc działające animacje ciosów, chodu i upadku zadziałają bez zmian. Kolory klubu to Twoje barwy: kurtka, czapka, szalik i lampasy.</p>
-<div class="line" id="line"></div>
+<div class="line" id="line"></div><details class="card" style="display:block"><summary style="cursor:pointer;font:700 20px 'Barlow Condensed',sans-serif">Na czym oparte są modele</summary><ul>
+<li><b>Światło</b>: jedno źródło z przodu u góry. Cień ma twardą krawędź i podąża za bryłą, zamiast obrysowywać brzeg. Cień kontaktowy jest pod kołnierzem, brodą i rękawem.</li>
+<li><b>Poświata krawędzi</b>: chłodna linia po stronie cienia odcina sylwetkę od ciemnego tła.</li>
+<li><b>Linie</b>: grubszy kontur na zewnątrz i cienkie linie wewnątrz. Kontur ma ciemny odcień koloru danej części zamiast czystej czerni.</li>
+<li><b>Fałdy</b>: kilka mocnych zamiast wielu. Zygzak w zgięciu łokcia, „harmonijka” przy kostce, fałdy naciągu od pachy.</li>
+<li><b>Głowa w 3/4</b>: czaszka jak koło, żuchwa nachylona ok. 15°, kość policzkowa na wysokości podstawy nosa. Dalsze oko jest węższe, a boczna płaszczyzna twarzy w cieniu.</li>
+<li><b>Anatomia</b>: kończyny mają objętość (bark, łokieć, przedramię zwężające się do nadgarstka, udo, kolano, łydka) i zachowują proporcje mimo stylizacji.</li>
+<li><b>Materiały</b>: skóra z ostrymi refleksami, dżins z przeszyciem, nylon z miękkim połyskiem, dzianina w prążki, metal i drewno z własnym połyskiem.</li>
+<li><b>Moda</b>: styl „casual” z trybun (overshirt z naszywką na rękawie, kaszkiet, anorak z kapturem, tenisówki na gumie, bucket hat) oraz styl ultrasów (czarny blok z kominiarką, capo z megafonem, raca).</li>
+<li><b>Czytelność</b>: każda klasa ma inną sylwetkę (kaszkiet, łysina z brodą, uniesiona raca, kaptur, kominiarka z kijem), więc rozpoznasz ją nawet z daleka na planszy.</li>
+</ul></details>
 <div id="cards"></div>
 </main>
 <script src="modele.js"></script>
@@ -46,39 +56,42 @@ const COL="#d62839",C2="#ffffff",EN="#3f4654";
 const INFO={
 "Prowodyr":["Lider ekipy","Zbalansowany przywódca, rzuca Bojowy okrzyk.",[
  ["Kaszkiet z tweedu","w jodełkę, z guzikiem i daszkiem; spod spodu krótko ścięte boki i baki"],
- ["Kurtka bomber","w barwach klubu, ze ściągaczami w paski na kołnierzu, mankietach i pasie, pomarańczową podszewką i kieszonką na zamek na rękawie"],
- ["Złoty łańcuch z medalikiem","widoczny w rozpiętym zamku"],
+ ["Overshirt w barwach klubu","dwie kieszenie z patkami na guzik, listwa z guzikami i naszywka na rękawie w stylu casual"],
+ ["Biały t-shirt i złoty łańcuch","t-shirt pod rozpiętym kołnierzem, łańcuch z medalikiem"],
  ["Mosiężny kastet","cztery pierścienie z refleksem światła"],
  ["Złoty sygnet","z czerwonym oczkiem na drugiej dłoni (sprzęt klasy)"],
- ["Lekki zarost i dżinsy","dżinsy z szwem i fałdami; białe sneakersy z podeszwą i sznurówkami"]]],
+ ["Dżinsy i tenisówki","dżinsy z przeszyciem, podwinięciem i „harmonijką” przy kostce; tenisówki tarasowe na gumowej podeszwie"]]],
 "Stary Wyga":["Weteran","Najwięcej zdrowia, Prowokacja i Twarda głowa.",[
- ["Twarz po przejściach","łysina z siwymi bokami, gęsta siwa broda i wąsy, blizna przez brew"],
- ["Rysy boksera","ucho „kalafior” po latach bójek, złamany nos, zmarszczki na czole"],
- ["Skórzana kurtka","brązowa, z połyskiem, klapami z przeszyciami, kieszeniami na zamek i ćwiekami na mankietach (sprzęt klasy); pod nią koszulka w barwach z herbem"],
- ["Szeroka sylwetka z brzuchem","pas ze stalową klamrą"],
- ["Stalowa rura","z ogniskami rdzy, chwytem owiniętym taśmą i złączką na końcu"],
- ["Glany i stary tatuaż","glany ze sznurowaniem i grubą podeszwą; wyblakły tatuaż na dłoni"]]],
-"Gniazdowy":["Prowadzi doping","Wsparcie: Raca, Doping z młyna, Zadyma.",[
+ ["Twarz po przejściach","łysina z siwymi bokami i połyskiem, gęsta siwa broda i wąsy, blizna przez brew, zmarszczki"],
+ ["Rysy boksera","ucho „kalafior” i złamany, krzywy nos"],
+ ["Skórzana kurtka","brązowa, z twardymi refleksami jak na skórze, klapami z przeszyciem i kieszeniami na zamek (sprzęt klasy)"],
+ ["Koszulka klubowa z herbem","pod kurtką"],
+ ["Szeroka sylwetka z brzuchem","pas ze stalową klamrą; masywne ramiona"],
+ ["Stalowa rura","metaliczny połysk, ogniska rdzy, chwyt owinięty taśmą, złączka z gwintem"],
+ ["Glany","sznurowane, z grubą podeszwą z bieżnikiem"],
+ ["Stary tatuaż","wyblakły, na dłoni"]]],
+"Gniazdowy":["Capo, prowadzi doping","Wsparcie: Raca, Doping z młyna, Zadyma.",[
  ["Krzyczy","otwarte usta i zęby, ściągnięte brwi"],
- ["Czapka z daszkiem","w barwach, z paskiem i guzikiem"],
+ ["Kapelusz typu bucket","w barwach, z paskiem"],
  ["Długi szalik klubowy","w paski, z frędzlami"],
- ["Megafon","przy biodrze na pasku przewieszonym przez pierś (sprzęt klasy), z tubą, rączką i membraną"],
- ["Raca w uniesionej ręce","z etykietą i nasadką, żarem, płomieniem, iskrami i smugą dymu; czerwona łuna oświetla otoczenie"],
- ["Koszulka z herbem","herb na piersi"]]],
+ ["Megafon","przy biodrze na pasku przez pierś (sprzęt klasy), z tubą, rączką, membraną i spustem"],
+ ["Raca w uniesionej ręce","etykieta i nasadka, biały żar, płomień, iskry i smuga dymu; czerwona łuna pada na otoczenie"],
+ ["Bluza klubowa","z herbem i ściągaczem w pasy"]]],
 "Czujka":["Zwiadowca","Najszybszy, 3 pola ruchu, ciosy krytyczne.",[
- ["Kaptur dresu","naciągnięty, ze sznurkami"],
- ["Komin na nos","widać tylko czujne oczy"],
- ["Smukła sylwetka","w dresie z lampasami na rękawach, bokach i nogawkach"],
- ["Zamek i pasek","srebrny zamek z suwakiem, ściągacze"],
- ["Łańcuch rowerowy","z ogniw na zmianę płaskich i bocznych, owinięty wokół dłoni"],
- ["Buty biegowe","neonowa pianka, bieżnik i zapiętek (sprzęt klasy)"]]],
+ ["Anorak z kapturem","naciągnięty kaptur z grubą krawędzią i sznurkami z końcówkami; pół-zamek z suwakiem i kieszeń kangurka"],
+ ["Komin na nos","z prążkami dzianiny; widać tylko zmrużone, czujne oczy"],
+ ["Smukła sylwetka","węższe ramiona i tułów niż u reszty ekipy"],
+ ["Wąskie dresy","z podwójnym lampasem w barwach"],
+ ["Łańcuch rowerowy","z ogniw na zmianę płaskich i bocznych, z nitami, owinięty dwa razy wokół dłoni"],
+ ["Buty biegowe","neonowa pianka z bieżnikiem, zapiętek (sprzęt klasy)"]]],
 "Bojówkarz":["Najmocniejszy cios","Zasięg 2 pola, celuje w najsłabszych, Zasadzka.",[
- ["Czarna kominiarka","z prążkami dzianiny; widać tylko pasek skóry z oczami"],
- ["Bluza z kapturem","w barwach, kaptur zsunięty na kark, sznurki z końcówkami i kieszeń kangurka"],
- ["Mapa dzielnic","wystaje z kieszeni, z zaznaczoną trasą i celem (sprzęt klasy)"],
+ ["Kominiarka","czarna, z prążkami dzianiny; tylko pasek skóry z oczami"],
+ ["Czarny blok","ciemna bluza z kapturem w odcieniu barw; podszewka kaptura i sznurki w kolorze klubu"],
+ ["Opaska klubowa","na ramieniu, w barwach z paskiem"],
+ ["Mapa dzielnic","wystaje z kieszeni kangurka, z zagięciami, zaznaczoną trasą i celem (sprzęt klasy)"],
  ["Taktyczne rękawice","z ochraniaczem na kłykcie"],
- ["Kij bejsbolowy","drewniany, ze słojami, obiciami, gałką i chwytem z taśmy"],
- ["Bojówki i glany","bojówki z kieszenią na udzie"]]]};
+ ["Kij bejsbolowy","drewno ze słojami, połyskiem i obiciami, gałka, chwyt owinięty taśmą"],
+ ["Bojówki i glany","bojówki z kieszenią na udzie i patką na napę"]]]};
 const KS=[0,2,1,3,4];
 document.getElementById("line").innerHTML=FIG2_CLASSES.map((c,i)=>fig2(c,COL,0,KS[i],{},C2)).join("");
 document.getElementById("cards").innerHTML=FIG2_CLASSES.map((c,i)=>{const I=INFO[c];return `<section class="card"><div class="stage">${fig2(c,COL,0,KS[i],{},C2)}</div><div><h2>${c}</h2><div class="sub">${I[0]} · ${I[1]}</div><ul>${I[2].map(x=>`<li><b>${x[0]}</b>: ${x[1]}</li>`).join("")}</ul>
