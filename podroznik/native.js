@@ -16,8 +16,11 @@
 
   // link zaproszenia otwarty w aplikacji (intent-filter w AndroidManifest): dolacz.html#POKOJ.KLUCZ → ekran „Dołącz”
   const openLink = url => {
-    const m = /\/podroznik\/dolacz(?:\.html)?#([\w-]+\.[\w-]+)/.exec(String(url || ""));
-    if (m) location.hash = `#/dolacz/${m[1]}`;
+    const u = String(url || "");
+    let m;
+    if ((m = /\/podroznik\/dolacz(?:\.html)?#z\.([A-Za-z0-9]{20,40})(?![\w-])/.exec(u))) location.hash = `#/znajomi/dodaj/${m[1]}`; // znajomy (QR)
+    else if ((m = /\/podroznik\/dolacz(?:\.html)?#p\.([A-Za-z0-9]{20,40})\.([\w-]{12})\.([\w-]{43})/.exec(u))) location.hash = `#/publiczna/${m[1]}/${m[2]}/${m[3]}`; // podróż publiczna
+    else if ((m = /\/podroznik\/dolacz(?:\.html)?#([\w-]+\.[\w-]+)/.exec(u))) location.hash = `#/dolacz/${m[1]}`;
   };
   if (P.App) {
     P.App.addListener("appUrlOpen", e => openLink(e.url));

@@ -20,7 +20,7 @@
 <p class="meta">Aplikacja <b>Podróżnik</b> (Android: <code>io.github.chiniak.podroznik</code>, strona: chiniak.github.io/podroznik) · obowiązuje od 17 listopada 2026</p>
 
 <h2>Najkrócej</h2>
-<p>Podróżnik to planer podróży, który działa <b>na Twoim telefonie</b>. Nie mamy własnego serwera, kont użytkowników ani reklam. Twoje podróże, bilety, wydatki, dziennik i dane z Gmaila zostają w pamięci urządzenia i nie są nam wysyłane, sprzedawane ani udostępniane. Wyjątek, który sam włączasz: <a href="#razem-pl">wspólne planowanie</a> – wtedy zmiany podróży idą do pozostałych uczestników przez serwer Google Firebase, <b>zaszyfrowane</b> kluczem, którego serwer nie zna.</p>
+<p>Podróżnik to planer podróży, który działa <b>na Twoim telefonie</b>. Nie mamy własnego serwera, kont użytkowników ani reklam. Twoje podróże, bilety, wydatki, dziennik i dane z Gmaila zostają w pamięci urządzenia i nie są nam wysyłane, sprzedawane ani udostępniane. Wyjątki, które sam włączasz: <a href="#razem-pl">wspólne planowanie</a> oraz <a href="#znajomi-pl">znajomi i udostępnione podróże</a> (szyfrowane w telefonie) – wtedy zmiany podróży idą do pozostałych uczestników przez serwer Google Firebase, <b>zaszyfrowane</b> kluczem, którego serwer nie zna.</p>
 
 <h2>Jakie dane przetwarza aplikacja</h2>
 <ul>
@@ -66,6 +66,15 @@
   <li><b>Usuwanie:</b> „Opuść wspólną podróż” albo usunięcie podróży kończy wysyłanie i odbieranie zmian na Twoim telefonie. Zaszyfrowane wpisy na serwerze bez klucza są nieczytelne; na prośbę (kontakt niżej) usuniemy wszystkie wpisy danej podróży z serwera.</li>
 </ul>
 
+<h2 id="znajomi-pl">Znajomi, czat i udostępnione podróże</h2>
+<ul>
+  <li><b>Kiedy:</b> tylko gdy otworzysz ekran „Znajomi” albo ustawisz podróży widoczność „Dla znajomych” lub „Publiczna”. Domyślnie każda podróż jest <b>prywatna</b>.</li>
+  <li><b>Jawne na serwerze</b> (Google Firebase, region UE): imię, które podasz, klucz publiczny telefonu, losowy anonimowy identyfikator, informacja kto kogo zaprosił i kto z kim pisze oraz czas wiadomości.</li>
+  <li><b>Szyfrowane end-to-end</b> (tylko szyfr na serwerze): treść wiadomości czatu (AES-256-GCM kluczem wyliczonym z kluczy obu osób – ECDH P-256; klucz prywatny nie opuszcza telefonu) oraz udostępnione podróże: nazwa, cel, termin, trasa (skąd–dokąd, godziny, numer lotu/pociągu), noclegi (nazwa i miasto), plan dni i pomysły. <b>Nie</b> są wysyłane: bilety, kody rezerwacji, ceny, notatki, adresy noclegów, wydatki, dokumenty, dziennik ani żadne dane z Gmaila.</li>
+  <li><b>Kto widzi podróż:</b> „Prywatna” – tylko Ty; „Dla znajomych” – osoby, które przyjęły zaproszenie; „Publiczna” – każdy, kto ma link (klucz jest w części linku po #). Minione podróże o takiej widoczności znajomi widzą jako historię. Zmiana na „Prywatna” usuwa podróż z serwera i wyłącza link.</li>
+  <li><b>Usuwanie:</b> „Usuń ze znajomych” usuwa czat z telefonu i dostęp tej osoby do Twoich podróży. Na prośbę (kontakt niżej) usuniemy z serwera Twój profil, zaproszenia, czaty i podróże.</li>
+</ul>
+
 <h2>Bezpieczeństwo i usuwanie danych</h2>
 <ul>
   <li>Dane są w prywatnej pamięci aplikacji, chronionej przez system Android. Możesz dodatkowo włączyć blokadę PIN-em, a kopię zapasową zaszyfrować hasłem.</li>
@@ -87,7 +96,7 @@
 <p class="meta"><b>Podróżnik</b> app (Android: <code>io.github.chiniak.podroznik</code>, web: chiniak.github.io/podroznik) · effective 17 November 2026</p>
 
 <h2>In short</h2>
-<p>Podróżnik is a travel planner that runs <b>on your phone</b>. We have no server of our own, no user accounts and no advertising. Your trips, tickets, expenses, journal and Gmail data stay in the device's storage and are never sent to us, sold or shared. The one exception, which you switch on yourself: <a href="#together-en">planning together</a> – then a trip's changes go to the other participants through Google Firebase, <b>encrypted</b> with a key the server does not know.</p>
+<p>Podróżnik is a travel planner that runs <b>on your phone</b>. We have no server of our own, no user accounts and no advertising. Your trips, tickets, expenses, journal and Gmail data stay in the device's storage and are never sent to us, sold or shared. The exceptions, which you switch on yourself: <a href="#together-en">planning together</a> and <a href="#friends-en">friends and shared trips</a> (encrypted on the phone) – then a trip's changes go to the other participants through Google Firebase, <b>encrypted</b> with a key the server does not know.</p>
 
 <h2>Data the app processes</h2>
 <ul>
@@ -131,6 +140,15 @@
   <li><b>How:</b> every change is encrypted on the phone (AES-256-GCM). The key exists only in the invitation link (in the part after #, which browsers never send to any server). Encrypted changes are stored in Google Firebase (Cloud Firestore, EU region) – Google and we see only ciphertext, the time of writing and a random anonymous device identifier (Firebase Authentication, anonymous sign-in – no e-mail or password).</li>
   <li><b>Who can see it:</b> the people you send the link to. Anyone with the link can view and change the trip, so share it only with your travel companions.</li>
   <li><b>Deletion:</b> "Leave the shared trip" or deleting the trip stops sending and receiving changes on your phone. Encrypted entries on the server are unreadable without the key; on request (contact below) we will delete all entries of a trip from the server.</li>
+</ul>
+
+<h2 id="friends-en">Friends, chat and shared trips</h2>
+<ul>
+  <li><b>When:</b> only when you open the "Friends" screen or set a trip's visibility to "Friends" or "Public". Every trip is <b>private</b> by default.</li>
+  <li><b>Visible on the server</b> (Google Firebase, EU region): the name you enter, the phone's public key, a random anonymous identifier, who invited whom and who chats with whom, and message times.</li>
+  <li><b>End-to-end encrypted</b> (only ciphertext on the server): chat message content (AES-256-GCM with a key derived from both people's keys – ECDH P-256; the private key never leaves the phone) and shared trips: name, destination, dates, route (from–to, times, flight/train number), stays (name and city), day plan and ideas. <b>Not</b> sent: tickets, booking codes, prices, notes, stay addresses, expenses, documents, the journal or any Gmail data.</li>
+  <li><b>Who can see a trip:</b> "Private" – only you; "Friends" – people who accepted your invitation; "Public" – anyone with the link (the key is in the part of the link after #). Friends see past trips with such visibility as history. Switching to "Private" removes the trip from the server and turns the link off.</li>
+  <li><b>Deletion:</b> "Remove friend" deletes the chat from the phone and that person's access to your trips. On request (contact below) we will delete your profile, invitations, chats and trips from the server.</li>
 </ul>
 
 <h2>Security and deletion</h2>

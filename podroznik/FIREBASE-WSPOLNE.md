@@ -1,6 +1,7 @@
 # Wspólne planowanie (Razem) – założenie projektu Firebase
 
-Cel: włączyć w Podróżniku wspólne planowanie na żywo (czat, pomysły z głosowaniem, zmiany widoczne od razu u wszystkich).
+Cel: włączyć w Podróżniku wspólne planowanie na żywo (czat, pomysły z głosowaniem, zmiany widoczne od razu u wszystkich)
+oraz **znajomych** (dodawanie przez link/QR, czat 1:1, podgląd planów i historii podróży – prywatne / dla znajomych / publiczne).
 Kod jest gotowy, ale potrzebuje Twojego projektu w Google Firebase. Darmowy plan (Spark) wystarczy z dużym zapasem
 i **nie wymaga karty płatniczej**.
 
@@ -39,11 +40,19 @@ Każdy telefon dostaje losowy, anonimowy identyfikator – bez e-maila i hasła.
 
 ```
 rules_version = '2';
+// Podróżnik – reguły Firestore.
+// 1) Wspólne planowanie (podroznik/sync.js): dane zaszyfrowane w telefonie (AES-256-GCM, klucz tylko w linku zaproszenia).
+//    Operacje można tylko dopisywać; odczyt tylko pojedynczego pokoju, którego losowy identyfikator jest w linku.
+// 2) Znajomi (podroznik/social.js): profil (imię + klucz publiczny), zaproszenia, czat 1:1 i podróże dla znajomych /
+//    publiczne. Czat i podróże są zaszyfrowane end-to-end – serwer przechowuje sam szyfr.
 service cloud.firestore {
   match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function isUid(id) { return id is string && id.size() >= 20 && id.size() <= 40 && id.matches('^[A-Za-z0-9]+$'); }
+
     match /rooms/{room}/ops/{op} {
-      allow list, get: if request.auth != null;
-      allow create: if request.auth != null
+      allow list, get: if signedIn();
+      allow create: if signedIn()
         && room.size() >= 16 && room.size() <= 32
         && request.resource.data.keys().hasOnly(['by', 't', 'c', 'v'])
         && request.resource.data.by == request.auth.uid
@@ -53,6 +62,62 @@ service cloud.firestore {
         && request.resource.data.v == 1;
       allow update, delete: if false;
     }
+
+    // profil: czyta każdy zalogowany, ale tylko po identyfikatorze (z linku / QR znajomego); bez listowania
+    match /people/{uid} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['name', 'pub', 'v'])
+        && request.resource.data.name is string && request.resource.data.name.size() <= 40
+        && request.resource.data.pub is string && request.resource.data.pub.size() <= 300
+        && request.resource.data.v == 1;
+      allow delete: if signedIn() && request.auth.uid == uid;
+
+      // zaproszenia / odpowiedzi: dokument nazwany identyfikatorem nadawcy; czyta i usuwa tylko odbiorca
+      match /inbox/{from} {
+        allow get, list, delete: if signedIn() && request.auth.uid == uid;
+        allow create, update: if signedIn() && request.auth.uid == from && from != uid && isUid(uid)
+          && request.resource.data.keys().hasOnly(['kind', 'name', 'pub', 't'])
+          && request.resource.data.kind in ['req', 'ok', 'bye']
+          && request.resource.data.name is string && request.resource.data.name.size() <= 40
+          && request.resource.data.pub is string && request.resource.data.pub.size() <= 300
+          && request.resource.data.t == request.time;
+      }
+    }
+
+    // czat 1:1: rozmowa „uidA_uidB” (posortowane) – czytają i piszą tylko te dwie osoby; wiadomości tylko dopisywane
+    match /dm/{conv}/msgs/{id} {
+      allow get, list: if signedIn() && request.auth.uid in conv.split('_');
+      allow create: if signedIn() && request.auth.uid in conv.split('_') && conv.split('_').size() == 2
+        && request.resource.data.keys().hasOnly(['by', 't', 'c', 'v'])
+        && request.resource.data.by == request.auth.uid
+        && request.resource.data.t == request.time
+        && request.resource.data.c is string && request.resource.data.c.size() < 20000
+        && request.resource.data.v == 1;
+      allow update, delete: if false;
+    }
+
+    // podróże udostępnione: zaszyfrowane migawki; odczyt po identyfikatorze (z listy kluczy albo z linku), pisze tylko właściciel
+    match /pub/{uid}/trips/{doc} {
+      allow get: if signedIn();
+      allow list: if signedIn() && request.auth.uid == uid;
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['c', 't', 'v'])
+        && request.resource.data.c is string && request.resource.data.c.size() < 900000
+        && request.resource.data.t == request.time && request.resource.data.v == 1;
+      allow delete: if signedIn() && request.auth.uid == uid;
+    }
+    // lista kluczy podróży dla jednego znajomego (zaszyfrowana kluczem tej pary)
+    match /pub/{uid}/keys/{friend} {
+      allow get: if signedIn() && (request.auth.uid == uid || request.auth.uid == friend);
+      allow list: if signedIn() && request.auth.uid == uid;
+      allow create, update: if signedIn() && request.auth.uid == uid && isUid(friend)
+        && request.resource.data.keys().hasOnly(['c', 't', 'v'])
+        && request.resource.data.c is string && request.resource.data.c.size() < 100000
+        && request.resource.data.t == request.time && request.resource.data.v == 1;
+      allow delete: if signedIn() && request.auth.uid == uid;
+    }
   }
 }
 ```
@@ -60,7 +125,8 @@ service cloud.firestore {
 3. **Opublikuj (Publish)**.
 
 Co robią: zapisywać mogą tylko zalogowane (anonimowo) telefony, tylko zaszyfrowane wpisy i tylko dopisywać –
-nikt nie zmieni ani nie usunie cudzych wpisów i nie wylistuje cudzych podróży.
+nikt nie zmieni ani nie usunie cudzych wpisów i nie wylistuje cudzych podróży. Te same reguły obsługują **znajomych**
+(profil, zaproszenia, czat 1:1, podróże dla znajomych / publiczne): czat czytają tylko te dwie osoby, a podróże są zaszyfrowane.
 (Ten sam plik jest w repozytorium: `podroznik-app/firebase/firestore.rules`.)
 
 ## Krok 5. Konfiguracja dla aplikacji – przyślij ją Claude'owi

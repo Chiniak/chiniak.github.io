@@ -69,6 +69,7 @@
         chip(lock ? "wł." : "wył.", lock ? "ok" : "")));
 
     const app = group("Aplikacja",
+      (App.Social && App.Social.available() ? link("#/znajomi", "users", "Znajomi", "czat i podgląd planów") : "") +
       (App.Gmail && App.Gmail.available() ? link("#/gmail?wroc=%23%2Fustawienia", "mail", "Konto Google (Gmail)",
         gmailCfg ? `<span translate="no">${esc(gmailCfg.email)}</span>` : "propozycje z maili", gmailCfg ? chip("połączone", "ok") : "") : "") +
       (inApk ? "" : `<a class="li" href="Podroznik.apk" download><span class="li-ico" aria-hidden="true">${icon("download")}</span>

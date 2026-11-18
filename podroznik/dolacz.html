@@ -13,7 +13,11 @@
   <script>
     // link zaproszenia: dolacz.html#POKOJ.KLUCZ – część po # (klucz) nigdy nie trafia do serwera.
     // W aplikacji na Androida ten adres otwiera od razu aplikację; w przeglądarce przechodzimy do wersji internetowej.
-    location.replace("./#/dolacz/" + location.hash.slice(1).replace(/[^\w.-]/g, ""));
+    // także: #z.UID – dodanie do znajomych, #p.UID.DOK.KLUCZ – podróż publiczna (znajomi.js)
+    var h = location.hash.slice(1).replace(/[^\w.-]/g, ""), m;
+    if ((m = /^z\.([A-Za-z0-9]{20,40})$/.exec(h))) location.replace("./#/znajomi/dodaj/" + m[1]);
+    else if ((m = /^p\.([A-Za-z0-9]{20,40})\.([\w-]{12})\.([\w-]{43})$/.exec(h))) location.replace("./#/publiczna/" + m[1] + "/" + m[2] + "/" + m[3]);
+    else location.replace("./#/dolacz/" + h);
   </script>
 </body>
 </html>

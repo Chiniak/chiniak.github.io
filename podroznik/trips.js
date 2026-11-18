@@ -143,7 +143,9 @@
     const [trips, segs] = await Promise.all([DB.all("trips"), DB.all("segments")]);
     const segsOf = {};
     segs.forEach(s => (segsOf[s.tripId] = segsOf[s.tripId] || []).push(s));
-    const statsAction = `<a class="icon-btn" href="#/statystyki" aria-label="Statystyki">${ic("chart")}</a>`;
+    const zn = App.Social && App.Social.available() ? await App.Social.unreadAll().catch(() => 0) : -1;
+    const statsAction = (zn >= 0 ? `<a class="icon-btn zn-top" href="#/znajomi" aria-label="Znajomi${zn ? ` – ${zn} nowe` : ""}">${ic("users")}${zn ? `<span class="zn-dot">${zn}</span>` : ""}</a>` : "")
+      + `<a class="icon-btn" href="#/statystyki" aria-label="Statystyki">${ic("chart")}</a>`;
     const head = `<header class="hm-head"><h2>${greeting()}</h2><p>${longDate()}</p></header>`;
 
     if (!trips.length) {
@@ -579,6 +581,7 @@
     // C: narzędzia
     const jr = App.Journal && t.start <= today ? await App.Journal.summary(id) : null;
     const guides = App.Guide ? await App.Guide.forTrip(id) : [];
+    const vis = App.Social && App.Social.available() ? await App.Social.visibility(id) : "private";
     const shared = App.Sync ? await App.Sync.isShared(id) : false, unread = shared ? await App.Sync.unread(id) : 0;
     const row = (href, icon, title, desc, extra = "") => `
       <${href ? `a href="${href}"` : `button type="button"`} class="li td-link"${extra}>
@@ -593,6 +596,7 @@
         ${App.Guide ? row(`#/przewodnik/${t.id}`, "compass", "Przewodnik", guides.length ? `${guides.map(g => esc(g.title)).join(", ")} · offline` : "Wikivoyage: co zobaczyć, jedzenie, dojazd – offline") : ""}
         ${row(`#/waluty/${t.id}`, "currency", "Przelicznik walut", "działa offline, kursy na drogę")}
         ${App.Sync ? row(`#/razem/${t.id}`, "chat", "Razem", shared ? `czat i pomysły${unread ? ` · <b class="rz-new">${unread} ${plural(unread, "nowa wiadomość", "nowe wiadomości", "nowych wiadomości")}</b>` : ""}` : "planujcie wspólnie – czat, pomysły, zmiany na żywo") : ""}
+        ${App.Social && App.Social.available() ? row(`#/widocznosc/${t.id}`, vis === "private" ? "lock" : vis === "public" ? "globe" : "users", "Kto widzi podróż", vis === "public" ? "publiczna – każdy z linkiem" : vis === "friends" ? "widzą ją Twoi znajomi" : "prywatna – tylko Ty") : ""}
         ${row(`#/udostepnij/${t.id}`, "share", "Wyślij podróż", "jako plik albo plan w wiadomości")}
         ${row(null, "bell", "Do kalendarza", "plik .ics z przypomnieniami", ` id="ics-trip"`)}
       </div>`;
