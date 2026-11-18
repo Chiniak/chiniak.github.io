@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ekipy – modele postaci</title>
+<title>Ekipy – modele postaci v3</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&display=swap">
 <style>
 :root{--bg:#0b1630;--card:#122449;--bd:#2c4f85;--tx:#eef2fa;--mut:#9fb4d8;--acc:#ffc13b}
@@ -35,22 +35,20 @@ li b{color:#fff}
 </head>
 <body>
 <main>
-<h1>Ekipy – nowe modele postaci (wersja 2)</h1>
+<h1>Ekipy – modele postaci (wersja 3, półrealistyczna)</h1>
 <p class="lead">Pięć klas, każda z detalami wynikającymi z jej roli i sprzętu w grze. Modele mają ten sam układ części co obecne postacie (nogi, tułów, ramię z bronią), więc działające animacje ciosów, chodu i upadku zadziałają bez zmian. Kolory klubu to Twoje barwy: kurtka, czapka, szalik i lampasy.</p>
-<div class="line" id="line"></div><details class="card" style="display:block"><summary style="cursor:pointer;font:700 20px 'Barlow Condensed',sans-serif">Na czym oparte są modele</summary><ul>
-<li><b>Światło</b>: jedno źródło z przodu u góry. Cień ma twardą krawędź i podąża za bryłą, zamiast obrysowywać brzeg. Cień kontaktowy jest pod kołnierzem, brodą i rękawem.</li>
-<li><b>Poświata krawędzi</b>: chłodna linia po stronie cienia odcina sylwetkę od ciemnego tła.</li>
-<li><b>Linie</b>: grubszy kontur na zewnątrz i cienkie linie wewnątrz. Kontur ma ciemny odcień koloru danej części zamiast czystej czerni.</li>
-<li><b>Fałdy</b>: kilka mocnych zamiast wielu. Zygzak w zgięciu łokcia, „harmonijka” przy kostce, fałdy naciągu od pachy.</li>
-<li><b>Głowa w 3/4</b>: czaszka jak koło, żuchwa nachylona ok. 15°, kość policzkowa na wysokości podstawy nosa. Dalsze oko jest węższe, a boczna płaszczyzna twarzy w cieniu.</li>
-<li><b>Anatomia</b>: kończyny mają objętość (bark, łokieć, przedramię zwężające się do nadgarstka, udo, kolano, łydka) i zachowują proporcje mimo stylizacji.</li>
-<li><b>Materiały</b>: skóra z ostrymi refleksami, dżins z przeszyciem, nylon z miękkim połyskiem, dzianina w prążki, metal i drewno z własnym połyskiem.</li>
-<li><b>Moda</b>: styl „casual” z trybun (overshirt z naszywką na rękawie, kaszkiet, anorak z kapturem, tenisówki na gumie, bucket hat) oraz styl ultrasów (czarny blok z kominiarką, capo z megafonem, raca).</li>
-<li><b>Czytelność</b>: każda klasa ma inną sylwetkę (kaszkiet, łysina z brodą, uniesiona raca, kaptur, kominiarka z kijem), więc rozpoznasz ją nawet z daleka na planszy.</li>
+<div class="line" id="line"></div><details class="card" style="display:block"><summary style="cursor:pointer;font:700 20px 'Barlow Condensed',sans-serif">Co zmieniło się w wersji 3</summary><ul>
+<li><b>Proporcje</b>: ok. 7,5 głowy zamiast ok. 5. Dłuższe nogi i tułów, głowa mniejsza względem ciała, ramiona i biodra w realnym stosunku.</li>
+<li><b>Bryła zamiast konturu</b>: zniknął gruby czarny obrys. Kształt budują gradienty poprzecinające każdą kończynę (odbicie, cień, półcień, światło) oraz miękkie cienie kontaktowe pod kołnierzem, rękawem, daszkiem i paskiem.</li>
+<li><b>Skóra</b>: ciepłe cienie zamiast fioletowych, rumieniec na policzku, cień oczodołu, pod dolną wargą i żuchwą, światło na czole i czubku nosa.</li>
+<li><b>Twarz</b>: oko z białkiem, tęczówką z pierścieniem, źrenicą i refleksem, powieką, krawędzią dolnej powieki i brwią z pojedynczych włosków. Dalsze oko węższe, nos z nozdrzem i bryłą, usta dwutonowe z refleksem.</li>
+<li><b>Włosy i zarost</b>: pasma o różnej jasności, zarost jako punkty, broda z włosków.</li>
+<li><b>Materiały</b>: skóra z ostrymi refleksami, dżins z przeszyciem i podwinięciem, dzianina w prążki, tweed, metal z połyskiem i rdzą, drewno ze słojami, guma i skóra na butach.</li>
+<li><b>Fałdy</b>: kilka mocnych z jasną krawędzią obok (zgięcie łokcia, pod pachą, przy kostce, przy pasie).</li>
 </ul></details>
 <div id="cards"></div>
 </main>
-<script src="modele.js"></script>
+<script src="modele3.js"></script>
 <script>
 const COL="#d62839",C2="#ffffff",EN="#3f4654";
 const INFO={
@@ -93,10 +91,10 @@ const INFO={
  ["Kij bejsbolowy","drewno ze słojami, połyskiem i obiciami, gałka, chwyt owinięty taśmą"],
  ["Bojówki i glany","bojówki z kieszenią na udzie i patką na napę"]]]};
 const KS=[0,2,1,3,4];
-document.getElementById("line").innerHTML=FIG2_CLASSES.map((c,i)=>fig2(c,COL,0,KS[i],{},C2)).join("");
-document.getElementById("cards").innerHTML=FIG2_CLASSES.map((c,i)=>{const I=INFO[c];return `<section class="card"><div class="stage">${fig2(c,COL,0,KS[i],{},C2)}</div><div><h2>${c}</h2><div class="sub">${I[0]} · ${I[1]}</div><ul>${I[2].map(x=>`<li><b>${x[0]}</b>: ${x[1]}</li>`).join("")}</ul>
-<div class="mini"><div><div class="tile">${fig2(c,COL,0,KS[i],{},C2)}</div><small>na planszy</small></div><div><div class="tile g">${fig2(c,EN,1,(KS[i]+2)%5,{},"#c9a227")}</div><small>jako rywal</small></div><div><div class="tile">${fig2(c,COL,0,KS[i],{scarf:1,shades:1,shoes:1,stripes:1},C2)}</div><small>z dodatkami</small></div></div>
-<div class="cols">${[["#2563eb","#fff"],["#16a34a","#fff"],["#d99a00","#111"],["#111827","#f5d000"],["#7c3aed","#fff"]].map((p,j)=>fig2(c,p[0],0,(KS[i]+j)%5,{},p[1])).join("")}</div></div></section>`}).join("");
+document.getElementById("line").innerHTML=FIG3_CLASSES.map((c,i)=>fig3(c,COL,0,KS[i],{},C2)).join("");
+document.getElementById("cards").innerHTML=FIG3_CLASSES.map((c,i)=>{const I=INFO[c];return `<section class="card"><div class="stage">${fig3(c,COL,0,KS[i],{},C2)}</div><div><h2>${c}</h2><div class="sub">${I[0]} · ${I[1]}</div><ul>${I[2].map(x=>`<li><b>${x[0]}</b>: ${x[1]}</li>`).join("")}</ul>
+<div class="mini"><div><div class="tile">${fig3(c,COL,0,KS[i],{},C2)}</div><small>na planszy</small></div><div><div class="tile g">${fig3(c,EN,1,(KS[i]+2)%5,{},"#c9a227")}</div><small>jako rywal</small></div><div><div class="tile">${fig3(c,COL,0,KS[i],{scarf:1,shades:1,shoes:1,stripes:1},C2)}</div><small>z dodatkami</small></div></div>
+<div class="cols">${[["#2563eb","#fff"],["#16a34a","#fff"],["#d99a00","#111"],["#111827","#f5d000"],["#7c3aed","#fff"]].map((p,j)=>fig3(c,p[0],0,(KS[i]+j)%5,{},p[1])).join("")}</div></div></section>`}).join("");
 </script>
 </body>
 </html>
