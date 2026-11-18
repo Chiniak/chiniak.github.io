@@ -22,7 +22,7 @@
     const common = wb.filter(w => wa.has(w)).length;
     return common / Math.min(wa.size, wb.length) >= 0.6;
   }
-  const langs = () => (self.I18N && I18N.lang === "en") ? ["en", "pl"] : ["pl", "en"];
+  const langs = () => self.I18N ? I18N.dataLangs() : ["pl", "en"];
 
   async function api(host, params) {
     const r = await fetch(`https://${host}/w/api.php?` + new URLSearchParams({ action: "query", format: "json", origin: "*", ...params }));

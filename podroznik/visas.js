@@ -144,12 +144,12 @@
   const NO_EN = new Set(["GE", "JO", "TD"]); // „Georgia” = też stan USA, „Jordan” = imię, „Chad” = imię
   const NO_TEXT = new Set(["ML", "DM"]); // „Mali” = „mali” (mały), „Dominika” = imię – tylko z lotnisk albo ręcznie
   const norm = s => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/ł/g, "l").replace(/Ł/g, "L").toLowerCase();
-  let dnPl = null, dnEn = null;
-  try { dnPl = new Intl.DisplayNames(["pl"], { type: "region" }); dnEn = new Intl.DisplayNames(["en"], { type: "region" }); } catch (e) { /* stara przeglądarka */ }
+  const dns = {};
+  const dn = l => dns[l] || (dns[l] = (() => { try { return new Intl.DisplayNames([l], { type: "region" }); } catch (e) { return null; } })());
   const name = (cc, lang) => {
-    const en = lang === "en" || (lang == null && root.I18N && I18N.lang === "en");
-    if (!en && NAME_FIX[cc]) return NAME_FIX[cc];
-    try { return (en ? dnEn : dnPl).of(cc); } catch (e) { return cc; }
+    const l = lang || (root.I18N ? I18N.lang : "pl");
+    if (l === "pl" && NAME_FIX[cc]) return NAME_FIX[cc];
+    try { return (dn(l) || dn("en")).of(cc); } catch (e) { return cc; }
   };
   let matcher = null;
   function textCountries(text) {
@@ -159,7 +159,7 @@
       for (const cc of all) {
         if (NO_TEXT.has(cc)) continue;
         const words = new Set((ALIAS[cc] || "").split("|").filter(Boolean));
-        if (dnPl) { words.add(norm(name(cc, "pl"))); if (!NO_EN.has(cc)) words.add(norm(name(cc, "en"))); }
+        if (dn("pl")) { words.add(norm(name(cc, "pl"))); if (!NO_EN.has(cc)) words.add(norm(name(cc, "en"))); }
         if (NAME_FIX[cc]) words.add(norm(NAME_FIX[cc]));
         const list = [...words].filter(w => w && w.length >= 3).map(w => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
         if (list.length) matcher.push([cc, new RegExp(`(^|[^a-z])(${list.join("|")})($|[^a-z])`)]);

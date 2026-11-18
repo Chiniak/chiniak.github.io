@@ -13,7 +13,8 @@
   const STORE = "guides";
   const API = lang => `https://${lang}.wikivoyage.org/w/api.php`;
   const PAGE = (lang, title) => `https://${lang}.wikivoyage.org/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`;
-  const appLang = () => (self.I18N && I18N.lang === "en" ? "en" : "pl");
+  const appLang = () => (self.I18N ? I18N.lang : "pl");
+  const GLANGS = () => [...new Set([appLang(), "pl", "en"])]; // języki przewodnika: język aplikacji, polski, angielski
 
   /* ---------- pobieranie ---------- */
   async function api(lang, params, timeout = 20000) {
@@ -227,7 +228,7 @@
     const trip = await DB.get("trips", id);
     if (!trip) { location.replace("#/podroze"); return ""; }
     const guides = await forTrip(id);
-    const lang = q.l === "en" || q.l === "pl" ? q.l : appLang();
+    const lang = self.I18N && I18N.LANGS[q.l] ? q.l : appLang();
 
     // dodawanie: brak przewodników albo „+ Dodaj”
     if (!guides.length || q.dodaj != null) {
@@ -244,8 +245,7 @@
           ${searchForm(first, "")}
           ${sug.length > 1 ? `<div class="st-chips gd-sug">${sug.map(s => `<button type="button" class="st-chip" data-sug="${esc(s)}">${esc(s)}</button>`).join("")}</div>` : ""}
           <div class="st-chips gd-lang" role="group" aria-label="Język przewodnika">
-            <a class="st-chip${lang === "pl" ? " on" : ""}" href="#/przewodnik/${id}?${new URLSearchParams({ ...(q.dodaj != null ? { dodaj: q.dodaj } : {}), l: "pl" })}">Polski</a>
-            <a class="st-chip${lang === "en" ? " on" : ""}" href="#/przewodnik/${id}?${new URLSearchParams({ ...(q.dodaj != null ? { dodaj: q.dodaj } : {}), l: "en" })}">English</a>
+            ${GLANGS().map(l => `<a class="st-chip${lang === l ? " on" : ""}" href="#/przewodnik/${id}?${new URLSearchParams({ ...(q.dodaj != null ? { dodaj: q.dodaj } : {}), l })}">${I18N.LANGS[l].name}</a>`).join("")}
           </div>
           <div id="gd-res" aria-live="polite"></div>
           ${guides.length ? `<p class="gd-back"><a href="#/przewodnik/${id}">← Wróć do przewodnika</a></p>` : ""}

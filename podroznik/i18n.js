@@ -1,34 +1,48 @@
-/* Podróżnik – języki: polski (napisany w kodzie) i angielski (słownik i18n-en.js).
+/* Podróżnik – języki: polski (napisany w kodzie), angielski (słownik i18n-en.js) i słowniki i18n-de/es/it/pt/zh.js (ładowane tylko dla wybranego języka – patrz skrypt w index.html).
    Działa jak „tłumacz ekranu”: po każdej zmianie widoku podmienia teksty, podpowiedzi (placeholder), opisy (aria-label, title),
-   okienka confirm/prompt/alert i tytuł strony. Daty i liczby: App/I18N.locale ("pl-PL" / "en-GB").
-   Wybór: Ustawienia → Język (localStorage "podroznik-lang": "pl" | "en" | "auto"; auto = język telefonu, polski tylko dla polskiego).
+   okienka confirm/prompt/alert i tytuł strony. Daty i liczby: App/I18N.locale ("pl-PL", "en-GB", "de-DE"…).
+   Wybór: Ustawienia → Język (localStorage "podroznik-lang": pl | en | de | es | it | pt | zh | auto; auto = pierwszy obsługiwany język telefonu, inaczej angielski).
    W service workerze (powiadomienia) język czytany z bazy (ustawienie "lang"). */
 (function (root) {
-  const DICT = root.I18N_EN || {};
   const isWin = typeof document !== "undefined";
 
+  /* ---------- języki: polski (w kodzie), angielski (i18n-en.js), pozostałe: i18n-<kod>.js → I18N_DICTS[kod] ---------- */
+  const LANGS = {
+    pl: { name: "Polski", locale: "pl-PL" }, en: { name: "English", locale: "en-GB" }, de: { name: "Deutsch", locale: "de-DE" },
+    es: { name: "Español", locale: "es-ES" }, it: { name: "Italiano", locale: "it-IT" }, pt: { name: "Português", locale: "pt-PT" }, zh: { name: "中文", locale: "zh-CN" },
+  };
+  const dictOf = l => l === "en" ? (root.I18N_EN || {}) : ((root.I18N_DICTS || {})[l] || {});
+
+  // auto = pierwszy obsługiwany język telefonu (kolejność jak na liście języków telefonu), w innym wypadku angielski
   function pickLang(pref) {
-    if (pref === "pl" || pref === "en") return pref;
+    if (LANGS[pref]) return pref;
     const nav = (root.navigator && (navigator.languages || [navigator.language])) || [];
-    return nav.some(l => /^pl\b/i.test(l || "")) || !nav.length ? "pl" : "en";
+    if (!nav.length || nav.some(l => /^pl\b/i.test(l || ""))) return "pl"; // kto ma polski na liście, dostaje polski (jak dotąd)
+    for (const l of nav) { const c = String(l || "").slice(0, 2).toLowerCase(); if (LANGS[c]) return c; }
+    return "en";
   }
   let pref = "auto";
   try { pref = (isWin && localStorage.getItem("podroznik-lang")) || "auto"; } catch (e) { /* brak dostępu */ }
   let lang = pickLang(pref);
 
-  /* ---------- wzorce z {} ---------- */
+  /* ---------- wzorce z {} (budowane dla bieżącego języka) ---------- */
   const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const patterns = [];
-  for (const [k, v] of Object.entries(DICT)) {
-    if (!k.includes("{}")) continue;
-    const parts = k.split("{}");
-    const statics = parts.join("");
-    if (!/[^\s·:,.()–\-—/%×+]/.test(statics)) continue; // same znaki interpunkcyjne – za ogólne
-    const re = new RegExp("^" + parts.map(esc).join("([\\s\\S]*?)") + "$");
-    const longest = parts.slice().sort((a, b) => b.length - a.length)[0];
-    patterns.push({ re, v, n: parts.length - 1, longest, weight: statics.length });
+  let DICT = {}, patterns = [];
+  function build() {
+    DICT = lang === "en" ? dictOf("en") : { ...dictOf("en"), ...dictOf(lang) }; patterns = []; // brak tłumaczenia → angielski (nie polski)
+    for (const [k, v] of Object.entries(DICT)) {
+      if (!k.includes("{}")) continue;
+      const parts = k.split("{}");
+      const statics = parts.join("");
+      if (!/[^\s·:,.()–\-—/%×+]/.test(statics)) continue; // same znaki interpunkcyjne – za ogólne
+      const re = new RegExp("^" + parts.map(esc).join("([\\s\\S]*?)") + "$");
+      const longest = parts.slice().sort((a, b) => b.length - a.length)[0];
+      patterns.push({ re, v, n: parts.length - 1, longest, weight: statics.length });
+    }
+    patterns.sort((a, b) => b.weight - a.weight);
   }
-  patterns.sort((a, b) => b.weight - a.weight);
+  build();
+  if (lang !== "pl" && lang !== "en" && !Object.keys(dictOf(lang)).length) { lang = "en"; build(); } // brak pliku słownika (np. offline) – angielski
 
   const fill = (tpl, args) => {
     let i = 0;
@@ -89,9 +103,17 @@
   const I18N = root.I18N = {
     get lang() { return lang; },
     get pref() { return pref; },
-    get locale() { return lang === "en" ? "en-GB" : "pl-PL"; },
+    get locale() { return LANGS[lang].locale; },
+    LANGS,
+    // języki do zapytań o artykuły (Wikipedia, Wikivoyage): najpierw język aplikacji, potem polski i angielski
+    dataLangs() { return [...new Set([lang, "pl", "en"])]; },
     tr, trText,
-    setLang(p) { pref = p; lang = pickLang(p); cache.clear(); },
+    setLang(p) {
+      pref = p; lang = pickLang(p);
+      // service worker: słowniki są wczytane na starcie (importScripts), brak = angielski
+      if (lang !== "pl" && lang !== "en" && !Object.keys(dictOf(lang)).length) lang = "en";
+      build(); cache.clear();
+    },
   };
 
   if (!isWin) return; // service worker – tylko tr()

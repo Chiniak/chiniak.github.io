@@ -21,7 +21,7 @@
       if (wait > 0) await sleep(wait);
       lastCall = Date.now();
       const r = await fetch(`https://nominatim.openstreetmap.org/${path}?` +
-        new URLSearchParams({ format: "jsonv2", "accept-language": (self.I18N && I18N.lang === "en") ? "en,pl" : "pl,en", ...params }));
+        new URLSearchParams({ format: "jsonv2", "accept-language": (self.I18N ? I18N.dataLangs() : ["pl", "en"]).join(","), ...params }));
       if (!r.ok) throw new Error(`wyszukiwarka odpowiedziała ${r.status}`);
       return r.json();
     };

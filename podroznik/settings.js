@@ -21,7 +21,7 @@
       await Visas.ready();
       cit = Visas.citizen();
       const all = self.VISA_WORLD ? Object.keys(VISA_WORLD.rows) : ["PL"];
-      citOpts = all.map(cc => [cc, Visas.name(cc)]).sort((a, b) => a[1].localeCompare(b[1], self.I18N && I18N.lang === "en" ? "en" : "pl"));
+      citOpts = all.map(cc => [cc, Visas.name(cc)]).sort((a, b) => a[1].localeCompare(b[1], self.I18N ? I18N.lang : "pl"));
     }
     const [last, lock] = await Promise.all([DB.getSetting("lastBackup", null), DB.getSetting("lock", null)]);
     const age = last ? Math.floor((Date.now() - new Date(last.at)) / 86400000) : null;
@@ -42,7 +42,7 @@
 
     const look = group("Wygląd",
       pick("sun", "Motyw", "theme-sel", [["auto", "Auto"], ["light", "Jasny"], ["dark", "Ciemny"]], theme) +
-      pick("globe", "Język / Language", "lang-sel", [["auto", "Auto"], ["pl", "Polski"], ["en", "English"]], lang, "", ' translate="no"') +
+      pick("globe", "Język / Language", "lang-sel", [["auto", "Auto"], ...Object.entries(I18N.LANGS).map(([k, v]) => [k, v.name])], lang, "", ' translate="no"') +
       (App.Backdrop ? `
         <div class="li set-row set-bg"><span class="li-ico" aria-hidden="true">${icon("image")}</span>
           <span class="li-main"><b>Tło ze zdjęć</b><small>natura i miasta z Wikimedia Commons</small></span>
