@@ -109,6 +109,24 @@ automatycznego czytania Gmaila (wymaga weryfikacji aplikacji przez Google) – z
 
 ---
 
+## Pomysły do zrobienia (zgłoszone przez właściciela)
+
+### Biblioteka planów z ocenami (18.11.2026)
+Publiczna biblioteka gotowych planów, z której każdy może skorzystać:
+- **Rodzaje planów:** plan jednego dnia w mieście (np. „1 dzień w Rzymie”) oraz plany długoterminowe – zwiedzanie kraju
+  albo kilku krajów (np. „3 tygodnie w Wietnamie”, „Bałkany: Chorwacja, Czarnogóra, Albania w 14 dni”).
+- **Wyszukiwarka:** po mieście, kraju, kilku miastach naraz albo kilku krajach naraz (plan pasuje, gdy obejmuje
+  wszystkie wybrane miejsca); przydatne filtry: liczba dni, pora roku, najwyżej oceniane / najnowsze.
+- **Oceny 1–10 gwiazdek:** każdy użytkownik może ocenić plan (jedna ocena na osobę, można ją zmienić);
+  przy planie średnia i liczba ocen. Ewentualnie krótka opinia.
+- **Użycie planu:** „Skopiuj do moich podróży” z wyborem daty (jest już `copyTrip` i „Skopiuj dzień” – t57).
+- **Dodawanie:** „Opublikuj w bibliotece” z własnej podróży lub jednego dnia (bez biletów, cen, notatek, adresów noclegów –
+  jak migawka „publiczna” w social.js).
+- Do przemyślenia przy realizacji: plany w bibliotece muszą być **jawne** (nie E2E), żeby dało się je wyszukiwać –
+  osobna kolekcja Firestore (np. `library/{id}` z polami miasta/kraje/dni + `ratings/{uid}`), zgłaszanie nadużyć
+  i moderacja (wymóg Google Play dla treści od użytkowników), limit darmowego planu Firebase (zapytania = odczyty),
+  zapis w polityce prywatności i w formularzu „Bezpieczeństwo danych”. Można zacząć od obecnego „Odkrywaj”.
+
 ## Jak to jest zbudowane (dla kolejnych etapów)
 
 | Plik | Rola |
