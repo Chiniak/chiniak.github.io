@@ -1060,4 +1060,7 @@ self.I18N_EN = {
   "Dodaj podróż, a potem wybierz, kto ją widzi.": "Add a trip, then choose who can see it.",
   "Znajomi i obserwujący mogą oglądać plany i brać z nich pomysły. Bilety, kody rezerwacji, ceny i notatki nigdy nie są pokazywane.": "Friends and followers can view plans and take ideas from them. Tickets, booking codes, prices and notes are never shown.",
   "{} zaproszenie czeka": "{} invitation waiting", "{} zaproszenia czekają": "{} invitations waiting", "{} zaproszeń czeka": "{} invitations waiting",
+  "Powiadomienia": "Notifications", "Powiadomienia – {} nowych": "Notifications – {} new", "Zamknij": "Close",
+  "chce dodać Cię do znajomych": "wants to add you as a friend", "Przyjmij": "Accept", "Brak nowych powiadomień.": "No new notifications.",
+  "Wszystkie wiadomości": "All messages", "{} przyjął(a) Twoje zaproszenie": "{} accepted your invitation",
 };

@@ -2135,3 +2135,22 @@ a.tp-trip { text-decoration: none; }
 .social-top .icon-btn[aria-current="page"] { background: var(--accent-soft); color: var(--accent); }
 .zn-stats { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin: 8px 0 0; }
 .zn-ideas .li { align-items: center; }
+
+/* ikony marek (Google, Facebook) – kolorowe, bez obrysu */
+.ic-brand { stroke: none; fill: none; }
+.btn.primary .ic-brand, .ac-btn.primary .ac-logo { background: #fff; border-radius: 50%; padding: 2px; box-sizing: content-box; }
+.li-ico .ic-brand { width: 20px; height: 20px; }
+
+/* okienko powiadomień (znajomi.js) */
+.notif-scrim { position: fixed; inset: 0; z-index: 40; background: rgba(0,0,0,.25); }
+.notif-pop { position: fixed; z-index: 41; top: calc(56px + env(safe-area-inset-top)); right: 8px; left: 8px; max-width: 380px; margin-left: auto;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg, 16px); box-shadow: 0 12px 40px rgba(0,0,0,.25); display: flex; flex-direction: column; max-height: 70vh; overflow: hidden; }
+.np-head { display: flex; align-items: center; justify-content: space-between; padding: 8px 8px 8px 16px; border-bottom: 1px solid var(--line); }
+.np-body { overflow-y: auto; padding: 4px 0; }
+.np-row { display: flex; align-items: center; gap: 10px; padding: 10px 14px; color: inherit; text-decoration: none; }
+.np-row .li-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.np-row small { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.np-row + .np-row { border-top: 1px solid var(--line); }
+.np-empty { padding: 18px 16px; margin: 0; text-align: center; }
+.np-foot { display: flex; justify-content: space-between; padding: 10px 16px; border-top: 1px solid var(--line); font-size: var(--fs-sm, .9rem); }
+.np-foot a { color: var(--accent); text-decoration: none; font-weight: 600; }

@@ -74,16 +74,16 @@
           <div class="zn-acc-h"><span class="li-ico">${ic("lock")}</span><span class="li-main"><b>${acc.google && acc.facebook ? "Konto Google i Facebook" : acc.google ? "Konto Google" : "Konto Facebook"}</b><small translate="no">${esc(acc.email || acc.name)}</small></span>
             <button type="button" class="btn small" id="zn-out">Wyloguj</button></div>
           <label class="zn-sw"><input type="checkbox" id="zn-find"${st.findable !== false ? " checked" : ""}><span><b>Znajomi mogą znaleźć mnie po e-mailu</b><small>tylko gdy wpiszą dokładnie ten adres</small></span></label>
-          ${acc.google ? "" : `<button type="button" class="btn wide zn-g2" id="zn-google">${ic("lock")} <span>Dołącz też konto Google</span></button>`}
-          ${SO().fbAvailable() ? acc.facebook ? `<button type="button" class="btn wide zn-fbf" id="zn-fbfriends">${ic("users")} <span>Znajomi z Facebooka w Podróżniku</span></button><div id="zn-fblist"></div>`
-            : `<button type="button" class="btn wide zn-fb" id="zn-facebook">${ic("users")} <span>Połącz z Facebookiem – znajdź znajomych</span></button>` : ""}
+          ${acc.google ? "" : `<button type="button" class="btn wide zn-g2" id="zn-google">${ic("google")} <span>Dołącz też konto Google</span></button>`}
+          ${SO().fbAvailable() ? acc.facebook ? `<button type="button" class="btn wide zn-fbf" id="zn-fbfriends">${ic("facebook")} <span>Znajomi z Facebooka w Podróżniku</span></button><div id="zn-fblist"></div>`
+            : `<button type="button" class="btn wide zn-fb" id="zn-facebook">${ic("facebook")} <span>Połącz z Facebookiem – znajdź znajomych</span></button>` : ""}
           <a class="btn wide zn-acclink" href="#/konto">${ic("lock")} <span>Połączone konta (Google, Facebook)</span></a>
           <label class="zn-sw"><input type="checkbox" id="zn-vault"${st.vault !== false ? " checked" : ""}><span><b>Kopia znajomych na koncie</b><small>na nowym telefonie wrócą znajomi, czaty i widoczność podróży (kopia klucza czatu jest chroniona logowaniem do konta, bez osobnego hasła)</small></span></label>
         </section>` : `
         <section class="card zn-acc">
           <p class="zn-acc-t"><b>Zaloguj się kontem Google</b> – znajomi i czaty przejdą z Tobą na nowy telefon, a znajomi znajdą Cię po adresie e-mail.</p>
-          <button type="button" class="btn primary wide" id="zn-google">${ic("lock")} <span>Zaloguj kontem Google</span></button>
-          ${SO().fbAvailable() ? `<button type="button" class="btn wide zn-fb" id="zn-facebook">${ic("users")} <span>Zaloguj przez Facebooka</span></button>
+          <button type="button" class="btn primary wide" id="zn-google">${ic("google")} <span>Zaloguj kontem Google</span></button>
+          ${SO().fbAvailable() ? `<button type="button" class="btn wide zn-fb" id="zn-facebook">${ic("facebook")} <span>Zaloguj przez Facebooka</span></button>
           <p class="f-hint">Przez Facebooka zobaczysz znajomych, którzy też zalogowali się do Podróżnika przez Facebooka.</p>` : ""}
         </section>`}
 
@@ -694,31 +694,88 @@
     };
   });
 
-  /* ================= stały pasek: Znajomi i Wiadomości na każdym ekranie ================= */
+  /* ================= stały pasek: Powiadomienia, Znajomi i Wiadomości na każdym ekranie ================= */
   (function topButtons() {
     const box = document.getElementById("social-top");
     if (!box || !SO()) return;
-    let last = "";
-    async function refresh() {
-      if (!SO().available()) { box.hidden = true; return; }
-      let inv = 0, msg = 0;
-      try {
-        const st = await SO().state();
-        for (const [id, f] of Object.entries(st.friends)) { if (f.state === "in") inv++; else if (f.state === "ok") msg += await SO().unread(id); }
-      } catch (e) { /* bez licznika */ }
-      const h = `${inv}|${msg}|${(location.hash || "").slice(0, 12)}`;
-      if (h === last) return; last = h;
-      const here = r => location.hash.startsWith(r) ? ' aria-current="page"' : "";
-      const dot = n => n ? `<span class="zn-dot">${n > 99 ? "99+" : n}</span>` : "";
-      box.innerHTML = `<a class="icon-btn zn-top" href="#/znajomi"${here("#/znajomi")} aria-label="Znajomi${inv ? ` – ${inv} zaproszeń` : ""}">${ic("users", "")}${dot(inv)}</a>
-        <a class="icon-btn zn-top" href="#/wiadomosci"${here("#/wiadomosci")} aria-label="Wiadomości${msg ? ` – ${msg} nowych` : ""}">${ic("chat", "")}${dot(msg)}</a>`;
-      box.hidden = false;
-      if (self.I18N && I18N.translate) try { I18N.translate(box); } catch (e) { /* tłumaczenie opcjonalne */ }
+    const LOG = "podroznik-notifs", SEEN = "podroznik-notifs-seen";
+    const lsGet = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch (e) { return d; } };
+    const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* brak dostępu */ } };
+    // dziennik zdarzeń (np. ktoś przyjął zaproszenie) – ostatnie 15
+    const note = (text, href) => { const l = lsGet(LOG, []); l.unshift({ at: new Date().toISOString(), text, href }); lsSet(LOG, l.slice(0, 15)); };
+    let data = { inv: [], msgs: [], log: [] }, last = "", open = false;
+
+    async function collect() {
+      const st = await SO().state(), inv = [], msgs = [];
+      for (const [id, f] of Object.entries(st.friends)) {
+        if (f.state === "in") inv.push({ id, name: f.name || "Ktoś" });
+        else if (f.state === "ok") {
+          const n = await SO().unread(id);
+          if (n) { const m = await SO().messages(id); msgs.push({ id, name: f.name || "Znajomy", n, text: (m[m.length - 1] || {}).text || "", at: (m[m.length - 1] || {}).at || "" }); }
+        }
+      }
+      msgs.sort((x, y) => y.at.localeCompare(x.at));
+      const seen = lsGet(SEEN, ""), log = lsGet(LOG, []).map(x => ({ ...x, fresh: x.at > seen }));
+      return { inv, msgs, log };
     }
-    const soon = () => { last = ""; setTimeout(refresh, 120); };
+    const count = d => d.inv.length + d.msgs.reduce((s, m) => s + m.n, 0) + d.log.filter(x => x.fresh).length;
+    const dot = n => n ? `<span class="zn-dot">${n > 99 ? "99+" : n}</span>` : "";
+
+    async function refresh(force) {
+      if (!SO().available()) { box.hidden = true; return; }
+      try { data = await collect(); } catch (e) { /* bez liczników */ }
+      const invN = data.inv.length, msgN = data.msgs.reduce((s, m) => s + m.n, 0), bell = count(data);
+      const h = `${invN}|${msgN}|${bell}|${(location.hash || "").slice(0, 12)}`;
+      if (h !== last || force) {
+        last = h;
+        const here = r => location.hash.startsWith(r) ? ' aria-current="page"' : "";
+        box.innerHTML = `<a class="icon-btn zn-top" href="#/wiadomosci"${here("#/wiadomosci")} aria-label="Wiadomości${msgN ? ` – ${msgN} nowych` : ""}">${ic("chat", "")}${dot(msgN)}</a>
+          <a class="icon-btn zn-top" href="#/znajomi"${here("#/znajomi")} aria-label="Znajomi${invN ? ` – ${invN} zaproszeń` : ""}">${ic("users", "")}${dot(invN)}</a>
+          <button type="button" class="icon-btn zn-top" id="notif-btn" aria-haspopup="dialog" aria-expanded="${open}" aria-label="Powiadomienia${bell ? ` – ${bell} nowych` : ""}">${ic("bell", "")}${dot(bell)}</button>`;
+        box.hidden = false;
+        box.querySelector("#notif-btn").onclick = toggle;
+        if (self.I18N && I18N.translate) try { I18N.translate(box); } catch (e) { /* tłumaczenie opcjonalne */ }
+      }
+      if (open) paint();
+    }
+
+    function close() {
+      open = false;
+      const p = document.getElementById("notif-pop"), sc = document.getElementById("notif-scrim");
+      if (p) p.remove(); if (sc) sc.remove();
+      const b = document.getElementById("notif-btn"); if (b) b.setAttribute("aria-expanded", "false");
+    }
+    function toggle() { if (open) { close(); return; } open = true; lsSet(SEEN, new Date().toISOString()); paint(); refresh(true); }
+    function paint() {
+      let p = document.getElementById("notif-pop");
+      if (!p) {
+        const sc = document.createElement("div"); sc.id = "notif-scrim"; sc.className = "notif-scrim"; sc.onclick = close; document.body.appendChild(sc);
+        p = document.createElement("div"); p.id = "notif-pop"; p.className = "notif-pop"; p.setAttribute("role", "dialog"); p.setAttribute("aria-label", "Powiadomienia");
+        document.body.appendChild(p);
+      }
+      const d = data, empty = !d.inv.length && !d.msgs.length && !d.log.length;
+      p.innerHTML = `<div class="np-head"><b>Powiadomienia</b><button type="button" class="icon-btn" id="np-x" aria-label="Zamknij">${ic("close", "")}</button></div>
+        <div class="np-body">
+        ${d.inv.map(x => `<div class="np-row">${av(x.id, x.name)}<span class="li-main"><b>${esc(x.name)}</b><small>chce dodać Cię do znajomych</small></span>
+          <button type="button" class="btn small primary" data-np-ok="${x.id}">Przyjmij</button><button type="button" class="icon-btn" data-np-no="${x.id}" aria-label="Odrzuć: ${esc(x.name)}">${ic("close", "")}</button></div>`).join("")}
+        ${d.msgs.map(x => `<a class="np-row" href="#/czat/${x.id}">${av(x.id, x.name)}<span class="li-main"><b>${esc(x.name)}</b><small>${esc(x.text.slice(0, 60))}</small></span><span class="rz-badge">${x.n}</span></a>`).join("")}
+        ${d.log.map(x => `<${x.href ? `a href="${esc(x.href)}"` : "div"} class="np-row"><span class="li-ico">${ic("check")}</span><span class="li-main"><b>${esc(x.text)}</b><small>${App.fmtDay(x.at.slice(0, 10))}</small></span></${x.href ? "a" : "div"}>`).join("")}
+        ${empty ? `<p class="muted small np-empty">Brak nowych powiadomień.</p>` : ""}</div>
+        <div class="np-foot"><a href="#/wiadomosci">Wszystkie wiadomości</a><a href="#/znajomi">Znajomi</a></div>`;
+      p.querySelector("#np-x").onclick = close;
+      p.querySelectorAll("a").forEach(a => a.addEventListener("click", close));
+      p.querySelectorAll("[data-np-ok]").forEach(b => b.onclick = async () => { b.disabled = true; try { await SO().accept(b.dataset.npOk); App.toast("Jesteście znajomymi"); } catch (e) { App.toast(offlineMsg(e)); } last = ""; refresh(); });
+      p.querySelectorAll("[data-np-no]").forEach(b => b.onclick = async () => { b.disabled = true; try { await SO().remove(b.dataset.npNo); } catch (e) { App.toast(offlineMsg(e)); } last = ""; refresh(); });
+      if (self.I18N && I18N.translate) try { I18N.translate(p); } catch (e) { /* tłumaczenie opcjonalne */ }
+    }
+    addEventListener("keydown", e => { if (e.key === "Escape" && open) close(); });
+    const soon = () => { if (open) close(); last = ""; setTimeout(refresh, 120); };
     window.addEventListener("hashchange", soon);
     window.addEventListener("online", soon);
-    SO().on(() => { last = ""; refresh(); });
+    SO().on((what, x) => {
+      if (what === "accepted" && x) note(`${x.name || "Ktoś"} przyjął(a) Twoje zaproszenie`, `#/znajomy/${x.id}`);
+      last = ""; refresh();
+    });
     setInterval(refresh, 5000);
     setTimeout(refresh, 400);
   })();

@@ -449,7 +449,7 @@
             <p class="td-note gm-privacy">${App.icon("shield", "sm")}<span>Tylko odczyt – Podróżnik nie wysyła, nie usuwa i nie zmienia maili. Maile czyta telefon wprost z Gmaila, nic nie trafia na żaden serwer.
               Szuka tylko maili z rezerwacjami z ostatnich 13 miesięcy. Każdą propozycję zatwierdzasz sam.
               <a href="https://chiniak.github.io/podroznik/prywatnosc.html#gmail-pl" target="_blank" rel="noopener">Polityka prywatności</a></span></p>
-            ${can ? `<button type="button" class="btn primary wide" id="gm-connect">${App.icon("lock", "sm")} <span>Zaloguj się kontem Google</span></button>`
+            ${can ? `<button type="button" class="btn primary wide" id="gm-connect">${App.icon("google", "sm")} <span>Zaloguj się kontem Google</span></button>`
               : `<p class="td-note error gm-web">${App.icon("info", "sm")}<span>Logowanie Google działa w aplikacji na Androida (Podróżnik 2.0). W przeglądarce możesz dalej wkleić maila: <a href="#/wklej">Dodaj z maila</a>.</span></p>`}
           </div>`,
         after(v) {

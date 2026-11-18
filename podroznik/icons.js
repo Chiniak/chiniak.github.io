@@ -80,7 +80,13 @@
   };
 
   /* App.icon(nazwa, klasa?) – gotowy znacznik SVG; nieznana nazwa = pusty tekst */
+  // znaki marek (kolorowe, wypełnione – nie są częścią zestawu w obrysie): logowanie Google / Facebook
+  const BRAND = {
+    google: '<path fill="#4285F4" d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 01-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.3z"/><path fill="#34A853" d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6A10 10 0 0012 22z"/><path fill="#FBBC05" d="M6.4 14c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V7.4H3.1a10 10 0 000 9.2z"/><path fill="#EA4335" d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.9-2.9A10 10 0 003.1 7.4L6.4 10c.8-2.3 3-4.1 5.6-4.1z"/>',
+    facebook: '<circle cx="12" cy="12" r="10" fill="#1877F2"/><path fill="#fff" d="M13.4 21.9v-7h2.3l.4-2.8h-2.7v-1.8c0-.8.3-1.4 1.4-1.4h1.4V6.4c-.3 0-1.1-.1-2.1-.1-2.1 0-3.5 1.3-3.5 3.6v2.2H8.3v2.8h2.3v7z"/>',
+  };
   function icon(name, cls) {
+    if (BRAND[name]) return `<svg class="ic ic-brand${cls ? " " + cls : ""}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${BRAND[name]}</svg>`;
     const p = P[name];
     if (!p) return "";
     return `<svg class="ic${cls ? " " + cls : ""}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${p}</svg>`;
