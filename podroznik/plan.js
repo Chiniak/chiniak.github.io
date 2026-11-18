@@ -191,6 +191,43 @@
       .join("");
   }
 
+  /* pasek „Twoje podróże” (plan i pakowanie): karty trwających i nadchodzących podróży + archiwum w liście.
+     href(id) – adres po wybraniu; selId – id <select> archiwum */
+  function tripTabs(trips, id, href, selId) {
+    if (trips.length < 2) return "";
+    const today = App.todayStr();
+    const active = trips.filter(t => t.end >= today).sort((a, b) => a.start.localeCompare(b.start));
+    const past = trips.filter(t => t.end < today).sort((a, b) => b.start.localeCompare(a.start));
+    const cur = trips.find(t => t.id === id);
+    if (cur && cur.end < today) active.push(cur); // oglądana podróż z archiwum też ma kartę
+    const sub = t => {
+      if (t.start <= today && today <= t.end) return `trwa · dzień ${App.dayDiff(t.start, today) + 1} z ${App.dayDiff(t.start, t.end) + 1}`;
+      if (t.end < today) return App.fmtRange(t.start, t.end);
+      const n = App.dayDiff(today, t.start);
+      return `${n === 1 ? "jutro" : `za ${n} ${plural(n, "dzień", "dni", "dni")}`} · ${App.fmtRange(t.start, t.end)}`;
+    };
+    const card = t => `
+      <a class="pl-tcard${t.id === id ? " is-on" : ""}${t.start <= today && today <= t.end ? " is-now" : ""}" href="${href(t.id)}"${t.id === id ? ` aria-current="page"` : ""} style="--c:${esc(t.color || "#0f6e6e")}">
+        <b><i aria-hidden="true"></i>${esc(t.name)}</b><small>${sub(t)}</small></a>`;
+    const arch = past.filter(t => t.id !== id);
+    return `<nav class="pl-trips" aria-label="Twoje podróże">${active.map(card).join("")}
+      ${arch.length ? `<label class="pl-tcard pl-tarch"><b>Archiwum (${arch.length})</b><small>wcześniejsze podróże</small>
+        <select id="${selId}"><option value="" selected disabled>Archiwum</option>${arch.map(t => `<option value="${t.id}">${esc(t.name)} · ${App.fmtRange(t.start, t.end)}</option>`).join("")}</select></label>` : ""}
+    </nav>`;
+  }
+
+  // przełączanie bez dokładania historii (wstecz wraca do poprzedniego ekranu, nie do poprzedniej podróży)
+  function bindTripTabs(view, selId, href) {
+    view.querySelectorAll("a.pl-tcard").forEach(a => a.onclick = e => { e.preventDefault(); if (!a.classList.contains("is-on")) location.replace(a.getAttribute("href")); });
+    const arch = view.querySelector(`#${selId}`);
+    if (arch) arch.onchange = () => location.replace(href(arch.value));
+    const on = view.querySelector(".pl-tcard.is-on"), bar = view.querySelector(".pl-trips");
+    if (on && bar) { // wybrana karta poza ekranem → przewiń do niej
+      const r = on.getBoundingClientRect(), b = bar.getBoundingClientRect();
+      if (r.left < b.left || r.right > b.right) bar.scrollLeft += r.left + r.width / 2 - (b.left + b.width / 2);
+    }
+  }
+
   App.route(/^\/plan$/, async () => {
     const trips = await DB.all("trips");
     if (!trips.length) return App.empty("🗓️", "Plan dnia i podróży",
@@ -234,7 +271,7 @@
       const n = App.dayDiff(today, trip.start);
       info = `Do wyjazdu ${n === 1 ? "1 dzień" : `${n} ${plural(n, "dzień", "dni", "dni")}`} · ${App.fmtRange(trip.start, trip.end)}`;
     } else info = App.fmtRange(trip.start, trip.end);
-    let html = `
+    let html = tripTabs(trips, id, x => `#/plan/${x}`, "pl-arch") + `
       <header class="pl-head">
         <div class="pl-head-name">
           <h2>${esc(trip.name)}</h2>
@@ -411,6 +448,7 @@
         if (wx) wx.refresh().then(changed => { if (changed) App.render(); }).catch(() => {});
         const sel = view.querySelector("#pl-trip");
         if (sel) sel.onclick = () => tripSheet(trips, id, v => location.replace(`#/plan/${v}`));
+        bindTripTabs(view, "pl-arch", x => `#/plan/${x}`);
         if (ongoing) {
           // co minutę odśwież tylko kartę „Dziś” (liczniki „za X min”), bez przewijania strony
           timer = setInterval(() => {
@@ -836,5 +874,5 @@
   App.route(/^\/plan\/([\w-]+)\/nowy$/, ([tripId], q) => itemForm({ tripId, date: q.d, q }));
   App.route(/^\/punkt\/([\w-]+)$/, ([itemId]) => itemForm({ itemId }));
 
-  App.Plan = { tripSheet, switchBtn, infoFromText, segEvents, CATS, catOf, pickTrip, tripOptions, routeIcon, placeInDay, todayCard, mergeDay, byOrder, inTime };
+  App.Plan = { tripSheet, switchBtn, infoFromText, segEvents, CATS, catOf, pickTrip, tripOptions, tripTabs, bindTripTabs, routeIcon, placeInDay, todayCard, mergeDay, byOrder, inTime };
 })();
