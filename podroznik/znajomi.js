@@ -68,6 +68,7 @@
           </div>` : ""}
         </section>
 
+        <a class="btn wide zn-acclink" href="#/profil">${ic("users")} <span>Mój profil – tak widzą mnie inni</span></a>
         ${err ? "" : acc ? `
         <section class="card zn-acc">
           <div class="zn-acc-h"><span class="li-ico">${ic("lock")}</span><span class="li-main"><b>${acc.google && acc.facebook ? "Konto Google i Facebook" : acc.google ? "Konto Google" : "Konto Facebook"}</b><small translate="no">${esc(acc.email || acc.name)}</small></span>
@@ -249,19 +250,23 @@
     const n = await SO().unread(id);
     const by = s => trips.filter(x => statusOf(x.trip) === s);
     const now = by("now"), soon = by("soon").sort((a, b) => a.trip.start.localeCompare(b.trip.start)), past = by("past").sort((a, b) => b.trip.start.localeCompare(a.trip.start));
+    const ideas = ideasOf(trips);
     const sec = (title, list) => list.length ? `<h3 class="tp-h">${title}</h3>${list.map(s => tripCard(`#/znajomy/${id}/p/${s.doc}`, s)).join("")}` : "";
     return {
       title: f.name || "Znajomy", back: "#/znajomi",
       html: `
         <div class="gd-intro zn-prof">${av(id, f.name, "xl")}<h2>${esc(f.name || "Bez imienia")}</h2>
-          <p class="muted small">znajomi od ${App.fmtDay(String(f.since || "").slice(0, 10) || today())}</p></div>
+          <p class="muted small">znajomi od ${App.fmtDay(String(f.since || "").slice(0, 10) || today())}</p>
+          ${trips.length ? `<p class="zn-stats"><span class="chip">${trips.length} ${plural(trips.length, "podróż", "podróże", "podróży")}</span>${ideas.length ? `<span class="chip">${ideas.length} ${plural(ideas.length, "pomysł", "pomysły", "pomysłów")}</span>` : ""}</p>` : ""}</div>
         <a class="btn primary wide" href="#/czat/${id}">${ic("chat")} <span>Czat</span>${n ? ` <span class="rz-badge">${n}</span>` : ""}</a>
         <h2 class="section">Podróże</h2>
         ${err ? `<p class="gd-err">${offlineMsg(err)}</p>` : ""}${trips.offline ? `<p class="muted small">Bez internetu – pokazuję ostatnio pobrane.</p>` : ""}
         ${trips.length ? sec("Teraz", now) + sec("Nadchodzące", soon) + (past.length ? `<h3 class="tp-h">Historia</h3>${past.map(s => tripCard(`#/znajomy/${id}/p/${s.doc}`, s)).join("")}` : "")
           : err ? "" : `<p class="muted small">${esc(f.name || "Znajomy")} nie udostępnia jeszcze żadnej podróży.</p>`}
+        ${ideasHtml(ideas, f.name || "znajomego")}
         <div class="pl-danger"><button type="button" class="btn danger" id="zn-del">${ic("trash")} <span>Usuń ze znajomych</span></button></div>`,
       after(view) {
+        bindTake(view, ideas, f.name);
         view.querySelector("#zn-del").onclick = async () => {
           if (!confirm(`Usunąć ${f.name || "tę osobę"} ze znajomych? Przestaniecie widzieć swoje plany „dla znajomych”, a czat zniknie z tego telefonu.`)) return;
           try { await SO().remove(id); App.toast("Usunięto ze znajomych"); } catch (e) { App.toast(offlineMsg(e)); }
@@ -360,21 +365,40 @@
       <button type="button" class="btn wide zn-copy" id="zn-copytrip">${ic("copy")} <span>Skopiuj do moich podróży</span></button>
       <p class="f-hint">Podgląd bez biletów, kodów rezerwacji, cen i notatek · zaktualizowano ${App.fmtDay(String(s.updated || "").slice(0, 10) || today())}</p>`;
   }
+  // „+” przy punkcie: do pomysłów w wybranej mojej podróży (items – lista punktów, data-take = numer na liście)
+  const bindTake = (view, items, from) => view.querySelectorAll("[data-take]").forEach(b => b.onclick = async () => {
+    const it = items[+b.dataset.take];
+    const mine = await DB.all("trips");
+    const put = async tripId => {
+      await SO().takeIdea(tripId, it, from);
+      const t = mine.find(x => x.id === tripId);
+      b.innerHTML = ic("check", ""); b.classList.add("done");
+      App.toast(`Dodano do pomysłów: ${t ? t.name : ""}`);
+    };
+    if (!mine.length) { App.toast("Najpierw dodaj swoją podróż – albo skopiuj całą"); return; }
+    if (mine.length === 1) return put(mine[0].id);
+    if (App.Plan && App.Plan.tripSheet) App.Plan.tripSheet(mine, null, put);
+  });
+  // pomysły z planów danej osoby (miejsca bez powtórzeń) – z „+” do moich pomysłów
+  const ideasOf = snaps => {
+    const seen = new Set(), list = [];
+    for (const sn of snaps) for (const it of sn.items || []) {
+      const k = (it.title || "").trim().toLowerCase();
+      if (!k || seen.has(k)) continue; seen.add(k);
+      list.push({ ...it, _trip: sn.trip && sn.trip.name || "" });
+    }
+    return list.slice(0, 40);
+  };
+  const ideasHtml = (list, name) => {
+    const CATS = App.Plan ? App.Plan.CATS : {};
+    return list.length ? `<h2 class="section">Pomysły od ${esc(name)}</h2><p class="muted small">Dotknij „+”, żeby dodać miejsce do swoich pomysłów.</p>
+      <div class="list zn-ideas">${list.map((it, i) => `<div class="li zn-ev-it"><span class="zn-ev-ic" aria-hidden="true">${(CATS[it.cat] || { icon: "📌" }).icon}</span>
+        <span class="li-main"><b>${esc(it.title)}</b><small>${esc(it.place || it._trip || "")}</small></span>
+        <button type="button" class="icon-btn zn-take" data-take="${i}" aria-label="Weź pomysł: ${esc(it.title)}">${ic("plus", "")}</button></div>`).join("")}</div>` : "";
+  };
+
   const copyBtn = (view, s, from) => {
-    // „+” przy punkcie: do pomysłów w wybranej mojej podróży
-    view.querySelectorAll("[data-take]").forEach(b => b.onclick = async () => {
-      const it = s.items[+b.dataset.take];
-      const mine = await DB.all("trips");
-      const put = async tripId => {
-        await SO().takeIdea(tripId, it, from || s.owner);
-        const t = mine.find(x => x.id === tripId);
-        b.innerHTML = ic("check", ""); b.classList.add("done");
-        App.toast(`Dodano do pomysłów: ${t ? t.name : ""}`);
-      };
-      if (!mine.length) { App.toast("Najpierw dodaj swoją podróż – albo skopiuj całą"); return; }
-      if (mine.length === 1) return put(mine[0].id);
-      if (App.Plan && App.Plan.tripSheet) App.Plan.tripSheet(mine, null, put);
-    });
+    bindTake(view, s.items, from || s.owner);
     // „Skopiuj dzień”: punkty tego dnia (z godzinami) → wybrana moja podróż i dzień
     view.querySelectorAll("[data-copyday]").forEach(b => b.onclick = async () => {
       const day = b.dataset.copyday;
@@ -489,6 +513,9 @@
     try { await SO().enable(); [ix, p] = await Promise.all([SO().publicTrips(uid), SO().person(uid)]); } catch (e) { err = e; }
     const name = (p && p.name) || (ix && ix.name) || "Podróżnik", fol = await SO().isFollowing(uid);
     const trips = (ix && ix.trips) || [];
+    const snaps = [];
+    for (const t of trips.slice(0, 4)) { const sn = await SO().publicTrip({ uid, doc: t.doc, key: t.key }).catch(() => null); if (sn) snaps.push(sn); }
+    const ideas = ideasOf(snaps);
     return {
       title: name, back: "#/obserwowani",
       html: err ? `<p class="gd-err">${offlineMsg(err)}</p>` : `
@@ -500,8 +527,10 @@
         </div>
         <h2 class="section">Podróże</h2>
         ${trips.length ? trips.map(t => feedCard({ ...t, uid, owner: name })).join("") : `<p class="muted small">Brak podróży publicznych.</p>`}
+        ${ideasHtml(ideas, name)}
         <p class="f-hint">Obserwując widzisz tylko podróże publiczne. Znajomi widzą też te „dla znajomych” i mogą pisać na czacie.</p>`,
       after(view) {
+        bindTake(view, ideas, name);
         const b = view.querySelector("#zn-follow");
         if (b) b.onclick = async () => { b.disabled = true; try { if (fol) await SO().unfollow(uid); else await SO().follow(uid); App.toast(fol ? "Nie obserwujesz" : `Obserwujesz: ${name}`); } catch (e) { App.toast(offlineMsg(e)); } App.render(); };
       },
@@ -614,4 +643,83 @@
     else if (what === "account") { if (/^#\/znajomi/.test(h)) App.render(); }
     else if (what === "accepted") App.toast(`🤝 ${d.name || "Znajomy"} przyjmuje zaproszenie`);
   });
+
+  /* ================= wiadomości: wszystkie rozmowy w jednym miejscu ================= */
+  App.route(/^\/wiadomosci$/, async () => {
+    if (!SO() || !SO().available()) return notReady();
+    let err = null;
+    try { await SO().enable(); } catch (e) { err = e; }
+    const st = await SO().state();
+    const ok = Object.entries(st.friends).filter(([, f]) => f.state === "ok"), inc = Object.entries(st.friends).filter(([, f]) => f.state === "in");
+    const rows = [];
+    for (const [id, f] of ok) { const m = await SO().messages(id); rows.push({ id, f, last: m[m.length - 1], n: await SO().unread(id) }); }
+    rows.sort((a, b) => ((b.last || {}).at || b.f.since || "").localeCompare((a.last || {}).at || a.f.since || ""));
+    const talked = rows.filter(r => r.last), quiet = rows.filter(r => !r.last);
+    const row = r => `<a class="li zn-row" href="#/czat/${r.id}">${av(r.id, r.f.name)}
+      <span class="li-main"><b>${esc(r.f.name || "Bez imienia")}</b><small>${r.last ? `${r.last.by === "me" ? "Ty: " : ""}${esc(r.last.text.slice(0, 70))}` : "napisz pierwszą wiadomość"}</small></span>
+      ${r.n ? `<span class="rz-badge" aria-label="${r.n} nowe">${r.n}</span>` : r.last ? `<time class="muted small">${hhmm(r.last.at)}</time>` : ""}${ic("chev", "")}</a>`;
+    return {
+      title: "Wiadomości",
+      html: `${err ? `<p class="gd-err">${offlineMsg(err)}</p>` : ""}
+        ${inc.length ? `<a class="btn wide" href="#/znajomi">${ic("users")} <span>${inc.length} ${plural(inc.length, "zaproszenie czeka", "zaproszenia czekają", "zaproszeń czeka")}</span></a>` : ""}
+        ${talked.length ? `<div class="list">${talked.map(row).join("")}</div>` : ""}
+        ${quiet.length ? `<h3 class="tp-h">${talked.length ? "Napisz do znajomych" : "Znajomi"}</h3><div class="list">${quiet.map(row).join("")}</div>` : ""}
+        ${ok.length ? "" : App.empty("💬", "Brak rozmów", "Dodaj znajomych, a ich wiadomości pojawią się tutaj.", `<a class="btn primary" href="#/znajomi">Znajomi</a>`)}`,
+    };
+  });
+
+  /* ================= mój profil: tak widzą mnie inni ================= */
+  App.route(/^\/profil$/, async () => {
+    if (!SO() || !SO().available()) return notReady();
+    let me = "", fol = 0, err = null;
+    try { await SO().enable(); me = await SO().profile(); fol = await SO().followersCount().catch(() => 0); } catch (e) { err = e; }
+    const st = await SO().state(), name = await SO().myName();
+    const trips = (await DB.all("trips")).sort((a, b) => b.start.localeCompare(a.start));
+    const vis = {}; for (const t of trips) vis[t.id] = await SO().visibility(t.id);
+    const nf = Object.values(st.friends).filter(f => f.state === "ok").length;
+    const shown = trips.filter(t => vis[t.id] !== "private");
+    const VI = { friends: ["users", "dla znajomych"], public: ["globe", "publiczna"] };
+    return {
+      title: "Mój profil", back: "#/znajomi",
+      html: `${err ? `<p class="gd-err">${offlineMsg(err)}</p>` : ""}
+        <div class="gd-intro zn-prof">${av(me, name || "Ty", "xl")}<h2>${esc(name || "Bez imienia")}</h2>
+          <p class="zn-stats"><span class="chip">${nf} ${plural(nf, "znajomy", "znajomych", "znajomych")}</span><span class="chip">${fol} ${plural(fol, "obserwujący", "obserwujących", "obserwujących")}</span><span class="chip">${shown.length} ${plural(shown.length, "podróż widoczna", "podróże widoczne", "podróży widocznych")}</span></p></div>
+        <div class="zn-acts"><a class="btn" href="#/znajomi">${ic("edit")} <span>Zmień imię</span></a>
+          <a class="btn" href="#/widocznosc">${ic("lock")} <span>Kto widzi podróże</span></a></div>
+        <h2 class="section">Moje podróże w oczach innych</h2>
+        ${trips.length ? `<div class="list">${trips.map(t => `<a class="li" href="#/widocznosc/${t.id}"><span class="li-ico">${ic(vis[t.id] === "private" ? "lock" : VI[vis[t.id]][0])}</span>
+          <span class="li-main"><b>${esc(t.name)}</b><small>${App.fmtRange(t.start, t.end)} · ${vis[t.id] === "private" ? "tylko Ty" : VI[vis[t.id]][1]}</small></span>${ic("chev", "")}</a>`).join("")}</div>`
+          : `<p class="muted small">Dodaj podróż, a potem wybierz, kto ją widzi.</p>`}
+        <p class="f-hint">Znajomi i obserwujący mogą oglądać plany i brać z nich pomysły. Bilety, kody rezerwacji, ceny i notatki nigdy nie są pokazywane.</p>`,
+    };
+  });
+
+  /* ================= stały pasek: Znajomi i Wiadomości na każdym ekranie ================= */
+  (function topButtons() {
+    const box = document.getElementById("social-top");
+    if (!box || !SO()) return;
+    let last = "";
+    async function refresh() {
+      if (!SO().available()) { box.hidden = true; return; }
+      let inv = 0, msg = 0;
+      try {
+        const st = await SO().state();
+        for (const [id, f] of Object.entries(st.friends)) { if (f.state === "in") inv++; else if (f.state === "ok") msg += await SO().unread(id); }
+      } catch (e) { /* bez licznika */ }
+      const h = `${inv}|${msg}|${(location.hash || "").slice(0, 12)}`;
+      if (h === last) return; last = h;
+      const here = r => location.hash.startsWith(r) ? ' aria-current="page"' : "";
+      const dot = n => n ? `<span class="zn-dot">${n > 99 ? "99+" : n}</span>` : "";
+      box.innerHTML = `<a class="icon-btn zn-top" href="#/znajomi"${here("#/znajomi")} aria-label="Znajomi${inv ? ` – ${inv} zaproszeń` : ""}">${ic("users", "")}${dot(inv)}</a>
+        <a class="icon-btn zn-top" href="#/wiadomosci"${here("#/wiadomosci")} aria-label="Wiadomości${msg ? ` – ${msg} nowych` : ""}">${ic("chat", "")}${dot(msg)}</a>`;
+      box.hidden = false;
+      if (self.I18N && I18N.translate) try { I18N.translate(box); } catch (e) { /* tłumaczenie opcjonalne */ }
+    }
+    const soon = () => { last = ""; setTimeout(refresh, 120); };
+    window.addEventListener("hashchange", soon);
+    window.addEventListener("online", soon);
+    SO().on(() => { last = ""; refresh(); });
+    setInterval(refresh, 5000);
+    setTimeout(refresh, 400);
+  })();
 })();

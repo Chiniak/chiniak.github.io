@@ -143,9 +143,7 @@
     const [trips, segs] = await Promise.all([DB.all("trips"), DB.all("segments")]);
     const segsOf = {};
     segs.forEach(s => (segsOf[s.tripId] = segsOf[s.tripId] || []).push(s));
-    const zn = App.Social && App.Social.available() ? await App.Social.unreadAll().catch(() => 0) : -1;
-    const statsAction = (zn >= 0 ? `<a class="icon-btn zn-top" href="#/znajomi" aria-label="Znajomi${zn ? ` – ${zn} nowe` : ""}">${ic("users")}${zn ? `<span class="zn-dot">${zn}</span>` : ""}</a>` : "")
-      + `<a class="icon-btn" href="#/statystyki" aria-label="Statystyki">${ic("chart")}</a>`;
+    const statsAction = `<a class="icon-btn" href="#/statystyki" aria-label="Statystyki">${ic("chart")}</a>`;
     const head = `<header class="hm-head"><h2>${greeting()}</h2><p>${longDate()}</p></header>`;
 
     if (!trips.length) {

@@ -2128,3 +2128,10 @@ a.tp-trip { text-decoration: none; }
 .ac-ico { background: var(--surface-2); }
 .ac-out { margin-top: 18px; }
 .zn-acclink { margin-top: 10px; }
+
+/* stały pasek Znajomi / Wiadomości w nagłówku (znajomi.js) */
+.social-top { display: flex; gap: 2px; flex: none; }
+.social-top[hidden] { display: none; }
+.social-top .icon-btn[aria-current="page"] { background: var(--accent-soft); color: var(--accent); }
+.zn-stats { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin: 8px 0 0; }
+.zn-ideas .li { align-items: center; }
