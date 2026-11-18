@@ -195,7 +195,7 @@ CL["Gniazdowy"]=c=>{const{col,c2,sk,hr,fa}=c,P=pal(col);
   wp+=`<g class="flm"><path d="M35.8 4.7Q33.4 2.4 35.8 -1.4Q36.1 1 37.8 1.2Q38.9 3.4 35.8 4.7Z" fill="#ff6a12"/><path d="M35.85 4.3Q34.6 2.6 36 .6Q36.3 2.1 37.2 2.3Q37.5 3.6 35.85 4.3Z" fill="#ffd24a"/><ellipse cx="35.8" cy="4.15" rx="1" ry=".8" fill="#fffbe6"/></g>`;
   wp+=[[38.6,1],[33.2,1.6],[37.8,-1.8],[34.4,-2.8],[39.6,-.6],[32.6,-.4]].map(([x,y],i)=>`<circle cx="${x}" cy="${y}" r="${.12+i%3*.05}" fill="${["#ffd24a","#ffb14a","#fff0a0"][i%3]}"/>`).join("");
   wp+=[[34,-3.8,2.4,.4],[31.2,-6,3.2,.3],[27.8,-7.8,3.9,.2],[24.2,-8.6,4.4,.12]].map(([x,y,r,o])=>`<circle cx="${x}" cy="${y}" r="${r}" fill="#cfc7c2" opacity="${o}"/><circle cx="${r2(x+r*.3)}" cy="${r2(y-r*.3)}" r="${r2(r*.55)}" fill="#e8e2dd" opacity="${r2(o*.8)}"/>`).join("");
-  const arm=`<g class="wp">${wp}</g>`+sleeve(AF,col)+cuffAt(AF,c2,.84,.97,1)+fist(34.6,10.4,sk,{rot:-60});
+  const arm=`<g class="wp" style="transform-origin:34.6px 10.4px">${wp}</g>`+sleeve(AF,col)+cuffAt(AF,c2,.84,.97,1)+fist(34.6,10.4,sk,{rot:-60});
   return{legs:["jeans","#2e4266","terrace"],body,head:hd,arm,acc:c2};
 };
 /* CZUJKA: anorak z kapturem (pół-zamek, kieszeń kangurka) w barwach, komin na nos, czujne oczy,
