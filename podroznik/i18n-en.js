@@ -12,7 +12,7 @@ self.I18N_EN = {
   "Dziś": "Today", "Jutro": "Tomorrow", "Nazwa": "Name", "Rodzaj": "Type", "Kolor": "Colour", "Od": "From", "Do": "To", "Dzień": "Day",
   "Szukaj": "Search", "Szukam…": "Searching…", "Szukam… {}/{}": "Searching… {}/{}", "Pobieram…": "Downloading…", "Wczytuję…": "Loading…",
   "Sprawdzam…": "Checking…", "Przygotowuję…": "Preparing…", "Wysłano": "Sent", "Enter": "Enter", "Backspace": "Backspace",
-  "Wszystkie": "All", "Archiwum": "Archive", "Twoje podróże": "Your trips", "Archiwum ({})": "Archive ({})", "wcześniejsze podróże": "earlier trips", "Nadchodzące": "Upcoming", "Trwające": "Ongoing", "zakończona": "finished",
+  "Wszystkie": "All", "Archiwum": "Archive", "Twoje podróże": "Your trips", "Pokazujemy wszystkie pliki – telefon często zapisuje pobrany .json jako „tekst” albo „plik binarny” i z filtrem by go ukrył. Szukaj w „Pobranych” albo na Dysku Google.": "All files are shown – phones often save a downloaded .json as “text” or “binary file”, and a filter would hide it. Look in Downloads or Google Drive.", "Archiwum ({})": "Archive ({})", "wcześniejsze podróże": "earlier trips", "Nadchodzące": "Upcoming", "Trwające": "Ongoing", "zakończona": "finished",
   "(archiwum)": "(archive)", "Inne": "Other", "Inny": "Other", "inne": "other", "Zrobione": "Done", "Kod": "Code",
   "włączone": "on", "wyłączone": "off", "włączona": "on", "wyłączona": "off", "włączony": "on", "wył.": "off",
   "niedostępne": "unavailable", "brak danych": "no data",
