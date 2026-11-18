@@ -26,6 +26,15 @@ Każdy telefon dostaje losowy, anonimowy identyfikator – bez e-maila i hasła.
 1. Menu po lewej: **Kompilacja (Build) → Authentication** → **Rozpocznij**.
 2. Karta **Metoda logowania (Sign-in method)** → **Anonimowo (Anonymous)** → przełącznik **Włącz** → **Zapisz**.
 
+## Krok 2b. Logowanie kontem Google (znajomi na nowym telefonie, szukanie po e-mailu)
+
+1. **Authentication → Metoda logowania → Dodaj nowego dostawcę → Google** → włącz → e-mail pomocy: Twój Gmail → **Zapisz**.
+2. W tym samym oknie Google rozwiń **„Dodaj do listy dozwolonych identyfikatory klienta z projektów zewnętrznych”**
+   (Safelist client IDs from external projects) i wklej **pełny identyfikator klienta Android** z projektu „Podróżnik”
+   w Google Cloud (Google Auth Platform → Klienci → „Podróżnik (docelowa)”, zaczyna się od `765781512100-u5k4…`) → **Zapisz**.
+   Dzięki temu aplikacja na Androida loguje się do Firebase tym samym kontem Google co do Gmaila.
+3. **Authentication → Ustawienia → Autoryzowane domeny** → **Dodaj domenę** → `chiniak.github.io` (logowanie w przeglądarce).
+
 ## Krok 3. Baza danych Firestore
 
 1. Menu: **Kompilacja → Firestore Database** → **Utwórz bazę danych**.
@@ -107,6 +116,20 @@ service cloud.firestore {
         && request.resource.data.c is string && request.resource.data.c.size() < 900000
         && request.resource.data.t == request.time && request.resource.data.v == 1;
       allow delete: if signedIn() && request.auth.uid == uid;
+    }
+    // szukanie znajomych po e-mailu (etap 2): dokument = dokładny adres z konta Google zalogowanej osoby; bez listowania
+    match /emails/{email} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create, update: if signedIn() && request.auth.token.email != null && request.auth.token.email_verified == true
+        && email == request.auth.token.email.lower()
+        && request.resource.data.keys().hasOnly(['uid']) && request.resource.data.uid == request.auth.uid;
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+    }
+    // kopia klucza i listy znajomych na koncie (tylko konto Google – nie anonimowe); czyta i pisze wyłącznie właściciel
+    match /vault/{uid} {
+      allow get, create, update, delete: if signedIn() && request.auth.uid == uid && request.auth.token.email != null;
+      allow list: if false;
     }
     // lista kluczy podróży dla jednego znajomego (zaszyfrowana kluczem tej pary)
     match /pub/{uid}/keys/{friend} {

@@ -29,7 +29,7 @@
   const load = () => loading || (loading = (async () => {
     st = Object.assign({ friends: {}, trips: {}, since: {}, read: {} }, await DB.getSetting("social", {}) || {});
   })());
-  const save = () => DB.setSetting("social", st);
+  const save = () => { scheduleVault(); return DB.setSetting("social", st); };
   const listeners = new Set();
   const emit = (what, data) => { for (const fn of listeners) try { fn(what, data); } catch (e) { console.warn(e); } };
 
@@ -354,12 +354,114 @@
     return t;
   }
 
+  /* ---------- konto Google (etap 2): to samo konto na nowym telefonie, szukanie po e-mailu ----------
+     Logowanie dołącza konto Google do obecnego (anonimowego) identyfikatora – znajomi i czaty zostają.
+     Jeśli konto Google jest już przypisane do innego identyfikatora (np. z poprzedniego telefonu), przełączamy się na niego
+     i odtwarzamy z kopii na koncie (vault/{uid}: klucze, znajomi, widoczność podróży) – czat pobiera się wtedy od nowa z serwera.
+     Kopia jest chroniona regułami (czyta ją tylko zalogowany właściciel), ale nie jest zaszyfrowana hasłem – można ją wyłączyć.
+     emails/{email} → { uid }: znajomi znajdą Cię po dokładnym adresie (bez listowania); można wyłączyć. */
+  const googleOf = u => u && u.providerData && u.providerData.find(p => p.providerId === "google.com");
+  async function account() {
+    const u = (await fb()).auth.currentUser, g = googleOf(u);
+    return g ? { email: String(u.email || g.email || "").toLowerCase(), name: g.displayName || "" } : null;
+  }
+  async function credential(idToken) {
+    if (idToken) return firebase.auth.GoogleAuthProvider.credential(idToken); // testy (emulator)
+    const P = window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.GoogleAuth;
+    if (window.PodroznikNative && PodroznikNative.isNative && P) {
+      const r = await P.authorize({ scopes: ["openid", "email", "profile"], interactive: true });
+      return firebase.auth.GoogleAuthProvider.credential(null, r.accessToken);
+    }
+    return null; // przeglądarka: okno logowania Google (popup)
+  }
+  async function signInGoogle({ idToken } = {}) {
+    await load();
+    const f = await fb(), auth = f.auth, before = auth.currentUser && auth.currentUser.uid;
+    const cred = await credential(idToken);
+    try {
+      if (cred) await auth.currentUser.linkWithCredential(cred);
+      else await auth.currentUser.linkWithPopup(new firebase.auth.GoogleAuthProvider());
+    } catch (e) {
+      if (e.code !== "auth/credential-already-in-use" && e.code !== "auth/email-already-in-use") throw e;
+      const c = e.credential || cred;
+      if (!c) throw e;
+      await auth.signInWithCredential(c); // to konto ma już swój identyfikator (np. z poprzedniego telefonu)
+    }
+    await auth.currentUser.getIdToken(true); // e-mail w tokenie – potrzebny regułom
+    profileDone = null;
+    if (auth.currentUser.uid !== before) await restore();
+    if (st.findable !== false) await setFindable(true).catch(e => console.warn("e-mail:", e.code || e));
+    await profile();
+    await writeVault();
+    emit("account");
+    return account();
+  }
+  function stopAll() {
+    if (inboxOff) { inboxOff(); inboxOff = null; }
+    for (const k of Object.keys(chats)) { chats[k](); delete chats[k]; }
+    started = false;
+  }
+  // przełączenie na istniejące konto – stan z kopii na koncie (albo pusty)
+  async function restore() {
+    stopAll();
+    const f = await fb(), me = f.auth.currentUser.uid;
+    const d = await f.db.collection("vault").doc(me).get().catch(() => null);
+    const v = d && d.exists ? d.data() : null;
+    for (const m of await DB.all("dms")) await DB.delRaw("dms", m.id); // wiadomości poprzedniego identyfikatora
+    if (v && v.keys) { await DB.setSetting("social.keys", v.keys); myKeys = null; for (const k of Object.keys(shared)) delete shared[k]; }
+    // imię: z kopii albo z profilu na serwerze (gdy na tym telefonie jeszcze go nie ma)
+    if (!(await myName())) { const nm = (v && v.name) || ((await person(me).catch(() => null)) || {}).name; if (nm) await DB.setSetting("myName", nm); }
+    st = { friends: (v && v.friends) || {}, trips: (v && v.trips) || {}, since: {}, read: (v && v.read) || {}, findable: v ? v.findable : undefined, vault: v ? v.vault : undefined };
+    await DB.setSetting("social", st);
+    if (!v || !v.keys) await keyMaps().catch(() => {});
+    await start(true);
+  }
+  let vaultTimer = null;
+  function scheduleVault() { clearTimeout(vaultTimer); vaultTimer = setTimeout(() => writeVault().catch(e => console.warn("kopia na koncie:", e.code || e)), 1500); }
+  async function writeVault() {
+    if (!st || !available() || !fb) return;
+    const f = await fb(), u = f.auth.currentUser;
+    if (!googleOf(u)) return;
+    const ref = f.db.collection("vault").doc(u.uid);
+    if (st.vault === false) { await ref.delete().catch(() => {}); return; }
+    const keysRaw = await DB.getSetting("social.keys", null);
+    await ref.set({ v: 1, t: f.now(), vault: true, name: (await myName()).slice(0, 40), findable: st.findable !== false, keys: keysRaw, friends: st.friends, trips: st.trips, read: st.read });
+  }
+  async function setFindable(on) {
+    await load();
+    const f = await fb(), acc = await account();
+    st.findable = !!on; await save();
+    if (!acc || !acc.email) return;
+    const ref = f.db.collection("emails").doc(acc.email);
+    if (on) await ref.set({ uid: f.auth.currentUser.uid }); else await ref.delete().catch(() => {});
+  }
+  async function setVault(on) { await load(); st.vault = !!on; await save(); await writeVault(); }
+  async function findByEmail(email) {
+    const e = String(email || "").trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) throw Object.assign(new Error("To nie wygląda na adres e-mail."), { code: "bad-email" });
+    const d = await (await fb()).db.collection("emails").doc(e).get();
+    return d.exists ? d.data().uid : null;
+  }
+  // wylogowanie: ten telefon wraca do nowego, anonimowego profilu (znajomi zostają na koncie, jeśli jest kopia)
+  async function signOut() {
+    const f = await fb();
+    await writeVault().catch(() => {});
+    stopAll();
+    await f.auth.signOut();
+    await f.auth.signInAnonymously();
+    await DB.setSetting("social.keys", null); myKeys = null; for (const k of Object.keys(shared)) delete shared[k];
+    for (const m of await DB.all("dms")) await DB.delRaw("dms", m.id);
+    st = { friends: {}, trips: {}, since: {}, read: {} }; await DB.setSetting("social", st);
+    profileDone = null;
+    emit("account");
+  }
+
   /* ---------- start ---------- */
   let started = false;
-  async function start() {
+  async function start(force) {
     if (started || !available() || !navigator.onLine) return;
     await load();
-    if (!Object.keys(st.friends).length && !Object.keys(st.trips).length && !(await DB.getSetting("social.on", false))) return; // nic nie używane – nie łącz się
+    if (!force && !Object.keys(st.friends).length && !Object.keys(st.trips).length && !(await DB.getSetting("social.on", false))) return; // nic nie używane – nie łącz się
     started = true;
     try {
       await listenInbox();
@@ -375,6 +477,7 @@
     available, enable, start, load, state: async () => (await load(), st), myLink, myName, rename, profile, parseFriend, person,
     addFriend, accept, remove, sendMessage, messages, markRead, unread, unreadAll, startChat,
     VIS, setVisibility, visibility, publicLink, friendTrips, parsePublic, publicTrip, copyTrip, snapshot,
+    account, signInGoogle, signOut, setFindable, setVault, findByEmail,
     on: fn => { listeners.add(fn); return () => listeners.delete(fn); },
     _publish: publish, _keyMaps: keyMaps,
   };

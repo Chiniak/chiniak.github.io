@@ -25,8 +25,8 @@
   /* ================= lista znajomych ================= */
   App.route(/^\/znajomi$/, async () => {
     if (!SO() || !SO().available()) return notReady();
-    let link = "", err = null;
-    try { await SO().enable(); link = await SO().myLink(); } catch (e) { err = e; }
+    let link = "", err = null, acc = null;
+    try { await SO().enable(); link = await SO().myLink(); acc = await SO().account(); } catch (e) { err = e; }
     const st = await SO().state(), name = await SO().myName();
     const fr = Object.entries(st.friends);
     const incoming = fr.filter(([, f]) => f.state === "in"), outgoing = fr.filter(([, f]) => f.state === "out"), ok = fr.filter(([, f]) => f.state === "ok");
@@ -59,6 +59,18 @@
           </div>` : ""}
         </section>
 
+        ${err ? "" : acc ? `
+        <section class="card zn-acc">
+          <div class="zn-acc-h"><span class="li-ico">${ic("lock")}</span><span class="li-main"><b>Konto Google</b><small translate="no">${esc(acc.email)}</small></span>
+            <button type="button" class="btn small" id="zn-out">Wyloguj</button></div>
+          <label class="zn-sw"><input type="checkbox" id="zn-find"${st.findable !== false ? " checked" : ""}><span><b>Znajomi mogą znaleźć mnie po e-mailu</b><small>tylko gdy wpiszą dokładnie ten adres</small></span></label>
+          <label class="zn-sw"><input type="checkbox" id="zn-vault"${st.vault !== false ? " checked" : ""}><span><b>Kopia znajomych na koncie</b><small>na nowym telefonie wrócą znajomi, czaty i widoczność podróży (kopia klucza czatu jest chroniona logowaniem do konta, bez osobnego hasła)</small></span></label>
+        </section>` : `
+        <section class="card zn-acc">
+          <p class="zn-acc-t"><b>Zaloguj się kontem Google</b> – znajomi i czaty przejdą z Tobą na nowy telefon, a znajomi znajdą Cię po adresie e-mail.</p>
+          <button type="button" class="btn primary wide" id="zn-google">${ic("lock")} <span>Zaloguj kontem Google</span></button>
+        </section>`}
+
         ${incoming.length ? `<h2 class="section">Zaproszenia <span class="rz-badge">${incoming.length}</span></h2>
           <div class="list">${incoming.map(([id, f]) => `<div class="li zn-row">${av(id, f.name)}
             <span class="li-main"><b>${esc(f.name || "Bez imienia")}</b><small>chce dodać Cię do znajomych</small></span>
@@ -76,6 +88,9 @@
           <input id="zn-add-in" name="l" placeholder="Wklej link znajomego" autocomplete="off">
           <button class="btn primary" type="submit">Dodaj</button></form>
         <p class="f-hint">Kod QR znajomego zeskanuj zwykłym aparatem – link otworzy Podróżnika.</p>
+        <form class="rz-add zn-mail" id="zn-mail"><label class="sr" for="zn-mail-in">Adres e-mail znajomego</label>
+          <input id="zn-mail-in" name="e" type="email" inputmode="email" placeholder="albo wpisz e-mail znajomego (Gmail)" autocomplete="off">
+          <button class="btn" type="submit" aria-label="Szukaj po e-mailu">${ic("search", "")}</button></form>
 
         <div class="list zn-more">
           <a class="li" href="#/widocznosc"><span class="li-ico">${ic("lock")}</span><span class="li-main"><b>Kto widzi moje podróże</b>
@@ -97,6 +112,38 @@
         if (cp) cp.onclick = async () => { try { await navigator.clipboard.writeText(link); App.toast("Skopiowano link"); } catch (e) { App.toast(link); } };
         view.querySelectorAll("[data-ok]").forEach(b => b.onclick = async () => { b.disabled = true; try { await SO().accept(b.dataset.ok); App.toast("Jesteście znajomymi"); } catch (e) { App.toast(offlineMsg(e)); } App.render(); });
         view.querySelectorAll("[data-no]").forEach(b => b.onclick = async () => { b.disabled = true; try { await SO().remove(b.dataset.no); } catch (e) { App.toast(offlineMsg(e)); } App.render(); });
+        const gb = view.querySelector("#zn-google");
+        if (gb) gb.onclick = async () => {
+          gb.disabled = true;
+          try { const a = await SO().signInGoogle(); App.toast(`Zalogowano: ${a ? a.email : ""}`); }
+          catch (e) { App.toast(e.code === "auth/popup-closed-by-user" || e.code === "CANCELED" ? "Anulowano" : e.code === "auth/operation-not-allowed" ? "Logowanie Google nie jest jeszcze włączone w Firebase" : offlineMsg(e)); }
+          App.render();
+        };
+        const so = view.querySelector("#zn-out");
+        if (so) so.onclick = async () => {
+          if (!confirm("Wylogować konto Google na tym telefonie? Znajomi i czaty znikną z telefonu" + (st.vault !== false ? ", ale wrócą po ponownym zalogowaniu." : " (kopia na koncie jest wyłączona – nie wrócą).")))
+            return;
+          try { await SO().signOut(); App.toast("Wylogowano"); } catch (e) { App.toast(offlineMsg(e)); }
+          App.render();
+        };
+        const fd = view.querySelector("#zn-find");
+        if (fd) fd.onchange = async () => { try { await SO().setFindable(fd.checked); App.toast(fd.checked ? "Znajomi znajdą Cię po e-mailu" : "Ukryto Twój e-mail"); } catch (e) { fd.checked = !fd.checked; App.toast(offlineMsg(e)); } };
+        const vt = view.querySelector("#zn-vault");
+        if (vt) vt.onchange = async () => {
+          if (!vt.checked && !confirm("Wyłączyć kopię na koncie? Na nowym telefonie zaczniesz bez znajomych i czatów.")) { vt.checked = true; return; }
+          try { await SO().setVault(vt.checked); } catch (e) { vt.checked = !vt.checked; App.toast(offlineMsg(e)); }
+        };
+        const mf = view.querySelector("#zn-mail");
+        mf.onsubmit = async e => {
+          e.preventDefault();
+          const b = mf.querySelector("button"); b.disabled = true;
+          try {
+            const id = await SO().findByEmail(mf.e.value);
+            if (id) location.hash = `#/znajomi/dodaj/${id}`;
+            else App.toast("Nikt z tym adresem nie korzysta z Podróżnika (albo ukrył adres)");
+          } catch (er) { App.toast(er.code === "bad-email" ? er.message : offlineMsg(er)); }
+          b.disabled = false;
+        };
         const af = view.querySelector("#zn-add");
         af.onsubmit = e => {
           e.preventDefault();
@@ -364,6 +411,7 @@
       App.toast(`💬 ${d.name || "Znajomy"}: ${d.msgs[d.msgs.length - 1].text.slice(0, 80)}`);
       if (/^#\/znajomi$/.test(h)) App.render();
     } else if (what === "friends") { if (/^#\/znajomi/.test(h) && !(document.activeElement && /INPUT|TEXTAREA/.test(document.activeElement.tagName))) App.render(); }
+    else if (what === "account") { if (/^#\/znajomi/.test(h)) App.render(); }
     else if (what === "accepted") App.toast(`🤝 ${d.name || "Znajomy"} przyjmuje zaproszenie`);
   });
 })();
