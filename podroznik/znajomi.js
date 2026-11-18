@@ -729,9 +729,9 @@
       if (h !== last || force) {
         last = h;
         const here = r => location.hash.startsWith(r) ? ' aria-current="page"' : "";
-        box.innerHTML = `<button type="button" class="icon-btn zn-top" id="notif-btn" aria-haspopup="dialog" aria-expanded="${open}" aria-label="Powiadomienia${bell ? ` – ${bell} nowych` : ""}">${ic("bell", "")}${dot(bell)}</button>
+        box.innerHTML = `<a class="icon-btn zn-top" href="#/wiadomosci"${here("#/wiadomosci")} aria-label="Wiadomości${msgN ? ` – ${msgN} nowych` : ""}">${ic("chat", "")}${dot(msgN)}</a>
           <a class="icon-btn zn-top" href="#/znajomi"${here("#/znajomi")} aria-label="Znajomi${invN ? ` – ${invN} zaproszeń` : ""}">${ic("users", "")}${dot(invN)}</a>
-          <a class="icon-btn zn-top" href="#/wiadomosci"${here("#/wiadomosci")} aria-label="Wiadomości${msgN ? ` – ${msgN} nowych` : ""}">${ic("chat", "")}${dot(msgN)}</a>`;
+          <button type="button" class="icon-btn zn-top" id="notif-btn" aria-haspopup="dialog" aria-expanded="${open}" aria-label="Powiadomienia${bell ? ` – ${bell} nowych` : ""}">${ic("bell", "")}${dot(bell)}</button>`;
         box.hidden = false;
         box.querySelector("#notif-btn").onclick = toggle;
         if (self.I18N && I18N.translate) try { I18N.translate(box); } catch (e) { /* tłumaczenie opcjonalne */ }
