@@ -2217,7 +2217,7 @@ function head(){
 }
 function tabs(){
   const t=(k,l,ic)=>`<button class="tbn${tab===k?" on":""}" ${tab===k?'aria-current="page"':""} onclick="tab='${k}';render()"><span aria-hidden="true">${ic}</span>${l}</button>`;
-  return `<nav class="tabs" aria-label="Menu">${t("home","Główna","🏠")}${t("crew","Ekipa","👥")}${t("fight","Walka","⚔️")}${t("pvp","PvP","🌐")}${t("rank","Ranking","🏆")}${t("shop","Sklep","🛒")}</nav>`;
+  return `<nav class="tabs" aria-label="Menu">${t("home","Główna","🏠")}${t("crew","Ekipa","👥")}${t("base","Miasto","🗺️")}${t("fight","Walka","⚔️")}${t("pvp","PvP","🌐")}${t("rank","Ranking","🏆")}${t("shop","Sklep","🛒")}</nav>`;
 }
 let LTAB=null;
 function render(){if(typeof SFX!=="undefined"&&!busy)SFX.menu();if(typeof BMSG!=="undefined"&&LTAB!==tab){BMSG="";SWP=null;REL=null}LTAB=tab;
