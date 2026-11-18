@@ -2111,3 +2111,27 @@ a.tp-trip { text-decoration: none; }
 .zn-copyday { flex: none; min-height: 34px; }
 .zn-copyday.done { color: var(--accent); background: var(--accent-soft); border-color: transparent; }
 .zn-copyform .field { margin: 10px 0 4px; } .zn-copyform .btn { margin-top: 10px; }
+
+/* konto (konto.js): logowanie Google / Facebook i połączone konta */
+.ac-hero { padding: 18px 16px; }
+.ac-h { margin: 0 0 4px; font-size: 1.15rem; }
+.ac-hero .muted { margin: 0 0 14px; }
+.ac-btn { margin-top: 10px; gap: 10px; }
+.ac-btn .ac-logo, .ac-ico .ac-logo { width: 20px; height: 20px; stroke: none; }
+.ac-btn.primary .ac-logo { background: #fff; border-radius: 50%; padding: 2px; box-sizing: content-box; }
+.ac-why { list-style: none; margin: 16px 0 8px; padding: 0; display: grid; gap: 8px; }
+.ac-why li { display: flex; gap: 10px; align-items: center; color: var(--muted); }
+.ac-why .ic { color: var(--accent); flex: none; }
+.ac-me { padding: 14px 16px; }
+.ac-row { gap: 10px; }
+.ac-row .chip { flex: none; }
+.ac-ico { background: var(--surface-2); }
+.ac-out { margin-top: 18px; }
+.zn-acclink { margin-top: 10px; }
+
+/* stały pasek Znajomi / Wiadomości w nagłówku (znajomi.js) */
+.social-top { display: flex; gap: 2px; flex: none; }
+.social-top[hidden] { display: none; }
+.social-top .icon-btn[aria-current="page"] { background: var(--accent-soft); color: var(--accent); }
+.zn-stats { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin: 8px 0 0; }
+.zn-ideas .li { align-items: center; }
