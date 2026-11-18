@@ -2925,7 +2925,8 @@ function shoe(t,dx,col,acc){const X=v=>r2(v+dx);let s="";
       soft(X(27.6),53,2.4,.9,.45)+soft(X(35),54.8,2.4,.7,.28,0,1)+`<path d="M${X(33.4)} 54.1Q${X(36)} 54.6 ${X(37.2)} 55.9V56.4H${X(33.2)}Z" fill="${m.s}" opacity=".5"/><path d="M${X(30.3)} 53L${X(31.5)} 53.6M${X(30.8)} 52.8L${X(32)} 53.4M${X(31.3)} 53L${X(32.5)} 53.6" stroke="#9a9ea6" stroke-width=".26"/><path d="M${X(27)} 55.7Q${X(29.8)} 54 ${X(32.8)} 54.7" stroke="${acc}" stroke-width=".75" fill="none"/><path d="M${X(25.8)} 52.4H${X(29.9)}" stroke="#8f939a" stroke-width=".8"/>`);
     s+=sole(`M${X(25.3)} 56H${X(37.7)}Q${X(38.1)} 57.9 ${X(36.5)} 57.9H${X(26)}Q${X(25.1)} 57.7 ${X(25.3)} 56Z`,"#dcb578","#8a6030")+`<path d="M${X(26)} 57.2H${X(37)}" stroke="#6a4820" stroke-width=".22" opacity=".6"/><path d="M${X(25.4)} 56.15H${X(37.6)}" stroke="#fff4d8" stroke-width=".22" opacity=".6"/>`;
   }
-  return s}
+  const ax=r2(28.2+dx);
+  return`<g transform="translate(${ax} 57.8) scale(.74 .84) translate(${-ax} -57.8)">${s}</g>`}
 
 /* ---------- ręce ---------- */
 const ARMB=[[19.9,15.2,2.35],[18.7,22.4,2.0],[19.4,28.8,1.55],[19.6,30.6,1.4]];
