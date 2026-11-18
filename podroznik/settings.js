@@ -68,7 +68,10 @@
       link("#/ustawienia/blokada", "lock", "Blokada PIN-em", lock ? "otwiera się po podaniu PIN-u" : "zabezpiecz bilety i dokumenty",
         chip(lock ? "wł." : "wył.", lock ? "ok" : "")));
 
+    const acc = App.Social && App.Social.available() ? await App.Social.account().catch(() => null) : null;
     const app = group("Aplikacja",
+      link("#/konto", "lock", "Twoje konto", acc ? `<span translate="no">${esc(acc.email || acc.name)}</span>` : "załóż przez Google lub Facebooka",
+        acc ? chip([acc.google && "Google", acc.facebook && "Facebook"].filter(Boolean).join(" + "), "ok") : "") +
       (App.Social && App.Social.available() ? link("#/znajomi", "users", "Znajomi", "czat i podgląd planów") : "") +
       (App.Gmail && App.Gmail.available() ? link("#/gmail?wroc=%23%2Fustawienia", "mail", "Konto Google (Gmail)",
         gmailCfg ? `<span translate="no">${esc(gmailCfg.email)}</span>` : "propozycje z maili", gmailCfg ? chip("połączone", "ok") : "") : "") +

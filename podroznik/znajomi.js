@@ -76,6 +76,7 @@
           ${acc.google ? "" : `<button type="button" class="btn wide zn-g2" id="zn-google">${ic("lock")} <span>Dołącz też konto Google</span></button>`}
           ${SO().fbAvailable() ? acc.facebook ? `<button type="button" class="btn wide zn-fbf" id="zn-fbfriends">${ic("users")} <span>Znajomi z Facebooka w Podróżniku</span></button><div id="zn-fblist"></div>`
             : `<button type="button" class="btn wide zn-fb" id="zn-facebook">${ic("users")} <span>Połącz z Facebookiem – znajdź znajomych</span></button>` : ""}
+          <a class="btn wide zn-acclink" href="#/konto">${ic("lock")} <span>Połączone konta (Google, Facebook)</span></a>
           <label class="zn-sw"><input type="checkbox" id="zn-vault"${st.vault !== false ? " checked" : ""}><span><b>Kopia znajomych na koncie</b><small>na nowym telefonie wrócą znajomi, czaty i widoczność podróży (kopia klucza czatu jest chroniona logowaniem do konta, bez osobnego hasła)</small></span></label>
         </section>` : `
         <section class="card zn-acc">
@@ -129,15 +130,15 @@
         const gb = view.querySelector("#zn-google");
         if (gb) gb.onclick = async () => {
           gb.disabled = true;
-          try { const a = await SO().signInGoogle(); App.toast(`Zalogowano: ${a ? a.email : ""}`); }
-          catch (e) { App.toast(e.code === "auth/popup-closed-by-user" || e.code === "CANCELED" ? "Anulowano" : e.code === "auth/operation-not-allowed" ? "Logowanie Google nie jest jeszcze włączone w Firebase" : offlineMsg(e)); }
+          try { const a = await App.Account.signIn("google.com"); App.toast(`Zalogowano: ${a ? a.email : ""}`); }
+          catch (e) { App.toast(App.Account.errMsg(e)); }
           App.render();
         };
         const fbb = view.querySelector("#zn-facebook");
         if (fbb) fbb.onclick = async () => {
           fbb.disabled = true;
-          try { await SO().signInFacebook(); App.toast("Połączono z Facebookiem"); }
-          catch (e) { App.toast(e.code === "auth/popup-closed-by-user" || e.code === "CANCELED" ? "Anulowano" : e.code === "auth/operation-not-allowed" ? "Logowanie przez Facebooka nie jest jeszcze włączone w Firebase" : offlineMsg(e)); }
+          try { await App.Account.signIn("facebook.com"); App.toast("Połączono z Facebookiem"); }
+          catch (e) { App.toast(App.Account.errMsg(e)); }
           App.render();
         };
         const fbf = view.querySelector("#zn-fbfriends");

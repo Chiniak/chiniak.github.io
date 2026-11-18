@@ -448,7 +448,8 @@
     const u = (await fb()).auth.currentUser;
     if (!linked(u)) return null;
     const g = googleOf(u), fbp = u.providerData.find(p => p.providerId === "facebook.com");
-    return { email: String(u.email || (g && g.email) || (fbp && fbp.email) || "").toLowerCase(), name: (g || fbp).displayName || "", google: !!g, facebook: !!fbp };
+    return { email: String(u.email || (g && g.email) || (fbp && fbp.email) || "").toLowerCase(), name: (g || fbp).displayName || "", google: !!g, facebook: !!fbp,
+      gEmail: g ? String(g.email || "").toLowerCase() : "", fbName: fbp ? fbp.displayName || "" : "", fbEmail: fbp ? String(fbp.email || "").toLowerCase() : "" };
   }
   async function credential(idToken) {
     if (idToken) return firebase.auth.GoogleAuthProvider.credential(idToken); // testy (emulator)
@@ -459,12 +460,15 @@
     }
     return null; // przeglądarka: okno logowania Google (popup)
   }
-  async function signInGoogle({ idToken } = {}) {
-    await linkOrSignIn(await credential(idToken), () => new firebase.auth.GoogleAuthProvider());
+  // opts: confirmSwitch(info) → true/false – pytanie, gdy to konto należy już do innego profilu, a obecny ma znajomych albo konto;
+  //       pending – poświadczenie (np. Facebooka) do dołączenia po zalogowaniu (gdy ten sam e-mail ma już konto przez Google)
+  async function signInGoogle({ idToken, ...opts } = {}) {
+    await load(); await fb(); // Firebase musi być wczytany przed budową poświadczenia
+    await linkOrSignIn(await credential(idToken), () => new firebase.auth.GoogleAuthProvider(), opts);
     return account();
   }
   // dołącz konto (Google / Facebook) do obecnego profilu albo przełącz się na profil, do którego to konto już należy
-  async function linkOrSignIn(cred, popupProvider) {
+  async function linkOrSignIn(cred, popupProvider, opts = {}) {
     await load();
     const f = await fb(), auth = f.auth, before = auth.currentUser && auth.currentUser.uid;
     let res = null;
@@ -475,7 +479,25 @@
       if (e.code !== "auth/credential-already-in-use" && e.code !== "auth/email-already-in-use") throw e;
       const c = e.credential || cred;
       if (!c) throw e;
-      res = await auth.signInWithCredential(c); // to konto ma już swój identyfikator (np. z poprzedniego telefonu)
+      // to konto ma już swój profil (np. z poprzedniego telefonu) – przejście na tamten profil
+      const hasAcc = linked(auth.currentUser), hasFriends = Object.keys(st.friends || {}).length > 0;
+      if ((hasAcc || hasFriends) && opts.confirmSwitch && !(await opts.confirmSwitch({ hasAcc, hasFriends, email: e.email || (e.customData && e.customData.email) || "" })))
+        throw Object.assign(new Error("Anulowano"), { code: "switch-canceled" });
+      if (hasAcc) await writeVault().catch(() => {}); // obecny profil wróci po zalogowaniu jego kontem
+      try { res = await auth.signInWithCredential(c); }
+      catch (e2) {
+        // ten sam e-mail ma już konto przez innego dostawcę (np. Facebook, a konto założone przez Google)
+        if (e2.code !== "auth/account-exists-with-different-credential") throw e2;
+        throw Object.assign(new Error("Ten e-mail ma już konto w Podróżniku – zaloguj się nim, a potem połączymy konta."),
+          { code: "other-provider", pending: e2.credential || c, email: e2.email || (e2.customData && e2.customData.email) || "" });
+      }
+    }
+    if (opts.pending) {
+      try {
+        const r2 = await auth.currentUser.linkWithCredential(opts.pending);
+        const tok = (opts.pending && opts.pending.accessToken) || (r2 && r2.credential && r2.credential.accessToken);
+        if (tok && opts.pending.providerId === "facebook.com") { fbToken = tok; await DB.setSetting("social.fbToken", tok); }
+      } catch (e) { console.warn("łączenie kont:", e.code || e); }
     }
     await auth.currentUser.getIdToken(true); // e-mail i dostawcy w tokenie – potrzebne regułom
     profileDone = null;
@@ -497,14 +519,14 @@
   const fbNative = () => window.PodroznikNative && PodroznikNative.isNative && window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.FacebookLogin;
   const fbAvailable = () => available() && fbConfigured() && (!(window.PodroznikNative && PodroznikNative.isNative) || !!fbNative());
   let fbToken = null; // token dostępu Facebooka (tylko w pamięci i w ustawieniu „social.fbToken” na tym telefonie)
-  async function signInFacebook({ accessToken } = {}) {
+  async function signInFacebook({ accessToken, ...opts } = {}) {
     if (!accessToken && fbNative()) {
       const r = await fbNative().login({ permissions: FB_PERMS });
       if (!r || !r.accessToken) throw Object.assign(new Error("Anulowano"), { code: "CANCELED" });
       accessToken = r.accessToken.token;
     }
     const prov = () => { const p = new firebase.auth.FacebookAuthProvider(); FB_PERMS.forEach(s => p.addScope(s)); return p; };
-    const res = await linkOrSignIn(accessToken ? firebase.auth.FacebookAuthProvider.credential(accessToken) : null, prov);
+    const res = await linkOrSignIn(accessToken ? firebase.auth.FacebookAuthProvider.credential(accessToken) : null, prov, opts);
     const tok = accessToken || (res && res.credential && res.credential.accessToken);
     if (tok) { fbToken = tok; await DB.setSetting("social.fbToken", tok); }
     await registerFacebook();
@@ -542,6 +564,28 @@
       out.push({ uid: id, name: (p && p.name) || fr.name || "", fbName: fr.name || "", state: (st.friends[id] || {}).state || "" });
     }
     return out;
+  }
+  // odłączenie jednego sposobu logowania (Google / Facebook) – zostać musi co najmniej jeden
+  async function unlink(providerId) {
+    await load();
+    const f = await fb(), u = f.auth.currentUser;
+    if (!["google.com", "facebook.com"].includes(providerId) || !u.providerData.some(p => p.providerId === providerId)) return account();
+    if (u.providerData.filter(p => p.providerId === "google.com" || p.providerId === "facebook.com").length < 2)
+      throw Object.assign(new Error("To jedyny sposób logowania – najpierw połącz drugie konto."), { code: "last-provider" });
+    const old = await account();
+    if (providerId === "facebook.com") {
+      const p = fbOf(u);
+      if (p) await f.db.collection("fbids").doc(p.uid).delete().catch(() => {});
+      fbToken = null; await DB.setSetting("social.fbToken", null);
+      if (fbNative()) fbNative().logout().catch(() => {});
+    }
+    if (old && old.email) await f.db.collection("emails").doc(old.email).delete().catch(() => {});
+    await u.unlink(providerId);
+    await u.getIdToken(true);
+    if (st.findable !== false) await setFindable(true).catch(e => console.warn("e-mail:", e.code || e));
+    await writeVault().catch(() => {});
+    emit("account");
+    return account();
   }
   function stopAll() {
     if (inboxOff) { inboxOff(); inboxOff = null; }
@@ -628,7 +672,7 @@
     addFriend, accept, remove, sendMessage, messages, markRead, unread, unreadAll, startChat,
     VIS, setVisibility, visibility, publicLink, friendTrips, parsePublic, publicTrip, copyTrip, snapshot,
     publicIndex, setExplore, follow, unfollow, isFollowing, followersCount, publicTrips, followingFeed, explore, takeIdea,
-    account, signInGoogle, signInFacebook, fbAvailable, facebookFriends, signOut, setFindable, setVault, findByEmail,
+    account, signInGoogle, signInFacebook, unlink, fbAvailable, facebookFriends, signOut, setFindable, setVault, findByEmail,
     on: fn => { listeners.add(fn); return () => listeners.delete(fn); },
     _publish: publish, _keyMaps: keyMaps,
   };
