@@ -28,7 +28,7 @@ Czas: ok. 20 minut + oczekiwanie na przegląd (zwykle kilka dni). Na komputerze.
 |---|---|
 | Domeny aplikacji | `chiniak.github.io` |
 | Adres URL Polityki prywatności | `https://chiniak.github.io/podroznik/prywatnosc.html` |
-| Adres URL instrukcji usuwania danych | `https://chiniak.github.io/podroznik/prywatnosc.html#usuwanie` |
+| Adres URL instrukcji usuwania danych | `https://chiniak.github.io/podroznik/usun-konto.html` |
 | Kategoria | Podróże |
 | Ikona (1024×1024) | `podroznik/icon-512.png` powiększona – Claude może przygotować |
 
