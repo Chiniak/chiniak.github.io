@@ -636,6 +636,7 @@ html.gt .tbh,html.gt .lgr{color:#fff}
 /* liczby obrazen */
 @keyframes fl{0%{transform:translateY(4px) scale(.55);opacity:0}14%{transform:translateY(-6px) scale(1.25);opacity:1}30%{transform:translateY(-14px) scale(1)}100%{transform:translateY(-34px) scale(.95);opacity:0}}
 @media (prefers-reduced-motion:reduce){.imp,.isk,.dst{animation-duration:.01s}.board.rl .u.dead .fig{transition:none}}
+.pvt{display:flex;gap:6px;margin:6px 0 10px}.pvs{flex:1;min-height:44px;border:1px solid var(--bd);border-radius:12px;background:var(--card);color:var(--tx);font:inherit;font-weight:700;font-size:13px;position:relative;padding:4px}.pvs.on{border-color:var(--club);border-width:2px}.pvb{display:inline-block;min-width:18px;height:18px;line-height:18px;border-radius:9px;background:#e53935;color:#fff;font-size:11px;font-style:normal;font-weight:800;text-align:center;margin-left:4px;padding:0 4px}.rpg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0}.rpu{margin:0 0 6px;font-size:13px}.rpu span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rpu.dead{opacity:.4}.rpu.hl{outline:2px solid var(--club);outline-offset:2px;border-radius:6px}.chl{max-height:220px;overflow-y:auto;font-size:14px}
 </style>
 </head>
 <body>
@@ -831,6 +832,7 @@ function tbBurn(){const h=[];let msg="";[0,1].forEach(s=>tbIdx(s).forEach(k=>{co
 function tbPlan(){const T=TB.T,cand=tbIdx(1).filter(k=>!T[1][k].acted),i=pick(cand.length?cand:tbIdx(1)),u=T[1][i];
   const near=tbIdx(0).sort((a,b)=>tbD(u,T[0][a])-tbD(u,T[0][b]));
   let j=u.cls==="Bojówkarz"?tbWeak(0):(Math.random()<.35?pick(near):near[0]);
+  if(TB.o&&TB.o.pvp&&TB.o.pvp.tg){const pj=tbIdx(0).find(k=>T[0][k].cls===TB.o.pvp.tg);if(pj!==undefined&&Math.random()<.75)j=pj}
   const tt=tbIdx(0).find(k=>(T[0][k].taunt||0)>=TB.r);if(tt!==undefined)j=tt;
   return{i,j,as:pick(["straight","straight","heavy","flurry","feint"])}}
 function tbOver(afterEnemy){return !tbIdx(0).length||!tbIdx(1).length||(afterEnemy&&TB.r>=60)}
@@ -886,9 +888,10 @@ addEventListener("keydown",e=>{if(e.key==="Escape"&&typeof TB!=="undefined"&&TB&
 function turnFight(o,lv){
   busy=true;
   const enemy=o.pvp?o.pvp.units.slice(0,5).map(u=>({a:+u.a||10,h:+u.h||30,cls:CLS[u.cls]?u.cls:(OLDC[u.cls]||"Prowodyr"),ab:Math.max(0,Math.min(2,+u.ab|0)),ar:u.ar||{},name:String(u.n||"Rywal").slice(0,20),perk:null,lvl:+u.lvl||1})):pveEnemies(o,lv);
-  const mine=S.crew.filter(m=>!hurt(m)).map(m=>({...st(m,club()),name:m.name,perk:m.perk,lvl:m.lvl,ref:m,ab:m.ab|0}));
+  const mine=pvSorted(S.crew.filter(m=>!hurt(m))).map(m=>({...st(m,club()),name:m.name,perk:m.perk,lvl:m.lvl,ref:m,ab:m.ab|0}));
   const op=OP.find(x=>x[0]===S.op);S.opUsed=null;if(op&&S.coins>=op[2]){S.coins-=op[2];S.opUsed=op[0];mine.forEach(u=>{if(op[0]==="flares")u.a*=1.08;if(op[0]==="chant")u.h*=1.1})}S.op=null;
   TB={o,mine,T:[mine.map((u,k)=>({...u,hp:u.h,mx:u.h,acted:false,moved:false,c:k%2,r:k})),enemy.map((u,k)=>({...u,hp:u.h,mx:u.h,acted:false,moved:false,c:6-k%2,r:k}))],r:1,a:"straight",d:"guard",turn:0,sel:0,tg:0,anim:false,ev:[],done:false,log:["Stuknij swojego zawodnika, potem rywala, a w kole wybierz atak. Przycisk ✦ to umiejętność postaci."],cry:[0,0],lw:[0,0],scout:[0,0],trap:[],nx:null};
+  pvAfterSetup(o);
   spd=(window.matchMedia("(prefers-reduced-motion:reduce)").matches?.15:.55)*(PREF.spd||1);
   TB.ed=tbStance();tbRender();
 }
@@ -1033,11 +1036,11 @@ function tbStrike(s,i,j,as){
     if(own==="rush")d*=1.15;
     if(ds==="rush")d*=1.15;
     if(ds==="guard"&&!back)d*=as==="heavy"?.82:.65;
-    d*=tbMul(s,t);if(back)d*=2;
+    const av=advM(u.cls,t.cls);d*=tbMul(s,t)*av;if(back)d*=2;
     const crit=Math.random()<(u.cls==="Czujka"?.2:0)+.04*(u.ar.boks||0)+(as==="feint"?.35:0);
     if(crit)d*=1.5;
     d=Math.max(1,d);const hr=tbHurt(1-s,j,d),dead=hr.dead;let msg=hr.msg;
-    if(back)msg+=" Atak z zaskoczenia!";
+    if(back)msg+=" Atak z zaskoczenia!";if(av>1)msg+=" Przewaga klasy!";
     if(trip&&!dead){tbStun(t);msg+=` Podcięcie: ${t.name} traci ruch!`}
     push({s,i,j,d:Math.round(d),c:crit,miss:false,dead,msg});
     if((t.refl||0)>=TB.r&&!dead&&u.hp>0){const x=d*.5,r2=tbHurt(s,i,x);push({s:1-s,i:j,j:i,d:Math.round(x),c:false,miss:false,dead:r2.dead,k:"counter",msg:" (Twarda kontra)"+r2.msg})}
@@ -1144,7 +1147,7 @@ function tbEnd(){
 
 /* ===== PvP (asynchroniczne, wspólna baza artefaktu) ===== */
 let PV={db:null,uid:null,ok:false,init:false,list:[],rep:[],err:"",msg:"",sy:false,loaded:false};
-const pvRe=()=>setTimeout(()=>{if((tab==="pvp"||tab==="rank"||tab==="home")&&INFO===null&&!busy&&S&&!document.getElementById("end"))render()},0);
+const pvRe=()=>setTimeout(()=>{const ae=document.activeElement;if(ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName))return;if((tab==="pvp"||tab==="rank"||tab==="home"||tab==="base")&&INFO===null&&!busy&&S&&!document.getElementById("end"))render()},0);
 async function pvpInit(){
   if(PV.init)return;PV.init=true;
   try{
@@ -1176,55 +1179,255 @@ function rankView(){
   const m={};all.forEach(r=>{const c=r.city||"?";m[c]=(m[c]||0)+(r.pts||1000)});
   h+=`<h2>Ranking miast</h2><p class="mut">Suma punktów PvP ekip z danego miasta.</p>`+Object.entries(m).sort((x,y)=>y[1]-x[1]).map((r,i)=>`<div class="card row" ${r[0]===S.city?'style="border-color:var(--club);border-width:2px"':""}><span><span class="num">${i+1}</span>&nbsp; ${esc(r[0])}</span><b>${r[1]}</b></div>`).join("");
   return h}
+/* ===== PvP 2.0: obrona, dobór rywali, zemsta, bilety, przewagi klas, ustawienie, oprawa, ligi, okupacje, zgrupowania, powtórki, ochrona, limity ===== */
+const TKMAX=5,TKR=2*36e5,TKFILL=3,HITMAX=3,DOPMAX=3,DOPC={banner:1,flares:2,chant:2},OCCH=72,OCCR=5,OCCCAP=120,CLMAX=10,CLGOAL=30,CLCOST=200;
+const ADV={"Prowodyr":"Bojówkarz","Bojówkarz":"Czujka","Czujka":"Gniazdowy","Gniazdowy":"Stary Wyga","Stary Wyga":"Prowodyr"};
+const advM=(a,b)=>ADV[a]===b?1.2:ADV[b]===a?.85:1;
+const CIC={"Prowodyr":"🎯","Stary Wyga":"🛡️","Gniazdowy":"📣","Czujka":"👁️","Bojówkarz":"👊"};
+const FM={bal:{n:"Zrównoważona",a:1,h:1,d:"bez premii i kar"},off:{n:"Ofensywna",a:1.12,h:.9,d:"+12% ataku, −10% zdrowia"},def:{n:"Defensywna",a:.9,h:1.15,d:"−10% ataku, +15% zdrowia"}};
+const LGS=[["Liga Okręgowa",0,"#8a7a6a",1,60],["IV Liga",950,"#b8794a",2,100],["III Liga",1050,"#aab4c0",3,160],["II Liga",1150,"#e0b341",5,250],["I Liga",1250,"#4fc3b5",7,400],["Ekstraklasa",1350,"#c04bd6",10,600]];
+const lgOf=p=>{let k=0;LGS.forEach((l,i)=>{if((p||1000)>=l[1])k=i});return k};
+const lgBadge=p=>{const l=LGS[lgOf(p)];return `<span class="rkb" style="--rc:${l[2]}">${l[0]}</span>`};
+const BOTN=["Osiedlowi Sparingowcy","Ekipa Treningowa","Rezerwy z Bloków","Chłopaki z Szatni","Sparing Team"];
+const curWk=()=>Math.floor((Date.now()/864e5+3)/7);
+const pvDay=ts=>Math.floor(ts/864e5)+S.off;
+let PVT="fight",RPL=null;
+PV.out=[];PV.occ=[];PV.clans=[];PV.chat=[];PV.chatC=null;PV.chatU=null;PV.f={n:"",t:"",c:""};
+function P(){if(!S.pv)S.pv={};const p=S.pv;
+  if(p.tk===undefined){p.tk=TKMAX;p.tt=Date.now()}
+  p.rv=p.rv||{};p.fm=FM[p.fm]?p.fm:"bal";p.ord=Array.isArray(p.ord)?p.ord:[];p.ops=Array.isArray(p.ops)?p.ops:[];p.oc=p.oc||{};
+  if(p.seen===undefined)p.seen=Date.now();if(p.rr===undefined)p.rr=0;if(p.clc===undefined)p.clc=-1;
+  if(p.ord.length!==S.crew.length||p.ord.some(i=>!(i>=0&&i<S.crew.length))||new Set(p.ord).size!==p.ord.length)p.ord=S.crew.map((m,i)=>i);
+  const n=Math.floor((Date.now()-p.tt)/TKR);if(n>0){p.tk=Math.min(TKMAX,p.tk+n);p.tt+=n*TKR}if(p.tk>=TKMAX)p.tt=Date.now();
+  return p}
+function pvSorted(list){const o=P().ord,pos=m=>{const i=S.crew.indexOf(m),k=o.indexOf(i);return k<0?99+i:k};return list.slice().sort((a,b)=>pos(a)-pos(b))}
+const pwU=us=>(us||[]).reduce((t,u)=>t+(+u.a||0)*3+(+u.h||0),0);
+const pwMe=()=>pwU(pvUnits());
+const pvTot=p=>(p.w||0)+(p.l||0)+(p.dw||0)+(p.dl||0);
+const pvNew=p=>pvTot(p)<5||Date.now()-(p.jt||0)<48*36e5;
+const pvProt=p=>pvNew(p)&&pwMe()>1.3*pwU(p.units);
+const pvHits=id=>PV.out.filter(f=>f.d===id&&!f.rv&&pvDay(f.ts||0)===today()).length;
+function pvElo(my,op){const ex=1/(1+Math.pow(10,((op||1000)-(my||1000))/400));return{g:Math.max(1,Math.min(50,Math.round(24*(1-ex)))),l:Math.max(1,Math.min(50,Math.round(24*ex)))}}
+function pvOcc(ds){if(!PV.ok||!PV.uid)return null;return PV.occ.find(x=>x.d===PV.uid&&x.ds===ds&&x.o&&Date.now()-(x.ts||0)<OCCH*36e5)||null}
+const pvMyOcc=()=>PV.occ.filter(x=>x.o===PV.uid&&Date.now()-(x.ts||0)<OCCH*36e5);
+function pvOccGain(x){const st=Math.max(x.ts||0,P().oc[x.id]||0),end=Math.min(Date.now(),(x.ts||0)+OCCH*36e5);return Math.max(0,Math.min(OCCCAP,Math.floor((end-st)/36e5*OCCR)))}
+const pvUnseen=()=>PV.ok&&S?PV.rep.filter(r=>(r.ts||0)>P().seen).length:0;
+const pvMyClan=()=>{const me=pvMe();return me&&me.cl?PV.clans.find(c=>c.id===me.cl)||null:null};
+const pvMembers=id=>PV.list.filter(p=>p.cl===id);
+const pvClanWk=id=>{const w=curWk();return pvMembers(id).reduce((t,p)=>t+(p.wk===w?p.ww||0:0),0)};
+
+/* --- subskrypcje dodatkowe --- */
+function pvSubs(){if(!PV.ok||PV.subs)return;PV.subs=true;const db=PV.db,uid=PV.uid;
+  try{db.collection("pvp_fights").where("a","==",uid).onSnapshot(sn=>{PV.out=sn.docs.map(d=>({id:d.id,...d.data()}));pvRe()},()=>{})}catch(e){}
+  try{db.collection("pvp_occ").onSnapshot(sn=>{PV.occ=sn.docs.map(d=>({id:d.id,...d.data()}));pvRe()},()=>{})}catch(e){}
+  try{db.collection("pvp_clans").onSnapshot(sn=>{PV.clans=sn.docs.map(d=>({id:d.id,...d.data()})).filter(c=>c.n);pvRe()},()=>{})}catch(e){}
+}
+function pvChatSub(){const c=pvMyClan();const id=c?c.id:null;if(PV.chatC===id)return;PV.chatC=id;PV.chat=[];
+  if(typeof PV.chatU==="function")try{PV.chatU()}catch(e){}PV.chatU=null;if(!id)return;
+  try{PV.chatU=PV.db.collection("pvp_chat").where("c","==",id).onSnapshot(sn=>{if(PV.chatC!==id)return;PV.chat=sn.docs.map(d=>d.data()).sort((a,b)=>(a.ts||0)-(b.ts||0)).slice(-40);const el=document.getElementById("chl");if(el){el.innerHTML=pvChatHtml();el.scrollTop=el.scrollHeight}},()=>{})}catch(e){}
+}
+
+/* --- publikacja drużyny (obrona) --- */
+function pvUnits(){return pvSorted(S.crew).map(m=>{const q=st(m,club());return{cls:m.cls,ab:m.ab|0,lvl:m.lvl,a:Math.round(q.a),h:Math.round(q.h),ar:m.ar||{},n:m.name}})}
+function pvDoc(me){const p=P();return{name:S.name,club:S.clubName,city:S.city,c1:S.emb?S.emb.c1:"#d6203a",units:pvUnits(),fm:p.fm,tg:p.tg||null,terr:Object.keys(S.terr||{}),ts:Date.now(),jt:me&&me.jt?me.jt:Date.now()}}
+async function pvpPublish(){
+  if(!PV.ok)return;const me=pvMe();
+  try{
+    if(me)await PV.db.doc("pvp_players/"+PV.uid).update(pvDoc(me));
+    else await PV.db.doc("pvp_players/"+PV.uid).set({...pvDoc(null),pts:1000,w:0,l:0,dw:0,dl:0,seen:Date.now(),cl:null,ww:0,wk:curWk()});
+    PV.msg="Obrona zapisana: inni gracze walczą z tym składem i ustawieniem."
+  }catch(e){PV.msg="Nie można zapisać. Potrzebny jest dostęp współautora (Contributor) do tej gry."}
+  pvRe();
+}
+const pvSave=()=>{const me=pvMe();if(PV.ok&&me)PV.db.doc("pvp_players/"+PV.uid).update(pvDoc(me)).catch(()=>{})};
+
+/* --- start walki --- */
+function pvCanFight(){return S.crew.some(m=>!hurt(m))&&!busy}
+function pvpFight(id,x){x=x||{};
+  const t=PV.list.find(q=>q.id===id),me=pvMe(),p=P();
+  if(!t||!me||id===PV.uid||!pvCanFight())return;
+  const free=x.rv||x.ret;
+  if(!free){if(p.tk<1||pvHits(id)>=HITMAX||pvProt(t))return;if(p.tk>=TKMAX)p.tt=Date.now();p.tk--}
+  const o={l:"PvP",d:0,n:t.name+" ("+t.club+")",city:t.city,ds:"PvP",st:"Arena PvP",pvp:{id,c1:t.c1,pts:t.pts||1000,units:t.units||[],fm:t.fm,tg:t.tg,terr:t.terr||[],tn:t.name,rv:x.rv||null,ret:x.ret||null}};
+  S.op=null;const md=S.mode;S.mode="turn";fight(o);S.mode=md;
+}
+function pvBot(k){if(!pvCanFight())return;const o={l:"Sparing",d:0,n:"🤖 "+BOTN[k%BOTN.length],city:S.city,ds:"PvP",st:"Arena PvP",pbot:true};S.op=null;const md=S.mode;S.mode="turn";fight(o);S.mode=md}
+function pvAfterSetup(o){
+  if(!o||!(o.pvp||o.pbot))return;const p=P(),T=TB.T,ap=(arr,f)=>arr.forEach(u=>{u.a*=f.a;u.h*=f.h;u.hp=u.mx=u.h});
+  ap(T[0],FM[p.fm]);if(o.pvp&&FM[o.pvp.fm])ap(T[1],FM[o.pvp.fm]);
+  const ops=p.ops.filter(k=>OP.some(q=>q[0]===k)),cost=ops.reduce((t,k)=>t+OP.find(q=>q[0]===k)[2],0);
+  if(ops.length&&S.coins>=cost){S.coins-=cost;T[0].forEach(u=>{if(ops.includes("flares"))u.a*=1.08;if(ops.includes("chant")){u.h*=1.1;u.hp=u.mx=u.h}});if(ops.includes("banner"))S.opUsed="banner"}
+  p.ops=[];
+}
+/* --- powtórki --- */
+function pvBuildRp(res){try{
+  const u=TB.T.map(X=>X.map(x=>[String(x.name).slice(0,20),x.cls,Math.round(x.mx)]));
+  const e=(res.ev||[]).slice(-150).map(v=>[v.s,v.i,v.j,Math.round(v.d||0),(v.c?1:0)|(v.miss?2:0)|(v.dead?4:0)|(v.k==="counter"?8:0),v.hp?v.hp.map(X=>X.map(Math.round)):null]);
+  return JSON.stringify({u,e})}catch(x){return ""}}
+function openReplay(rp,title){let d;try{d=typeof rp==="string"?JSON.parse(rp):rp}catch(e){d=null}if(!d||!d.u||!d.e)return;
+  RPL={d,k:0,t:title||"Powtórka",play:null};rplDraw();setTimeout(()=>{const b=document.getElementById("rplx");if(b)b.focus()},0)}
+function rplClose(){if(RPL&&RPL.play)clearInterval(RPL.play);RPL=null;const w=document.getElementById("rplw");if(w)w.remove()}
+function rplStep(n){if(!RPL)return;RPL.k=Math.max(0,Math.min(RPL.d.e.length,RPL.k+n));rplDraw()}
+function rplPlay(){if(!RPL)return;if(RPL.play){clearInterval(RPL.play);RPL.play=null}else RPL.play=setInterval(()=>{if(!RPL)return;if(RPL.k>=RPL.d.e.length){clearInterval(RPL.play);RPL.play=null}else RPL.k++;rplDraw()},650);rplDraw()}
+function rplDraw(){if(!RPL)return;let w=document.getElementById("rplw");if(!w){w=document.createElement("div");w.id="rplw";w.className="mdl";w.onclick=e=>{if(e.target===w)rplClose()};document.body.appendChild(w)}
+  const {d,k}=RPL,ev=k?d.e[k-1]:null,hp=ev&&ev[5]?ev[5]:d.u.map(X=>X.map(x=>x[2]));
+  const col=s=>d.u[s].map((x,i)=>{const h=hp[s]&&hp[s][i]!==undefined?hp[s][i]:x[2],pc=Math.max(0,Math.min(100,h*100/x[2])),hl=ev&&((ev[0]===s&&ev[1]===i)||(ev[0]!==s&&ev[2]===i));
+    return `<div class="rpu${h<=0?" dead":""}${hl?" hl":""}"><span>${CIC[x[1]]||""} ${esc(x[0])}</span><div class="bar sm"><i style="width:${pc}%;${s?"background:var(--mut)":""}"></i></div></div>`}).join("");
+  let line="Początek walki.";
+  if(ev){const a=d.u[ev[0]][ev[1]],t=d.u[1-ev[0]][ev[2]];line=a&&t?`${esc(a[0])} → ${esc(t[0])}: `+(ev[4]&2?"pudło":`−${ev[3]}`+(ev[4]&1?" (krytyk)":"")+(ev[4]&8?" (kontra)":"")+(ev[4]&4?" · nokaut!":"")):""}
+  w.innerHTML=`<div class="mdc" role="dialog" aria-modal="true" aria-labelledby="rplt"><div class="row"><h2 id="rplt">▶ ${esc(RPL.t)}</h2><button class="btn alt" id="rplx" onclick="rplClose()" aria-label="Zamknij">✕</button></div>
+  <div class="rpg"><div>${col(0)}</div><div>${col(1)}</div></div><p class="nt" role="status" style="min-height:24px">${line}</p><p class="mut" style="margin:0 0 8px">Ruch ${k}/${d.e.length}</p>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px"><button class="btn alt" onclick="RPL.k=0;rplDraw()" aria-label="Od początku">⏮</button><button class="btn alt" onclick="rplStep(-1)" aria-label="Wstecz">◀</button><button class="btn" onclick="rplPlay()">${RPL.play?"⏸":"⏯"}</button><button class="btn alt" onclick="rplStep(1)" aria-label="Dalej">▶</button></div></div>`}
+function pvShare(txt,btn){const url=location.href.split("#")[0],full=txt+" "+url;
+  if(navigator.share){navigator.share({title:"Ekipy",text:txt,url}).catch(()=>{});return}
+  try{navigator.clipboard.writeText(full).then(()=>{if(btn)btn.textContent="Skopiowano ✓"},()=>{if(btn)btn.textContent="Nie udało się skopiować"})}catch(e){}}
+
+/* --- wynik walki PvP --- */
+let PVLAST=null;
+function pvpResult(win,o,res){
+  const me=pvMe();if(!PV.ok||!me)return"";const p=P(),x=o.pvp,now=Date.now(),wk=curWk();
+  const e=pvElo(me.pts||1000,x.pts||1000);let dl=win?e.g:e.l;if(win&&x.rv)dl=Math.round(dl*1.5);
+  const np=Math.max(0,(me.pts||1000)+(win?dl:-dl)),ww=(me.wk===wk?me.ww||0:0)+(win?1:0);
+  PV.db.doc("pvp_players/"+PV.uid).update({...pvDoc(me),pts:np,w:(me.w||0)+(win?1:0),l:(me.l||0)+(win?0:1),ww,wk}).catch(()=>{});
+  const rp=pvBuildRp(res);
+  PV.db.collection("pvp_fights").add({a:PV.uid,an:S.name,d:x.id,dn:x.tn||"",win:!!win,dl,ts:now,rv:!!x.rv,rp:rp.length<60000?rp:""}).catch(()=>{});
+  let msg=`Ranking PvP: ${win?"+":"−"}${dl} pkt.`;
+  if(x.rv){p.rv[x.rv]=1;if(win){S.coins+=40;msg+=" Zemsta udana: premia ×1,5 i +40 monet!"}else msg+=" Zemsta nieudana."}
+  if(win&&x.ret){PV.db.doc("pvp_occ/"+x.ret).update({o:null,on:"",ts:now}).catch(()=>{});const oc=PV.occ.find(q=>q.id===x.ret);msg+=` Odbito dzielnicę${oc?" "+oc.ds:""}!`}
+  else if(win){const busyD=PV.occ.filter(q=>q.d===x.id&&q.o&&now-(q.ts||0)<OCCH*36e5).map(q=>q.ds),fr=(x.terr||[]).filter(ds=>DIS.includes(ds)&&!busyD.includes(ds));
+    if(fr.length){const ds=pick(fr),id=x.id.replace(/[^\w-]/g,"").slice(0,40)+"_"+DIS.indexOf(ds);
+      PV.db.doc("pvp_occ/"+id).set({d:x.id,dn:x.tn||"",ds,o:PV.uid,on:S.name,ts:now}).catch(()=>{});
+      msg+=` Zajęto dzielnicę ${ds} ekipy ${esc(x.tn||"")}: haracz ${OCCR} monet/h przez ${OCCH} h.`}}
+  PVLAST={rp,txt:`Moja ekipa ${S.name} ${win?"pokonała":"przegrała z"} ${x.tn||"rywalem"} w PvP (${win?"+":"−"}${dl} pkt)!`};
+  return msg;
+}
 function pvpSync(){
   const me=pvMe();if(!me||PV.sy)return;
   const fresh=PV.rep.filter(r=>(r.ts||0)>(me.seen||0)).sort((a,b)=>a.ts-b.ts);
   if(!fresh.length)return;
   let pts=me.pts||1000,dw=me.dw||0,dl=me.dl||0;
-  fresh.forEach(r=>{const d=Math.min(50,Math.abs(+r.dl||0));if(r.win){pts=Math.max(0,pts-d);dl++}else{pts+=d;dw++}});
+  fresh.forEach(r=>{const d=Math.min(75,Math.abs(+r.dl||0));if(r.win){pts=Math.max(0,pts-d);dl++}else{pts+=d;dw++}});
   PV.sy=true;
   PV.db.doc("pvp_players/"+PV.uid).update({pts,dw,dl,seen:fresh[fresh.length-1].ts}).catch(()=>{}).finally(()=>{PV.sy=false});
 }
-function pvUnits(){return S.crew.map(m=>{const q=st(m,club());return{cls:m.cls,ab:m.ab|0,lvl:m.lvl,a:Math.round(q.a),h:Math.round(q.h),ar:m.ar||{},n:m.name}})}
-async function pvpPublish(){
-  if(!PV.ok)return;const me=pvMe();
-  try{
-    await PV.db.doc("pvp_players/"+PV.uid).set({name:S.name,club:S.clubName,city:S.city,c1:S.emb?S.emb.c1:"#d6203a",units:pvUnits(),pts:me?me.pts:1000,w:me?me.w||0:0,l:me?me.l||0:0,dw:me?me.dw||0:0,dl:me?me.dl||0:0,seen:me?me.seen||0:Date.now(),ts:Date.now()});
-    PV.msg="Drużyna zapisana w rankingu PvP."
-  }catch(e){PV.msg="Nie można zapisać. Potrzebny jest dostęp współautora (Contributor) do tej gry."}
-  pvRe();
-}
-function pvpFight(id){
-  const t=PV.list.find(x=>x.id===id),me=pvMe();
-  if(!t||!me||id===PV.uid||busy||!S.crew.some(m=>!hurt(m)))return;
-  const o={l:"PvP",d:0,n:t.name+" ("+t.club+")",city:t.city,ds:"PvP",st:"Arena PvP",pvp:{id,c1:t.c1,pts:t.pts||1000,units:t.units||[]}};
-  const md=S.mode;S.mode="turn";fight(o);S.mode=md;
-}
-function pvpResult(win,o){
-  const me=pvMe();if(!PV.ok||!me)return"";
-  const my=me.pts||1000,ex=1/(1+Math.pow(10,((o.pvp.pts||1000)-my)/400));
-  const dl=Math.max(1,Math.min(50,Math.round(Math.abs(24*((win?1:0)-ex)))));
-  const np=Math.max(0,my+(win?dl:-dl));
-  PV.db.doc("pvp_players/"+PV.uid).update({pts:np,w:(me.w||0)+(win?1:0),l:(me.l||0)+(win?0:1)}).catch(()=>{});
-  PV.db.collection("pvp_fights").add({a:PV.uid,an:S.name,d:o.pvp.id,win:!!win,dl,ts:Date.now()}).catch(()=>{});
-  return `Ranking PvP: ${win?"+":"−"}${dl} pkt.`;
-}
+
+/* --- akcje UI --- */
+function pvSub(k){PVT=k;if(k==="def")P().seen=Date.now();render()}
+function pvRefill(){const p=P();if(p.tk>=TKMAX||S.dia<TKFILL)return;S.dia-=TKFILL;p.tk=TKMAX;p.tt=Date.now();render()}
+function pvReroll(){P().rr++;render()}
+function pvSetFm(k){if(!FM[k])return;P().fm=k;pvSave();render()}
+function pvSetTg(k){P().tg=CLS[k]?k:null;pvSave();render()}
+function pvMove(i,d){const o=P().ord,j=i+d;if(j<0||j>=o.length)return;[o[i],o[j]]=[o[j],o[i]];pvSave();render()}
+function pvOp(k){const p=P(),i=p.ops.indexOf(k);if(i>=0)p.ops.splice(i,1);else{const u=p.ops.reduce((t,x)=>t+DOPC[x],0);if(u+DOPC[k]>DOPMAX)return;p.ops.push(k)}render()}
+function pvCollect(){const L=pvMyOcc();let g=0;L.forEach(x=>{g+=pvOccGain(x);P().oc[x.id]=Date.now()});if(!g)return;S.coins+=g;PV.msg=`Haracz odebrany: +${g} monet.`;render()}
+async function pvClanCreate(){const me=pvMe();if(!me||me.cl)return;const n=PV.f.n.trim().slice(0,22),t=PV.f.t.trim().toUpperCase().replace(/[^A-Z0-9ĄĆĘŁŃÓŚŹŻ]/g,"").slice(0,4);
+  if(n.length<3||t.length<2){PV.msg="Nazwa: min. 3 znaki, skrót: 2–4 litery.";render();return}if(S.coins<CLCOST){PV.msg=`Założenie zgrupowania kosztuje ${CLCOST} monet.`;render();return}
+  try{await PV.db.doc("pvp_clans/"+PV.uid).set({n,tg:t,ow:PV.uid,ts:Date.now()});await PV.db.doc("pvp_players/"+PV.uid).update({cl:PV.uid});S.coins-=CLCOST;PV.f.n=PV.f.t="";PV.msg=`Zgrupowanie [${t}] ${n} założone.`}catch(e){PV.msg="Nie udało się założyć zgrupowania."}render()}
+function pvClanJoin(id){const me=pvMe();if(!me||me.cl||pvMembers(id).length>=CLMAX)return;PV.db.doc("pvp_players/"+PV.uid).update({cl:id}).catch(()=>{});PV.msg="Dołączono do zgrupowania."}
+function pvClanLeave(){const me=pvMe();if(!me||!me.cl)return;if(!PV.lq){PV.lq=true;render();setTimeout(()=>{PV.lq=false},4000);return}PV.lq=false;PV.db.doc("pvp_players/"+PV.uid).update({cl:null}).catch(()=>{});PV.msg="Opuszczono zgrupowanie."}
+function pvClanClaim(){const c=pvMyClan(),wk=curWk(),p=P();if(!c||pvClanWk(c.id)<CLGOAL||p.clc===wk)return;p.clc=wk;S.dia+=5;S.coins+=200;PV.msg="Cel tygodnia zgrupowania: +5 fiolek, +200 monet!";render()}
+function pvChatSend(){const c=pvMyClan(),t=PV.f.c.trim().slice(0,200);if(!c||!t)return;PV.db.collection("pvp_chat").add({c:c.id,u:PV.uid,n:S.name,t,ts:Date.now()}).catch(()=>{});PV.f.c="";const i=document.getElementById("chi");if(i){i.value="";i.focus()}}
+function pvChatHtml(){return PV.chat.length?PV.chat.map(m=>`<p style="margin:3px 0"><b${m.u===PV.uid?' style="color:var(--club)"':""}>${esc(m.n||"?")}:</b> ${esc(m.t||"")}</p>`).join(""):`<p class="mut" style="margin:0">Brak wiadomości. Napisz pierwszą.</p>`}
+
+/* --- sezon: ligi z awansem i spadkiem --- */
+function pvSeasonEnd(){const me=pvMe(),p=P();if(!PV.ok||!me)return;
+  const pts=me.pts||1000,lg=lgOf(pts),L=LGS[lg],st=p.lgS===undefined?lgOf(1000):p.lgS,np=Math.round(1000+(pts-1000)/2);
+  S.dia+=L[3];S.coins+=L[4];p.lgS=lgOf(np);p.lh={lg,st,d:L[3],c:L[4]};
+  PV.db.doc("pvp_players/"+PV.uid).update({pts:np}).catch(()=>{});}
+const _checkSeason=checkSeason;
+checkSeason=function(){const q=S.se;if(q&&today()-q.s>=SEAS)pvSeasonEnd();_checkSeason()};
+
+/* --- koniec walki: przyciski powtórki i udostępniania --- */
+const _finish=finish;
+finish=function(res,o){PVLAST=null;_finish(res,o);const end=document.getElementById("end"),c=end&&end.querySelector(".card");if(!c)return;
+  if(o&&o.pbot)c.insertAdjacentHTML("afterbegin",`<p class="mut" style="margin:0 0 6px">🤖 Sparing z botem: nie liczy się do rankingu PvP.</p>`);
+  if(o&&o.pvp&&PVLAST){const L=PVLAST;window.PVL=L;c.insertAdjacentHTML("beforeend",`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">${L.rp?`<button class="btn alt" onclick="openReplay(PVL.rp,'Twoja walka')">▶ Powtórka</button>`:""}<button class="btn alt" onclick="pvShare(PVL.txt,this)">📤 Udostępnij</button></div><button class="btn" style="width:100%;margin-top:8px" onclick="tab='pvp';PVT='fight';render()">🌐 Wróć do PvP</button>`)}
+};
+
+/* --- powiadomienie na stronie głównej --- */
+function pvAlert(){const n=pvUnseen(),occ=PV.ok?PV.occ.filter(x=>x.d===PV.uid&&x.o&&Date.now()-(x.ts||0)<OCCH*36e5).length:0;if(!n&&!occ)return"";
+  return `<div class="sec" style="border-color:#ff5a5f"><div class="row"><div><h3>⚠️ ${n?`${n} ${n===1?"nowy atak":"nowe ataki"} na Twoją ekipę`:"Twoje dzielnice są okupowane"}</h3><small>${occ?`Okupowane dzielnice: ${occ}. `:""}Zobacz powtórki i weź zemstę.</small></div><button class="get" onclick="tab='pvp';pvSub('def')">Zobacz</button></div></div>`}
+
+/* --- widok PvP --- */
 function pvpView(){
-  let h=`<h2>PvP: ranking graczy</h2><p class="mut">Walcz z drużynami prawdziwych graczy (ich ekipa broni się sama) i wspinaj się na pierwsze miejsce w rankingu PvP.</p>`;
+  let h=`<h2>PvP</h2>`;
   if(!PV.init||!PV.loaded&&!PV.ok)return h+`<div class="card"><b>Łączenie…</b></div>`;
-  if(!PV.ok)return h+`<div class="card"><b>PvP niedostępne</b><p class="mut" style="margin:6px 0 0">Rywalizacja PvP działa w opublikowanej wersji gry (link z Claude), po zalogowaniu. W samodzielnym pliku HTML nie ma wspólnej bazy graczy.</p></div>`;
-  const me=pvMe(),all=[...PV.list].sort((a,b)=>(b.pts||0)-(a.pts||0));
-  const pos=me?all.findIndex(x=>x.id===PV.uid)+1:0;
-  h+=`<div class="card">`+(me?`<div class="row"><div><b>Twoje miejsce: ${pos}/${all.length}</b><br><span class="mut">Punkty PvP: ${me.pts||1000} · Ataki: ${me.w||0} W / ${me.l||0} P · Obrony: ${me.dw||0} W / ${me.dl||0} P</span></div></div><button class="btn alt" style="width:100%;margin-top:8px" onclick="pvpPublish()">Odśwież drużynę w rankingu</button><p class="mut" style="margin:6px 0 0">Rywale walczą z zapisem Twojej drużyny. Odśwież go po ulepszeniach.</p>`:`<b>Dołącz do rankingu PvP</b><p class="mut" style="margin:6px 0 8px">Zapisz aktualną drużynę, żeby inni gracze mogli z nią walczyć. Zaczynasz z 1000 punktów.</p><button class="btn" style="width:100%" onclick="pvpPublish()">Zgłoś ekipę do PvP</button>`)+(PV.msg?`<p class="nt" role="status" style="margin:8px 0 0">${PV.msg}</p>`:"")+(PV.err?`<p class="er" role="alert" style="margin:8px 0 0">${PV.err==="timeout"?"Baza graczy nie odpowiada. Dane mogą być nieaktualne.":"Błąd połączenia z bazą graczy."}</p>`:"")+`</div>`;
-  const rp=[...PV.rep].sort((a,b)=>b.ts-a.ts).slice(0,4);
-  if(rp.length)h+=`<h3>Ostatnie ataki na Ciebie</h3>`+rp.map(r=>`<div class="card"><span>${esc(r.an||"Gracz")} ${r.win?"pokonał Twoją drużynę":"przegrał z Twoją drużyną"} <b>(${r.win?"−":"+"}${Math.min(50,Math.abs(+r.dl||0))} pkt)</b></span></div>`).join("");
-  h+=`<h3>Ranking PvP</h3>`;
-  if(!all.length)h+=`<div class="card"><span class="mut">Nikt jeszcze się nie zgłosił. Bądź pierwszy.</span></div>`;
-  const ok=S.crew.some(m=>!hurt(m));
-  h+=all.map((r,i)=>`<div class="card row" ${r.id===PV.uid?'style="border-color:var(--club);border-width:2px"':""}><span><span class="num">${i+1}</span>&nbsp; ${i===0?"👑 ":""}<b>${esc(r.name||"Ekipa")}</b><br><span class="mut">${esc(r.club||"")} · ${esc(r.city||"")} · ${r.pts||1000} pkt · ${r.w||0}W/${r.l||0}P</span></span>${r.id===PV.uid?"<b>Ty</b>":`<button class="btn" ${me&&ok?"":"disabled"} onclick="pvpFight('${r.id}')">Wyzwij</button>`}</div>`).join("");
-  if(!me)h+=`<p class="mut">Zgłoś swoją ekipę, żeby wyzywać innych.</p>`;
-  return h;
+  if(!PV.ok)return h+`<div class="card"><b>PvP niedostępne</b><p class="mut" style="margin:6px 0 0">Rywalizacja PvP działa w opublikowanej wersji gry (link z Claude), po zalogowaniu. W samodzielnym pliku HTML nie ma wspólnej bazy graczy.</p><button class="btn alt" style="width:100%;margin-top:8px" onclick="pvBot(0)">🤖 Sparing z botem</button></div>`;
+  pvSubs();pvChatSub();const p=P(),me=pvMe(),un=pvUnseen();
+  if(PVT==="def"&&un)p.seen=Date.now();
+  const sb=(k,l)=>`<button class="pvs${PVT===k?" on":""}" ${PVT===k?'aria-current="page"':""} onclick="pvSub('${k}')">${l}</button>`;
+  h+=`<div class="pvt" role="tablist">${sb("fight","⚔️ Atak")}${sb("def","🛡️ Obrona"+(un&&PVT!=="def"?`<i class="pvb">${un}</i>`:""))}${sb("clan","🤝 Zgrupowanie")}</div>`;
+  const st=(PV.msg?`<p class="nt" role="status" style="margin:8px 0 0">${PV.msg}</p>`:"")+(PV.err?`<p class="er" role="alert" style="margin:8px 0 0">${PV.err==="timeout"?"Baza graczy nie odpowiada. Dane mogą być nieaktualne.":"Błąd połączenia z bazą graczy."}</p>`:"");
+  if(!me)return h+`<div class="card"><b>Dołącz do PvP</b><p class="mut" style="margin:6px 0 8px">Zapisz drużynę: będzie bronić się sama, gdy jesteś offline. Zaczynasz z 1000 pkt w lidze ${LGS[lgOf(1000)][0]}. Przez pierwsze 48 h i 5 walk masz ochronę przed dużo silniejszymi ekipami.</p><button class="btn" style="width:100%" onclick="pvpPublish()">Zgłoś ekipę do PvP</button>${st}</div>`;
+  const all=[...PV.list].sort((a,b)=>(b.pts||0)-(a.pts||0)),pos=all.findIndex(x=>x.id===PV.uid)+1;
+  h+=`<div class="card"><div class="row"><div><b>Miejsce ${pos}/${all.length}</b> ${lgBadge(me.pts)}<br><span class="mut">${me.pts||1000} pkt · Ataki ${me.w||0}W/${me.l||0}P · Obrony ${me.dw||0}W/${me.dl||0}P</span></div></div>${pvNew(me)?`<p class="mut" style="margin:6px 0 0">🛡️ Ochrona nowego gracza: dużo silniejsze ekipy nie mogą Cię atakować.</p>`:""}${st}</div>`;
+  if(PVT==="def")return h+pvDefView(me);
+  if(PVT==="clan")return h+pvClanView(me);
+  return h+pvFightView(me);
 }
+function pvTicketHtml(){const p=P(),left=p.tk>=TKMAX?0:Math.max(0,p.tt+TKR-Date.now()),m=Math.ceil(left/6e4);
+  return `<div class="card row"><div><b>🎟️ Bilety: ${p.tk}/${TKMAX}</b><br><span class="mut">${p.tk>=TKMAX?"Komplet biletów.":"Następny za "+(m>=60?Math.floor(m/60)+" h "+m%60+" min":m+" min")+"."} Zemsta i odbijanie dzielnic nie zużywają biletów.</span></div>${p.tk<TKMAX?`<button class="btn alt" ${S.dia<TKFILL?"disabled":""} onclick="pvRefill()">Uzupełnij ${TKFILL} fiol.</button>`:""}</div>`}
+function pvRevenge(){const now=Date.now(),p=P();return [...PV.rep].filter(r=>r.win&&now-(r.ts||0)<24*36e5&&!p.rv[r.id]&&PV.list.some(x=>x.id===r.a)).sort((a,b)=>b.ts-a.ts).slice(0,3)}
+function pvFightView(me){const p=P(),ok=pvCanFight(),my=pwMe();let h=pvTicketHtml();
+  const rv=pvRevenge();
+  if(rv.length)h+=`<h3>🔥 Zemsta</h3>`+rv.map(r=>`<div class="card row"><div><b>${esc(r.an||"Gracz")}</b> pokonał Twoją ekipę<br><span class="mut">Wygrana daje ×1,5 pkt i +40 monet. Bez biletu, do 24 h.</span></div><button class="btn" ${ok?"":"disabled"} onclick="pvpFight('${r.a}',{rv:'${r.id}'})">Zemsta</button></div>`).join("");
+  const mine=PV.occ.filter(x=>x.d===PV.uid&&x.o&&Date.now()-(x.ts||0)<OCCH*36e5);
+  if(mine.length)h+=`<h3>🏴 Twoje okupowane dzielnice</h3>`+mine.map(x=>`<div class="card row"><div><b>${esc(x.ds)}</b>: okupuje ${esc(x.on||"rywal")}<br><span class="mut">Budynek w tej dzielnicy jest zablokowany. Odbicie nie zużywa biletu.</span></div><button class="btn" ${ok&&PV.list.some(q=>q.id===x.o)?"":"disabled"} onclick="pvpFight('${x.o}',{ret:'${x.id}'})">Odbij</button></div>`).join("");
+  const held=pvMyOcc();if(held.length){const g=held.reduce((t,x)=>t+pvOccGain(x),0);h+=`<div class="card row"><div><b>💰 Haracz z okupacji: ${g} monet</b><br><span class="mut">Okupujesz ${held.length} ${held.length===1?"dzielnicę":"dzielnice"}: ${held.map(x=>esc(x.ds)+" ("+esc(x.dn||"?")+")").join(", ")}. ${OCCR} monet/h, do ${OCCCAP} z jednej.</span></div><button class="btn" ${g?"":"disabled"} onclick="pvCollect()">Odbierz</button></div>`}
+  const cand=PV.list.filter(x=>x.id!==PV.uid&&(x.units||[]).length);
+  const sc=x=>Math.abs((x.pts||1000)-(me.pts||1000))/100+Math.abs(Math.log(Math.max(1,pwU(x.units))/Math.max(1,my)))*3;
+  const prot=cand.filter(pvProt).length,lim=cand.filter(x=>!pvProt(x)&&pvHits(x.id)>=HITMAX).length;
+  const pool=cand.filter(x=>!pvProt(x)&&pvHits(x.id)<HITMAX).sort((a,b)=>sc(a)-sc(b)).slice(0,8);
+  const rot=pool.map((x,i)=>({x,k:(i*7+p.rr*3)%11})).sort((a,b)=>a.k-b.k).slice(0,5).map(z=>z.x).sort((a,b)=>sc(a)-sc(b));
+  h+=`<div class="row" style="margin-top:12px"><h3 style="margin:0">Rywale dla Ciebie</h3><button class="btn alt" style="min-height:36px" onclick="pvReroll()">🔄 Inni</button></div><p class="mut" style="margin:4px 0 6px">Dobrani wg punktów i siły ekipy (Twoja siła: ${Math.round(my)}). Wygrana z silniejszym daje więcej punktów.</p>`;
+  h+=rot.map(x=>{const r=pwU(x.units)/Math.max(1,my),e=pvElo(me.pts,x.pts),lb=r<.85?["słabszy","#8cf0b5"]:r>1.15?["silniejszy","#ff9b9f"]:["wyrównany","#ffd24a"],hl=pvHits(x.id);
+    return `<div class="card"><div class="row"><div><b>${esc(x.name||"Ekipa")}</b> ${lgBadge(x.pts)}<br><span class="mut">${esc(x.city||"")} · ${x.pts||1000} pkt · siła ${Math.round(pwU(x.units))} <b style="color:${lb[1]}">(${lb[0]})</b></span><br><span class="mut">Skład: ${(x.units||[]).map(u=>CIC[u.cls]||"?").join(" ")} · ${FM[x.fm]?FM[x.fm].n:"Zrównoważona"}${x.cl?` · [${esc((PV.clans.find(c=>c.id===x.cl)||{}).tg||"")}]`:""}</span></div>
+    <div style="text-align:right"><small class="win">+${e.g}</small> / <small class="lose">−${e.l}</small><br><button class="btn" style="margin-top:4px" ${ok&&p.tk>0?"":"disabled"} onclick="pvpFight('${x.id}')">Atakuj 🎟️</button>${hl?`<br><small class="mut">ataki dziś: ${hl}/${HITMAX}</small>`:""}</div></div></div>`}).join("");
+  const bots=Math.max(0,3-rot.length);
+  for(let k=0;k<bots;k++)h+=`<div class="card row"><div><b>🤖 ${BOTN[(k+p.rr)%BOTN.length]}</b><br><span class="mut">Za mało graczy o Twojej sile. Sparing z botem: bez biletu, nie liczy się do rankingu.</span></div><button class="btn alt" ${ok?"":"disabled"} onclick="pvBot(${k+p.rr})">Sparing</button></div>`;
+  if(prot||lim)h+=`<p class="mut">${prot?`🛡️ ${prot} ${prot===1?"ekipa ma":"ekip ma"} ochronę nowego gracza. `:""}${lim?`⛔ ${lim} – limit ${HITMAX} ataków dziennie na tę samą ekipę.`:""}</p>`;
+  const used=p.ops.reduce((t,k)=>t+DOPC[k],0),cost=p.ops.reduce((t,k)=>t+OP.find(q=>q[0]===k)[2],0);
+  h+=`<div class="card"><b>Oprawa PvP: ${used}/${DOPMAX} pkt dopingu</b><p class="mut" style="margin:4px 0 8px">W PvP możesz łączyć oprawy, ale masz limit punktów dopingu na walkę. Koszt w monetach pobierany na starcie (teraz: ${cost}).</p><div style="display:grid;gap:6px">${OP.map(o=>{const on=p.ops.includes(o[0]),dis=!on&&(used+DOPC[o[0]]>DOPMAX||S.coins<cost+o[2]);return `<button class="btn ${on?"":"alt"}" ${dis?"disabled":""} aria-pressed="${on}" onclick="pvOp('${o[0]}')">${on?"✓ ":""}${o[1]} · ${DOPC[o[0]]} pkt · ${o[2]} 🪙 · ${o[3]}</button>`}).join("")}</div></div>`;
+  h+=pvAdvHtml();
+  return h}
+function pvAdvHtml(){return `<div class="card"><b>Przewagi klas</b><p class="mut" style="margin:4px 0 6px">Klasa z przewagą zadaje +20% obrażeń, a trafiona przez słabszą klasę dostaje −15%. Działa w każdej walce.</p>${Object.keys(ADV).map(a=>`<div class="sr"><span>${CIC[a]} ${a}</span><span>bije ${CIC[ADV[a]]} ${ADV[a]}</span></div>`).join("")}</div>`}
+function pvDefView(me){const p=P();let h=`<h3>🛡️ Ustawienie drużyny</h3><p class="mut" style="margin:0 0 6px">Używane w Twoich atakach PvP i w obronie, gdy ktoś atakuje Twój zapis. Zmiany zapisują się w obronie od razu.</p>`;
+  h+=`<div class="card"><b>Formacja</b><div style="display:grid;gap:6px;margin-top:6px">${Object.keys(FM).map(k=>`<button class="btn ${p.fm===k?"":"alt"}" aria-pressed="${p.fm===k}" onclick="pvSetFm('${k}')">${p.fm===k?"✓ ":""}${FM[k].n}: ${FM[k].d}</button>`).join("")}</div></div>`;
+  h+=`<div class="card"><b>Kolejność i pozycje</b><p class="mut" style="margin:4px 0 6px">Zawodnicy na pozycjach 2 i 4 stoją z przodu, bliżej rywali. Kontuzjowani nie walczą, a reszta przesuwa się w górę.</p>${p.ord.map((ci,i)=>{const m=S.crew[ci];return m?`<div class="row" style="margin:4px 0"><span><b>${i+1}.</b> ${CIC[m.cls]} ${esc(m.name)} <span class="mut">· ${i%2?"przód":"tył"}${hurt(m)?" · kontuzja":""}</span></span><span><button class="btn alt" style="min-height:36px;padding:2px 10px" ${i?"":"disabled"} onclick="pvMove(${i},-1)" aria-label="W górę">▲</button> <button class="btn alt" style="min-height:36px;padding:2px 10px" ${i<p.ord.length-1?"":"disabled"} onclick="pvMove(${i},1)" aria-label="W dół">▼</button></span></div>`:""}).join("")}</div>`;
+  h+=`<div class="card"><b>Cel w obronie</b><p class="mut" style="margin:4px 0 6px">Kogo Twoja drużyna atakuje najpierw, gdy broni się bez Ciebie.</p><select aria-label="Cel w obronie" onchange="pvSetTg(this.value)"><option value="">Najbliższy rywal</option>${Object.keys(CLS).map(c=>`<option value="${c}" ${p.tg===c?"selected":""}>${CIC[c]} ${c}</option>`).join("")}</select></div>`;
+  h+=`<button class="btn" style="width:100%;margin:4px 0 10px" onclick="pvpPublish()">Zapisz obronę (aktualny skład i statystyki)</button>`;
+  if(p.lh){const l=p.lh;h+=`<div class="card"><div class="row"><b>Koniec sezonu: ${LGS[l.lg][0]}</b><button class="btn alt" style="min-height:36px" onclick="delete P().lh;render()">OK</button></div><span class="mut">${l.lg>l.st?"🎖️ Awans!":l.lg<l.st?"📉 Spadek.":"Utrzymanie ligi."} Nagroda ligowa: +${l.d} fiolek, +${l.c} monet. Punkty zostały częściowo wyzerowane.</span></div>`}
+  const rp=[...PV.rep].sort((a,b)=>b.ts-a.ts).slice(0,8);
+  h+=`<h3>Ataki na Ciebie</h3>`+(rp.length?rp.map(r=>{const can=r.win&&Date.now()-(r.ts||0)<24*36e5&&!p.rv[r.id]&&PV.list.some(x=>x.id===r.a);
+    return `<div class="card"><div class="row"><span>${esc(r.an||"Gracz")} ${r.win?"pokonał Twoją drużynę":"przegrał z Twoją drużyną"} <b class="${r.win?"lose":"win"}">(${r.win?"−":"+"}${Math.min(75,Math.abs(+r.dl||0))} pkt)</b><br><small class="mut">${new Date(r.ts||0).toLocaleString()}</small></span></div><div style="display:flex;gap:6px;margin-top:6px">${r.rp?`<button class="btn alt" style="flex:1" onclick="pvRpOpen('${r.id}',0)">▶ Powtórka</button>`:""}${can?`<button class="btn" style="flex:1" ${pvCanFight()?"":"disabled"} onclick="pvpFight('${r.a}',{rv:'${r.id}'})">🔥 Zemsta</button>`:""}</div></div>`}).join(""):`<div class="card"><span class="mut">Nikt Cię jeszcze nie zaatakował.</span></div>`);
+  const out=[...PV.out].sort((a,b)=>b.ts-a.ts).slice(0,5);
+  if(out.length)h+=`<h3>Twoje ataki</h3>`+out.map(r=>`<div class="card row"><span>vs ${esc(r.dn||"rywal")}: <b class="${r.win?"win":"lose"}">${r.win?"wygrana +":"porażka −"}${r.dl||0}</b>${r.rv?" · zemsta":""}</span><span>${r.rp?`<button class="btn alt" style="min-height:36px" onclick="pvRpOpen('${r.id}',1)" aria-label="Powtórka">▶</button> `:""}<button class="btn alt" style="min-height:36px" onclick="pvShare('Moja ekipa ${esc(S.name).replace(/'/g,"")} ${r.win?"pokonała":"przegrała z"} ${esc(r.dn||"rywalem").replace(/'/g,"")} w PvP!',this)" aria-label="Udostępnij">📤</button></span></div>`).join("");
+  return h}
+function pvRpOpen(id,out){const r=(out?PV.out:PV.rep).find(x=>x.id===id);if(r&&r.rp)openReplay(r.rp,out?"vs "+(r.dn||"rywal"):(r.an||"Gracz")+" atakuje")}
+function pvClanView(me){const c=pvMyClan(),wk=curWk();let h="";
+  if(!c){h+=`<div class="card"><b>Załóż zgrupowanie</b><p class="mut" style="margin:4px 0 8px">Do ${CLMAX} ekip, wspólny czat i cotygodniowy cel: ${CLGOAL} wygranych ataków PvP. Koszt: ${CLCOST} monet.</p>
+    <label class="fl" for="cln">Nazwa (3–22 znaki)</label><input id="cln" maxlength="22" value="${esc(PV.f.n)}" oninput="PV.f.n=this.value"><label class="fl" for="clt">Skrót (2–4 litery)</label><input id="clt" maxlength="4" value="${esc(PV.f.t)}" oninput="PV.f.t=this.value">
+    <button class="btn" style="width:100%;margin-top:8px" ${S.coins<CLCOST?"disabled":""} onclick="pvClanCreate()">Załóż za ${CLCOST} 🪙</button></div><h3>Dołącz do zgrupowania</h3>`;
+    const L=PV.clans.map(x=>({...x,m:pvMembers(x.id)})).filter(x=>x.m.length).sort((a,b)=>b.m.length-a.m.length);
+    h+=L.length?L.map(x=>`<div class="card row"><div><b>[${esc(x.tg)}] ${esc(x.n)}</b><br><span class="mut">${x.m.length}/${CLMAX} ekip · ${x.m.reduce((t,p)=>t+(p.pts||1000),0)} pkt · tydzień: ${pvClanWk(x.id)}/${CLGOAL}</span></div><button class="btn" ${x.m.length>=CLMAX?"disabled":""} onclick="pvClanJoin('${x.id}')">${x.m.length>=CLMAX?"Pełne":"Dołącz"}</button></div>`).join(""):`<div class="card"><span class="mut">Nie ma jeszcze zgrupowań. Załóż pierwsze.</span></div>`;
+    return h}
+  const M=pvMembers(c.id).sort((a,b)=>(b.pts||0)-(a.pts||0)),pr=pvClanWk(c.id),done=P().clc===wk;
+  h+=`<div class="card"><b>[${esc(c.tg)}] ${esc(c.n)}</b><br><span class="mut">${M.length}/${CLMAX} ekip · ${M.reduce((t,p)=>t+(p.pts||1000),0)} pkt łącznie</span>
+  <p style="margin:8px 0 4px"><b>Cel tygodnia: ${Math.min(pr,CLGOAL)}/${CLGOAL} wygranych</b></p><div class="bar sm"><i style="width:${Math.min(100,pr*100/CLGOAL)}%"></i></div>
+  <button class="btn" style="width:100%;margin-top:8px" ${pr>=CLGOAL&&!done?"":"disabled"} onclick="pvClanClaim()">${done?"Nagroda odebrana w tym tygodniu":"Odbierz: +5 fiolek, +200 monet"}</button></div>`;
+  h+=`<h3>Członkowie</h3>`+M.map(p=>`<div class="card row"><span>${p.id===c.ow?"👑 ":""}${esc(p.name||"Ekipa")} ${lgBadge(p.pts)}<br><span class="mut">${p.pts||1000} pkt · w tym tygodniu ${p.wk===wk?p.ww||0:0} wygr.</span></span>${p.id===PV.uid?"<b>Ty</b>":""}</div>`).join("");
+  h+=`<h3>Czat</h3><div class="card"><div id="chl" class="chl" aria-live="polite">${pvChatHtml()}</div><div style="display:flex;gap:6px;margin-top:8px"><input id="chi" aria-label="Wiadomość" maxlength="200" style="flex:1" value="${esc(PV.f.c)}" oninput="PV.f.c=this.value" onkeydown="if(event.key==='Enter')pvChatSend()"><button class="btn" onclick="pvChatSend()">Wyślij</button></div></div>`;
+  h+=`<button class="btn alt" style="width:100%" onclick="pvClanLeave()">${PV.lq?"Dotknij ponownie, żeby opuścić":"Opuść zgrupowanie"}</button>`;
+  setTimeout(()=>{const el=document.getElementById("chl");if(el)el.scrollTop=el.scrollHeight},0);
+  return h}
+
+/* --- ranking: ligi i zgrupowania --- */
+const _rankView=rankView;
+rankView=function(){let h=_rankView();if(!PV.ok)return h;pvSubs();
+  h=h.replace(`<h3 class="rkh">Gracze</h3>`,`<div class="card"><b>Ligi sezonowe</b><p class="mut" style="margin:4px 0 6px">Liga zależy od punktów PvP. Na koniec sezonu nagroda za ligę, a punkty są częściowo zerowane.</p>${LGS.map(l=>`<div class="sr"><span><span class="rkb" style="--rc:${l[2]}">${l[0]}</span></span><span>od ${l[1]||0} pkt · +${l[3]} fiol., +${l[4]} 🪙</span></div>`).join("")}</div><h3 class="rkh">Gracze</h3>`);
+  const L=PV.clans.map(c=>{const m=pvMembers(c.id);return{...c,m:m.length,p:m.reduce((t,x)=>t+(x.pts||1000),0)}}).filter(c=>c.m).sort((a,b)=>b.p-a.p);
+  if(L.length)h+=`<h2>Ranking zgrupowań</h2>`+L.map((c,i)=>`<div class="card row"><span><span class="num">${i+1}</span>&nbsp; [${esc(c.tg)}] ${esc(c.n)} <span class="mut">· ${c.m} ekip</span></span><b>${c.p}</b></div>`).join("");
+  return h};
 
 let INFO=null;
 function openInfo(i){INFO=i;render();setTimeout(()=>{const c=document.getElementById("mdx");if(c)c.focus()},0)}
@@ -1759,7 +1962,7 @@ clinic:{n:"Szpital",ic:"🏥",base:120,d:l=>"Kontuzje leczą się krócej o "+15
 pub:{n:"Pub kibica",ic:"🍺",base:140,d:l=>"Po każdej walce +"+2*l+" szacunku dla ekipy"},
 shop:{n:"Sklepik kibica",ic:"🛍️",base:150,d:l=>"Zarabia "+3*l+" monet na minutę (maks. "+30*l+")"}};
 DK.forEach((k,i)=>BDS[k]=DIS[i]);
-const unl=k=>!!(S.terr&&S.terr[BDS[k]]);
+const unl=k=>!!(S.terr&&S.terr[BDS[k]])&&!pvOcc(BDS[k]);
 const blv=k=>unl(k)?S.bl[k].lv:0;
 const SKL={iron:{n:"Żelazna szczęka",d:"+20% zdrowia",a:1,h:1.2},heavy:{n:"Ciężka ręka",d:"+15% ataku",a:1.15,h:1},rage:{n:"Szał",d:"+30% ataku, −10% zdrowia",a:1.3,h:.9},wall:{n:"Twierdza",d:"+30% zdrowia, −10% ataku",a:.9,h:1.3},warrior:{n:"Wojownik",d:"+8% ataku i zdrowia",a:1.08,h:1.08}};
 const SKC=150;
@@ -1909,6 +2112,7 @@ function cityMap(){
 
 function bcard(k){
   const B=BL[k],b=S.bl[k],L=b.lv,sm="style=\"min-height:36px;padding:4px 10px\"";
+  {const oc=pvOcc(BDS[k]);if(oc&&S.terr&&S.terr[BDS[k]])return `<div class="card"><b>🏴 ${B.ic} ${B.n}</b>${L?", poz. "+L+"/5":""}<br><span class="mut">Dzielnica <b>${BDS[k]}</b> jest okupowana przez ekipę <b>${esc(oc.on||"rywala")}</b>. Budynek jest zablokowany. Odbij ją w zakładce PvP (bez biletu).</span><br><button class="btn" style="margin-top:8px" onclick="tab='pvp';PVT='fight';render()">Odbij w PvP</button></div>`}
   if(!unl(k)){const di=DK.indexOf(k);return `<div class="card"><b>🔒 ${B.ic} ${B.n}</b>${L?", poz. "+L+"/5":""}<br><span class="mut">Zablokowane. Przejmij dzielnicę <b>${BDS[k]}</b> w mieście <b>${esc(S.city)}</b>: wygraj z ekipą <b>${ON[di]}</b>.${L?" Poziom budynku wróci po odzyskaniu dzielnicy.":""}</span></div>`}
   let h=`<div class="card"><div class="row"><div><b>${B.ic} ${B.n}</b>, poz. ${L}/5<br><span class="mut">${B.d(L||1)}${L?"":" (po zbudowaniu)"}</span></div>`;
   if(b.up){const c=rushC(b.up);h+=`<div style="display:grid;gap:6px;text-align:right"><b data-e="${b.up}" data-p="Budowa: ">Budowa: ${fmt(secs(b.up))}</b><button class="btn alt" ${S.dia<c?"disabled":""} onclick="rushB('${k}')">Przyspiesz ${c} fiol.</button></div>`}
@@ -2110,7 +2314,7 @@ function home(tb){sync();
   <div class="match"><div class="eb">${emblem(S.emb,40,((S.clubName||S.name)[0]||"E").toUpperCase())}</div><div class="mid"><small>Następna walka</small><b>vs ${esc(o.n)}</b><small>Trudność: ${o.l} · ${o.city}</small></div><div class="crest"><i style="background:#566a8c">${esc(o.n[0])}</i></div></div>
   <div class="pw"><button class="play" ${ok?"":"disabled"} onclick="fight(1)">${ok?"GRAJ":"BRAK ZDROWYCH ZAWODNIKÓW"}</button></div>
   <div class="form"><span>Forma</span>${form}<span style="margin-left:auto">${S.w} W : ${S.l} P</span></div>
-  ${repRow()}${seasonBlock()}${idleBlock()}${derbyBlock()}
+  ${repRow()}${pvAlert()}${seasonBlock()}${idleBlock()}${derbyBlock()}
   <div class="tiles">${tile("👥","Ekipa",S.crew.length+"/5"+((S.bench||[]).length?" +"+S.bench.length+" rez.":""),"tab='crew';render()",sick||"")}${tile("➕","Rekrutuj",recCost()+" monet","recruit()","")}${tile("🩹","Leczenie",sick?sick+" kontuzji":"wszyscy zdrowi","tab='crew';render()","")}${tile("🗺️","Miasto",DIS.filter(d=>(S.terr||{})[d]).length+"/"+DIS.length+" dzielnic","tab='base';render()","")}${tile("🏆","Ranking",pos?"miejsce "+pos+" PvP":"tylko PvP","tab='rank';render()","")}${tile("🧪","Sklep","fiolki","tab='shop';render()","")}${tile("🔄","Nowa gra",NGQ?"dotknij ponownie":"zacznij od początku","newGame()","")}</div>${daily()}</div>`;
 }
 const LT={"Prowodyr":"P","Stary Wyga":"W","Gniazdowy":"G","Czujka":"C","Bojówkarz":"B"};
@@ -2201,7 +2405,7 @@ function finish(res,o){SFX.crowdStop();if(res.win)SFX.win();else SFX.lose();
   const gem=((res.win&&S.w%4===0)?1:0)+(o.derby&&res.win?1:0);S.dia+=gem;sync();S.dy.f++;if(res.win)S.dy.w++;S.hist=(S.hist||[]).concat(res.win?"W":"P").slice(-5);S.coins+=coins;S.pts=Math.max(0,S.pts+pts);
   let spg=0;if(S.sp.deal==="wins"&&res.win){if(S.sp.wd!==today()){S.sp.wd=today();S.sp.wn=0}if(S.sp.wn<3){S.sp.wn++;S.dia++;spg=1}}
   S.sc.me+=res.win?1:0;S.sc.al=S.sc.al.map(x=>x+(Math.random()<.5?1:0));S.others.forEach(r=>{r[1]=Math.max(500,r[1]+Math.round(R(-5,9)))});
-  const rk0=rkStep(rw0),rk1=rkStep(S.rw||0);S.terr=S.terr||{};let tmsg="";if(o.pvp){tmsg=pvpResult(res.win,o)}else if(o.terr&&res.win&&!S.terr[o.ds]){S.terr[o.ds]=true;{const bk=DK[DIS.indexOf(o.ds)];tmsg=`Zdobyto terytorium: ${o.ds}!`+(bk?` Odblokowano: ${BL[bk].n}.`:"")}}else if(o.terr&&!res.win&&S.terr[o.ds]){delete S.terr[o.ds];{const bk=DK[DIS.indexOf(o.ds)];tmsg=`Utracono terytorium: ${o.ds}.`+(bk?` Zablokowano: ${BL[bk].n}.`:"")}}
+  const rk0=rkStep(rw0),rk1=rkStep(S.rw||0);S.terr=S.terr||{};let tmsg="";if(o.pvp){tmsg=pvpResult(res.win,o,res)}else if(o.terr&&res.win&&!S.terr[o.ds]){S.terr[o.ds]=true;{const bk=DK[DIS.indexOf(o.ds)];tmsg=`Zdobyto terytorium: ${o.ds}!`+(bk?` Odblokowano: ${BL[bk].n}.`:"")}}else if(o.terr&&!res.win&&S.terr[o.ds]){delete S.terr[o.ds];{const bk=DK[DIS.indexOf(o.ds)];tmsg=`Utracono terytorium: ${o.ds}.`+(bk?` Zablokowano: ${BL[bk].n}.`:"")}}
   let rg=(res.win?15+10*(o.d+1):4)+faN()+2*blv("pub")+Object.keys(S.terr).length+(S.opUsed==="banner"?6:0),ri0=rkI(S.rep||0);if(o.derby)rg*=2;S.rep=(S.rep||0)+rg;const ri1=rkI(S.rep);
   newOpps();busy=false;
   document.getElementById("end").innerHTML=`<div class="card"><h2 class="${res.win?"win":"lose"}" style="margin-top:0">${res.win?"Wygrana!":"Porażka"}</h2>
@@ -2217,7 +2421,7 @@ function head(){
 }
 function tabs(){
   const t=(k,l,ic)=>`<button class="tbn${tab===k?" on":""}" ${tab===k?'aria-current="page"':""} onclick="tab='${k}';render()"><span aria-hidden="true">${ic}</span>${l}</button>`;
-  return `<nav class="tabs" aria-label="Menu">${t("home","Główna","🏠")}${t("crew","Ekipa","👥")}${t("base","Miasto","🗺️")}${t("fight","Walka","⚔️")}${t("pvp","PvP","🌐")}${t("rank","Ranking","🏆")}${t("shop","Sklep","🛒")}</nav>`;
+  const nb=PV.ok&&S?pvUnseen():0;return `<nav class="tabs" aria-label="Menu">${t("home","Główna","🏠")}${t("crew","Ekipa","👥")}${t("base","Miasto","🗺️")}${t("fight","Walka","⚔️")}${t("pvp","PvP"+(nb?`<i class="pvb" aria-label="${nb} nowych ataków">${nb}</i>`:""),"🌐")}${t("rank","Ranking","🏆")}${t("shop","Sklep","🛒")}</nav>`;
 }
 let LTAB=null;
 function render(){if(typeof SFX!=="undefined"&&!busy)SFX.menu();if(typeof BMSG!=="undefined"&&LTAB!==tab){BMSG="";SWP=null;REL=null}LTAB=tab;
