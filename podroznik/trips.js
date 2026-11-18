@@ -1,4 +1,4 @@
-/* Podróżnik – etap 1: podróże, odcinki transportu, noclegi i oś czasu.
+/* Tripwillow – etap 1: podróże, odcinki transportu, noclegi i oś czasu.
    Trasy:
      #/podroze                    lista: trwające / nadchodzące / archiwum
      #/podroze/nowa               nowa podróż
@@ -148,7 +148,7 @@
 
     if (!trips.length) {
       return {
-        title: "Podróżnik", brand: true, action: statsAction,
+        title: "Tripwillow", brand: true, action: statsAction,
         html: `${head}
           <section class="hm-empty">
             <div class="hm-empty-art" aria-hidden="true">${ic("trips", "lg")}</div>
@@ -272,7 +272,7 @@
 
     let unpaint = null, timer = null;
     return {
-      title: "Podróżnik", brand: true, action: statsAction, html,
+      title: "Tripwillow", brand: true, action: statsAction, html,
       after(v) {
         unpaint = paintCovers(v, cov);
         if (App.Covers) App.Covers.fill([...now, ...future], ownCovers(cov), (t, c) => paintAuto(v, t.id, c.data));

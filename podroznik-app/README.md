@@ -1,4 +1,4 @@
-# Podróżnik – prawdziwa aplikacja na Androida (Capacitor)
+# Tripwillow – prawdziwa aplikacja na Androida (Capacitor)
 
 Następca `podroznik-android/` (TWA). Tamten APK tylko otwierał stronę w Chrome; ten ma **cały kod aplikacji
 w środku** (działa od pierwszego uruchomienia bez internetu) i może korzystać z funkcji telefonu
@@ -12,7 +12,7 @@ obsługuje `podroznik/native.js` (w przeglądarce nic nie robi).
 - Pliki (kopia zapasowa, .ics, wspólna podróż, rozliczenie, skan PDF) – natywne „Udostępnij” (wtyczki Filesystem + Share),
   bo WebView nie umie pobierać plików ani `navigator.share` z plikami.
 - Uprawnienia aparatu (skaner kodów) i położenia („📍 Tutaj”) – w `AndroidManifest.xml`.
-- Ikona i ekran startowy Podróżnika (wygenerowane z `podroznik/icon-512.png`).
+- Ikona i ekran startowy Tripwillow (wygenerowane z `podroznik/icon-512.png`).
 
 ## Powiadomienia (wersja 2.2)
 `@capacitor/local-notifications`: `reminders.js` planuje w telefonie najbliższe przypomnienia (do 60, na 60 dni) –
@@ -25,10 +25,10 @@ Mała ikona: `res/drawable-*/ic_stat_podroznik.png` (samolot z ikony aplikacji).
 ## Wersje
 | | pakiet | nazwa | podpis |
 |---|---|---|---|
-| testowa (`assembleDebug`) | `io.github.chiniak.podroznik.test` | Podróżnik (test) | `android/app/podroznik-test.keystore` – **jawny klucz tylko do testów** (hasło `podroznik-test`) |
-| docelowa (`assembleRelease`) | `io.github.chiniak.podroznik` | Podróżnik | prawdziwy klucz właściciela (`podroznik-klucz-podpisu.zip`, nie w repozytorium) |
+| testowa (`assembleDebug`) | `io.github.chiniak.podroznik.test` | Tripwillow (test) | `android/app/podroznik-test.keystore` – **jawny klucz tylko do testów** (hasło `podroznik-test`) |
+| docelowa (`assembleRelease`) | `io.github.chiniak.podroznik` | Tripwillow | prawdziwy klucz właściciela (`podroznik-klucz-podpisu.zip`, nie w repozytorium) |
 
-Wersja testowa instaluje się **obok** obecnego Podróżnika. Docelowa (ten sam pakiet i klucz co TWA,
+Wersja testowa instaluje się **obok** obecnego Tripwillow. Docelowa (ten sam pakiet i klucz co TWA,
 `versionCode 2`) zainstaluje się jako **aktualizacja** starej aplikacji.
 
 **Dane:** stara aplikacja trzyma dane w Chrome (adres chiniak.github.io), nowa – we własnym WebView
@@ -60,9 +60,9 @@ stoliki w restauracjach) i proponuje dodanie ich do podróży – `podroznik/gma
 token dostępu (ok. 1 h) dostaje telefon, Gmail API pyta wprost. Przy uruchomieniu aplikacja sprawdza pocztę sama (co 6 h).
 
 **Konfiguracja w Google Cloud (raz, robi właściciel konta):**
-1. https://console.cloud.google.com → nowy projekt, np. „Podróżnik”.
+1. https://console.cloud.google.com → nowy projekt, np. „Tripwillow”.
 2. *APIs & Services → Library* → **Gmail API** → *Enable*.
-3. *Google Auth Platform* (dawniej „OAuth consent screen”) → *Get started*: nazwa aplikacji „Podróżnik”, e-mail kontaktowy,
+3. *Google Auth Platform* (dawniej „OAuth consent screen”) → *Get started*: nazwa aplikacji „Tripwillow”, e-mail kontaktowy,
    odbiorcy **External**. Potem *Audience* → zostaw **Testing** i w *Test users* dodaj swój adres Gmail.
    *Data access* → *Add or remove scopes* → `https://www.googleapis.com/auth/gmail.readonly`.
 4. *Clients* → *Create client* → typ **Android**:
@@ -82,5 +82,5 @@ Błąd „Aplikacja nie jest zarejestrowana w Google Cloud” (kod 10) = brak kl
 1. ✅ Projekt Capacitor, pliki przez „Udostępnij”, aparat, położenie, ikona (wersja 2.0.0)
 2. ✅ (2.1) Logowanie Google + propozycje z Gmaila
 3. ✅ (2.2) Punktualne powiadomienia (Local Notifications – także po restarcie telefonu) + jasność na maks przy bilecie
-4. ⬜ „Udostępnij → Podróżnik” dla plików (PDF, .ics, zdjęcia biletów z Gmaila i galerii)
+4. ⬜ „Udostępnij → Tripwillow” dla plików (PDF, .ics, zdjęcia biletów z Gmaila i galerii)
 5. ⬜ Widżet na ekranie głównym, OCR z ML Kit, odcisk palca natywnie (WebAuthn w WebView nie działa – teraz tylko PIN)

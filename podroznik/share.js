@@ -1,4 +1,4 @@
-/* Podróżnik – etap 10: wspólna podróż bez serwera (namiastka „collaboration” z Wanderlog).
+/* Tripwillow – etap 10: wspólna podróż bez serwera (namiastka „collaboration” z Wanderlog).
    Trasy:
      #/udostepnij/:tripId   wyślij podróż (plik .json) albo plan jako tekst do komunikatora
      #/udostepnij           otwórz plik podróży od kogoś – dołącza ją albo aktualizuje
@@ -28,7 +28,7 @@
 
   async function mergePackage(data) {
     if (!data || data.app !== "podroznik" || data.kind !== "trip" || !data.stores || !Array.isArray(data.stores.trips) || !data.stores.trips[0])
-      throw new Error("To nie jest plik podróży z Podróżnika.");
+      throw new Error("To nie jest plik podróży z Tripwillow.");
     if (data.format > 1) throw new Error("Plik z nowszej wersji aplikacji – zaktualizuj aplikację.");
     const tripId = data.stores.trips[0].id;
     const res = { added: 0, updated: 0, kept: 0, tripId, isNew: !(await DB.get("trips", tripId)) };
@@ -125,7 +125,7 @@
       <section class="tx-hero">
         <span class="tx-hero-ic" aria-hidden="true">${App.icon("download")}</span>
         <div><h2>Otwórz plik podróży</h2>
-        <p>Wybierz plik <b>podroz-….json</b>, który ktoś Ci wysłał z Podróżnika. Nowa podróż zostanie dodana,
+        <p>Wybierz plik <b>podroz-….json</b>, który ktoś Ci wysłał z Tripwillow. Nowa podróż zostanie dodana,
           a jeśli już ją masz – dołączą się zmiany (nowsza wersja każdej pozycji wygrywa).</p></div>
       </section>
       <label class="btn primary wide">${App.icon("doc", "sm")} Wybierz plik<input type="file" id="sh-in" accept="application/json,.json" hidden></label>

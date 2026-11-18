@@ -1,5 +1,5 @@
-/* Podróżnik – etap 8 (pkt 39): odczyt biletu / rezerwacji z wklejonego maila.
-   Trasa: #/wklej?trip=<id>   (także po „Udostępnij → Podróżnik” z innej aplikacji – App.sharedText)
+/* Tripwillow – etap 8 (pkt 39): odczyt biletu / rezerwacji z wklejonego maila.
+   Trasa: #/wklej?trip=<id>   (także po „Udostępnij → Tripwillow” z innej aplikacji – App.sharedText)
    Działa w telefonie, bez wysyłania treści gdziekolwiek. Odczyt jest heurystyczny (szuka wzorców):
      lot      – numer lotu (np. LO 281, FR 1234), kody lotnisk (WAW, LIS), daty, godziny, miejsce
      pociąg / autobus – numer (EIP 5300, IC 3510…), stacje z godzinami, wagon, miejsce, przewoźnik

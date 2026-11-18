@@ -1,4 +1,4 @@
-/* Podróżnik – etap 10: miejsca na mapie, trasa dnia i jej układanie (jak w Wanderlog).
+/* Tripwillow – etap 10: miejsca na mapie, trasa dnia i jej układanie (jak w Wanderlog).
    Trasy:
      #/mapa/:tripId?d=RRRR-MM-DD   mapa planu: punkty dnia w kolejności, nocleg, odległości, „ułóż najkrótszą trasę”
      #/mapa/:tripId?d=pomysly      pomysły (punkty bez dnia) na mapie

@@ -1,4 +1,4 @@
-/* Podróżnik – mapy offline: pobranie kafelków mapy dla miejsc podróży przed wyjazdem (np. Azja bez roamingu).
+/* Tripwillow – mapy offline: pobranie kafelków mapy dla miejsc podróży przed wyjazdem (np. Azja bez roamingu).
    Trasa:
      #/mapa-offline/:tripId            obszary podróży (noclegi, punkty planu, cel) – pobierz / usuń
      #/mapa-offline/:tripId?v=S,W,N,E  dodatkowo „widoczny fragment mapy” (z ekranu mapy)

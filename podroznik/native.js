@@ -1,4 +1,4 @@
-/* Podróżnik – most do aplikacji na Androida (Capacitor).
+/* Tripwillow – most do aplikacji na Androida (Capacitor).
    W przeglądarce i w starym APK (TWA) nic nie robi.
    W aplikacji (podroznik-app/) zastępuje to, czego WebView nie umie:
    - navigator.share / canShare z plikami (kopia zapasowa, .ics, podróż, rozliczenie) → wtyczka Share,

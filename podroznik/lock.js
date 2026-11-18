@@ -1,4 +1,4 @@
-/* Podróżnik – etap 6: blokada PIN-em (opcjonalnie odciskiem palca).
+/* Tripwillow – etap 6: blokada PIN-em (opcjonalnie odciskiem palca).
    Trasa ustawień: #/ustawienia/blokada
    Ustawienie "lock" (tylko na tym telefonie, nie trafia do kopii):
      { salt, hash, iter, len, timeout: minut w tle do ponownej blokady (0 = od razu), bio: id klucza odcisku | null }
@@ -28,8 +28,8 @@
   async function bioRegister() {
     const cred = await navigator.credentials.create({ publicKey: {
       challenge: crypto.getRandomValues(new Uint8Array(32)),
-      rp: { name: "Podróżnik" },
-      user: { id: crypto.getRandomValues(new Uint8Array(16)), name: "podroznik", displayName: "Podróżnik" },
+      rp: { name: "Tripwillow" },
+      user: { id: crypto.getRandomValues(new Uint8Array(16)), name: "podroznik", displayName: "Tripwillow" },
       pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
       authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required", residentKey: "discouraged" },
       timeout: 60000, attestation: "none",
@@ -68,7 +68,7 @@
     el.innerHTML = `
       <div class="lk-box">
         <img src="icon-192.png" alt="" class="lk-icon">
-        <h2>Podróżnik</h2>
+        <h2>Tripwillow</h2>
         <p class="lk-msg" id="lk-msg" aria-live="polite">Podaj PIN</p>
         <div class="lk-dots" id="lk-dots" aria-hidden="true">${"<i></i>".repeat(cfg.len)}</div>
         <div class="lk-pad">

@@ -1,4 +1,4 @@
-/* Podróżnik – etap 8 (pkt 38): dokumenty podróżne z datą ważności.
+/* Tripwillow – etap 8 (pkt 38): dokumenty podróżne z datą ważności.
    Trasy:
      #/dokumenty              lista (wygasłe i wygasające na górze)
      #/dokumenty/nowy         nowy dokument

@@ -1,10 +1,10 @@
-/* Podróżnik – działanie offline.
+/* Tripwillow – działanie offline.
    Pliki aplikacji: najpierw sieć (aktualizacje od razu), zapisana kopia gdy brak internetu.
    Przy każdej zmianie plików podbij numer CACHE. Dane użytkownika są w IndexedDB, nie tutaj. */
 // baza i wyliczanie przypomnień – do sprawdzania w tle (Periodic Background Sync)
 importScripts("i18n-en.js", "i18n-de.js", "i18n-es.js", "i18n-it.js", "i18n-pt.js", "i18n-zh.js", "i18n.js", "db.js", "lib/airports.js", "lib/visa-world.js", "visas.js", "reminders-core.js");
 
-const CACHE = "podroznik-v84";
+const CACHE = "podroznik-v85";
 const APP = [
   "./", "./index.html", "./style.css", "./i18n-en.js", "./i18n-de.js", "./i18n-es.js", "./i18n-it.js", "./i18n-pt.js", "./i18n-zh.js", "./i18n.js", "./native.js", "./db.js", "./app.js", "./trips.js", "./manifest.webmanifest",
   "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png", "./tickets.js", "./plan.js", "./pack.js", "./reminders-core.js", "./reminders.js", "./backup.js", "./lock.js", "./docs.js", "./budget.js", "./stats.js", "./weather.js", "./email.js", "./places.js", "./discover.js", "./split.js", "./share.js", "./offline.js", "./phrases.js", "./photos.js", "./backdrop.js", "./prep.js", "./ocr.js", "./gmail.js", "./icons.js", "./covers.js", "./settings.js", "./dzis.js", "./visas.js", "./waluty.js", "./journal.js", "./sync-config.js", "./sync.js", "./razem.js", "./guide.js", "./social.js", "./znajomi.js", "./konto.js", "./dolacz.html",

@@ -1,4 +1,4 @@
-/* Podróżnik – rdzeń: router, górny pasek, wspólne pomocniki i proste zakładki.
+/* Tripwillow – rdzeń: router, górny pasek, wspólne pomocniki i proste zakładki.
    Widoki rejestruje się przez App.route(/^\/sciezka\/(\w+)$/, (params, query) => ({ title, back, action, html, after })).
    Etap 1 (podróże i odcinki) jest w trips.js. */
 (function () {
@@ -8,7 +8,7 @@
 
   /* ---------- pomocniki ---------- */
   // wersja aplikacji – ta sama co versionName APK (podroznik-app/android/app/build.gradle); podbijaj razem
-  App.VERSION = "2.15.2";
+  App.VERSION = "2.16.0";
   App.esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const pad = n => String(n).padStart(2, "0");
   App.todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
@@ -182,10 +182,10 @@
     // w międzyczasie przełączono ekran (wolniejszy widok skończył się wczytywać później) – nie nadpisuj nowszego
     if (seq !== renderSeq) return;
     if (typeof r === "string") r = { html: r };
-    const title = r.title || TAB_TITLES[tab] || "Podróżnik";
+    const title = r.title || TAB_TITLES[tab] || "Tripwillow";
     $("#title").textContent = title;
-    $(".topbar").classList.toggle("brand", !!r.brand); // ekran główny: mały znak „Podróżnik” zamiast dużego tytułu
-    document.title = title === "Podróżnik" ? title : `${title} · Podróżnik`;
+    $(".topbar").classList.toggle("brand", !!r.brand); // ekran główny: mały znak „Tripwillow” zamiast dużego tytułu
+    document.title = title === "Tripwillow" ? title : `${title} · Tripwillow`;
     const back = $("#back");
     back.hidden = !r.back;
     back.onclick = () => App.back(r.back);
@@ -233,7 +233,7 @@
     window.addEventListener("online", updateOnline);
     window.addEventListener("offline", updateOnline);
     updateOnline();
-    // udostępnienie tekstu do aplikacji (np. maila z Gmaila → „Udostępnij” → Podróżnik) – manifest share_target
+    // udostępnienie tekstu do aplikacji (np. maila z Gmaila → „Udostępnij” → Tripwillow) – manifest share_target
     if (location.search) {
       const sp = new URLSearchParams(location.search);
       const shared = [sp.get("title"), sp.get("text"), sp.get("url")].filter(Boolean).join("\n");

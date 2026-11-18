@@ -1,4 +1,4 @@
-# Testy Podróżnika (Playwright)
+# Testy Tripwillow (Playwright)
 
 Testy całej aplikacji w Chromium z emulacją telefonu (Pixel 7). Nie są publikowane na stronie (`_config.yml` → exclude).
 

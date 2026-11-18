@@ -1,4 +1,4 @@
-/* Podróżnik – zdjęcia miejsc w planie i pomysłach (jak w Wanderlog).
+/* Tripwillow – zdjęcia miejsc w planie i pomysłach (jak w Wanderlog).
    Skąd: 1) zdjęcie z Odkrywaj (photoUrl), 2) artykuł Wikipedii o tym miejscu – w pobliżu punktu (geosearch)
    albo po nazwie, 3) zapas: zdjęcie z Wikimedia Commons zrobione tuż obok (do 60 m, „okolica”).
    Zdjęcie jest zmniejszane (do 360 px) i zapisywane w punkcie planu jako `photo: { data, page, credit, auto }`

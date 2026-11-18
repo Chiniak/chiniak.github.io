@@ -1,4 +1,4 @@
-# Podróżnik – do sprawdzenia na telefonie
+# Tripwillow – do sprawdzenia na telefonie
 
 Wszystko poniżej było testowane tylko w przeglądarce na komputerze (symulacja telefonu Pixel 7,
 wirtualny aparat, wygenerowane kody). Te rzeczy trzeba sprawdzić na prawdziwym telefonie.
@@ -87,13 +87,13 @@ Adres (po scaleniu pull requesta): https://chiniak.github.io/podroznik/
 - ⬜ Mapa w statystykach czytelna na telefonie, kraje po polsku z flagami
 - ⬜ Pogoda: na telefonie z internetem pojawia się prognoza przy podróży w ciągu 16 dni (w testach serwis był symulowany) i ikonki w planie dnia
 - ⬜ **Z maila – na prawdziwych mailach** (LOT, Ryanair, Wizz Air, PKP Intercity, FlixBus, Booking.com, Airbnb…): które odczytuje dobrze, a które źle? Zapisz przewoźnika – poprawię wzorce (testowane na 5 przykładowych mailach)
-- ⬜ Gmail → ⋮ → „Udostępnij” / zaznacz tekst → „Udostępnij” → Podróżnik (działa tylko w aplikacji dodanej do ekranu głównego)
+- ⬜ Gmail → ⋮ → „Udostępnij” / zaznacz tekst → „Udostępnij” → Tripwillow (działa tylko w aplikacji dodanej do ekranu głównego)
 
 ## Etap 7 – APK na Androida
 - ⬜ Pobranie `Podroznik.apk` (Ustawienia → „Aplikacja na Androida” albo https://chiniak.github.io/podroznik/Podroznik.apk) i instalacja (zgoda na instalację z nieznanych źródeł)
 - ⬜ **Brak paska adresu** u góry aplikacji – jeśli jest, `assetlinks.json` nie został jeszcze odczytany (poczekaj kilka minut po scaleniu, odinstaluj i zainstaluj ponownie)
-- ⬜ Powiadomienia: Android pyta o zgodę, przypomnienia przychodzą jako „Podróżnik”
-- ⬜ Gmail → Udostępnij → **Podróżnik** na liście aplikacji
+- ⬜ Powiadomienia: Android pyta o zgodę, przypomnienia przychodzą jako „Tripwillow”
+- ⬜ Gmail → Udostępnij → **Tripwillow** na liście aplikacji
 - ⬜ Dane: aplikacja z APK i strona w Chrome korzystają z tych samych danych (ta sama przeglądarka) – sprawdzić, czy podróże są w obu
 
 ## Etap 11 – Przed Azją (karty, rozmówki, mapa offline)
@@ -173,7 +173,7 @@ Adres (po scaleniu pull requesta): https://chiniak.github.io/podroznik/
 
 ## Odczyt z maili i plików (13.11)
 - [ ] Wczytaj plik podróży przysłany w czacie (Podróże → 📥 Otwórz podróż od kogoś) – sprawdź godziny
-- [ ] Gmail → mail z rezerwacją → zaznacz tekst → Udostępnij → Podróżnik (albo skopiuj i wklej w „Z maila”)
+- [ ] Gmail → mail z rezerwacją → zaznacz tekst → Udostępnij → Tripwillow (albo skopiuj i wklej w „Z maila”)
 - [ ] „📎 Z pliku”: PDF biletu pobrany z Gmaila – odcinek + PDF dołączony jako bilet
 - [ ] Jeśli coś odczyta źle – prześlij treść maila (dane możesz zamazać)
 

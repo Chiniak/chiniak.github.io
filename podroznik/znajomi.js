@@ -1,4 +1,4 @@
-/* Podróżnik – znajomi (ekrany; rdzeń w social.js).
+/* Tripwillow – znajomi (ekrany; rdzeń w social.js).
    Trasy:
      #/znajomi                         mój kod / QR, zaproszenia, lista znajomych, dodawanie z linku
      #/znajomi/dodaj/:uid              dodanie znajomego z linku / QR (dolacz.html#z.UID)
@@ -75,7 +75,7 @@
             <button type="button" class="btn small" id="zn-out">Wyloguj</button></div>
           <label class="zn-sw"><input type="checkbox" id="zn-find"${st.findable !== false ? " checked" : ""}><span><b>Znajomi mogą znaleźć mnie po e-mailu</b><small>tylko gdy wpiszą dokładnie ten adres</small></span></label>
           ${acc.google ? "" : `<button type="button" class="btn wide zn-g2" id="zn-google">${ic("google")} <span>Dołącz też konto Google</span></button>`}
-          ${SO().fbAvailable() ? acc.facebook ? `<button type="button" class="btn wide zn-fbf" id="zn-fbfriends">${ic("facebook")} <span>Znajomi z Facebooka w Podróżniku</span></button><div id="zn-fblist"></div>`
+          ${SO().fbAvailable() ? acc.facebook ? `<button type="button" class="btn wide zn-fbf" id="zn-fbfriends">${ic("facebook")} <span>Znajomi z Facebooka w Tripwillow</span></button><div id="zn-fblist"></div>`
             : `<button type="button" class="btn wide zn-fb" id="zn-facebook">${ic("facebook")} <span>Połącz z Facebookiem – znajdź znajomych</span></button>` : ""}
           <a class="btn wide zn-acclink" href="#/konto">${ic("lock")} <span>Połączone konta (Google, Facebook)</span></a>
           <label class="zn-sw"><input type="checkbox" id="zn-vault"${st.vault !== false ? " checked" : ""}><span><b>Kopia znajomych na koncie</b><small>na nowym telefonie wrócą znajomi, czaty i widoczność podróży (kopia klucza czatu jest chroniona logowaniem do konta, bez osobnego hasła)</small></span></label>
@@ -84,7 +84,7 @@
           <p class="zn-acc-t"><b>Zaloguj się kontem Google</b> – znajomi i czaty przejdą z Tobą na nowy telefon, a znajomi znajdą Cię po adresie e-mail.</p>
           <button type="button" class="btn primary wide" id="zn-google">${ic("google")} <span>Zaloguj kontem Google</span></button>
           ${SO().fbAvailable() ? `<button type="button" class="btn wide zn-fb" id="zn-facebook">${ic("facebook")} <span>Zaloguj przez Facebooka</span></button>
-          <p class="f-hint">Przez Facebooka zobaczysz znajomych, którzy też zalogowali się do Podróżnika przez Facebooka.</p>` : ""}
+          <p class="f-hint">Przez Facebooka zobaczysz znajomych, którzy też zalogowali się do Tripwillow przez Facebooka.</p>` : ""}
         </section>`}
 
         ${incoming.length ? `<h2 class="section">Zaproszenia <span class="rz-badge">${incoming.length}</span></h2>
@@ -103,7 +103,7 @@
         <form class="rz-add" id="zn-add"><label class="sr" for="zn-add-in">Link albo kod znajomego</label>
           <input id="zn-add-in" name="l" placeholder="Wklej link znajomego" autocomplete="off">
           <button class="btn primary" type="submit">Dodaj</button></form>
-        <p class="f-hint">Kod QR znajomego zeskanuj zwykłym aparatem – link otworzy Podróżnika.</p>
+        <p class="f-hint">Kod QR znajomego zeskanuj zwykłym aparatem – link otworzy Tripwillow.</p>
         <form class="rz-add zn-mail" id="zn-mail"><label class="sr" for="zn-mail-in">Adres e-mail znajomego</label>
           <input id="zn-mail-in" name="e" type="email" inputmode="email" placeholder="albo wpisz e-mail znajomego (Gmail)" autocomplete="off">
           <button class="btn" type="submit" aria-label="Szukaj po e-mailu">${ic("search", "")}</button></form>
@@ -120,8 +120,8 @@
         nf.onsubmit = async e => { e.preventDefault(); try { await SO().rename(nf.n.value); App.toast("Zapisano imię"); } catch (er) { App.toast(offlineMsg(er)); } App.render(); };
         const sh = view.querySelector("#zn-share");
         if (sh) sh.onclick = async () => {
-          const text = `Dodaj mnie do znajomych w Podróżniku: ${link}`;
-          if (navigator.share) { try { await navigator.share({ title: "Podróżnik", text }); return; } catch (e) { if (e.name === "AbortError") return; } }
+          const text = `Dodaj mnie do znajomych w Tripwillow: ${link}`;
+          if (navigator.share) { try { await navigator.share({ title: "Tripwillow", text }); return; } catch (e) { if (e.name === "AbortError") return; } }
           try { await navigator.clipboard.writeText(link); App.toast("Skopiowano link"); } catch (e) { App.toast(link); }
         };
         const cp = view.querySelector("#zn-copy");
@@ -151,7 +151,7 @@
             box.innerHTML = list.length ? `<div class="list">${list.map(x => `<div class="li zn-row">${av(x.uid, x.name)}
               <span class="li-main"><b>${esc(x.name || x.fbName)}</b>${x.fbName && x.fbName !== x.name ? `<small>na Facebooku: ${esc(x.fbName)}</small>` : ""}</span>
               ${x.state === "ok" ? `<span class="chip">znajomi</span>` : x.state === "out" ? `<span class="chip">wysłane</span>` : `<a class="btn small primary" href="#/znajomi/dodaj/${x.uid}">Zaproś</a>`}</div>`).join("")}</div>`
-              : `<p class="muted small">Nikt z Twoich znajomych z Facebooka nie połączył jeszcze Podróżnika z Facebookiem. Wyślij im swój link.</p>`;
+              : `<p class="muted small">Nikt z Twoich znajomych z Facebooka nie połączył jeszcze Tripwillow z Facebookiem. Wyślij im swój link.</p>`;
           } catch (e) {
             box.innerHTML = `<p class="gd-err">${e.code === "fb-expired" || e.code === "no-fb" ? "Połącz ponownie z Facebookiem." : offlineMsg(e)}</p>`;
             if (e.code === "fb-expired" || e.code === "no-fb") box.insertAdjacentHTML("beforeend", `<button type="button" class="btn wide" id="zn-fbagain">Połącz ponownie</button>`);
@@ -181,7 +181,7 @@
           try {
             const id = await SO().findByEmail(mf.e.value);
             if (id) location.hash = `#/znajomi/dodaj/${id}`;
-            else App.toast("Nikt z tym adresem nie korzysta z Podróżnika (albo ukrył adres)");
+            else App.toast("Nikt z tym adresem nie korzysta z Tripwillow (albo ukrył adres)");
           } catch (er) { App.toast(er.code === "bad-email" ? er.message : offlineMsg(er)); }
           b.disabled = false;
         };
@@ -189,7 +189,7 @@
         af.onsubmit = e => {
           e.preventDefault();
           const id = SO().parseFriend(af.l.value);
-          if (!id) { App.toast("To nie wygląda na link znajomego z Podróżnika"); return; }
+          if (!id) { App.toast("To nie wygląda na link znajomego z Tripwillow"); return; }
           location.hash = `#/znajomi/dodaj/${id}`;
         };
       },
@@ -206,7 +206,7 @@
     if (id === me) return { title: "Dodaj znajomego", back: "#/znajomi", html: App.empty("🤝", "To Twój kod", "Wyślij ten link znajomemu – to on doda Ciebie.", `<a class="btn" href="#/znajomi">Znajomi</a>`) };
     return {
       title: "Dodaj znajomego", back: "#/znajomi",
-      html: err ? `<p class="gd-err">${offlineMsg(err)}</p>` : !p ? App.empty("🤝", "Nie znaleziono", "Tej osoby nie ma w Podróżniku albo link jest niepełny.") : `
+      html: err ? `<p class="gd-err">${offlineMsg(err)}</p>` : !p ? App.empty("🤝", "Nie znaleziono", "Tej osoby nie ma w Tripwillow albo link jest niepełny.") : `
         <div class="gd-intro">${av(id, p.name, "xl")}<h2>${esc(p.name || "Bez imienia")}</h2>
           <p class="muted">${cur && cur.state === "ok" ? "Jesteście już znajomymi." : cur && cur.state === "out" ? "Zaproszenie już wysłane – czeka na odpowiedź." : "Zaproś tę osobę do znajomych – zobaczycie swoje plany (te, które udostępnicie) i będziecie mogli pisać."}</p></div>
         ${cur && cur.state === "ok" ? `<a class="btn primary wide" href="#/znajomy/${id}">Otwórz</a>` : cur && cur.state === "out" ? "" : `
@@ -608,7 +608,7 @@
       title: "Znajomi",
       html: `${tabs("o")}
         ${err ? `<p class="gd-err">${offlineMsg(err)}</p>` : ""}
-        ${fol.length ? `<div class="st-chips zn-folchips">${fol.map(([id, f]) => `<a class="st-chip" href="#/osoba/${id}">${av(id, f.name, "xs")} ${esc(f.name || "Podróżnik")}</a>`).join("")}</div>` : ""}
+        ${fol.length ? `<div class="st-chips zn-folchips">${fol.map(([id, f]) => `<a class="st-chip" href="#/osoba/${id}">${av(id, f.name, "xs")} ${esc(f.name || "Tripwillow")}</a>`).join("")}</div>` : ""}
         <h2 class="section">Podróże obserwowanych</h2>
         ${feed.length ? feed.map(feedCard).join("") : `<p class="muted small zn-none">${fol.length ? "Obserwowane osoby nie mają jeszcze podróży publicznych." : "Nikogo jeszcze nie obserwujesz. Zajrzyj do „Odkrywaj” albo otwórz czyjś link do podróży i wybierz „Obserwuj”."}</p>`}
         <p class="f-hint">Otwórz podróż i dotknij „+” przy punkcie, żeby wziąć pomysł do swojej podróży.${nFol ? ` · Ciebie obserwuje: ${nFol}` : ""}</p>`,
@@ -627,7 +627,7 @@
       html: `${tabs("d")}
         ${err ? `<p class="gd-err">${offlineMsg(err)}</p>` : ""}
         <section class="card zn-acc"><label class="zn-sw"><input type="checkbox" id="zn-explore"${st.explore ? " checked" : ""}>
-          <span><b>Pokazuj moje publiczne podróże w Odkrywaj</b><small>${nPub ? `${nPub} ${plural(nPub, "podróż publiczna", "podróże publiczne", "podróży publicznych")} – zobaczą je wszyscy użytkownicy Podróżnika` : "nie masz jeszcze podróży publicznych – ustaw je w „Kto widzi podróż”"}</small></span></label></section>
+          <span><b>Pokazuj moje publiczne podróże w Odkrywaj</b><small>${nPub ? `${nPub} ${plural(nPub, "podróż publiczna", "podróże publiczne", "podróży publicznych")} – zobaczą je wszyscy użytkownicy Tripwillow` : "nie masz jeszcze podróży publicznych – ustaw je w „Kto widzi podróż”"}</small></span></label></section>
         <h2 class="section">Inspiracje od innych</h2>
         ${list.length ? list.map(feedCard).join("") : `<p class="muted small zn-none">Nikt jeszcze nie pokazuje podróży w Odkrywaj. Bądź pierwszy!</p>`}`,
       after(view) {
@@ -640,7 +640,7 @@
   /* ================= widoczność moich podróży ================= */
   const VIS_INFO = {
     private: { ic: "lock", t: "Prywatna", d: "Widzisz ją tylko Ty." },
-    friends: { ic: "users", t: "Dla znajomych", d: "Widzą ją Twoi znajomi w Podróżniku." },
+    friends: { ic: "users", t: "Dla znajomych", d: "Widzą ją Twoi znajomi w Tripwillow." },
     public: { ic: "globe", t: "Publiczna", d: "Widzi ją każdy, kto ma link – także osoby spoza znajomych." },
   };
   App.route(/^\/widocznosc$/, async () => {
@@ -684,7 +684,7 @@
         if (link) {
           App.loadScript("lib/bwip-js.min.js").then(() => { try { bwipjs.toCanvas(view.querySelector("#zn-pqr"), { bcid: "qrcode", text: link, scale: 3, padding: 2, backgroundcolor: "FFFFFF" }); } catch (e) { console.warn(e); } }).catch(() => {});
           view.querySelector("#zn-pshare").onclick = async () => {
-            if (navigator.share) { try { await navigator.share({ title: t.name, text: `Mój plan podróży „${t.name}” w Podróżniku: ${link}` }); return; } catch (e) { if (e.name === "AbortError") return; } }
+            if (navigator.share) { try { await navigator.share({ title: t.name, text: `Mój plan podróży „${t.name}” w Tripwillow: ${link}` }); return; } catch (e) { if (e.name === "AbortError") return; } }
             try { await navigator.clipboard.writeText(link); App.toast("Skopiowano link"); } catch (e) { App.toast(link); }
           };
           view.querySelector("#zn-pcopy").onclick = async () => { try { await navigator.clipboard.writeText(link); App.toast("Skopiowano link"); } catch (e) { App.toast(link); } };

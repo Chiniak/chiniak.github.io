@@ -1,6 +1,6 @@
 {
   "appId": "io.github.chiniak.podroznik",
-  "appName": "Podróżnik",
+  "appName": "Tripwillow",
   "webDir": "www",
   "android": {
     "backgroundColor": "#0e1416"

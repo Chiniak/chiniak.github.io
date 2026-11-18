@@ -1,4 +1,4 @@
-/* Podróżnik – automatyczne zdjęcia celu podróży (redesign „Premium Light”, karta podróży na ekranie głównym).
+/* Tripwillow – automatyczne zdjęcia celu podróży (redesign „Premium Light”, karta podróży na ekranie głównym).
    Dla podróży bez własnej okładki szuka zdjęcia celu (pole „Cel podróży”, a bez niego nazwa):
      1) zdjęcie z artykułu Wikipedii o tym miejscu (pl, potem en),
      2) zapas: wyróżnione / dobre zdjęcia z Wikimedia Commons z nazwą miejsca.

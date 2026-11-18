@@ -1,4 +1,4 @@
-/* Podróżnik – tło ze zdjęć: przy każdym przejściu na inny ekran losowe zdjęcie z podróży (krajobrazy, miasta, Azja…).
+/* Tripwillow – tło ze zdjęć: przy każdym przejściu na inny ekran losowe zdjęcie z podróży (krajobrazy, miasta, Azja…).
    Zdjęcia: „Featured pictures” z Wikimedia Commons (wolne licencje, autor widoczny w Ustawieniach → Tło).
    Lista kandydatów (ustawienie `bgPool`) pobierana raz na 30 dni; same zdjęcia (~1000 px) pobierane po jednym
    przy kolejnych przejściach, aż będzie ich 100 – w pamięci „tla-zdjecia” (działa offline, nie kasuje jej nowa wersja aplikacji).

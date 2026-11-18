@@ -1,4 +1,4 @@
-/* Podróżnik – odczyt tekstu ze zdjęć i screenów (OCR) – do biletów dodawanych w planie („📎 Z biletu lub screena”).
+/* Tripwillow – odczyt tekstu ze zdjęć i screenów (OCR) – do biletów dodawanych w planie („📎 Z biletu lub screena”).
    Tesseract.js (lib/ocr/, polski + angielski) działa w telefonie, bez wysyłania zdjęć gdziekolwiek.
    Pliki (~6 MB) pobierane przy pierwszym użyciu albo w „📥 Przygotuj offline”; sw.js trzyma je w pamięci „ocr-pliki”,
    która nie jest kasowana przy nowej wersji aplikacji. */

@@ -1,4 +1,4 @@
-/* Podróżnik – karty dla kierowcy i rozmówki (Chiny, Laos, Wietnam, Tajlandia).
+/* Tripwillow – karty dla kierowcy i rozmówki (Chiny, Laos, Wietnam, Tajlandia).
    Trasa:
      #/karty/:tripId                 noclegi i punkty planu z położeniem + rozmówki
      #/karty/:tripId?k=s:ID / p:ID   od razu karta noclegu (segment) / punktu planu na pełnym ekranie

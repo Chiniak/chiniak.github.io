@@ -1,4 +1,4 @@
-/* Podróżnik – etap 6: kopia zapasowa.
+/* Tripwillow – etap 6: kopia zapasowa.
    Trasa: #/ustawienia/kopia
    Plik kopii (JSON): { app: "podroznik", format: 1, exportedAt, counts, stores: { trips: [...], files: [...], ... } }
      pliki biletów zapisane jako data URL (pole blobData), więc jedna kopia zawiera wszystko.
@@ -85,8 +85,8 @@
   /* ---------- import ---------- */
   async function readBackup(file, askPassword) {
     let data;
-    try { data = JSON.parse(await file.text()); } catch (e) { throw new Error("To nie jest plik kopii Podróżnika (zły format)."); }
-    if (!data || data.app !== "podroznik") throw new Error("To nie jest plik kopii Podróżnika.");
+    try { data = JSON.parse(await file.text()); } catch (e) { throw new Error("To nie jest plik kopii Tripwillow (zły format)."); }
+    if (!data || data.app !== "podroznik") throw new Error("To nie jest plik kopii Tripwillow.");
     if (data.format > 1) throw new Error("Kopia z nowszej wersji aplikacji – zaktualizuj aplikację.");
     if (data.encrypted) {
       const pw = await askPassword();
@@ -181,7 +181,7 @@
         <div class="list bk-tips">
           <ol>
             <li><b>Przed wyjazdem</b> zapisz kopię z hasłem na <b>Dysku Google</b> albo wyślij <b>mailem do siebie</b> – dostaniesz się do niej z każdego telefonu czy komputera.</li>
-            <li><b>Drugi telefon</b> (osoba, z którą jedziesz): wyślij jej plik, a ona w Podróżniku wybierze Ustawienia → Kopia zapasowa → „Wybierz plik kopii” → „Dołącz”. Bilety i plan będą też u niej.</li>
+            <li><b>Drugi telefon</b> (osoba, z którą jedziesz): wyślij jej plik, a ona w Tripwillow wybierze Ustawienia → Kopia zapasowa → „Wybierz plik kopii” → „Dołącz”. Bilety i plan będą też u niej.</li>
             <li>Hasło zapamiętaj albo zapisz poza telefonem (np. w notatce u bliskiej osoby).</li>
             <li>Po większych zmianach (nowe bilety, noclegi) zrób kopię jeszcze raz – aplikacja przypomni 3 dni przed wyjazdem.</li>
           </ol>

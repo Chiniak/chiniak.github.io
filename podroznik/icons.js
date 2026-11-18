@@ -1,4 +1,4 @@
-/* Podróżnik – ikony interfejsu (jeden zestaw w obrysie: 24 px, kreska 1.75, zaokrąglone końce).
+/* Tripwillow – ikony interfejsu (jeden zestaw w obrysie: 24 px, kreska 1.75, zaokrąglone końce).
    Użycie w widokach: App.icon("plane") → "<svg class="ic">…</svg>" (kolor = currentColor).
    Emoji zostają tylko w treści (kategorie pakowania i planu, nazwy podróży użytkownika). */
 (function () {

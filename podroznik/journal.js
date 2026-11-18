@@ -1,4 +1,4 @@
-/* Podróżnik – dziennik podróży.
+/* Tripwillow – dziennik podróży.
    Trasy:
      #/dziennik/:tripId            lista dni (najnowsze na górze; w trakcie podróży na górze „Dziś”), pamiątka (HTML ze zdjęciami), tekst
      #/dziennik/:tripId/:data      dzień: nastrój, tekst (zapis sam w trakcie pisania), zdjęcia, „co było w planie”, strzałki dni
@@ -125,7 +125,7 @@ header{margin-bottom:32px}header h1{font-weight:500;font-size:36px;line-height:1
 section{margin:0 0 40px}h2{font-weight:500;font-size:24px;margin:0 0 10px}h2 small{display:block;font:600 12px system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#177670}
 img{display:block;width:100%;height:auto;border-radius:14px;margin:14px 0}
 @media (prefers-color-scheme:dark){body{background:#101615;color:#E6ECEA}header p{color:#93A19E}h2 small{color:#5CCFC6}}
-</style></head><body><main><header><h1>${esc(trip.name)}</h1><p>${esc([trip.destination, App.fmtRange(trip.start, trip.end)].filter(Boolean).join(" · "))} · dziennik z aplikacji Podróżnik</p></header>
+</style></head><body><main><header><h1>${esc(trip.name)}</h1><p>${esc([trip.destination, App.fmtRange(trip.start, trip.end)].filter(Boolean).join(" · "))} · dziennik z aplikacji Tripwillow</p></header>
 ${body}</main></body></html>`;
     const name = `dziennik-${(trip.name || "podroz").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/ł/g, "l").replace(/Ł/g, "L").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "").toLowerCase() || "podroz"}.html`;
     return new File([html], name, { type: "text/html" });

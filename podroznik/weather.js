@@ -1,4 +1,4 @@
-/* Podróżnik – etap 8 (pkt 40): pogoda w miejscu docelowym w dniach podróży.
+/* Tripwillow – etap 8 (pkt 40): pogoda w miejscu docelowym w dniach podróży.
    Źródło: Open-Meteo (bez klucza). Prognoza sięga 16 dni naprzód; dla dalszych podróży pokazujemy,
    jaka pogoda była rok wcześniej w tych samych dniach (archiwum), z wyraźnym opisem.
    Miejsce: cel podróży (pole „Cel”), a gdy go nie ma – miejsce przylotu/przyjazdu pierwszego odcinka.
