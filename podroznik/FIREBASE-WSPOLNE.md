@@ -126,10 +126,20 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['uid']) && request.resource.data.uid == request.auth.uid;
       allow delete: if signedIn() && resource.data.uid == request.auth.uid;
     }
-    // kopia klucza i listy znajomych na koncie (tylko konto Google – nie anonimowe); czyta i pisze wyłącznie właściciel
+    // kopia klucza i listy znajomych na koncie (tylko konto Google / Facebook – nie anonimowe); czyta i pisze wyłącznie właściciel
     match /vault/{uid} {
-      allow get, create, update, delete: if signedIn() && request.auth.uid == uid && request.auth.token.email != null;
+      allow get, create, update, delete: if signedIn() && request.auth.uid == uid
+        && request.auth.token.firebase.identities.keys().hasAny(['google.com', 'facebook.com']);
       allow list: if false;
+    }
+    // znajomi z Facebooka (etap 3): identyfikator Facebooka (przypisany do aplikacji) → profil; zapisuje tylko właściciel tego konta Facebook
+    match /fbids/{fbid} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create, update: if signedIn() && 'facebook.com' in request.auth.token.firebase.identities
+        && fbid in request.auth.token.firebase.identities['facebook.com']
+        && request.resource.data.keys().hasOnly(['uid']) && request.resource.data.uid == request.auth.uid;
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
     }
     // lista kluczy podróży dla jednego znajomego (zaszyfrowana kluczem tej pary)
     match /pub/{uid}/keys/{friend} {

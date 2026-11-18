@@ -2094,3 +2094,6 @@ a.tp-trip { text-decoration: none; }
 .zn-sw span { display: flex; flex-direction: column; }
 .zn-sw small { color: var(--muted); font-size: var(--fs-sm); }
 .zn-mail { margin-top: 8px; }
+.zn-fb, .zn-fbf, .zn-g2 { margin-top: 10px; }
+.zn-fb .ic { color: #1877F2; }
+#zn-fblist .list { margin-top: 10px; }

@@ -361,9 +361,12 @@
      Kopia jest chroniona regułami (czyta ją tylko zalogowany właściciel), ale nie jest zaszyfrowana hasłem – można ją wyłączyć.
      emails/{email} → { uid }: znajomi znajdą Cię po dokładnym adresie (bez listowania); można wyłączyć. */
   const googleOf = u => u && u.providerData && u.providerData.find(p => p.providerId === "google.com");
+  const linked = u => !!(u && u.providerData && u.providerData.some(p => p.providerId === "google.com" || p.providerId === "facebook.com"));
   async function account() {
-    const u = (await fb()).auth.currentUser, g = googleOf(u);
-    return g ? { email: String(u.email || g.email || "").toLowerCase(), name: g.displayName || "" } : null;
+    const u = (await fb()).auth.currentUser;
+    if (!linked(u)) return null;
+    const g = googleOf(u), fbp = u.providerData.find(p => p.providerId === "facebook.com");
+    return { email: String(u.email || (g && g.email) || (fbp && fbp.email) || "").toLowerCase(), name: (g || fbp).displayName || "", google: !!g, facebook: !!fbp };
   }
   async function credential(idToken) {
     if (idToken) return firebase.auth.GoogleAuthProvider.credential(idToken); // testy (emulator)
@@ -375,26 +378,88 @@
     return null; // przeglądarka: okno logowania Google (popup)
   }
   async function signInGoogle({ idToken } = {}) {
+    await linkOrSignIn(await credential(idToken), () => new firebase.auth.GoogleAuthProvider());
+    return account();
+  }
+  // dołącz konto (Google / Facebook) do obecnego profilu albo przełącz się na profil, do którego to konto już należy
+  async function linkOrSignIn(cred, popupProvider) {
     await load();
     const f = await fb(), auth = f.auth, before = auth.currentUser && auth.currentUser.uid;
-    const cred = await credential(idToken);
+    let res = null;
     try {
-      if (cred) await auth.currentUser.linkWithCredential(cred);
-      else await auth.currentUser.linkWithPopup(new firebase.auth.GoogleAuthProvider());
+      if (cred) res = await auth.currentUser.linkWithCredential(cred);
+      else res = await auth.currentUser.linkWithPopup(popupProvider());
     } catch (e) {
       if (e.code !== "auth/credential-already-in-use" && e.code !== "auth/email-already-in-use") throw e;
       const c = e.credential || cred;
       if (!c) throw e;
-      await auth.signInWithCredential(c); // to konto ma już swój identyfikator (np. z poprzedniego telefonu)
+      res = await auth.signInWithCredential(c); // to konto ma już swój identyfikator (np. z poprzedniego telefonu)
     }
-    await auth.currentUser.getIdToken(true); // e-mail w tokenie – potrzebny regułom
+    await auth.currentUser.getIdToken(true); // e-mail i dostawcy w tokenie – potrzebne regułom
     profileDone = null;
     if (auth.currentUser.uid !== before) await restore();
     if (st.findable !== false) await setFindable(true).catch(e => console.warn("e-mail:", e.code || e));
+    await registerFacebook().catch(e => console.warn("facebook:", e.code || e));
     await profile();
     await writeVault();
     emit("account");
+    return res;
+  }
+
+  /* ---------- Facebook (etap 3): logowanie i znajomi z Facebooka, którzy też używają Podróżnika ----------
+     Facebook podaje tylko tych znajomych, którzy zalogowali się do Podróżnika przez Facebooka i zgodzili się na
+     „user_friends” (identyfikatory przypisane do tej aplikacji). fbids/{idFacebooka} → { uid } łączy je z profilami.
+     Włączone, gdy w sync-config.js jest facebookAppId (i – na Androidzie – wtyczka @capacitor-community/facebook-login). */
+  const FB_PERMS = ["public_profile", "email", "user_friends"];
+  const fbConfigured = () => !!(self.SYNC_CONFIG && self.SYNC_CONFIG.facebookAppId) || !!(S() && S().configured() && localStorage.getItem("podroznik-emu-fb"));
+  const fbNative = () => window.PodroznikNative && PodroznikNative.isNative && window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.FacebookLogin;
+  const fbAvailable = () => available() && fbConfigured() && (!(window.PodroznikNative && PodroznikNative.isNative) || !!fbNative());
+  let fbToken = null; // token dostępu Facebooka (tylko w pamięci i w ustawieniu „social.fbToken” na tym telefonie)
+  async function signInFacebook({ accessToken } = {}) {
+    if (!accessToken && fbNative()) {
+      const r = await fbNative().login({ permissions: FB_PERMS });
+      if (!r || !r.accessToken) throw Object.assign(new Error("Anulowano"), { code: "CANCELED" });
+      accessToken = r.accessToken.token;
+    }
+    const prov = () => { const p = new firebase.auth.FacebookAuthProvider(); FB_PERMS.forEach(s => p.addScope(s)); return p; };
+    const res = await linkOrSignIn(accessToken ? firebase.auth.FacebookAuthProvider.credential(accessToken) : null, prov);
+    const tok = accessToken || (res && res.credential && res.credential.accessToken);
+    if (tok) { fbToken = tok; await DB.setSetting("social.fbToken", tok); }
+    await registerFacebook();
+    emit("account");
     return account();
+  }
+  const fbOf = u => u && u.providerData && u.providerData.find(p => p.providerId === "facebook.com");
+  async function registerFacebook() {
+    const f = await fb(), u = f.auth.currentUser, p = fbOf(u);
+    if (!p) return;
+    await f.db.collection("fbids").doc(p.uid).set({ uid: u.uid });
+  }
+  // znajomi z Facebooka, którzy też są w Podróżniku: [{ uid, name, fbName, state }]
+  async function facebookFriends({ graph } = {}) {
+    await load();
+    const tok = fbToken || await DB.getSetting("social.fbToken", null);
+    if (!tok) throw Object.assign(new Error("Połącz najpierw konto Facebook."), { code: "no-fb" });
+    let list = [];
+    if (graph) list = graph; // testy
+    else {
+      let url = `https://graph.facebook.com/v19.0/me/friends?limit=500&access_token=${encodeURIComponent(tok)}`;
+      while (url && list.length < 2000) {
+        const r = await fetch(url);
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) throw Object.assign(new Error((j.error && j.error.message) || "Facebook nie odpowiada"), { code: j.error && j.error.code === 190 ? "fb-expired" : "fb-error" });
+        list = list.concat(j.data || []);
+        url = j.paging && j.paging.next;
+      }
+    }
+    const f = await fb(), me = await profile(), out = [];
+    for (const fr of list) {
+      const d = await f.db.collection("fbids").doc(String(fr.id)).get().catch(() => null);
+      if (!d || !d.exists || d.data().uid === me) continue;
+      const id = d.data().uid, p = await person(id).catch(() => null);
+      out.push({ uid: id, name: (p && p.name) || fr.name || "", fbName: fr.name || "", state: (st.friends[id] || {}).state || "" });
+    }
+    return out;
   }
   function stopAll() {
     if (inboxOff) { inboxOff(); inboxOff = null; }
@@ -421,7 +486,7 @@
   async function writeVault() {
     if (!st || !available() || !fb) return;
     const f = await fb(), u = f.auth.currentUser;
-    if (!googleOf(u)) return;
+    if (!linked(u)) return;
     const ref = f.db.collection("vault").doc(u.uid);
     if (st.vault === false) { await ref.delete().catch(() => {}); return; }
     const keysRaw = await DB.getSetting("social.keys", null);
@@ -449,6 +514,8 @@
     stopAll();
     await f.auth.signOut();
     await f.auth.signInAnonymously();
+    if (window.Capacitor && fbNative()) fbNative().logout().catch(() => {});
+    fbToken = null; await DB.setSetting("social.fbToken", null);
     await DB.setSetting("social.keys", null); myKeys = null; for (const k of Object.keys(shared)) delete shared[k];
     for (const m of await DB.all("dms")) await DB.delRaw("dms", m.id);
     st = { friends: {}, trips: {}, since: {}, read: {} }; await DB.setSetting("social", st);
@@ -477,7 +544,7 @@
     available, enable, start, load, state: async () => (await load(), st), myLink, myName, rename, profile, parseFriend, person,
     addFriend, accept, remove, sendMessage, messages, markRead, unread, unreadAll, startChat,
     VIS, setVisibility, visibility, publicLink, friendTrips, parsePublic, publicTrip, copyTrip, snapshot,
-    account, signInGoogle, signOut, setFindable, setVault, findByEmail,
+    account, signInGoogle, signInFacebook, fbAvailable, facebookFriends, signOut, setFindable, setVault, findByEmail,
     on: fn => { listeners.add(fn); return () => listeners.delete(fn); },
     _publish: publish, _keyMaps: keyMaps,
   };

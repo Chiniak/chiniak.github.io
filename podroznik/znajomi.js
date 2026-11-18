@@ -61,14 +61,19 @@
 
         ${err ? "" : acc ? `
         <section class="card zn-acc">
-          <div class="zn-acc-h"><span class="li-ico">${ic("lock")}</span><span class="li-main"><b>Konto Google</b><small translate="no">${esc(acc.email)}</small></span>
+          <div class="zn-acc-h"><span class="li-ico">${ic("lock")}</span><span class="li-main"><b>${acc.google && acc.facebook ? "Konto Google i Facebook" : acc.google ? "Konto Google" : "Konto Facebook"}</b><small translate="no">${esc(acc.email || acc.name)}</small></span>
             <button type="button" class="btn small" id="zn-out">Wyloguj</button></div>
           <label class="zn-sw"><input type="checkbox" id="zn-find"${st.findable !== false ? " checked" : ""}><span><b>Znajomi mogą znaleźć mnie po e-mailu</b><small>tylko gdy wpiszą dokładnie ten adres</small></span></label>
+          ${acc.google ? "" : `<button type="button" class="btn wide zn-g2" id="zn-google">${ic("lock")} <span>Dołącz też konto Google</span></button>`}
+          ${SO().fbAvailable() ? acc.facebook ? `<button type="button" class="btn wide zn-fbf" id="zn-fbfriends">${ic("users")} <span>Znajomi z Facebooka w Podróżniku</span></button><div id="zn-fblist"></div>`
+            : `<button type="button" class="btn wide zn-fb" id="zn-facebook">${ic("users")} <span>Połącz z Facebookiem – znajdź znajomych</span></button>` : ""}
           <label class="zn-sw"><input type="checkbox" id="zn-vault"${st.vault !== false ? " checked" : ""}><span><b>Kopia znajomych na koncie</b><small>na nowym telefonie wrócą znajomi, czaty i widoczność podróży (kopia klucza czatu jest chroniona logowaniem do konta, bez osobnego hasła)</small></span></label>
         </section>` : `
         <section class="card zn-acc">
           <p class="zn-acc-t"><b>Zaloguj się kontem Google</b> – znajomi i czaty przejdą z Tobą na nowy telefon, a znajomi znajdą Cię po adresie e-mail.</p>
           <button type="button" class="btn primary wide" id="zn-google">${ic("lock")} <span>Zaloguj kontem Google</span></button>
+          ${SO().fbAvailable() ? `<button type="button" class="btn wide zn-fb" id="zn-facebook">${ic("users")} <span>Zaloguj przez Facebooka</span></button>
+          <p class="f-hint">Przez Facebooka zobaczysz znajomych, którzy też zalogowali się do Podróżnika przez Facebooka.</p>` : ""}
         </section>`}
 
         ${incoming.length ? `<h2 class="section">Zaproszenia <span class="rz-badge">${incoming.length}</span></h2>
@@ -118,6 +123,31 @@
           try { const a = await SO().signInGoogle(); App.toast(`Zalogowano: ${a ? a.email : ""}`); }
           catch (e) { App.toast(e.code === "auth/popup-closed-by-user" || e.code === "CANCELED" ? "Anulowano" : e.code === "auth/operation-not-allowed" ? "Logowanie Google nie jest jeszcze włączone w Firebase" : offlineMsg(e)); }
           App.render();
+        };
+        const fbb = view.querySelector("#zn-facebook");
+        if (fbb) fbb.onclick = async () => {
+          fbb.disabled = true;
+          try { await SO().signInFacebook(); App.toast("Połączono z Facebookiem"); }
+          catch (e) { App.toast(e.code === "auth/popup-closed-by-user" || e.code === "CANCELED" ? "Anulowano" : e.code === "auth/operation-not-allowed" ? "Logowanie przez Facebooka nie jest jeszcze włączone w Firebase" : offlineMsg(e)); }
+          App.render();
+        };
+        const fbf = view.querySelector("#zn-fbfriends");
+        if (fbf) fbf.onclick = async () => {
+          const box = view.querySelector("#zn-fblist");
+          fbf.disabled = true; box.innerHTML = `<p class="muted small">Sprawdzam…</p>`;
+          try {
+            const list = await SO().facebookFriends();
+            box.innerHTML = list.length ? `<div class="list">${list.map(x => `<div class="li zn-row">${av(x.uid, x.name)}
+              <span class="li-main"><b>${esc(x.name || x.fbName)}</b>${x.fbName && x.fbName !== x.name ? `<small>na Facebooku: ${esc(x.fbName)}</small>` : ""}</span>
+              ${x.state === "ok" ? `<span class="chip">znajomi</span>` : x.state === "out" ? `<span class="chip">wysłane</span>` : `<a class="btn small primary" href="#/znajomi/dodaj/${x.uid}">Zaproś</a>`}</div>`).join("")}</div>`
+              : `<p class="muted small">Nikt z Twoich znajomych z Facebooka nie połączył jeszcze Podróżnika z Facebookiem. Wyślij im swój link.</p>`;
+          } catch (e) {
+            box.innerHTML = `<p class="gd-err">${e.code === "fb-expired" || e.code === "no-fb" ? "Połącz ponownie z Facebookiem." : offlineMsg(e)}</p>`;
+            if (e.code === "fb-expired" || e.code === "no-fb") box.insertAdjacentHTML("beforeend", `<button type="button" class="btn wide" id="zn-fbagain">Połącz ponownie</button>`);
+            const again = box.querySelector("#zn-fbagain");
+            if (again) again.onclick = async () => { try { await SO().signInFacebook(); fbf.click(); } catch (er) { App.toast(offlineMsg(er)); } };
+          }
+          fbf.disabled = false;
         };
         const so = view.querySelector("#zn-out");
         if (so) so.onclick = async () => {
