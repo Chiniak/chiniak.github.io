@@ -280,6 +280,7 @@
     configured: () => !!config(),
     on: fn => { listeners.add(fn); return () => listeners.delete(fn); },
     flush,
+    firebase: firebaseReady, b64u, unb64u, rand, // znajomi (social.js)
     _seal: seal, _open: open, // testy
   };
 
