@@ -836,4 +836,8 @@ self.I18N_EN = {
   "Wikivoyage: co zobaczyć, jedzenie, dojazd – offline": "Wikivoyage: what to see, food, getting there – offline", "{} · offline": "{} · offline",
   "Wyczyść plan": "Clear plan", "Usuń całą podróż": "Delete the whole trip", "Plan wyczyszczony": "Plan cleared",
   "Usunąć wszystkie punkty planu i pomysły z podróży „{}” ({})? Loty, pociągi i noclegi zostają. Tego nie da się cofnąć.": "Delete all plan items and ideas from the trip “{}” ({})? Flights, trains and stays remain. This cannot be undone.",
+  "Zdjęcie celu dobierze się samo po wpisaniu celu podróży. Możesz też wybrać własne.": "A destination photo is picked automatically once you enter the destination. You can also choose your own.",
+  "Zdjęcie celu dobierze się samo, gdy będzie internet.": "A destination photo will be picked automatically when you are online.",
+  "Szukam zdjęcia: {}…": "Looking for a photo: {}…", "Nie znaleziono zdjęcia celu – możesz wybrać własne.": "No destination photo found – you can choose your own.",
+  "Nie udało się pobrać zdjęcia celu – możesz wybrać własne.": "Could not download a destination photo – you can choose your own.",
 };
