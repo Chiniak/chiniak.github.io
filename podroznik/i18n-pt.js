@@ -2327,5 +2327,10 @@
   "nieważne": "inválido",
   "ważna": "válida",
   "ważne": "válido",
-  "Podróżnik": "Viajante"
+  "Podróżnik": "Viajante",
+  "Usuń konto": "Excluir conta",
+  "Usuwa z serwera Twój profil, znajomych, wiadomości, udostępnione podróże i połączenia z Google / Facebookiem. Plany, bilety i dokumenty na tym telefonie zostają. Tego nie da się cofnąć.": "Exclui do servidor o seu perfil, amigos, mensagens, viagens compartilhadas e as conexões com Google / Facebook. Planos, bilhetes e documentos neste telefone permanecem. Não é possível desfazer.",
+  "Usuń konto i dane z serwera": "Excluir conta e dados do servidor",
+  "Usunąć konto? Znikną z serwera: profil, znajomi, wiadomości, udostępnione podróże i połączone konta Google / Facebook. Plany na telefonie zostaną. Tego nie da się cofnąć.": "Excluir a conta? Perfil, amigos, mensagens, viagens compartilhadas e contas Google / Facebook vinculadas serão removidos do servidor. Os planos neste telefone permanecerão. Não é possível desfazer.",
+  "Konto usunięte": "Conta excluída"
 };

@@ -2327,5 +2327,10 @@
   "nieważne": "ungültig",
   "ważna": "gültig",
   "ważne": "gültig",
-  "Podróżnik": "Reisender"
+  "Podróżnik": "Reisender",
+  "Usuń konto": "Konto löschen",
+  "Usuwa z serwera Twój profil, znajomych, wiadomości, udostępnione podróże i połączenia z Google / Facebookiem. Plany, bilety i dokumenty na tym telefonie zostają. Tego nie da się cofnąć.": "Löscht dein Profil, deine Freunde, Nachrichten, geteilten Reisen und die Verknüpfungen mit Google / Facebook vom Server. Pläne, Tickets und Dokumente auf diesem Handy bleiben erhalten. Das lässt sich nicht rückgängig machen.",
+  "Usuń konto i dane z serwera": "Konto und Serverdaten löschen",
+  "Usunąć konto? Znikną z serwera: profil, znajomi, wiadomości, udostępnione podróże i połączone konta Google / Facebook. Plany na telefonie zostaną. Tego nie da się cofnąć.": "Konto löschen? Profil, Freunde, Nachrichten, geteilte Reisen und verknüpfte Google- / Facebook-Konten werden vom Server entfernt. Pläne auf diesem Handy bleiben erhalten. Das lässt sich nicht rückgängig machen.",
+  "Konto usunięte": "Konto gelöscht"
 };

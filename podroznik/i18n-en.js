@@ -1113,5 +1113,10 @@ self.I18N_EN = {
   "nieważne": "invalid",
   "ważna": "valid",
   "ważne": "valid",
-  "Podróżnik": "Traveller"
+  "Podróżnik": "Traveller",
+  "Usuń konto": "Delete account",
+  "Usuwa z serwera Twój profil, znajomych, wiadomości, udostępnione podróże i połączenia z Google / Facebookiem. Plany, bilety i dokumenty na tym telefonie zostają. Tego nie da się cofnąć.": "Deletes your profile, friends, messages, shared trips and Google / Facebook connections from the server. Plans, tickets and documents on this phone stay. This cannot be undone.",
+  "Usuń konto i dane z serwera": "Delete account and server data",
+  "Usunąć konto? Znikną z serwera: profil, znajomi, wiadomości, udostępnione podróże i połączone konta Google / Facebook. Plany na telefonie zostaną. Tego nie da się cofnąć.": "Delete your account? Your profile, friends, messages, shared trips and linked Google / Facebook accounts will be removed from the server. Plans on this phone will stay. This cannot be undone.",
+  "Konto usunięte": "Account deleted"
 };

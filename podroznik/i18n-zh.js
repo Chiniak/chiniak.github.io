@@ -2327,5 +2327,10 @@
   "nieważne": "无效",
   "ważna": "有效",
   "ważne": "有效",
-  "Podróżnik": "旅行者"
+  "Podróżnik": "旅行者",
+  "Usuń konto": "删除账户",
+  "Usuwa z serwera Twój profil, znajomych, wiadomości, udostępnione podróże i połączenia z Google / Facebookiem. Plany, bilety i dokumenty na tym telefonie zostają. Tego nie da się cofnąć.": "从服务器删除你的个人资料、好友、消息、共享的旅行以及与 Google / Facebook 的关联。此手机上的计划、票据和证件会保留。此操作无法撤销。",
+  "Usuń konto i dane z serwera": "删除账户和服务器数据",
+  "Usunąć konto? Znikną z serwera: profil, znajomi, wiadomości, udostępnione podróże i połączone konta Google / Facebook. Plany na telefonie zostaną. Tego nie da się cofnąć.": "删除账户？你的个人资料、好友、消息、共享的旅行以及关联的 Google / Facebook 账户将从服务器删除。此手机上的计划会保留。此操作无法撤销。",
+  "Konto usunięte": "账户已删除"
 };

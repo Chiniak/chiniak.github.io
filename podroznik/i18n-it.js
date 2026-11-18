@@ -2327,5 +2327,10 @@
   "nieważne": "non valido",
   "ważna": "valida",
   "ważne": "valido",
-  "Podróżnik": "Viaggiatore"
+  "Podróżnik": "Viaggiatore",
+  "Usuń konto": "Elimina account",
+  "Usuwa z serwera Twój profil, znajomych, wiadomości, udostępnione podróże i połączenia z Google / Facebookiem. Plany, bilety i dokumenty na tym telefonie zostają. Tego nie da się cofnąć.": "Elimina dal server il tuo profilo, gli amici, i messaggi, i viaggi condivisi e i collegamenti con Google / Facebook. Piani, biglietti e documenti su questo telefono restano. Non si può annullare.",
+  "Usuń konto i dane z serwera": "Elimina account e dati dal server",
+  "Usunąć konto? Znikną z serwera: profil, znajomi, wiadomości, udostępnione podróże i połączone konta Google / Facebook. Plany na telefonie zostaną. Tego nie da się cofnąć.": "Eliminare l'account? Profilo, amici, messaggi, viaggi condivisi e account Google / Facebook collegati verranno rimossi dal server. I piani su questo telefono resteranno. Non si può annullare.",
+  "Konto usunięte": "Account eliminato"
 };

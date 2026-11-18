@@ -3,7 +3,7 @@
 const fs = require("fs"), path = require("path");
 const src = path.join(__dirname, "..", "..", "podroznik");
 const dst = path.join(__dirname, "..", "www");
-const skip = name => /\.(apk|md)$/i.test(name) || ["strona", "strona.css", "aplikacja.html", "prywatnosc.html"].includes(name);
+const skip = name => /\.(apk|md)$/i.test(name) || ["strona", "strona.css", "aplikacja.html", "prywatnosc.html", "usun-konto.html"].includes(name);
 fs.rmSync(dst, { recursive: true, force: true });
 let n = 0;
 (function copy(a, b) {

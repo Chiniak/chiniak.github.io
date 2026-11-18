@@ -1,5 +1,5 @@
 rules_version = '2';
-// Podróżnik – reguły Firestore.
+// Tripwillow – reguły Firestore.
 // 1) Wspólne planowanie (podroznik/sync.js): dane zaszyfrowane w telefonie (AES-256-GCM, klucz tylko w linku zaproszenia).
 //    Operacje można tylko dopisywać; odczyt tylko pojedynczego pokoju, którego losowy identyfikator jest w linku.
 // 2) Znajomi (podroznik/social.js): profil (imię + klucz publiczny), zaproszenia, czat 1:1 i podróże dla znajomych /
@@ -63,7 +63,9 @@ service cloud.firestore {
         && request.resource.data.t == request.time
         && request.resource.data.c is string && request.resource.data.c.size() < 20000
         && request.resource.data.v == 1;
-      allow update, delete: if false;
+      allow update: if false;
+      // własne wiadomości można usunąć (usunięcie konta)
+      allow delete: if signedIn() && resource.data.by == request.auth.uid;
     }
 
     // podróże udostępnione: zaszyfrowane migawki; odczyt po identyfikatorze (z listy kluczy albo z linku), pisze tylko właściciel
