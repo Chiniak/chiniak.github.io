@@ -287,6 +287,7 @@
     if (!snap) return setVisibility(tripId, "private");
     const f = await fb(), me = await profile();
     await f.db.collection("pub").doc(me).collection("trips").doc(r.doc).set({ c: await seal(await rawKey(r.key), snap), t: f.now(), v: 1 });
+    if (r.vis === "public") await publicIndex().catch(() => {});
   }
   // lista podróży (dla znajomych i publicznych) dla każdego znajomego – zaszyfrowana jego kluczem
   async function keyMaps() {
@@ -298,6 +299,84 @@
       try { await f.db.collection("pub").doc(me).collection("keys").doc(id).set({ c: await seal(await sharedKey(fr.pub), { trips: list }), t: f.now(), v: 1 }); }
       catch (e) { console.warn("lista podróży dla znajomego:", e.code || e); }
     }
+    await publicIndex().catch(e => console.warn("podróże publiczne:", e.code || e));
+  }
+
+  /* ---------- obserwowanie (bez zgody, tylko podróże publiczne) i Odkrywaj ----------
+     pub/{uid}/index/public  { name, t, trips: [{ doc, key, name, dest, start, end, color }] } – spis moich podróży publicznych
+       (klucze i tak są w publicznych linkach); czyta każdy zalogowany, kto zna identyfikator (obserwujący).
+     explore/{uid}           to samo + widoczne na liście „Odkrywaj” – tylko gdy włączysz „Pokazuj mnie w Odkrywaj”.
+     people/{uid}/followers/{kto}  { t } – kto Cię obserwuje (licznik dla właściciela). */
+  async function publicIndex() {
+    await load();
+    const f = await fb(), me = await profile(), name = (await myName()).slice(0, 40);
+    const trips = [];
+    for (const [tripId, r] of Object.entries(st.trips)) {
+      if (r.vis !== "public") continue;
+      const t = await DB.get("trips", tripId);
+      if (t) trips.push({ doc: r.doc, key: r.key, name: (t.name || "").slice(0, 80), dest: (t.destination || "").slice(0, 80), start: t.start || "", end: t.end || "", color: t.color || "" });
+    }
+    trips.sort((a, b) => b.start.localeCompare(a.start));
+    const ix = f.db.collection("pub").doc(me).collection("index").doc("public");
+    if (trips.length) await ix.set({ name, t: f.now(), v: 1, trips: trips.slice(0, 50) }); else await ix.delete().catch(() => {});
+    const ex = f.db.collection("explore").doc(me);
+    if (st.explore && trips.length) await ex.set({ name, t: f.now(), v: 1, trips: trips.slice(0, 20) }); else await ex.delete().catch(() => {});
+  }
+  async function setExplore(on) { await load(); st.explore = !!on; await save(); await publicIndex(); }
+  async function follow(id) {
+    await load();
+    const f = await fb(), me = await profile();
+    if (id === me) return;
+    const p = await person(id);
+    st.following = st.following || {};
+    st.following[id] = { name: (p && p.name) || "", since: new Date().toISOString() };
+    await save();
+    await f.db.collection("people").doc(id).collection("followers").doc(me).set({ t: f.now() }).catch(() => {});
+    emit("following");
+  }
+  async function unfollow(id) {
+    await load();
+    const f = await fb(), me = await profile();
+    if (st.following) delete st.following[id];
+    await save();
+    await f.db.collection("people").doc(id).collection("followers").doc(me).delete().catch(() => {});
+    emit("following");
+  }
+  const isFollowing = async id => { await load(); return !!(st.following && st.following[id]); };
+  async function followersCount() {
+    const f = await fb(), me = await profile();
+    return (await f.db.collection("people").doc(me).collection("followers").get()).size;
+  }
+  // podróże publiczne jednej osoby (spis bez otwierania) i pełne migawki
+  async function publicTrips(id) {
+    const d = await (await fb()).db.collection("pub").doc(id).collection("index").doc("public").get();
+    return d.exists ? d.data() : { name: "", trips: [] };
+  }
+  // „Obserwowani”: najnowsze podróże publiczne obserwowanych osób
+  async function followingFeed() {
+    await load();
+    const out = [];
+    for (const [id, fo] of Object.entries(st.following || {})) {
+      try {
+        const ix = await publicTrips(id);
+        if (ix.name && ix.name !== fo.name) { fo.name = ix.name; }
+        for (const t of ix.trips || []) out.push({ ...t, uid: id, owner: ix.name || fo.name, t: ix.t && ix.t.toDate ? ix.t.toDate().toISOString() : "" });
+      } catch (e) { console.warn("obserwowani:", e.code || e); }
+    }
+    return out.sort((a, b) => (b.t || "").localeCompare(a.t || "") || b.start.localeCompare(a.start));
+  }
+  // „Odkrywaj”: ostatnio aktualizowane podróże osób, które się na to zgodziły
+  async function explore(limit = 30) {
+    const f = await fb(), me = await profile();
+    const snap = await f.db.collection("explore").orderBy("t", "desc").limit(limit).get();
+    const out = [];
+    snap.forEach(d => { if (d.id === me) return; const x = d.data(); for (const t of (x.trips || []).slice(0, 3)) out.push({ ...t, uid: d.id, owner: x.name || "" }); });
+    return out;
+  }
+  // pomysł od kogoś → moje pomysły (punkt bez dnia) w wybranej podróży
+  async function takeIdea(tripId, it, from) {
+    return DB.put("planItems", { tripId, date: "", time: "", title: (it.title || "").slice(0, 100), cat: it.cat || "inne", place: it.place || "",
+      ...(typeof it.lat === "number" && typeof it.lon === "number" ? { lat: it.lat, lon: it.lon } : {}), note: from ? `Pomysł od: ${from}` : "", cost: "", currency: "PLN", order: 1e6 });
   }
   // zmiany w udostępnionej podróży → nowa migawka (najwyżej co kilka sekund)
   const timers = {};
@@ -476,7 +555,8 @@
     if (v && v.keys) { await DB.setSetting("social.keys", v.keys); myKeys = null; for (const k of Object.keys(shared)) delete shared[k]; }
     // imię: z kopii albo z profilu na serwerze (gdy na tym telefonie jeszcze go nie ma)
     if (!(await myName())) { const nm = (v && v.name) || ((await person(me).catch(() => null)) || {}).name; if (nm) await DB.setSetting("myName", nm); }
-    st = { friends: (v && v.friends) || {}, trips: (v && v.trips) || {}, since: {}, read: (v && v.read) || {}, findable: v ? v.findable : undefined, vault: v ? v.vault : undefined };
+    st = { friends: (v && v.friends) || {}, trips: (v && v.trips) || {}, since: {}, read: (v && v.read) || {}, findable: v ? v.findable : undefined, vault: v ? v.vault : undefined,
+      following: (v && v.following) || {}, explore: !!(v && v.explore) };
     await DB.setSetting("social", st);
     if (!v || !v.keys) await keyMaps().catch(() => {});
     await start(true);
@@ -490,7 +570,7 @@
     const ref = f.db.collection("vault").doc(u.uid);
     if (st.vault === false) { await ref.delete().catch(() => {}); return; }
     const keysRaw = await DB.getSetting("social.keys", null);
-    await ref.set({ v: 1, t: f.now(), vault: true, name: (await myName()).slice(0, 40), findable: st.findable !== false, keys: keysRaw, friends: st.friends, trips: st.trips, read: st.read });
+    await ref.set({ v: 1, t: f.now(), vault: true, name: (await myName()).slice(0, 40), findable: st.findable !== false, keys: keysRaw, friends: st.friends, trips: st.trips, read: st.read, following: st.following || {}, explore: !!st.explore });
   }
   async function setFindable(on) {
     await load();
@@ -544,6 +624,7 @@
     available, enable, start, load, state: async () => (await load(), st), myLink, myName, rename, profile, parseFriend, person,
     addFriend, accept, remove, sendMessage, messages, markRead, unread, unreadAll, startChat,
     VIS, setVisibility, visibility, publicLink, friendTrips, parsePublic, publicTrip, copyTrip, snapshot,
+    publicIndex, setExplore, follow, unfollow, isFollowing, followersCount, publicTrips, followingFeed, explore, takeIdea,
     account, signInGoogle, signInFacebook, fbAvailable, facebookFriends, signOut, setFindable, setVault, findByEmail,
     on: fn => { listeners.add(fn); return () => listeners.delete(fn); },
     _publish: publish, _keyMaps: keyMaps,

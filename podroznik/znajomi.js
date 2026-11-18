@@ -22,6 +22,15 @@
   const offlineMsg = e => e && e.code === "noconfig" ? "Znajomi nie są jeszcze włączeni w tej wersji aplikacji."
     : navigator.onLine ? `Nie udało się połączyć: ${esc(e && (e.message || e.code) || "błąd")}` : "Brak internetu – spróbuj, gdy będzie połączenie.";
 
+  // zakładki: Znajomi · Obserwuję · Odkrywaj
+  const tabs = (on, n = 0) => `<nav class="rz-seg zn-tabs" aria-label="Ludzie">
+      <a href="#/znajomi" class="${on === "z" ? "on" : ""}"${on === "z" ? ' aria-current="page"' : ""}>${ic("users")} Znajomi${n ? ` <span class="rz-badge">${n}</span>` : ""}</a>
+      <a href="#/obserwowani" class="${on === "o" ? "on" : ""}"${on === "o" ? ' aria-current="page"' : ""}>${ic("star")} Obserwuję</a>
+      <a href="#/odkrywaj-ludzi" class="${on === "d" ? "on" : ""}"${on === "d" ? ' aria-current="page"' : ""}>${ic("compass")} Odkrywaj</a></nav>`;
+  const feedCard = x => `<a class="tp-trip zn-feed" href="#/publiczna/${x.uid}/${x.doc}/${x.key}" style="--c:${esc(x.color || "#0f6e6e")}"><span class="tp-bar" aria-hidden="true"></span>
+      <span class="tp-main"><small class="zn-feed-who">${esc(x.owner || "Podróżnik")}</small><b>${esc(x.name)}</b><small>${x.dest && x.dest !== x.name ? `${esc(x.dest)} · ` : ""}${App.fmtRange(x.start, x.end)}</small></span>
+      <span class="tp-st tp-${statusOf({ start: x.start, end: x.end })}">${statusTxt({ start: x.start, end: x.end })}</span></a>`;
+
   /* ================= lista znajomych ================= */
   App.route(/^\/znajomi$/, async () => {
     if (!SO() || !SO().available()) return notReady();
@@ -43,7 +52,7 @@
     };
     return {
       title: "Znajomi",
-      html: `
+      html: `${tabs("z", incoming.length)}
         ${err ? `<p class="gd-err">${offlineMsg(err)}</p>` : ""}
         <section class="card zn-me">
           <div class="zn-me-h">${av("me", name || "Ty", "lg")}
@@ -321,8 +330,10 @@
     const segRow = seg => seg.type === "nocleg"
       ? `<div class="zn-ev"><span class="zn-ev-t">${App.time(seg.depart)}</span><span class="zn-ev-ic">${ic("bed")}</span><span><b>${esc(seg.name || "Nocleg")}</b>${seg.city ? `<small>${esc(seg.city)}</small>` : ""}</span></div>`
       : `<div class="zn-ev"><span class="zn-ev-t">${App.time(seg.depart)}</span><span class="zn-ev-ic">${ic(SEG_ICON[seg.type] || "navigate")}</span><span><b>${esc(seg.from)} → ${esc(seg.to)}</b>${seg.arrive ? `<small>przyjazd ${App.time(seg.arrive)}${seg.number ? ` · ${esc(seg.number)}` : ""}</small>` : ""}</span></div>`;
-    const itemRow = it => `<div class="zn-ev"><span class="zn-ev-t">${esc(it.time || "–")}</span><span class="zn-ev-ic" aria-hidden="true">${(CATS[it.cat] || { icon: "📌" }).icon}</span>
-      <span><b>${esc(it.title)}</b>${it.place ? `<small>${esc(it.place)}</small>` : ""}</span></div>`;
+    const idx = new Map((s.items || []).map((it, i) => [it, i]));
+    const itemRow = it => `<div class="zn-ev zn-ev-it"><span class="zn-ev-t">${esc(it.time || "–")}</span><span class="zn-ev-ic" aria-hidden="true">${(CATS[it.cat] || { icon: "📌" }).icon}</span>
+      <span><b>${esc(it.title)}</b>${it.place ? `<small>${esc(it.place)}</small>` : ""}</span>
+      <button type="button" class="icon-btn zn-take" data-take="${idx.get(it)}" aria-label="Weź pomysł: ${esc(it.title)}">${ic("plus", "")}</button></div>`;
     let body = "";
     for (const d of days) {
       const segs = (s.segs || []).filter(x => segAt(x, d)).map(x => ({ k: (x.depart || "").slice(11, 16) || "99", h: segRow(x) }));
@@ -344,7 +355,21 @@
       <button type="button" class="btn wide zn-copy" id="zn-copytrip">${ic("copy")} <span>Skopiuj do moich podróży</span></button>
       <p class="f-hint">Podgląd bez biletów, kodów rezerwacji, cen i notatek · zaktualizowano ${App.fmtDay(String(s.updated || "").slice(0, 10) || today())}</p>`;
   }
-  const copyBtn = (view, s) => {
+  const copyBtn = (view, s, from) => {
+    // „+” przy punkcie: do pomysłów w wybranej mojej podróży
+    view.querySelectorAll("[data-take]").forEach(b => b.onclick = async () => {
+      const it = s.items[+b.dataset.take];
+      const mine = await DB.all("trips");
+      const put = async tripId => {
+        await SO().takeIdea(tripId, it, from || s.owner);
+        const t = mine.find(x => x.id === tripId);
+        b.innerHTML = ic("check", ""); b.classList.add("done");
+        App.toast(`Dodano do pomysłów: ${t ? t.name : ""}`);
+      };
+      if (!mine.length) { App.toast("Najpierw dodaj swoją podróż – albo skopiuj całą"); return; }
+      if (mine.length === 1) return put(mine[0].id);
+      if (App.Plan && App.Plan.tripSheet) App.Plan.tripSheet(mine, null, put);
+    });
     view.querySelector("#zn-copytrip").onclick = async () => {
       if (!confirm(`Skopiować „${s.trip.name}” jako nową podróż u Ciebie? To będzie Twoja kopia – zmiany autora nie będą się w niej pojawiać.`)) return;
       const t = await SO().copyTrip(s);
@@ -370,10 +395,78 @@
     try { s = await SO().publicTrip({ uid, doc, key }); } catch (e) { err = e; }
     if (!s) return { title: "Podróż", html: err ? `<p class="gd-err">${offlineMsg(err)}</p>` : App.empty("🔒", "Niedostępna", "Autor przestał udostępniać tę podróż albo link jest niepełny.") };
     const st = await SO().state(), isFriend = st.friends[uid] && st.friends[uid].state === "ok";
+    const me = await SO().profile().catch(() => ""), mine = uid === me;
     return {
-      title: "Podróż", html: tripView(s, { ownerHref: isFriend ? `#/znajomy/${uid}` : "" }) +
-        (isFriend ? "" : `<a class="btn wide zn-addowner" href="#/znajomi/dodaj/${uid}">${ic("users")} <span>Dodaj autora do znajomych</span></a>`),
+      title: "Podróż", html: tripView(s, { ownerHref: isFriend ? `#/znajomy/${uid}` : mine ? "" : `#/osoba/${uid}` }) +
+        (isFriend || mine ? "" : `<a class="btn wide zn-addowner" href="#/osoba/${uid}">${ic("users")} <span>Profil autora – obserwuj albo dodaj do znajomych</span></a>`),
       after: view => copyBtn(view, s),
+    };
+  });
+
+  /* ================= profil dowolnej osoby (podróże publiczne, obserwowanie) ================= */
+  App.route(/^\/osoba\/([A-Za-z0-9]{20,40})$/, async ([uid]) => {
+    if (!SO() || !SO().available()) return notReady();
+    const st = await SO().state();
+    if (st.friends[uid] && st.friends[uid].state === "ok") { location.replace(`#/znajomy/${uid}`); return ""; }
+    let ix = null, p = null, err = null;
+    try { await SO().enable(); [ix, p] = await Promise.all([SO().publicTrips(uid), SO().person(uid)]); } catch (e) { err = e; }
+    const name = (p && p.name) || (ix && ix.name) || "Podróżnik", fol = await SO().isFollowing(uid);
+    const trips = (ix && ix.trips) || [];
+    return {
+      title: name, back: "#/obserwowani",
+      html: err ? `<p class="gd-err">${offlineMsg(err)}</p>` : `
+        <div class="gd-intro zn-prof">${av(uid, name, "xl")}<h2>${esc(name)}</h2>
+          <p class="muted small">${trips.length} ${plural(trips.length, "podróż publiczna", "podróże publiczne", "podróży publicznych")}</p></div>
+        <div class="zn-acts">
+          <button type="button" class="btn ${fol ? "" : "primary"}" id="zn-follow">${ic(fol ? "check" : "star")} <span>${fol ? "Obserwujesz" : "Obserwuj"}</span></button>
+          ${st.friends[uid] ? "" : `<a class="btn" href="#/znajomi/dodaj/${uid}">${ic("users")} <span>Dodaj do znajomych</span></a>`}
+        </div>
+        <h2 class="section">Podróże</h2>
+        ${trips.length ? trips.map(t => feedCard({ ...t, uid, owner: name })).join("") : `<p class="muted small">Brak podróży publicznych.</p>`}
+        <p class="f-hint">Obserwując widzisz tylko podróże publiczne. Znajomi widzą też te „dla znajomych” i mogą pisać na czacie.</p>`,
+      after(view) {
+        const b = view.querySelector("#zn-follow");
+        if (b) b.onclick = async () => { b.disabled = true; try { if (fol) await SO().unfollow(uid); else await SO().follow(uid); App.toast(fol ? "Nie obserwujesz" : `Obserwujesz: ${name}`); } catch (e) { App.toast(offlineMsg(e)); } App.render(); };
+      },
+    };
+  });
+
+  /* ================= obserwowani: nowe podróże ================= */
+  App.route(/^\/obserwowani$/, async () => {
+    if (!SO() || !SO().available()) return notReady();
+    let feed = [], err = null, nFol = 0;
+    try { await SO().enable(); feed = await SO().followingFeed(); nFol = await SO().followersCount().catch(() => 0); } catch (e) { err = e; }
+    const st = await SO().state(), fol = Object.entries(st.following || {});
+    return {
+      title: "Znajomi",
+      html: `${tabs("o")}
+        ${err ? `<p class="gd-err">${offlineMsg(err)}</p>` : ""}
+        ${fol.length ? `<div class="st-chips zn-folchips">${fol.map(([id, f]) => `<a class="st-chip" href="#/osoba/${id}">${av(id, f.name, "xs")} ${esc(f.name || "Podróżnik")}</a>`).join("")}</div>` : ""}
+        <h2 class="section">Podróże obserwowanych</h2>
+        ${feed.length ? feed.map(feedCard).join("") : `<p class="muted small zn-none">${fol.length ? "Obserwowane osoby nie mają jeszcze podróży publicznych." : "Nikogo jeszcze nie obserwujesz. Zajrzyj do „Odkrywaj” albo otwórz czyjś link do podróży i wybierz „Obserwuj”."}</p>`}
+        <p class="f-hint">Otwórz podróż i dotknij „+” przy punkcie, żeby wziąć pomysł do swojej podróży.${nFol ? ` · Ciebie obserwuje: ${nFol}` : ""}</p>`,
+    };
+  });
+
+  /* ================= odkrywaj: podróże innych (za ich zgodą) ================= */
+  App.route(/^\/odkrywaj-ludzi$/, async () => {
+    if (!SO() || !SO().available()) return notReady();
+    let list = [], err = null;
+    try { await SO().enable(); list = await SO().explore(); } catch (e) { err = e; }
+    const st = await SO().state();
+    const nPub = Object.values(st.trips).filter(r => r.vis === "public").length;
+    return {
+      title: "Znajomi",
+      html: `${tabs("d")}
+        ${err ? `<p class="gd-err">${offlineMsg(err)}</p>` : ""}
+        <section class="card zn-acc"><label class="zn-sw"><input type="checkbox" id="zn-explore"${st.explore ? " checked" : ""}>
+          <span><b>Pokazuj moje publiczne podróże w Odkrywaj</b><small>${nPub ? `${nPub} ${plural(nPub, "podróż publiczna", "podróże publiczne", "podróży publicznych")} – zobaczą je wszyscy użytkownicy Podróżnika` : "nie masz jeszcze podróży publicznych – ustaw je w „Kto widzi podróż”"}</small></span></label></section>
+        <h2 class="section">Inspiracje od innych</h2>
+        ${list.length ? list.map(feedCard).join("") : `<p class="muted small zn-none">Nikt jeszcze nie pokazuje podróży w Odkrywaj. Bądź pierwszy!</p>`}`,
+      after(view) {
+        const x = view.querySelector("#zn-explore");
+        x.onchange = async () => { try { await SO().setExplore(x.checked); App.toast(x.checked ? "Twoje publiczne podróże są w Odkrywaj" : "Ukryto w Odkrywaj"); } catch (e) { x.checked = !x.checked; App.toast(offlineMsg(e)); } App.render(); };
+      },
     };
   });
 

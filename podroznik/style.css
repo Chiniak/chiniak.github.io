@@ -2097,3 +2097,11 @@ a.tp-trip { text-decoration: none; }
 .zn-fb, .zn-fbf, .zn-g2 { margin-top: 10px; }
 .zn-fb .ic { color: #1877F2; }
 #zn-fblist .list { margin-top: 10px; }
+.zn-tabs { margin-bottom: 14px; }
+.zn-tabs a .ic { width: 16px; height: 16px; }
+.zn-feed .zn-feed-who { color: var(--accent); font-weight: 600; }
+.zn-ev-it { grid-template-columns: 46px 28px 1fr 40px; }
+.zn-take { width: 36px; height: 36px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); align-self: center; }
+.zn-take.done { background: var(--accent-fill); color: var(--accent-ink); }
+.zn-av.xs { width: 22px; height: 22px; font-size: 10px; display: inline-grid; vertical-align: middle; margin-right: 4px; }
+.zn-folchips { margin-bottom: 4px; }
