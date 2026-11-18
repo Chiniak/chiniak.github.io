@@ -340,12 +340,16 @@
       const its = (s.items || []).filter(i => i.date === d).sort((a, b) => (a.order ?? 0) - (b.order ?? 0)).map(i => ({ k: i.time || "", h: itemRow(i) }));
       const all = its.filter(x => x.k).concat(segs).sort((a, b) => a.k.localeCompare(b.k)).concat(its.filter(x => !x.k));
       if (!all.length) continue;
-      body += `<section class="zn-day"><h3>${App.fmtDayLong(d)}</h3>${all.map(x => x.h).join("")}</section>`;
+      const nIt = its.length;
+      body += `<section class="zn-day"><div class="zn-day-h"><h3>${App.fmtDayLong(d)}</h3>
+        ${nIt ? `<button type="button" class="btn small zn-copyday" data-copyday="${d}" aria-label="Skopiuj ten dzień: ${App.fmtDay(d)}">${ic("copy")} <span>Skopiuj dzień</span></button>` : ""}</div>
+        ${all.map(x => x.h).join("")}</section>`;
     }
     const ideas = (s.items || []).filter(i => !i.date);
     if (ideas.length) body += `<section class="zn-day"><h3>💡 Pomysły</h3>${ideas.map(itemRow).join("")}</section>`;
     if (!body) body = `<p class="muted">Plan jest jeszcze pusty.</p>`;
     return `
+      <div class="zn-copybar"><button type="button" class="btn primary wide" id="zn-copytop">${ic("copy")} <span>Skopiuj całą wycieczkę</span></button></div>
       <header class="pl-head zn-thead" style="--c:${esc(t.color || "#0f6e6e")}">
         <p class="zn-owner">${ownerHref ? `<a href="${ownerHref}">${esc(owner || s.owner || "")}</a>` : esc(owner || s.owner || "")}</p>
         <h2>${esc(t.name)}</h2>
@@ -370,13 +374,85 @@
       if (mine.length === 1) return put(mine[0].id);
       if (App.Plan && App.Plan.tripSheet) App.Plan.tripSheet(mine, null, put);
     });
-    view.querySelector("#zn-copytrip").onclick = async () => {
-      if (!confirm(`Skopiować „${s.trip.name}” jako nową podróż u Ciebie? To będzie Twoja kopia – zmiany autora nie będą się w niej pojawiać.`)) return;
-      const t = await SO().copyTrip(s);
-      App.toast("Skopiowano – to teraz Twoja podróż");
-      location.hash = `#/podroze/${t.id}`;
+    // „Skopiuj dzień”: punkty tego dnia (z godzinami) → wybrana moja podróż i dzień
+    view.querySelectorAll("[data-copyday]").forEach(b => b.onclick = async () => {
+      const day = b.dataset.copyday;
+      const items = (s.items || []).filter(i => i.date === day).sort((x, y) => (x.order ?? 0) - (y.order ?? 0));
+      const mine = await DB.all("trips");
+      if (!mine.length) { App.toast("Najpierw dodaj swoją podróż – albo skopiuj całą wycieczkę"); return; }
+      const nth = App.dayDiff(s.trip.start, day); // ten sam numer dnia w mojej podróży
+      const go = tripId => {
+        const t = mine.find(x => x.id === tripId);
+        daySheet(t, nth, async target => {
+          const have = (await DB.byIndex("planItems", "tripId", tripId)).filter(i => i.date === target);
+          let order = have.reduce((m, i) => Math.max(m, i.order ?? 0), -1) + 1;
+          for (const it of items) await SO().takeIdea(tripId, it, from || s.owner).then(rec => DB.put("planItems", { ...rec, date: target, time: it.time || "", order: order++ }));
+          b.innerHTML = `${ic("check")} <span>Skopiowano</span>`; b.classList.add("done");
+          App.toast(`Skopiowano ${items.length} ${plural(items.length, "punkt", "punkty", "punktów")} → ${t.name}, ${App.fmtDay(target)}`);
+        });
+      };
+      if (mine.length === 1) go(mine[0].id); else App.Plan.tripSheet(mine, null, go);
+    });
+    view.querySelector("#zn-copytop").onclick = () => view.querySelector("#zn-copytrip").click();
+    // „Skopiuj całą wycieczkę”: nowa podróż u mnie, z wyborem daty wyjazdu (plan przesuwa się razem z nią)
+    view.querySelector("#zn-copytrip").onclick = () => {
+      const old = document.querySelector(".tp-sheet"); if (old) old.remove();
+      const len = App.dayDiff(s.trip.start, s.trip.end) + 1, past = s.trip.start < today();
+      const dlg = document.createElement("dialog");
+      dlg.className = "tp-sheet";
+      dlg.setAttribute("aria-label", "Skopiuj wycieczkę");
+      dlg.innerHTML = `<form class="tp-in zn-copyform" method="dialog">
+          <div class="tp-top"><h2>Skopiuj wycieczkę</h2><button type="button" class="icon-btn" data-close aria-label="Zamknij">${App.icon("close")}</button></div>
+          <p class="muted small">„${esc(s.trip.name)}” – ${len} ${plural(len, "dzień", "dni", "dni")}, ${(s.items || []).length} ${plural((s.items || []).length, "punkt", "punkty", "punktów")} planu. To będzie Twoja kopia – zmiany autora nie będą się w niej pojawiać.</p>
+          <label class="field"><span>Kiedy jedziesz?</span><input type="date" name="start" value="${past ? App.addDays(today(), 30) : esc(s.trip.start)}" required></label>
+          <p class="f-hint" id="zn-copyend"></p>
+          <button class="btn primary wide" type="submit">${App.icon("copy", "sm")} <span>Skopiuj</span></button>
+        </form>`;
+      document.body.appendChild(dlg);
+      const f = dlg.querySelector("form"), endP = dlg.querySelector("#zn-copyend");
+      const showEnd = () => { endP.textContent = f.start.value ? `Powrót: ${App.fmtDayLong(App.addDays(f.start.value, len - 1))}` : ""; };
+      f.start.oninput = showEnd; showEnd();
+      const close = () => { dlg.close(); dlg.remove(); };
+      dlg.addEventListener("click", e => { if (e.target === dlg || e.target.closest("[data-close]")) close(); });
+      dlg.addEventListener("cancel", e => { e.preventDefault(); close(); });
+      f.onsubmit = async e => {
+        e.preventDefault();
+        if (!f.start.value) return;
+        f.querySelector("button[type=submit]").disabled = true;
+        const t = await SO().copyTrip(s, f.start.value);
+        close();
+        App.toast("Skopiowano – to teraz Twoja podróż");
+        location.hash = `#/podroze/${t.id}`;
+      };
+      dlg.showModal();
     };
   };
+
+  // wybór dnia w mojej podróży (arkusz jak przy wyborze podróży)
+  function daySheet(t, nth, onPick) {
+    const old = document.querySelector(".tp-sheet"); if (old) old.remove();
+    const days = [];
+    for (let d = t.start; d <= t.end && days.length < 120; d = App.addDays(d, 1)) days.push(d);
+    const sug = days[Math.min(Math.max(nth, 0), days.length - 1)];
+    const dlg = document.createElement("dialog");
+    dlg.className = "tp-sheet";
+    dlg.setAttribute("aria-label", "Wybierz dzień");
+    dlg.innerHTML = `<div class="tp-in">
+        <div class="tp-top"><h2>Do którego dnia?</h2><button type="button" class="icon-btn" data-close aria-label="Zamknij">${App.icon("close")}</button></div>
+        <p class="muted small" style="margin:0 0 6px">${esc(t.name)}</p>
+        <div class="tp-list">${days.map((d, i) => `<button type="button" class="tp-trip${d === sug ? " on" : ""}" data-day="${d}" style="--c:${esc(t.color || "#0f6e6e")}">
+          <span class="tp-bar" aria-hidden="true"></span><span class="tp-main"><b>Dzień ${i + 1}</b><small>${App.fmtDayLong(d)}</small></span>${d === sug ? `<span class="tp-st tp-soon">ten sam dzień</span>` : ""}</button>`).join("")}</div></div>`;
+    document.body.appendChild(dlg);
+    const close = () => { dlg.close(); dlg.remove(); };
+    dlg.addEventListener("click", e => {
+      if (e.target === dlg || e.target.closest("[data-close]")) return close();
+      const b = e.target.closest("[data-day]");
+      if (b) { close(); onPick(b.dataset.day); }
+    });
+    dlg.addEventListener("cancel", e => { e.preventDefault(); close(); });
+    dlg.showModal();
+    const cur = dlg.querySelector(".tp-trip.on"); if (cur) cur.scrollIntoView({ block: "center" });
+  }
 
   App.route(/^\/znajomy\/([A-Za-z0-9]{20,40})\/p\/([\w-]{12})$/, async ([id, doc]) => {
     if (!SO() || !SO().available()) return notReady();

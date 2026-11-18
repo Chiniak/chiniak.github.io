@@ -2105,3 +2105,9 @@ a.tp-trip { text-decoration: none; }
 .zn-take.done { background: var(--accent-fill); color: var(--accent-ink); }
 .zn-av.xs { width: 22px; height: 22px; font-size: 10px; display: inline-grid; vertical-align: middle; margin-right: 4px; }
 .zn-folchips { margin-bottom: 4px; }
+.zn-copybar { margin: 0 0 14px; }
+.zn-day-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+.zn-day-h h3 { margin: 0; }
+.zn-copyday { flex: none; min-height: 34px; }
+.zn-copyday.done { color: var(--accent); background: var(--accent-soft); border-color: transparent; }
+.zn-copyform .field { margin: 10px 0 4px; } .zn-copyform .btn { margin-top: 10px; }

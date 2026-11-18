@@ -426,10 +426,13 @@
     return { doc, ...(await unseal(await rawKey(key), d.data().c)) };
   }
   // kopia cudzej podróży u mnie (bez powiązania – zwykła nowa podróż)
-  async function copyTrip(snap) {
-    const t = await DB.put("trips", { name: snap.trip.name, destination: snap.trip.destination, start: snap.trip.start, end: snap.trip.end, color: snap.trip.color || "#0f6e6e", note: snap.owner ? `Plan od: ${snap.owner}` : "" });
-    for (const s of snap.segs || []) await DB.put("segments", { ...s, tripId: t.id });
-    for (const i of snap.items || []) await DB.put("planItems", { ...i, tripId: t.id, note: "", cost: "", currency: "PLN" });
+  // start – nowa data początku (cała wycieczka przesunięta o tyle samo dni); bez – te same daty co u autora
+  async function copyTrip(snap, start) {
+    const shift = start && start !== snap.trip.start ? App.dayDiff(snap.trip.start, start) : 0;
+    const sd = d => (d && shift ? App.addDays(d.slice(0, 10), shift) + d.slice(10) : d);
+    const t = await DB.put("trips", { name: snap.trip.name, destination: snap.trip.destination, start: sd(snap.trip.start), end: sd(snap.trip.end), color: snap.trip.color || "#0f6e6e", note: snap.owner ? `Plan od: ${snap.owner}` : "" });
+    for (const s of snap.segs || []) await DB.put("segments", { ...s, tripId: t.id, depart: sd(s.depart), arrive: sd(s.arrive) });
+    for (const i of snap.items || []) await DB.put("planItems", { ...i, tripId: t.id, date: i.date ? sd(i.date) : "", note: "", cost: "", currency: "PLN" });
     return t;
   }
 
