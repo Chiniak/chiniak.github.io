@@ -840,4 +840,5 @@ self.I18N_EN = {
   "Zdjęcie celu dobierze się samo, gdy będzie internet.": "A destination photo will be picked automatically when you are online.",
   "Szukam zdjęcia: {}…": "Looking for a photo: {}…", "Nie znaleziono zdjęcia celu – możesz wybrać własne.": "No destination photo found – you can choose your own.",
   "Nie udało się pobrać zdjęcia celu – możesz wybrać własne.": "Could not download a destination photo – you can choose your own.",
+  "Wybierz podróż": "Choose a trip", "Teraz": "Now", "Minione": "Past", "minęła": "past", "Zmień podróż (teraz: {})": "Change trip (now: {})",
 };

@@ -246,6 +246,31 @@
   const dayOf = it => it.kind === "seg" ? it.depart.slice(0, 10) : it.date;
   const endOf = it => it.kind === "seg" ? (it.arrive || it.depart).slice(0, 10) : it.date;
 
+  /* nazwa nowej podróży: miejsce, w którym spędza się najwięcej czasu (nie stacja przesiadkowa w drodze na lotnisko).
+     Liczone są loty (jeśli są), inaczej wszystkie przejazdy: czas od przyjazdu do następnego wyjazdu; ostatni przejazd kończy się w domu (pomijany),
+     chyba że jest jedyny. Bez przejazdów – nocleg (miasto/nazwa), potem pierwszy punkt. */
+  const cleanPlace = s => String(s || "").replace(/\s*\(?\b[A-Z]{3}\b\)?\s*$/, "").replace(/\s+(International|Airport|Intl\.?)$/i, "").trim();
+  function tripName(items) {
+    const all = items.filter(x => x.kind === "seg" && x.type !== "nocleg" && x.to && x.depart).sort((a, b) => a.depart.localeCompare(b.depart));
+    const home = all.length ? cleanPlace(all[0].from) : "";
+    // loty są ważniejsze niż dojazdy (pociąg na lotnisko, wycieczka na miejscu): jeśli są, liczymy tylko je
+    const flights = all.filter(x => x.type === "lot");
+    const legs = flights.length ? flights : all;
+    let best = null, bestGap = -1;
+    legs.forEach((l, i) => {
+      const next = legs[i + 1];
+      if (!next && legs.length > 1) return; // powrót do domu
+      const to = cleanPlace(l.to);
+      if (!to || (home && to === home)) return;
+      const gap = next ? new Date(next.depart) - new Date(l.arrive || l.depart) : 1e12;
+      if (gap > bestGap) { bestGap = gap; best = to; }
+    });
+    if (best) return best;
+    const stay = items.find(x => x.kind === "seg" && x.type === "nocleg");
+    if (stay) return stay.city || stay.name || "Nowa podróż";
+    return (items[0] && items[0].title) || "Nowa podróż";
+  }
+
   async function proposals({ past = false } = {}) {
     const [seen, trips] = await Promise.all([DB.getSetting("gmailSeen", {}), DB.all("trips")]);
     const T = App.todayStr(), from = App.addDays(T, -1);
@@ -266,9 +291,7 @@
     }
     groups.forEach(g => {
       if (g.trip) return;
-      const dest = g.items.find(x => x.kind === "seg" && x.type !== "nocleg" && x.to && x.to !== (g.items[0].from || ""));
-      const stay = g.items.find(x => x.kind === "seg" && x.type === "nocleg");
-      g.name = dest ? dest.to.replace(/\s[A-Z]{3}$/, "") : stay ? (stay.name || "Nowa podróż") : (g.items[0].title || "Nowa podróż");
+      g.name = tripName(g.items);
     });
     const pastCount = past ? 0 : Object.values(seen).filter(m => m.s === "new").reduce((n, m) => n + m.items.filter(it => !it.done && endOf(it) < from).length, 0);
     return { groups, count: list.length, pastCount };
@@ -544,7 +567,7 @@
     };
   });
 
-  App.Gmail = { PACE, available, scan, proposals, newCount, homeCard, auto, connect, disconnect, extract, query, SCOPE };
+  App.Gmail = { tripName, PACE, available, scan, proposals, newCount, homeCard, auto, connect, disconnect, extract, query, SCOPE };
   // pierwsze sprawdzenie chwilę po starcie (nie spowalnia otwierania aplikacji)
   setTimeout(() => auto(), 4000);
 })();

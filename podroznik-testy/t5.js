@@ -57,7 +57,8 @@ const SP = process.argv[2];
   await p.click('#del'); await p.waitForTimeout(500);
   console.log('after delete:', JSON.stringify(await order()));
   // switch trip
-  await p.selectOption('#pl-trip', { label: /Lizbona/ }).catch(async()=>{ const v=await p.$eval('#pl-trip option:not([selected])', o=>o.value); await p.selectOption('#pl-trip', v); });
+  await p.click('#pl-trip'); await p.waitForSelector('.tp-sheet[open]');
+  await p.locator('.tp-trip:not(.on)', { hasText: 'Lizbona' }).first().click().catch(async () => { await p.locator('.tp-trip:not(.on)').first().click(); });
   await p.waitForTimeout(500); await shot('p-lisbon');
   console.log('lisbon info:', await p.textContent('.pl-info'));
   // trip page link + segment nav
