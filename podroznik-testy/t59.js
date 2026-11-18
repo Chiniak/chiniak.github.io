@@ -37,11 +37,19 @@ const get = url => new Promise(res => { const r = http.request(url, x => { x.res
   // zaproszenie → licznik
   await T.evaluate(id => App.Social.addFriend(id), uidA);
   ok(await until(A, () => document.querySelector('#social-top .zn-dot') !== null, null, 12000), 'Ania: licznik zaproszeń na pasku');
-  await A.evaluate(id => App.Social.accept(id), uidT);
+  await A.click('#notif-btn'); await A.waitForSelector('#notif-pop [data-np-ok]', { timeout: 8000 });
+  ok(/Tomek/.test(await A.textContent('#notif-pop')) && /Powiadomienia/.test(await A.textContent('#notif-pop')), 'dzwonek: panel z zaproszeniem od Tomka');
+  await A.click('#notif-pop [data-np-ok]'); await A.waitForTimeout(800);
+  ok(await A.evaluate(id => App.Social.state().then(s => s.friends[id] && s.friends[id].state === 'ok'), uidT), 'zaproszenie przyjęte z panelu powiadomień');
+  await A.keyboard.press('Escape'); ok(await A.$('#notif-pop') === null, 'Escape zamyka panel');
   ok(await until(T, id => App.Social.state().then(s => s.friends[id] && s.friends[id].state === 'ok'), uidA), 'znajomi');
   await T.evaluate(id => App.Social.startChat(id), uidA);
   await A.evaluate(id => App.Social.sendMessage(id, 'Cześć, zobacz mój plan Lizbony'), uidT);
   ok(await until(T, () => document.querySelector('#social-top a[href="#/wiadomosci"] .zn-dot') !== null, null, 12000), 'Tomek: licznik wiadomości na pasku');
+  await T.click('#notif-btn'); await T.waitForSelector('#notif-pop .np-row', { timeout: 8000 });
+  ok(/zobacz mój plan/.test(await T.textContent('#notif-pop')), 'dzwonek: nowa wiadomość w panelu');
+  await T.click('#notif-scrim', { position: { x: 5, y: 600 } });
+  ok(await T.$('#notif-pop') === null, 'kliknięcie obok zamyka panel');
   await T.click('#social-top a[href="#/wiadomosci"]'); await T.waitForSelector('.zn-row', { timeout: 8000 });
   ok(/Ania/.test(await T.textContent('#view')) && /zobacz mój plan/.test(await T.textContent('#view')), 'skrzynka: rozmowa z Anią i podgląd wiadomości');
   // profil znajomego: podróże + pomysły
@@ -60,6 +68,7 @@ const get = url => new Promise(res => { const r = http.request(url, x => { x.res
   await T.goto(B + '#/wiadomosci'); await T.reload(); await T.waitForSelector('#view .li', { timeout: 10000 }); await T.waitForTimeout(500);
   ok(/Messages/.test(await T.textContent('#title')), 'EN: Messages');
   await T.screenshot({ path: 'podroznik-testy/t59-wiadomosci.png' });
+  await T.click('#notif-btn'); await T.waitForTimeout(400); await T.screenshot({ path: 'podroznik-testy/t59-powiadomienia.png' });
   for (const p of [A, T]) ok(!p.errs.length, 'bez błędów JS ' + p.errs.join(' | '));
   await b.close();
   console.log(bad ? `FAILED ${bad}` : 'ALL OK'); process.exit(bad ? 1 : 0);

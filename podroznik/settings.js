@@ -70,10 +70,10 @@
 
     const acc = App.Social && App.Social.available() ? await App.Social.account().catch(() => null) : null;
     const app = group("Aplikacja",
-      link("#/konto", "lock", "Twoje konto", acc ? `<span translate="no">${esc(acc.email || acc.name)}</span>` : "załóż przez Google lub Facebooka",
+      link("#/konto", "users", "Twoje konto", acc ? `<span translate="no">${esc(acc.email || acc.name)}</span>` : "załóż przez Google lub Facebooka",
         acc ? chip([acc.google && "Google", acc.facebook && "Facebook"].filter(Boolean).join(" + "), "ok") : "") +
       (App.Social && App.Social.available() ? link("#/znajomi", "users", "Znajomi", "czat i podgląd planów") : "") +
-      (App.Gmail && App.Gmail.available() ? link("#/gmail?wroc=%23%2Fustawienia", "mail", "Konto Google (Gmail)",
+      (App.Gmail && App.Gmail.available() ? link("#/gmail?wroc=%23%2Fustawienia", "google", "Konto Google (Gmail)",
         gmailCfg ? `<span translate="no">${esc(gmailCfg.email)}</span>` : "propozycje z maili", gmailCfg ? chip("połączone", "ok") : "") : "") +
       (inApk ? "" : `<a class="li" href="Podroznik.apk" download><span class="li-ico" aria-hidden="true">${icon("download")}</span>
         <span class="li-main"><b>Aplikacja na Androida</b><small>pobierz APK</small></span>${icon("chev")}</a>`) +
