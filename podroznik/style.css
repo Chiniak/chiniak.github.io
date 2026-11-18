@@ -2161,3 +2161,7 @@ a.tp-trip { text-decoration: none; }
 .zn-card small { opacity: .75; }
 .rz-att { flex: none; }
 .zn-pickidea { width: 100%; text-align: left; background: none; border: 0; }
+
+/* rodzaj dokumentu pod tytułem karty, gdy ma własną nazwę (docs.js) */
+.doc-kind { color: var(--muted); font-size: var(--fs-sm, .9rem); margin: 2px 0 6px; }
+.field[hidden] { display: none; }

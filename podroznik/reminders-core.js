@@ -131,7 +131,7 @@
       wiza: "Wiza", karta: "Karta płatnicza", szczepienie: "Szczepienie", inne: "Dokument" };
     for (const d of data.docs || []) {
       if (!d.expires || !(+d.remind > 0)) continue;
-      const name = `${DOCS[d.type] || "Dokument"}${d.person ? ` (${d.person})` : ""}`;
+      const name = `${d.name || DOCS[d.type] || "Dokument"}${d.person ? ` (${d.person})` : ""}`;
       // ile dni naprawdę zostało (przypomnienie pokazane później nie może kłamać)
       const left = Math.max(0, Math.round((parse(d.expires) - parse(now.slice(0, 10))) / 86400000));
       const leftTxt = left === 0 ? "dziś" : left === 1 ? "jutro" : `za ${left} dni`;

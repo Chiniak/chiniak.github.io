@@ -10,35 +10,50 @@
 (function () {
   const { esc, plural } = App;
 
+  /* Każdy rodzaj dokumentu ma własne etykiety i podpowiedzi (formularz zmienia się po wyborze rodzaju).
+     g – rodzaj gramatyczny do „ważny / ważna / ważne”; num [etykieta, podpowiedź]; country (null = pole ukryte); issued / expires – etykiety dat;
+     nm [etykieta, podpowiedź] – dodatkowe pole „Nazwa” (null = brak); note – podpowiedź do notatki; trip – ostrzegaj, gdy wygasa przed końcem podróży. */
   const TYPES = {
-    paszport: { icon: "🛂", ic: "passport", name: "Paszport" },
-    dowod: { icon: "🪪", ic: "idcard", name: "Dowód osobisty" },
-    prawo_jazdy: { icon: "🚗", ic: "car", name: "Prawo jazdy" },
-    ubezpieczenie: { icon: "🩺", ic: "shield", name: "Ubezpieczenie / EKUZ" },
-    wiza: { icon: "📄", ic: "doc", name: "Wiza / ESTA / eTA" },
-    karta: { icon: "💳", ic: "card", name: "Karta płatnicza" },
-    szczepienie: { icon: "💉", ic: "syringe", name: "Szczepienie" },
-    inne: { icon: "📁", ic: "doc", name: "Inny dokument" },
+    paszport: { icon: "🛂", ic: "passport", name: "Paszport", g: "m", num: ["Numer paszportu", "np. EA1234567"], country: "Kraj wydania", issued: "Data wydania", expires: "Ważny do", nm: null, note: "np. do kogo dzwonić w razie utraty", trip: true },
+    dowod: { icon: "🪪", ic: "idcard", name: "Dowód osobisty", g: "m", num: ["Numer dowodu", "np. ABC123456"], country: "Kraj wydania", issued: "Data wydania", expires: "Ważny do", nm: null, note: "np. do kogo dzwonić w razie utraty", trip: true },
+    prawo_jazdy: { icon: "🚗", ic: "car", name: "Prawo jazdy", g: "n", num: ["Numer prawa jazdy", "np. 01234/56/7890"], country: "Kraj wydania", issued: "Data wydania", expires: "Ważny do", nm: null, note: "np. kategorie B i C, międzynarodowe prawo jazdy", trip: true },
+    ubezpieczenie: { icon: "🩺", ic: "shield", name: "Ubezpieczenie / EKUZ", g: "n", num: ["Numer polisy", "np. ABC-12345678"], country: "Kraj", issued: "Początek ochrony", expires: "Koniec ochrony", nm: ["Ubezpieczyciel", "np. Allianz, PZU"], note: "np. numer polisy, telefon alarmowy ubezpieczyciela", trip: true },
+    wiza: { icon: "🌍", ic: "globe", name: "Wiza / ESTA / eTA", g: "f", num: ["Numer wizy / wniosku", "np. numer wniosku ESTA"], country: "Kraj, którego dotyczy", issued: "Ważna od", expires: "Ważna do", nm: ["Rodzaj wizy", "np. turystyczna, ESTA"], note: "np. liczba wjazdów, maksymalny pobyt", trip: true },
+    karta: { icon: "💳", ic: "card", name: "Karta płatnicza", g: "f", num: ["Ostatnie 4 cyfry karty", "np. 1234"], country: null, issued: null, expires: "Ważna do", nm: null, note: "np. do kogo dzwonić w razie utraty", trip: true, hint: "Nie wpisuj pełnego numeru karty – tylko ostatnie 4 cyfry." },
+    szczepienie: { icon: "💉", ic: "syringe", name: "Szczepienie", g: "n", num: ["Nr certyfikatu / serii", "np. numer certyfikatu"], country: "Kraj szczepienia", issued: "Data szczepienia", expires: "Następna dawka / ważne do", nm: ["Nazwa szczepienia", "np. żółta febra, WZW A"], note: "np. numer partii szczepionki, dawka 2 z 3", trip: false },
+    inne: { icon: "📁", ic: "doc", name: "Inny dokument", g: "m", num: ["Numer", "np. numer dokumentu"], country: "Kraj", issued: "Data wydania", expires: "Ważny do", nm: ["Nazwa dokumentu", "np. zaświadczenie lekarskie"], note: "np. numer polisy, telefon alarmowy ubezpieczyciela", trip: true },
   };
   const typeOf = d => TYPES[d.type] || TYPES.inne;
-  const ST = { expired: ["err", "nieważny"], soon: ["warn", "wkrótce wygasa"], ok: ["ok", "ważny"], none: ["", "bez daty"] };
-  const stChip = v => `<span class="chip ${ST[v.st][0]} doc-st">${ST[v.st][1]}</span>`;
+  // „ważny / ważna / ważne” – zależnie od rodzaju dokumentu
+  const GEN = {
+    m: { exp: "wygasł", today: "ważny tylko dziś", left: "ważny jeszcze", bad: "nieważny", ok: "ważny" },
+    f: { exp: "wygasła", today: "ważna tylko dziś", left: "ważna jeszcze", bad: "nieważna", ok: "ważna" },
+    n: { exp: "wygasło", today: "ważne tylko dziś", left: "ważne jeszcze", bad: "nieważne", ok: "ważne" },
+  };
+  const stChip = v => {
+    const g = GEN[v.g] || GEN.m;
+    const T = { expired: ["err", g.bad], soon: ["warn", "wkrótce wygasa"], ok: ["ok", g.ok], none: ["", "bez daty"] }[v.st];
+    return `<span class="chip ${T[0]} doc-st">${T[1]}</span>`;
+  };
   const warnHtml = w => w.map(x => `<div class="doc-warn ${x.lvl}">${App.icon("alert", "sm")}<span>${esc(x.txt)}</span></div>`).join("");
-  const title = d => `${typeOf(d).name}${d.person ? ` – ${d.person}` : ""}`;
+  const title = d => `${d.name || typeOf(d).name}${d.person ? ` – ${d.person}` : ""}`;
+  // numer karty pokazujemy zamaskowany (zapisane są tylko ostatnie cyfry)
+  const numShow = d => d.type === "karta" && d.number ? `•••• ${d.number}` : d.number || "";
 
   // stan ważności: expired | soon (≤ 90 dni) | ok | none (bez daty)
   function validity(d, today = App.todayStr()) {
-    if (!d.expires) return { st: "none", txt: "bez daty ważności" };
+    const g = typeOf(d).g, G = GEN[g] || GEN.m;
+    if (!d.expires) return { st: "none", txt: "bez daty ważności", g };
     const days = App.dayDiff(today, d.expires);
-    if (days < 0) return { st: "expired", txt: `wygasł ${App.fmtRange(d.expires)}`, days };
-    if (days === 0) return { st: "expired", txt: "ważny tylko dziś", days };
+    if (days < 0) return { st: "expired", txt: `${G.exp} ${App.fmtRange(d.expires)}`, days, g };
+    if (days === 0) return { st: "expired", txt: G.today, days, g };
     const when = days < 60 ? `${days} ${plural(days, "dzień", "dni", "dni")}` : days < 730 ? `${Math.round(days / 30.4)} mies.` : `${Math.round(days / 365)} lat`;
-    return { st: days <= 90 ? "soon" : "ok", txt: `ważny jeszcze ${when} (do ${App.fmtRange(d.expires)})`, days };
+    return { st: days <= 90 ? "soon" : "ok", txt: `${G.left} ${when} (do ${App.fmtRange(d.expires)})`, days, g };
   }
 
   // paszport: wiele krajów wymaga ważności min. 3–6 mies. po powrocie
   function tripWarnings(d, trips, today = App.todayStr()) {
-    if (!d.expires) return [];
+    if (!d.expires || !typeOf(d).trip) return [];
     const out = [];
     for (const t of trips) {
       if (t.end < today) continue;
@@ -76,7 +91,7 @@
           <div class="doc-ico" aria-hidden="true">${App.icon(typeOf(d).ic)}</div>
           <div class="doc-main">
             <div class="doc-top"><span class="doc-title">${esc(title(d))}</span>${d.blob ? `<span class="doc-clip" title="Ma zdjęcie / skan" aria-label="ma skan">${App.icon("clip", "sm")}</span>` : ""}</div>
-            ${d.number ? `<div class="doc-num">${esc(d.number)}</div>` : ""}
+            ${d.number ? `<div class="doc-num">${esc(numShow(d))}</div>` : ""}
             <div class="doc-valid-row">${stChip(v)}<span class="doc-valid">${v.txt}</span></div>
             ${warnHtml(w)}
           </div>
@@ -99,16 +114,17 @@
         <div class="doc-head st-${v.st}">
           <div class="doc-head-top"><span class="doc-big-ico" aria-hidden="true">${App.icon(typeOf(d).ic)}</span>${stChip(v)}</div>
           <div class="doc-title">${esc(title(d))}</div>
-          ${d.number ? `<div class="doc-big-num" id="doc-num">${esc(d.number)}</div>` : ""}
+          ${d.name ? `<div class="doc-kind">${esc(typeOf(d).name)}</div>` : ""}
+          ${d.number ? `<div class="doc-big-num" id="doc-num">${esc(numShow(d))}</div>` : ""}
           <div class="doc-valid">${v.txt}</div>
           ${d.expires && v.days != null && v.days >= 0 ? `<div class="bar doc-bar" aria-hidden="true"><i style="width:${Math.max(4, Math.min(100, Math.round(v.days / 3650 * 100)))}%"></i></div>` : ""}
         </div>
         ${warnHtml(w)}
-        ${d.number ? `<button type="button" class="btn wide doc-copy" id="doc-copy">${App.icon("copy", "sm")} Kopiuj numer</button>` : ""}
+        ${d.number && d.type !== "karta" ? `<button type="button" class="btn wide doc-copy" id="doc-copy">${App.icon("copy", "sm")} Kopiuj numer</button>` : ""}
         <dl class="list doc-facts">
-          ${row("Kraj", d.country)}
-          ${row("Wydany", d.issued ? App.fmtRange(d.issued) : "")}
-          ${row("Ważny do", d.expires ? App.fmtRange(d.expires) : "")}
+          ${row(typeOf(d).country || "Kraj", d.country)}
+          ${row(typeOf(d).issued || "Data wydania", d.issued ? App.fmtRange(d.issued) : "")}
+          ${row(typeOf(d).expires, d.expires ? App.fmtRange(d.expires) : "")}
           ${row("Przypomnienie", d.expires && +d.remind ? `${d.remind} dni przed wygaśnięciem` : d.expires ? "wyłączone" : "")}
         </dl>
         ${d.note ? `<p class="td-note doc-note">${App.icon("info", "sm")}<span>${esc(d.note)}</span></p>` : ""}
@@ -147,16 +163,18 @@
         <form id="doc-form" class="form" novalidate>
           <div class="type-chips" role="radiogroup" aria-label="Rodzaj">${types}</div>
           <div class="fsec">
+            <label class="field" id="f-name"><span id="l-name">Nazwa</span><input name="name" maxlength="60" value="${esc(v.name || "")}"></label>
             <div class="grid2">
               <label class="field"><span>Czyj</span><input name="person" maxlength="40" placeholder="np. Jan, Ania" value="${esc(v.person)}"></label>
-              <label class="field"><span>Kraj</span><input name="country" maxlength="40" placeholder="np. Polska" value="${esc(v.country)}"></label>
+              <label class="field" id="f-country"><span id="l-country">Kraj</span><input name="country" maxlength="40" placeholder="np. Polska" value="${esc(v.country)}"></label>
             </div>
-            <label class="field"><span>Numer</span><input name="number" maxlength="40" autocapitalize="characters" placeholder="np. EA1234567" value="${esc(v.number)}"></label>
+            <label class="field"><span id="l-number">Numer</span><input name="number" maxlength="40" inputmode="text" value="${esc(v.number)}"></label>
+            <p class="f-hint" id="h-type" hidden></p>
           </div>
           <div class="fsec"><h2 class="section">Ważność</h2>
             <div class="grid2">
-              <label class="field"><span>Data wydania</span><input type="date" name="issued" value="${esc(v.issued)}"></label>
-              <label class="field"><span>Ważny do</span><input type="date" name="expires" value="${esc(v.expires)}"></label>
+              <label class="field" id="f-issued"><span id="l-issued">Data wydania</span><input type="date" name="issued" value="${esc(v.issued)}"></label>
+              <label class="field"><span id="l-expires">Ważny do</span><input type="date" name="expires" value="${esc(v.expires)}"></label>
             </div>
             <label class="field"><span>Przypomnij przed wygaśnięciem</span>
               <select name="remind">${REMIND.map(([k, n]) => `<option value="${k}" ${+v.remind === k ? "selected" : ""}>${n}</option>`).join("")}</select></label>
@@ -169,7 +187,7 @@
                 ${d && d.blob ? `<button type="button" class="btn" id="doc-rm">${App.icon("trash", "sm")} Usuń skan</button>` : ""}
               </div>
             </div>
-            <label class="field"><span>Notatka</span><textarea name="note" rows="2" placeholder="np. numer polisy, telefon alarmowy ubezpieczyciela">${esc(v.note)}</textarea></label>
+            <label class="field"><span>Notatka</span><textarea name="note" rows="2">${esc(v.note)}</textarea></label>
           </div>
           <p class="error" id="err" hidden></p>
           <div class="f-actions">
@@ -179,6 +197,21 @@
         </form>`,
       after(view) {
         const f = view.querySelector("#doc-form");
+        // po wyborze rodzaju zmieniają się etykiety, podpowiedzi i widoczne pola
+        const q = s => view.querySelector(s);
+        const applyType = k => {
+          const T = TYPES[k] || TYPES.inne;
+          q("#l-number").textContent = T.num[0]; f.number.placeholder = T.num[1];
+          q("#l-country").textContent = T.country || "Kraj"; q("#f-country").hidden = !T.country;
+          q("#l-issued").textContent = T.issued || "Data wydania"; q("#f-issued").hidden = !T.issued;
+          q("#l-expires").textContent = T.expires;
+          q("#f-name").hidden = !T.nm;
+          if (T.nm) { q("#l-name").textContent = T.nm[0]; f.elements.name.placeholder = T.nm[1]; }
+          f.note.placeholder = T.note;
+          const h = q("#h-type"); h.hidden = !T.hint; if (T.hint) h.textContent = T.hint;
+        };
+        f.querySelectorAll('input[name="type"]').forEach(r => r.addEventListener("change", () => applyType(r.value)));
+        applyType(v.type);
         view.querySelector("#doc-pick").addEventListener("change", e => {
           const file = e.target.files[0];
           if (!file) return;
@@ -196,6 +229,11 @@
           }
           data.remind = +data.remind;
           data.number = data.number.toUpperCase();
+          const T = TYPES[data.type] || TYPES.inne;
+          if (!T.nm) data.name = "";
+          if (!T.country) data.country = "";
+          if (!T.issued) data.issued = "";
+          if (data.type === "karta") data.number = data.number.replace(/\D/g, "").slice(-4);
           const rec = { ...(d || {}), ...data };
           if (newBlob !== undefined) { if (newBlob) rec.blob = newBlob; else delete rec.blob; }
           const saved = await DB.put("docs", rec);
