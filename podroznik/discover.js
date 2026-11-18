@@ -10,7 +10,7 @@
   const P = () => App.Places;
   const norm = s => String(s || "").trim().toLowerCase();
   const cache = new Map();
-  const EN_FIRST = () => (self.I18N && I18N.lang === "en"); // wyniki w pamięci – powrót na ekran nie pobiera ich od nowa
+  const NAME_LANG = () => (self.I18N ? I18N.lang : "pl"); // język nazw miejsc z OSM // wyniki w pamięci – powrót na ekran nie pobiera ich od nowa
 
   // Amap szuka po chińsku
   const AMAP_WORD = { "atrakcje turystyczne": "景点", muzea: "博物馆", parki: "公园", restauracje: "餐厅", kawiarnie: "咖啡", bary: "酒吧" };
@@ -78,7 +78,7 @@
     const score = (t.wikidata ? 3 : 0) + (t.wikipedia ? 3 : 0) + (/museum|attraction|castle/.test(type) ? 1 : 0) + (t.website ? 1 : 0)
       + (t.opening_hours ? 1 : 0) + (t.cuisine ? 1 : 0) + (t.image ? 1 : 0);
     return {
-      id: `${el.type}/${el.id}`, name: (EN_FIRST() ? t["name:en"] || t["name:pl"] : t["name:pl"] || t["name:en"]) || t.name,
+      id: `${el.type}/${el.id}`, name: (t["name:" + NAME_LANG()] || (NAME_LANG() === "pl" ? t["name:en"] : t["name:en"] || t["name:pl"])) || t.name,
       local: (t["name:pl"] || t["name:en"]) && t.name !== (t["name:pl"] || t["name:en"]) && t.name !== t["name:en"] ? t.name : "", lat, lon, type, kind: KIND[type] || type.replace(/_/g, " "),
       cuisine, hours: t.opening_hours || "", website: t.website || t["contact:website"] || "", wikipedia: t.wikipedia || "",
       address: addr, dist: c ? P().km(c, { lat, lon }) : 0, score,
@@ -143,7 +143,7 @@
   /* ---------- Wikipedia: artykuły o miejscach w pobliżu (zapas, gdy serwery map nie odpowiadają) ---------- */
   const NOT_SIGHT = /ulica|aleja|plac(?! zabaw)|stacja|przystanek|dzielnica|osiedle|gmina|parafia|freguesia|street|avenue|station|district|neighbourhood|szkoła|school|hotel|bank|firma|company|przedsiębiorstwo/i;
   async function wikiNearby(c) {
-    for (const lang of (self.I18N && I18N.lang === "en") ? ["en", "pl"] : ["pl", "en"]) {
+    for (const lang of self.I18N ? I18N.dataLangs() : ["pl", "en"]) {
       try {
         const r = await fetch(`https://${lang}.wikipedia.org/w/api.php?` + new URLSearchParams({
           action: "query", format: "json", origin: "*", generator: "geosearch", ggscoord: `${c.lat}|${c.lon}`, ggsradius: "3000",

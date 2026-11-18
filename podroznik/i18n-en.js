@@ -1063,4 +1063,8 @@ self.I18N_EN = {
   "Powiadomienia": "Notifications", "Powiadomienia – {} nowych": "Notifications – {} new", "Zamknij": "Close",
   "chce dodać Cię do znajomych": "wants to add you as a friend", "Przyjmij": "Accept", "Brak nowych powiadomień.": "No new notifications.",
   "Wszystkie wiadomości": "All messages", "{} przyjął(a) Twoje zaproszenie": "{} accepted your invitation",
+  "Wyślij pomysł albo podróż": "Send an idea or a trip", "Wyślij: {}": "Send to {}", "Moja podróż (plan do obejrzenia)": "My trip (plan to view)",
+  "Pomysł z mojego planu": "Idea from my plan", "Najpierw dodaj podróż albo pomysł w planie.": "First add a trip or an idea in your plan.",
+  "Wysłano podróż": "Trip sent", "Wysłano pomysł": "Idea sent",
+  "Ta podróż jest prywatna. Żeby znajomy mógł ją obejrzeć, udostępnię ją wszystkim Twoim znajomym (bez biletów, kodów, cen i notatek). Kontynuować?": "This trip is private. So your friend can view it, I will share it with all your friends (without tickets, codes, prices and notes). Continue?",
 };

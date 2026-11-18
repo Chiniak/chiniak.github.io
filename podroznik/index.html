@@ -52,6 +52,11 @@
   </nav>
 
   <script src="i18n-en.js"></script>
+  <script>/* słownik wybranego języka (de/es/it/pt/zh) – tylko ten jeden; zasada wyboru jak w i18n.js */
+    (function () { try { var p = localStorage.getItem("podroznik-lang") || "auto", L = ["de", "es", "it", "pt", "zh"], l = null;
+      if (L.indexOf(p) >= 0) l = p; else if (p === "auto") { var n = navigator.languages || [navigator.language];
+        for (var i = 0; i < n.length; i++) { var c = String(n[i] || "").slice(0, 2).toLowerCase(); if (c === "pl") { l = null; break; } if (!l && L.indexOf(c) >= 0) l = c; if (!l && c === "en") break; } }
+      if (l) document.write('<script src="i18n-' + l + '.js"><\/script>'); } catch (e) { /* brak dostępu – polski/angielski */ } })();</script>
   <script src="i18n.js"></script>
   <script src="native.js"></script>
   <script src="db.js"></script>

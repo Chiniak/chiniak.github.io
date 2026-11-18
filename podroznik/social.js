@@ -205,6 +205,7 @@
           try {
             const m = await unseal(key, d.c);
             const rec = { id: ch.doc.id, peer: id, by: d.by === me ? "me" : id, at: m.at || d.t.toDate().toISOString(), text: String(m.text || "").slice(0, 4000) };
+            const sh = cleanShare(m.share); if (sh) rec.share = sh;
             if (!(await DB.get("dms", rec.id))) { await DB.putRaw("dms", rec); if (rec.by !== "me") got.push(rec); }
             const ts = d.t.toDate().toISOString(); if (ts > last) last = ts;
           } catch (e) { console.warn("czat: nie da się odszyfrować", e); }
@@ -213,18 +214,43 @@
         if (got.length) emit("message", { id, name: fr.name, msgs: got });
       }, e => console.warn("czat:", e.code || e));
   }
-  async function sendMessage(id, text) {
+  // załącznik wiadomości: pomysł (miejsce z planu) albo podróż widoczna dla znajomych – tylko dozwolone pola
+  function cleanShare(sh) {
+    if (!sh || typeof sh !== "object") return null;
+    const str = (v, n) => String(v == null ? "" : v).slice(0, n), num = v => (typeof v === "number" && isFinite(v) ? v : undefined);
+    if (sh.k === "idea" && sh.it && str(sh.it.title, 1)) {
+      const it = sh.it, place = /^https?:/i.test(it.place || "") ? "" : str(it.place, 200);
+      return { k: "idea", it: { title: str(it.title, 120), cat: str(it.cat || "inne", 20), place, lat: num(it.lat), lon: num(it.lon) } };
+    }
+    if (sh.k === "trip" && /^[\w-]{6,20}$/.test(str(sh.doc, 20))) return { k: "trip", doc: str(sh.doc, 20), name: str(sh.name, 80), dest: str(sh.dest, 80), start: str(sh.start, 10), end: str(sh.end, 10), color: str(sh.color, 9) };
+    return null;
+  }
+  const shareLabel = sh => sh ? (sh.k === "trip" ? `🧳 ${sh.name}` : `📍 ${sh.it.title}`) : "";
+  async function sendMessage(id, text, share) {
     await load();
     const fr = st.friends[id];
     if (!fr || fr.state !== "ok") throw new Error("To nie jest Twój znajomy.");
-    text = String(text || "").trim().slice(0, 4000);
+    const sh = cleanShare(share);
+    text = String(text || "").trim().slice(0, 4000) || shareLabel(sh);
     if (!text) return null;
     const f = await fb(), me = await profile(), at = new Date().toISOString();
     const ref = f.db.collection("dm").doc(conv(me, id)).collection("msgs").doc();
-    const rec = { id: ref.id, peer: id, by: "me", at, text };
+    const rec = { id: ref.id, peer: id, by: "me", at, text, ...(sh ? { share: sh } : {}) };
     await DB.putRaw("dms", rec);
-    ref.set({ by: me, t: f.now(), c: await seal(await sharedKey(fr.pub), { text, at }), v: 1 }).catch(e => console.warn("czat: wysyłanie", e));
+    ref.set({ by: me, t: f.now(), c: await seal(await sharedKey(fr.pub), { text, at, ...(sh ? { share: sh } : {}) }), v: 1 }).catch(e => console.warn("czat: wysyłanie", e));
     return rec;
+  }
+  // wyślij znajomemu moją podróż: musi być widoczna dla znajomych (prywatna zostaje tak ustawiona na prośbę wywołującego)
+  async function shareTrip(id, tripId, { makeVisible = false } = {}) {
+    await load();
+    const t = await DB.get("trips", tripId);
+    if (!t) throw new Error("Nie ma takiej podróży.");
+    if (!st.trips[tripId]) {
+      if (!makeVisible) throw Object.assign(new Error("Podróż jest prywatna."), { code: "private" });
+      await setVisibility(tripId, "friends");
+    }
+    const r = st.trips[tripId];
+    return sendMessage(id, "", { k: "trip", doc: r.doc, name: t.name, dest: t.destination || "", start: t.start || "", end: t.end || "", color: t.color || "" });
   }
   async function messages(id) { return (await DB.byIndex("dms", "peer", id)).sort((a, b) => a.at.localeCompare(b.at)); }
   async function markRead(id) { await load(); st.read[id] = new Date().toISOString(); await save(); }
@@ -669,7 +695,7 @@
 
   App.Social = {
     available, enable, start, load, state: async () => (await load(), st), myLink, myName, rename, profile, parseFriend, person,
-    addFriend, accept, remove, sendMessage, messages, markRead, unread, unreadAll, startChat,
+    addFriend, accept, remove, sendMessage, shareTrip, messages, markRead, unread, unreadAll, startChat,
     VIS, setVisibility, visibility, publicLink, friendTrips, parsePublic, publicTrip, copyTrip, snapshot,
     publicIndex, setExplore, follow, unfollow, isFollowing, followersCount, publicTrips, followingFeed, explore, takeIdea,
     account, signInGoogle, signInFacebook, unlink, fbAvailable, facebookFriends, signOut, setFindable, setVault, findByEmail,

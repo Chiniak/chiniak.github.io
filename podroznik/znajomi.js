@@ -276,6 +276,49 @@
     };
   });
 
+  /* ================= wysyłanie pomysłu / podróży w czacie ================= */
+  async function attachSheet(id, friendName) {
+    const trips = (await DB.all("trips")).sort((a, b) => b.start.localeCompare(a.start));
+    const items = [];
+    for (const t of trips) for (const it of await DB.byIndex("planItems", "tripId", t.id)) if ((it.title || "").trim()) items.push({ it, trip: t.name });
+    const CATS = App.Plan ? App.Plan.CATS : {};
+    const old = document.querySelector(".tp-sheet"); if (old) old.remove();
+    const dlg = document.createElement("dialog");
+    dlg.className = "tp-sheet";
+    dlg.setAttribute("aria-label", "Wyślij znajomemu");
+    const tripBtn = t => `<button type="button" class="tp-trip" data-trip="${t.id}" style="--c:${esc(t.color || "#0f6e6e")}"><span class="tp-bar" aria-hidden="true"></span>
+      <span class="tp-main"><b>${esc(t.name)}</b><small>${App.fmtRange(t.start, t.end)}</small></span></button>`;
+    const ideaBtn = (x, i) => `<button type="button" class="li zn-pickidea" data-idea="${i}"><span class="zn-ev-ic" aria-hidden="true">${(CATS[x.it.cat] || { icon: "📍" }).icon}</span>
+      <span class="li-main"><b>${esc(x.it.title)}</b><small>${esc(x.it.place || x.trip)}</small></span></button>`;
+    dlg.innerHTML = `<div class="tp-in">
+      <div class="tp-top"><h2>Wyślij: ${esc(friendName || "znajomy")}</h2><button type="button" class="icon-btn" data-close aria-label="Zamknij">${ic("close")}</button></div>
+      <div class="tp-list">
+        ${trips.length ? `<h3 class="tp-h">Moja podróż (plan do obejrzenia)</h3>${trips.map(tripBtn).join("")}` : ""}
+        ${items.length ? `<h3 class="tp-h">Pomysł z mojego planu</h3><div class="list">${items.slice(0, 60).map(ideaBtn).join("")}</div>` : ""}
+        ${!trips.length && !items.length ? `<p class="muted small">Najpierw dodaj podróż albo pomysł w planie.</p>` : ""}
+      </div></div>`;
+    document.body.appendChild(dlg);
+    if (self.I18N && I18N.translate) try { I18N.translate(dlg); } catch (e) { /* tłumaczenie opcjonalne */ }
+    dlg.showModal();
+    const close = () => { dlg.close(); dlg.remove(); };
+    dlg.addEventListener("cancel", e => { e.preventDefault(); close(); });
+    dlg.addEventListener("click", async e => {
+      if (e.target === dlg || e.target.closest("[data-close]")) return close();
+      const tb = e.target.closest("[data-trip]"), ib = e.target.closest("[data-idea]");
+      try {
+        if (tb) {
+          const tid = tb.dataset.trip, vis = await SO().visibility(tid);
+          if (vis === "private" && !confirm("Ta podróż jest prywatna. Żeby znajomy mógł ją obejrzeć, udostępnię ją wszystkim Twoim znajomym (bez biletów, kodów, cen i notatek). Kontynuować?")) return;
+          close(); await SO().shareTrip(id, tid, { makeVisible: true }); App.toast("Wysłano podróż");
+        } else if (ib) {
+          const x = items[+ib.dataset.idea]; close();
+          await SO().sendMessage(id, "", { k: "idea", it: x.it }); App.toast("Wysłano pomysł");
+        } else return;
+        App.render();
+      } catch (er) { App.toast(offlineMsg(er)); }
+    });
+  }
+
   /* ================= czat ================= */
   const drafts = {};
   App.route(/^\/czat\/([A-Za-z0-9]{20,40})$/, async ([id]) => {
@@ -286,12 +329,27 @@
     const msgs = await SO().messages(id);
     await SO().markRead(id);
     let last = "", prev = "", html = "";
+    const shared = []; // pomysły z wiadomości – „+” dodaje je do moich pomysłów (data-take = numer na tej liście)
+    const CATS = App.Plan ? App.Plan.CATS : {};
+    const bubble = (m, mine) => {
+      const sh = m.share;
+      if (sh && sh.k === "idea") {
+        const i = shared.push(sh.it) - 1;
+        return `<div class="zn-card"><span class="zn-ev-ic" aria-hidden="true">${(CATS[sh.it.cat] || { icon: "📍" }).icon}</span><span class="li-main"><b>${esc(sh.it.title)}</b>${sh.it.place ? `<small>${esc(sh.it.place)}</small>` : ""}</span>
+          ${mine ? "" : `<button type="button" class="icon-btn zn-take" data-take="${i}" aria-label="Weź pomysł: ${esc(sh.it.title)}">${ic("plus", "")}</button>`}</div>`;
+      }
+      if (sh && sh.k === "trip") {
+        const inner = `<span class="zn-ev-ic" aria-hidden="true">🧳</span><span class="li-main"><b>${esc(sh.name)}</b><small>${sh.dest && sh.dest !== sh.name ? `${esc(sh.dest)} · ` : ""}${App.fmtRange(sh.start, sh.end)}</small></span>`;
+        return mine ? `<div class="zn-card">${inner}</div>` : `<a class="zn-card" href="#/znajomy/${id}/p/${esc(sh.doc)}">${inner}${ic("chev", "")}</a>`;
+      }
+      return `<span class="rz-txt">${esc(m.text)}</span>`;
+    };
     for (const m of msgs) {
       const day = m.at.slice(0, 10);
       if (day !== last) { html += `<div class="rz-day">${App.fmtDayLong(day)}</div>`; last = day; prev = ""; }
       const mine = m.by === "me", cont = prev === m.by;
       html += `<div class="rz-msg${mine ? " me" : ""}${cont ? " cont" : ""}">${mine ? "" : cont ? `<span class="rz-av-sp"></span>` : av(id, f.name, "sm")}
-        <div class="rz-bub"><span class="rz-txt">${esc(m.text)}</span><time>${hhmm(m.at)}</time></div></div>`;
+        <div class="rz-bub">${bubble(m, mine)}<time>${hhmm(m.at)}</time></div></div>`;
       prev = m.by;
     }
     if (!msgs.length) html = `<p class="rz-empty muted">Napisz pierwszą wiadomość do ${esc(f.name || "znajomego")}.</p>`;
@@ -300,12 +358,15 @@
       action: `<a class="icon-btn" href="#/znajomy/${id}" aria-label="Profil i podróże: ${esc(f.name || "")}">${ic("trips", "")}</a>`,
       html: `<div class="rz-chat" id="zn-chat">${html}</div>
         <form class="rz-send" id="zn-send" autocomplete="off">
+          <button type="button" class="icon-btn rz-att" id="zn-attach" aria-label="Wyślij pomysł albo podróż">${ic("plus", "")}</button>
           <label class="sr" for="zn-in">Wiadomość</label>
           <textarea id="zn-in" rows="1" maxlength="4000" placeholder="Wiadomość…">${esc(drafts[id] || "")}</textarea>
           <button class="icon-btn rz-go" aria-label="Wyślij">${ic("send", "")}</button>
         </form>
         <p class="sr">Wiadomości są szyfrowane end-to-end.</p>`,
       after(view) {
+        bindTake(view, shared, f.name);
+        view.querySelector("#zn-attach").onclick = () => attachSheet(id, f.name);
         const fm = view.querySelector("#zn-send"), inp = fm.querySelector("textarea");
         const grow = () => { inp.style.height = "auto"; inp.style.height = Math.min(inp.scrollHeight, 140) + "px"; };
         inp.oninput = () => { drafts[id] = inp.value; grow(); };
