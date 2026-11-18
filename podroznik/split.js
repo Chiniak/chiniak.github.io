@@ -1,4 +1,4 @@
-/* Podróżnik – etap 10: rozliczenie wydatków w grupie (jak „split expenses” w Wanderlog).
+/* Tripwillow – etap 10: rozliczenie wydatków w grupie (jak „split expenses” w Wanderlog).
    Trasa: #/rozliczenie/:tripId
    Uczestnicy: trips.people (ustawiane w budżecie). Wydatek: paidBy (kto płacił), split (za kogo; puste = wszyscy, po równo).
    Ceny biletów i noclegów z podróży są doliczane tylko, gdy wybrano, kto je opłacił (trips.segPayer) – wtedy za wszystkich.

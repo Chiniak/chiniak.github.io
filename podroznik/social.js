@@ -1,4 +1,4 @@
-/* Podróżnik – znajomi: profil, zaproszenia, czat 1:1 i podróże widoczne dla innych (rdzeń; ekrany: znajomi.js).
+/* Tripwillow – znajomi: profil, zaproszenia, czat 1:1 i podróże widoczne dla innych (rdzeń; ekrany: znajomi.js).
    Ten sam projekt Firebase co wspólne planowanie (sync.js: anonimowe logowanie, Firestore).
 
    Szyfrowanie end-to-end:
@@ -101,7 +101,7 @@
     const me = await profile();
     if (id === me) throw Object.assign(new Error("To Twój własny kod."), { code: "self" });
     const p = await person(id);
-    if (!p || !p.pub) throw Object.assign(new Error("Nie ma takiej osoby w Podróżniku."), { code: "missing" });
+    if (!p || !p.pub) throw Object.assign(new Error("Nie ma takiej osoby w Tripwillow."), { code: "missing" });
     const cur = st.friends[id];
     if (cur && cur.state === "ok") return cur;
     const mutual = cur && cur.state === "in"; // ta osoba już mnie zaprosiła – od razu znajomi
@@ -514,7 +514,7 @@
       catch (e2) {
         // ten sam e-mail ma już konto przez innego dostawcę (np. Facebook, a konto założone przez Google)
         if (e2.code !== "auth/account-exists-with-different-credential") throw e2;
-        throw Object.assign(new Error("Ten e-mail ma już konto w Podróżniku – zaloguj się nim, a potem połączymy konta."),
+        throw Object.assign(new Error("Ten e-mail ma już konto w Tripwillow – zaloguj się nim, a potem połączymy konta."),
           { code: "other-provider", pending: e2.credential || c, email: e2.email || (e2.customData && e2.customData.email) || "" });
       }
     }
@@ -536,8 +536,8 @@
     return res;
   }
 
-  /* ---------- Facebook (etap 3): logowanie i znajomi z Facebooka, którzy też używają Podróżnika ----------
-     Facebook podaje tylko tych znajomych, którzy zalogowali się do Podróżnika przez Facebooka i zgodzili się na
+  /* ---------- Facebook (etap 3): logowanie i znajomi z Facebooka, którzy też używają Tripwillow ----------
+     Facebook podaje tylko tych znajomych, którzy zalogowali się do Tripwillow przez Facebooka i zgodzili się na
      „user_friends” (identyfikatory przypisane do tej aplikacji). fbids/{idFacebooka} → { uid } łączy je z profilami.
      Włączone, gdy w sync-config.js jest facebookAppId (i – na Androidzie – wtyczka @capacitor-community/facebook-login). */
   const FB_PERMS = ["public_profile", "email", "user_friends"];
@@ -565,7 +565,7 @@
     if (!p) return;
     await f.db.collection("fbids").doc(p.uid).set({ uid: u.uid });
   }
-  // znajomi z Facebooka, którzy też są w Podróżniku: [{ uid, name, fbName, state }]
+  // znajomi z Facebooka, którzy też są w Tripwillow: [{ uid, name, fbName, state }]
   async function facebookFriends({ graph } = {}) {
     await load();
     const tok = fbToken || await DB.getSetting("social.fbToken", null);

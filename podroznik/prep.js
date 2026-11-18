@@ -1,4 +1,4 @@
-/* Podróżnik – „Przygotuj na wyjazd offline”: jedna lista kontrolna i jeden przycisk, który pobiera na zapas
+/* Tripwillow – „Przygotuj na wyjazd offline”: jedna lista kontrolna i jeden przycisk, który pobiera na zapas
    wszystko, co potem wymaga internetu. Ważne zwłaszcza przed Chinami (Google, Wikipedia i część map tam nie działa).
    Trasa: #/przygotuj/:tripId
    Kroki (po kolei): ochrona danych przed usunięciem → karty dla kierowcy (lokalne adresy) → zdjęcia miejsc →

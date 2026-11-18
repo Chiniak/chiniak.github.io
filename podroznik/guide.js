@@ -1,4 +1,4 @@
-/* Podróżnik – przewodniki Wikivoyage offline.
+/* Tripwillow – przewodniki Wikivoyage offline.
    Trasa: #/przewodnik/:tripId?g=<id przewodnika>&dodaj=<tytuł>&l=pl|en
    Artykuł z Wikivoyage (PL, w razie braku EN) pobierany raz przez API MediaWiki, „czyszczony” w telefonie
    (bez skryptów, stylów, obrazków, map i przycisków edycji – tylko tekst, listy i linki) i zapisywany w IndexedDB

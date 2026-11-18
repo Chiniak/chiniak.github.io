@@ -1,4 +1,4 @@
-/* Podróżnik – baza danych w telefonie (IndexedDB).
+/* Tripwillow – baza danych w telefonie (IndexedDB).
    Wersja 1: magazyny etapów 0–6. Wersja 2 (etap 8): dokumenty i wydatki. Wersja 3: dziennik podróży (wpisy i zdjęcia osobno). Wersja 4: wspólna podróż (czat, głosy na pomysły, uczestnicy). Wersja 5: przewodniki Wikivoyage offline. Wersja 6: wiadomości od znajomych
    – brakujące magazyny są dokładane, dane zostają.
    Użycie: await DB.put("trips", {...}); await DB.get("trips", id); await DB.all("trips");

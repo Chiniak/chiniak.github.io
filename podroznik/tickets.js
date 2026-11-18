@@ -1,4 +1,4 @@
-/* Podróżnik – etap 2: bilety.
+/* Tripwillow – etap 2: bilety.
    Trasy:
      #/bilety          wszystkie bilety: najbliższy, nadchodzące, archiwum
      #/odcinek/:id     szczegóły odcinka + jego bilety + dodawanie (plik / skaner)

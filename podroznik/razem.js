@@ -1,4 +1,4 @@
-/* Podróżnik – ekran „Razem”: wspólne planowanie na żywo (sync.js).
+/* Tripwillow – ekran „Razem”: wspólne planowanie na żywo (sync.js).
    Trasy:
      #/razem/:tripId?z=czat|pomysly|osoby   czat, pomysły z głosowaniem i komentarzami, uczestnicy i zaproszenie
      #/dolacz/:POKOJ.KLUCZ                  dołączenie z linku zaproszenia
@@ -232,7 +232,7 @@
           await App.loadScript("lib/bwip-js.min.js");
           try { bwipjs.toCanvas(view.querySelector("#rz-qr"), { bcid: "qrcode", text: link, scale: 4, padding: 2, backgroundcolor: "FFFFFF" }); } catch (e) { console.warn(e); }
         })();
-        const text = `Planujmy razem „${t.name}” w Podróżniku: ${link}`;
+        const text = `Planujmy razem „${t.name}” w Tripwillow: ${link}`;
         view.querySelector("#rz-share").onclick = async () => {
           if (navigator.share) { try { await navigator.share({ title: t.name, text }); return; } catch (e) { if (e.name === "AbortError") return; } }
           try { await navigator.clipboard.writeText(text); App.toast("Skopiowano zaproszenie – wklej w wiadomości"); } catch (e) { prompt("Skopiuj zaproszenie:", text); }

@@ -1,4 +1,4 @@
-/* Podróżnik – wspólna podróż na żywo (jak wspólne planowanie w Wanderlog), z szyfrowaniem end-to-end.
+/* Tripwillow – wspólna podróż na żywo (jak wspólne planowanie w Wanderlog), z szyfrowaniem end-to-end.
    Jak to działa:
    - Podróż „udostępniona na żywo” ma pokój (room) w Firebase Firestore i klucz AES-256 – oba są tylko w linku zaproszenia
      (https://chiniak.github.io/podroznik/dolacz.html#POKOJ.KLUCZ – część po # nie trafia do żadnego serwera). Serwer nie zna klucza, więc widzi wyłącznie szyfr.

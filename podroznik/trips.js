@@ -1,4 +1,4 @@
-/* Podróżnik – etap 1: podróże, odcinki transportu, noclegi i oś czasu.
+/* Tripwillow – etap 1: podróże, odcinki transportu, noclegi i oś czasu.
    Trasy:
      #/podroze                    lista: trwające / nadchodzące / archiwum
      #/podroze/nowa               nowa podróż
@@ -10,7 +10,7 @@
 (function () {
   const { esc, todayStr, dayDiff, plural } = App;
 
-  const COLORS = ["#43BDB5", "#4C7FD9", "#D9645A", "#E0A23F", "#8A6BD6", "#3E9B74"]; // redesign: kolory dopasowane do palety
+  const COLORS = ["#43BDB5", "#4C7FD9", "#D9645A", "#E0A23F", "#8A6BD6", "#3E9B74", "#E26FA6"]; // redesign: kolory dopasowane do palety
 
   /* ---------- rodzaje odcinków ----------
      extra: [pole, etykieta, podpowiedź]; route=false oznacza nocleg (nazwa + adres zamiast skąd/dokąd) */
@@ -148,7 +148,7 @@
 
     if (!trips.length) {
       return {
-        title: "Podróżnik", brand: true, action: statsAction,
+        title: "Tripwillow", brand: true, action: statsAction,
         html: `${head}
           <section class="hm-empty">
             <div class="hm-empty-art" aria-hidden="true">${ic("trips", "lg")}</div>
@@ -272,7 +272,7 @@
 
     let unpaint = null, timer = null;
     return {
-      title: "Podróżnik", brand: true, action: statsAction, html,
+      title: "Tripwillow", brand: true, action: statsAction, html,
       after(v) {
         unpaint = paintCovers(v, cov);
         if (App.Covers) App.Covers.fill([...now, ...future], ownCovers(cov), (t, c) => paintAuto(v, t.id, c.data));

@@ -1,6 +1,6 @@
-/* Podróżnik – konto: zakładanie konta przez Google lub Facebooka i łączenie kont (rdzeń w social.js).
+/* Tripwillow – konto: zakładanie konta przez Google lub Facebooka i łączenie kont (rdzeń w social.js).
    Trasa #/konto (Ustawienia → Twoje konto; link też z karty konta w Znajomych).
-   Konto = profil w Podróżniku (znajomi, czaty, widoczność podróży). Można do niego podpiąć Google i Facebooka naraz –
+   Konto = profil w Tripwillow (znajomi, czaty, widoczność podróży). Można do niego podpiąć Google i Facebooka naraz –
    wtedy zalogujesz się którymkolwiek z nich i zawsze trafisz do tego samego profilu. Plany podróży i tak zostają na telefonie.
    App.Account.signIn(provider) – wspólne logowanie z pytaniami (przejście na inny profil, ten sam e-mail u innego dostawcy). */
 (function () {
@@ -21,7 +21,7 @@
 
   // pytanie przed przejściem na profil, do którego to konto Google/Facebook już należy
   const confirmSwitch = ({ hasAcc, hasFriends }) => Promise.resolve(confirm(
-    "To konto jest już połączone z innym profilem w Podróżniku (np. z poprzedniego telefonu). Przełączyć się na tamten profil? " +
+    "To konto jest już połączone z innym profilem w Tripwillow (np. z poprzedniego telefonu). Przełączyć się na tamten profil? " +
     (hasAcc ? "Obecny profil wróci, gdy zalogujesz się jego kontem." : hasFriends ? "Znajomi z obecnego profilu bez konta znikną z tego telefonu." : "")));
 
   // logowanie / łączenie: provider "google.com" | "facebook.com"; zwraca konto albo null (anulowano)
@@ -33,7 +33,7 @@
       // ten sam e-mail ma już konto przez innego dostawcę – zaloguj tamtym i dołącz ten
       const other = provider === "facebook.com" ? "google.com" : "facebook.com";
       if (other === "facebook.com" && !SO().fbAvailable()) throw e;
-      if (!confirm(`Adres ${e.email || "e-mail"} ma już konto w Podróżniku przez ${NAME[other]}. Zalogować się przez ${NAME[other]} i połączyć z ${NAME[provider]}?`))
+      if (!confirm(`Adres ${e.email || "e-mail"} ma już konto w Tripwillow przez ${NAME[other]}. Zalogować się przez ${NAME[other]} i połączyć z ${NAME[provider]}?`))
         throw Object.assign(new Error("Anulowano"), { code: "CANCELED" });
       return SO()[other === "facebook.com" ? "signInFacebook" : "signInGoogle"]({ confirmSwitch, pending: e.pending });
     }
@@ -62,7 +62,7 @@
         <ul class="ac-why">
           <li>${ic("users")} <span>znajomi i czaty przejdą z Tobą na nowy telefon</span></li>
           <li>${ic("search")} <span>znajomi znajdą Cię po adresie e-mail</span></li>
-          <li>${ic("chat")} <span>z Facebookiem – zobaczysz znajomych, którzy też mają Podróżnika</span></li>
+          <li>${ic("chat")} <span>z Facebookiem – zobaczysz znajomych, którzy też mają Tripwillow</span></li>
         </ul>
         <p class="f-hint">Bez konta też wszystko działa – plany, bilety i dokumenty zostają na telefonie. Konto nie wysyła nigdzie Twoich planów.</p>
       </section>`;

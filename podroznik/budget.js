@@ -1,4 +1,4 @@
-/* Podróżnik – etap 8 (pkt 37): budżet podróży i wydatki.
+/* Tripwillow – etap 8 (pkt 37): budżet podróży i wydatki.
    Trasy:
      #/budzet/:tripId   podsumowanie, kategorie, lista wydatków, szybkie dodawanie, budżet i kursy walut
      #/wydatek/:id      edycja i usuwanie wydatku

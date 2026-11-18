@@ -1,5 +1,5 @@
 // t55: znajomi – etap 3: Facebook (emulator Firebase, fałszywe tokeny Facebooka, lista znajomych z Graph API podana w teście):
-// logowanie przez Facebooka, rejestracja fbids, znajomi z Facebooka, którzy są w Podróżniku → zaproszenie, reguły fbids, przycisk ukryty bez konfiguracji.
+// logowanie przez Facebooka, rejestracja fbids, znajomi z Facebooka, którzy są w Tripwillow → zaproszenie, reguły fbids, przycisk ukryty bez konfiguracji.
 // Bez emulatora (porty 8085/9099) test się pomija.
 const { chromium, devices } = require('playwright');
 const http = require('http');
@@ -40,10 +40,10 @@ const get = url => new Promise(res => { const r = http.request(url, x => { let d
   await T.goto(B + '#/znajomi'); await T.waitForSelector('#zn-facebook', { timeout: 15000 });
   await T.fill('#zn-name-in', 'Tomek'); await T.click('#zn-name button'); await T.waitForTimeout(500);
   await T.evaluate(t => App.Social.signInFacebook({ accessToken: t }), tok(fbT, 'Tomek Nowak'));
-  // Graph API zwraca znajomych, którzy też używają aplikacji: Ania + ktoś bez Podróżnika
+  // Graph API zwraca znajomych, którzy też używają aplikacji: Ania + ktoś bez Tripwillow
   const fbIdA = await A.evaluate(() => App.Sync.firebase().then(f => f.auth.currentUser.providerData.find(p => p.providerId === 'facebook.com').uid));
   const list = await T.evaluate(g => App.Social.facebookFriends({ graph: g }), [{ id: fbIdA, name: 'Ania Kowalska' }, { id: '999999', name: 'Ktoś Inny' }]);
-  ok(list.length === 1 && list[0].uid === uidA && list[0].name === 'Ania', 'znajomi z Facebooka w Podróżniku: ' + JSON.stringify(list.map(x => x.name)));
+  ok(list.length === 1 && list[0].uid === uidA && list[0].name === 'Ania', 'znajomi z Facebooka w Tripwillow: ' + JSON.stringify(list.map(x => x.name)));
   await T.evaluate(id => App.Social.addFriend(id), uidA);
   const ok2 = await (async () => { const end = Date.now() + 10000; while (Date.now() < end) { if (await A.evaluate(id => App.Social.state().then(s => s.friends[id] && s.friends[id].state === 'in'), await T.evaluate(() => App.Social.profile()))) return true; await A.waitForTimeout(250); } return false; })();
   ok(ok2, 'Ania dostaje zaproszenie od znajomego z Facebooka');
@@ -61,7 +61,7 @@ const get = url => new Promise(res => { const r = http.request(url, x => { let d
   // EN
   await A.evaluate(() => { localStorage.setItem('podroznik-lang', 'en'); return DB.setSetting('lang', 'en'); });
   await A.reload(); await A.waitForSelector('#zn-fbfriends', { timeout: 15000 }); await A.waitForTimeout(400);
-  ok(/Facebook friends on Podróżnik/.test(await A.textContent('#zn-fbfriends')), 'EN: ' + await A.textContent('#zn-fbfriends'));
+  ok(/Facebook friends on Tripwillow/.test(await A.textContent('#zn-fbfriends')), 'EN: ' + await A.textContent('#zn-fbfriends'));
   await A.screenshot({ path: `${dir}/t55-fb.png` });
 
   for (const p of [A, T, N]) ok(!p.errs.length, 'bez błędów JS ' + p.errs.join(' | '));

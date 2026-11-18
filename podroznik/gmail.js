@@ -1,4 +1,4 @@
-/* Podróżnik – „📬 Z Gmaila”: logowanie kontem Google i propozycje z maili.
+/* Tripwillow – „📬 Z Gmaila”: logowanie kontem Google i propozycje z maili.
    Aplikacja sama szuka w Gmailu potwierdzeń rezerwacji (loty, pociągi, autobusy, promy, hotele, wycieczki, bilety,
    stoliki w restauracjach), odczytuje je w telefonie (App.Email.parse, App.Plan.infoFromText, załączniki PDF/.ics)
    i proponuje dodanie do pasującej podróży albo jako nową podróż.
@@ -438,7 +438,7 @@
             <section class="tx-hero">
               <span class="tx-hero-ic" aria-hidden="true">${App.icon("mail")}</span>
               <div><h2>Propozycje z Twojej poczty</h2>
-              <p>Połącz konto Google, a Podróżnik sam znajdzie w Gmailu potwierdzenia rezerwacji i zaproponuje, co dodać:</p></div>
+              <p>Połącz konto Google, a Tripwillow sam znajdzie w Gmailu potwierdzenia rezerwacji i zaproponuje, co dodać:</p></div>
             </section>
             <ul class="list gm-list">
               <li class="li"><span class="li-ico" aria-hidden="true">${App.icon("plane")}</span><span class="li-main"><b>Loty, pociągi, autobusy, promy</b></span></li>
@@ -446,11 +446,11 @@
               <li class="li"><span class="li-ico" aria-hidden="true">${App.icon("ticket")}</span><span class="li-main"><b>Wycieczki, bilety wstępu, koncerty</b><small>GetYourGuide, Klook, Viator…</small></span></li>
               <li class="li"><span class="li-ico" aria-hidden="true">${App.icon("food")}</span><span class="li-main"><b>Stoliki w restauracjach</b></span></li>
             </ul>
-            <p class="td-note gm-privacy">${App.icon("shield", "sm")}<span>Tylko odczyt – Podróżnik nie wysyła, nie usuwa i nie zmienia maili. Maile czyta telefon wprost z Gmaila, nic nie trafia na żaden serwer.
+            <p class="td-note gm-privacy">${App.icon("shield", "sm")}<span>Tylko odczyt – Tripwillow nie wysyła, nie usuwa i nie zmienia maili. Maile czyta telefon wprost z Gmaila, nic nie trafia na żaden serwer.
               Szuka tylko maili z rezerwacjami z ostatnich 13 miesięcy. Każdą propozycję zatwierdzasz sam.
               <a href="https://chiniak.github.io/podroznik/prywatnosc.html#gmail-pl" target="_blank" rel="noopener">Polityka prywatności</a></span></p>
             ${can ? `<button type="button" class="btn primary wide" id="gm-connect">${App.icon("google", "sm")} <span>Zaloguj się kontem Google</span></button>`
-              : `<p class="td-note error gm-web">${App.icon("info", "sm")}<span>Logowanie Google działa w aplikacji na Androida (Podróżnik 2.0). W przeglądarce możesz dalej wkleić maila: <a href="#/wklej">Dodaj z maila</a>.</span></p>`}
+              : `<p class="td-note error gm-web">${App.icon("info", "sm")}<span>Logowanie Google działa w aplikacji na Androida (Tripwillow 2.0). W przeglądarce możesz dalej wkleić maila: <a href="#/wklej">Dodaj z maila</a>.</span></p>`}
           </div>`,
         after(v) {
           const b = v.querySelector("#gm-connect");
@@ -502,7 +502,7 @@
           : `<p class="muted">${cfg.lastScan ? "Brak nowych propozycji – wszystko z maili jest już w podróżach albo pominięte." : "Sprawdzam maile…"}</p>`}
         ${pastCount ? `<p><a href="#/gmail?wczesniej=1">Pokaż też wcześniejsze (${pastCount}) – np. do statystyk</a></p>` : ""}
         ${past ? `<p><a href="#/gmail">Tylko nadchodzące</a></p>` : ""}
-        <p class="small muted">Nie znalazło jakiejś rezerwacji? Otwórz maila i użyj „Udostępnij → Podróżnik” albo <a href="#/wklej">📧 wklej treść</a>.</p>`,
+        <p class="small muted">Nie znalazło jakiejś rezerwacji? Otwórz maila i użyj „Udostępnij → Tripwillow” albo <a href="#/wklej">📧 wklej treść</a>.</p>`,
       after(v) {
         const prog = v.querySelector("#gm-prog"), scanBtn = v.querySelector("#gm-scan");
         async function runScan() {

@@ -1,4 +1,4 @@
-/* Podróżnik – etap 4: pakowanie i przygotowania.
+/* Tripwillow – etap 4: pakowanie i przygotowania.
    Trasy:
      #/pakowanie                      wybiera podróż (trwającą, najbliższą albo ostatnio otwieraną)
      #/pakowanie/:tripId?l=todo       lista rzeczy (domyślnie) albo „Przed wyjazdem” (l=todo)

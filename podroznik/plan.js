@@ -1,4 +1,4 @@
-/* Podróżnik – etap 3: plan dnia i plan podróży.
+/* Tripwillow – etap 3: plan dnia i plan podróży.
    Trasy:
      #/plan                       wybiera podróż: trwającą, najbliższą, albo ostatnią
      #/plan/:tripId               plan dzień po dniu + karta „Dziś” (gdy podróż trwa)

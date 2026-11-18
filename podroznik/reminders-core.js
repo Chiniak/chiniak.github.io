@@ -1,4 +1,4 @@
-/* Podróżnik – etap 5: wyliczanie przypomnień.
+/* Tripwillow – etap 5: wyliczanie przypomnień.
    Ten plik działa i w aplikacji (okno), i w service workerze (sprawdzanie w tle), dlatego nie używa DOM ani App.
    Przypomnienie: { id, at: "RRRR-MM-DDTGG:MM", eventAt, title, body, href, tripId }
      at       – kiedy powiadomić (czas lokalny)
@@ -131,7 +131,7 @@
       wiza: "Wiza", karta: "Karta płatnicza", szczepienie: "Szczepienie", inne: "Dokument" };
     for (const d of data.docs || []) {
       if (!d.expires || !(+d.remind > 0)) continue;
-      const name = `${DOCS[d.type] || "Dokument"}${d.person ? ` (${d.person})` : ""}`;
+      const name = `${d.name || DOCS[d.type] || "Dokument"}${d.person ? ` (${d.person})` : ""}`;
       // ile dni naprawdę zostało (przypomnienie pokazane później nie może kłamać)
       const left = Math.max(0, Math.round((parse(d.expires) - parse(now.slice(0, 10))) / 86400000));
       const leftTxt = left === 0 ? "dziś" : left === 1 ? "jutro" : `za ${left} dni`;
@@ -179,7 +179,10 @@
         : r.id.startsWith("visa:") ? r.id.split(":").slice(0, 3).join(":") : r.id;
       if (!best[key] || best[key].at < r.at) best[key] = r;
     }
-    return Object.values(best).sort((a, b) => a.at.localeCompare(b.at));
+    // identyczne przypomnienia (ten sam tytuł i treść, np. dwie podróże o tej samej nazwie) pokazujemy raz – zostaje najnowsze
+    const same = {};
+    for (const r of Object.values(best)) { const k = `${r.title}|${r.body}`; if (!same[k] || same[k].at < r.at) same[k] = r; }
+    return Object.values(same).sort((a, b) => a.at.localeCompare(b.at));
   }
 
   async function load() {

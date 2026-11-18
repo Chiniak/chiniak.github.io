@@ -1,4 +1,4 @@
-/* Podróżnik – etap 8 (pkt 36): statystyki podróży i mapa.
+/* Tripwillow – etap 8 (pkt 36): statystyki podróży i mapa.
    Trasa: #/statystyki?rok=2026&plan=1
    Położenie miejsc:
      1) kod lotniska w nazwie (np. „Warszawa WAW”) → wbudowana lista lotnisk lib/airports.js (offline),

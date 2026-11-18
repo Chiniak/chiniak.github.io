@@ -1,4 +1,4 @@
-/* Podróżnik – wizy i zezwolenia na wjazd.
+/* Tripwillow – wizy i zezwolenia na wjazd.
    Obywatelstwo z ustawienia „citizenship” (domyślnie PL). Polski paszport: ręczna tabela D (sprawdzona, z linkami i wyjątkami czasowymi),
    kraje spoza D – z bazy światowej. Inne paszporty: baza światowa lib/visa-world.js (Passport Index, MIT), a nazwy zezwoleń i oficjalne
    strony brane z D, gdy rodzaj się zgadza (ESTA, eTA, TDAC…). Obywatele UE/EOG w krajach UE – „eu” (dowód osobisty).

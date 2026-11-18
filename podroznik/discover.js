@@ -1,4 +1,4 @@
-/* Podróżnik – etap 10: odkrywanie miejsc w okolicy (jak „Explore” w Wanderlog).
+/* Tripwillow – etap 10: odkrywanie miejsc w okolicy (jak „Explore” w Wanderlog).
    Trasa: #/odkrywaj/:tripId?t=atrakcje|jedzenie|szukaj&lat=..&lon=..&gdzie=nazwa
    Źródła (bez klucza, wymagają internetu):
      – atrakcje i jedzenie: OpenStreetMap przez Overpass API (muzea, zabytki, punkty widokowe, restauracje, kawiarnie…),

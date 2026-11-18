@@ -1,4 +1,4 @@
-/* Podróżnik – etap 5: licznik do podróży, przypomnienia i kalendarz.
+/* Tripwillow – etap 5: licznik do podróży, przypomnienia i kalendarz.
    - Licznik na ekranie głównym: do następnej podróży albo (w trakcie podróży) do najbliższego odjazdu.
    - Przypomnienia: liczone w reminders-core.js; pokazywane jako powiadomienia, gdy aplikacja jest otwarta,
      przy jej otwarciu (zaległe) i – jeśli Chrome pozwoli – w tle (Periodic Background Sync w sw.js).
@@ -242,7 +242,7 @@
     const plan = (await DB.all("planItems")).filter(i => ids.has(i.tripId) && i.time);
     const todos = (await DB.all("packItems")).filter(i => ids.has(i.tripId) && i.list === "todo" && i.due && i.status !== "done");
     const stamp = new Date().toISOString().replace(/[-:]/g, "").slice(0, 15) + "Z";
-    const L = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Podroznik//PL", "CALSCALE:GREGORIAN", "METHOD:PUBLISH", "X-WR-CALNAME:Podróżnik"];
+    const L = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Podroznik//PL", "CALSCALE:GREGORIAN", "METHOD:PUBLISH", "X-WR-CALNAME:Tripwillow"];
     const alarm = (trigger, text) => ["BEGIN:VALARM", "ACTION:DISPLAY", `DESCRIPTION:${icsText(text)}`, `TRIGGER:${trigger}`, "END:VALARM"];
     const ev = (uid, start, end, summary, { allDay, loc, desc, alarms = [] } = {}) => {
       L.push("BEGIN:VEVENT", `UID:${uid}@podroznik`, `DTSTAMP:${stamp}`,
@@ -296,7 +296,7 @@
     const end = s.arrive && s.arrive > s.depart ? s.arrive : R.addMin(s.depart, 60);
     const p = new URLSearchParams({
       action: "TEMPLATE", text: segSummary(s), dates: `${icsDate(s.depart)}/${icsDate(end)}`,
-      details: `${segInfo(s)}\n\nBilet: aplikacja Podróżnik`.trim(), location: s.type === "nocleg" ? (s.address || s.name || "") : (s.from || ""),
+      details: `${segInfo(s)}\n\nBilet: aplikacja Tripwillow`.trim(), location: s.type === "nocleg" ? (s.address || s.name || "") : (s.from || ""),
     });
     return `https://calendar.google.com/calendar/render?${p}`;
   }
@@ -310,7 +310,7 @@
     if (LN()) {
       await nativePerms();
       if (nPerm.display === "granted") return ["włączone ✅", nPerm.exact === "granted" ? "" : "Telefon może je opóźniać o kilka minut – włącz „Dokładne godziny” poniżej."];
-      if (nPerm.display === "denied") return ["zablokowane ❌", "Włącz je w ustawieniach telefonu: Aplikacje → Podróżnik → Powiadomienia."];
+      if (nPerm.display === "denied") return ["zablokowane ❌", "Włącz je w ustawieniach telefonu: Aplikacje → Tripwillow → Powiadomienia."];
       return ["nie włączone", ""];
     }
     if (!("Notification" in window)) return ["niedostępne", "Ta przeglądarka nie obsługuje powiadomień."];
@@ -440,7 +440,7 @@
         };
         const test = view.querySelector("#rm-test");
         if (test) test.onclick = async () => {
-          const ok = await showNotification({ id: "test", title: "Podróżnik – próba", body: "Tak będą wyglądać przypomnienia o podróży ✈️", href: "/podroze" });
+          const ok = await showNotification({ id: "test", title: "Tripwillow – próba", body: "Tak będą wyglądać przypomnienia o podróży ✈️", href: "/podroze" });
           App.toast(ok ? "Wysłano – sprawdź pasek powiadomień" : "Nie udało się wysłać");
         };
         view.querySelector("#rm-ics").onclick = () => exportTrips(trips.map(t => t.id), trips.length === 1 ? trips[0].name : "podroze");

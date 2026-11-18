@@ -1,4 +1,4 @@
-/* Podróżnik – ekran Ustawień (redesign etap 6, uporządkowany 15.11: krótki ekran, każda opcja w jednym wierszu).
+/* Tripwillow – ekran Ustawień (redesign etap 6, uporządkowany 15.11: krótki ekran, każda opcja w jednym wierszu).
    Trasa #/ustawienia. Grupy: Wygląd · Podróżowanie · Dane i bezpieczeństwo · Aplikacja.
    Ekrany szczegółowe mają własne pliki: przypomnienia (reminders.js), kopia (backup.js), blokada (lock.js), Gmail (gmail.js). */
 (function () {
@@ -80,7 +80,7 @@
       `<a class="li" href="https://chiniak.github.io/podroznik/prywatnosc.html" target="_blank" rel="noopener"><span class="li-ico" aria-hidden="true">${icon("shield")}</span>
         <span class="li-main"><b>Polityka prywatności</b><small>dane zostają na telefonie</small></span>${icon("chev")}</a>` +
       `<div class="li"><span class="li-ico" aria-hidden="true">${icon("info")}</span>
-        <span class="li-main"><b>Podróżnik <span id="app-version">${App.VERSION}</span></b><small id="storage">Sprawdzam…</small></span></div>`);
+        <span class="li-main"><b>Tripwillow <span id="app-version">${App.VERSION}</span></b><small id="storage">Sprawdzam…</small></span></div>`);
 
     return {
       html: `${look}${travel}${data}${app}`,

@@ -1,4 +1,4 @@
-/* Podróżnik – tryb „W podróży”: jeden ekran na dziś (zasady wyglądu: DESIGN.md).
+/* Tripwillow – tryb „W podróży”: jeden ekran na dziś (zasady wyglądu: DESIGN.md).
    Trasy:
      #/dzis              trwająca podróż (gdy żadna nie trwa – najbliższa, jako podgląd 1. dnia)
      #/dzis/:tripId?d=   dzień podróży (domyślnie dziś; poza podróżą – pierwszy albo ostatni dzień)

@@ -1,10 +1,10 @@
 # Weryfikacja Google dla Gmaila (droga C) – instrukcja krok po kroku
 
-Cel: żeby **każdy** użytkownik Podróżnika mógł połączyć Gmaila, bez limitu 100 osób i bez ostrzeżenia
+Cel: żeby **każdy** użytkownik Tripwillow mógł połączyć Gmaila, bez limitu 100 osób i bez ostrzeżenia
 „Google nie zweryfikował tej aplikacji”. Uprawnienie `gmail.readonly` jest u Google **zastrzeżone** (restricted),
 więc trzeba przejść weryfikację aplikacji i – jeśli Google tego zażąda – ocenę bezpieczeństwa (CASA).
 
-Wszystko poniżej robisz w przeglądarce, zalogowany na konto Google, na którym jest projekt „Podróżnik” w Google Cloud.
+Wszystko poniżej robisz w przeglądarce, zalogowany na konto Google, na którym jest projekt „Tripwillow” w Google Cloud.
 Gotowe teksty do wklejenia są po angielsku, bo Google weryfikuje po angielsku.
 
 ---
@@ -36,7 +36,7 @@ Strony zaczną działać pod tymi adresami, gdy zmiany trafią do gałęzi `main
 ## Krok 2. Klient Android dla wersji docelowej – ok. 3 min
 
 Google Cloud → **Google Auth Platform** → **Klienci** → **Utwórz klienta** → typ **Android**:
-- Nazwa: `Podróżnik (docelowa)`
+- Nazwa: `Tripwillow (docelowa)`
 - Nazwa pakietu: `io.github.chiniak.podroznik`
 - Odcisk SHA-1: `84:1E:4A:09:AC:AE:33:56:B7:29:E2:C5:FD:2D:FE:17:7F:65:28:CC`
 
@@ -48,7 +48,7 @@ Google Auth Platform → **Branding**:
 
 | Pole | Wpisz |
 |---|---|
-| App name | `Podróżnik` |
+| App name | `Tripwillow` |
 | User support email | Twój adres Gmail |
 | App logo | `logo-120.png` (Claude wyśle albo pobierz z repozytorium) |
 | Application home page | `https://chiniak.github.io/podroznik/aplikacja.html` |
@@ -67,7 +67,7 @@ Google Auth Platform → **Data Access** → **Add or remove scopes** → zaznac
 W polu uzasadnienia (**How will the scopes be used?**) wklej:
 
 ```
-Podróżnik is a travel planner for Android. The optional "From Gmail" feature uses the read-only
+Tripwillow is a travel planner for Android. The optional "From Gmail" feature uses the read-only
 gmail.readonly scope to find booking confirmations the user already received (flights, trains,
 buses, hotels, tours, restaurant and event bookings) and suggest adding them to the user's trips.
 
@@ -90,9 +90,9 @@ minimum required to read only booking confirmation emails.
 
 Google wymaga filmu na YouTube (może być **niepubliczny** – „Unlisted”), pokazującego:
 
-1. **Uruchomienie aplikacji** Podróżnik 2.11.1 (docelowej, nie „test”).
+1. **Uruchomienie aplikacji** Tripwillow 2.11.1 (docelowej, nie „test”).
 2. Wejście w **Ustawienia → Konto Google (Gmail)** i kliknięcie **„Zaloguj się kontem Google”**.
-3. **Cały ekran zgody Google** – tak, żeby było widać nazwę aplikacji „Podróżnik” i uprawnienie
+3. **Cały ekran zgody Google** – tak, żeby było widać nazwę aplikacji „Tripwillow” i uprawnienie
    „Wyświetlanie e-maili…”. **Telefon w języku angielskim** (Ustawienia Androida → Język → English)
    – Google prosi, by ekran zgody był po angielsku.
 4. Po zgodzie: aplikacja szuka maili i pokazuje **propozycje** (np. lot, hotel) → dodanie jednej
@@ -121,7 +121,7 @@ Dla zakresów zastrzeżonych Google zwykle wymaga corocznej oceny bezpieczeństw
 Cloud Application Security Assessment) wykonywanej przez niezależną firmę z listy
 https://appdefensealliance.dev/casa. Google w mailu napisze, czy jest potrzebna i na jakim poziomie (tier).
 
-- Podróżnik **nie ma serwera** i przetwarza maile tylko na telefonie – w zgłoszeniu warto to podkreślić;
+- Tripwillow **nie ma serwera** i przetwarza maile tylko na telefonie – w zgłoszeniu warto to podkreślić;
   to Google decyduje, czy i jaki audyt jest potrzebny.
 - Koszt zależy od firmy i poziomu – zwykle od kilkuset dolarów rocznie w górę. Ocenę powtarza się co
   12 miesięcy.

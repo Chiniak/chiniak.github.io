@@ -2,7 +2,7 @@ const { TwaManifest, TwaGenerator, ConsoleLog } = require('@bubblewrap/core');
 (async () => {
   const out = process.argv[2], ks = process.argv[3];
   const m = new TwaManifest({
-    packageId: 'io.github.chiniak.podroznik', host: 'chiniak.github.io', name: 'Podróżnik', launcherName: 'Podróżnik',
+    packageId: 'io.github.chiniak.podroznik', host: 'chiniak.github.io', name: 'Tripwillow', launcherName: 'Tripwillow',
     display: 'standalone', orientation: 'portrait', themeColor: '#0f6e6e', themeColorDark: '#0e1416', navigationColor: '#0e1416',
     navigationColorDark: '#0e1416', backgroundColor: '#0e1416', enableNotifications: true,
     startUrl: '/podroznik/index.html#/podroze', fullScopeUrl: 'https://chiniak.github.io/podroznik/',

@@ -1,4 +1,4 @@
-/* Podróżnik – przelicznik walut offline.
+/* Tripwillow – przelicznik walut offline.
    Trasy: #/waluty (trwająca / najbliższa podróż) i #/waluty/:tripId?z=VND
    Kursy z podróży (trip.rates – ile waluty głównej za 1 jednostkę, te same co w budżecie), więc działa bez internetu.
    Skąd kurs: trip.ratesInfo = { VND: { at: "RRRR-MM-DD", src: "NBP" | "ręcznie" } }. Z internetem – „Pobierz kursy NBP” (tylko gdy waluta główna to PLN).

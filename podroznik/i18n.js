@@ -1,4 +1,4 @@
-/* Podróżnik – języki: polski (napisany w kodzie), angielski (słownik i18n-en.js) i słowniki i18n-de/es/it/pt/zh.js (ładowane tylko dla wybranego języka – patrz skrypt w index.html).
+/* Tripwillow – języki: polski (napisany w kodzie), angielski (słownik i18n-en.js) i słowniki i18n-de/es/it/pt/zh.js (ładowane tylko dla wybranego języka – patrz skrypt w index.html).
    Działa jak „tłumacz ekranu”: po każdej zmianie widoku podmienia teksty, podpowiedzi (placeholder), opisy (aria-label, title),
    okienka confirm/prompt/alert i tytuł strony. Daty i liczby: App/I18N.locale ("pl-PL", "en-GB", "de-DE"…).
    Wybór: Ustawienia → Język (localStorage "podroznik-lang": pl | en | de | es | it | pt | zh | auto; auto = pierwszy obsługiwany język telefonu, inaczej angielski).
