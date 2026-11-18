@@ -22,6 +22,15 @@
   const offlineMsg = e => e && e.code === "noconfig" ? "Znajomi nie są jeszcze włączeni w tej wersji aplikacji."
     : navigator.onLine ? `Nie udało się połączyć: ${esc(e && (e.message || e.code) || "błąd")}` : "Brak internetu – spróbuj, gdy będzie połączenie.";
 
+  // zakładki: Znajomi · Obserwuję · Odkrywaj
+  const tabs = (on, n = 0) => `<nav class="rz-seg zn-tabs" aria-label="Ludzie">
+      <a href="#/znajomi" class="${on === "z" ? "on" : ""}"${on === "z" ? ' aria-current="page"' : ""}>${ic("users")} Znajomi${n ? ` <span class="rz-badge">${n}</span>` : ""}</a>
+      <a href="#/obserwowani" class="${on === "o" ? "on" : ""}"${on === "o" ? ' aria-current="page"' : ""}>${ic("star")} Obserwuję</a>
+      <a href="#/odkrywaj-ludzi" class="${on === "d" ? "on" : ""}"${on === "d" ? ' aria-current="page"' : ""}>${ic("compass")} Odkrywaj</a></nav>`;
+  const feedCard = x => `<a class="tp-trip zn-feed" href="#/publiczna/${x.uid}/${x.doc}/${x.key}" style="--c:${esc(x.color || "#0f6e6e")}"><span class="tp-bar" aria-hidden="true"></span>
+      <span class="tp-main"><small class="zn-feed-who">${esc(x.owner || "Podróżnik")}</small><b>${esc(x.name)}</b><small>${x.dest && x.dest !== x.name ? `${esc(x.dest)} · ` : ""}${App.fmtRange(x.start, x.end)}</small></span>
+      <span class="tp-st tp-${statusOf({ start: x.start, end: x.end })}">${statusTxt({ start: x.start, end: x.end })}</span></a>`;
+
   /* ================= lista znajomych ================= */
   App.route(/^\/znajomi$/, async () => {
     if (!SO() || !SO().available()) return notReady();
@@ -43,7 +52,7 @@
     };
     return {
       title: "Znajomi",
-      html: `
+      html: `${tabs("z", incoming.length)}
         ${err ? `<p class="gd-err">${offlineMsg(err)}</p>` : ""}
         <section class="card zn-me">
           <div class="zn-me-h">${av("me", name || "Ty", "lg")}
@@ -61,14 +70,19 @@
 
         ${err ? "" : acc ? `
         <section class="card zn-acc">
-          <div class="zn-acc-h"><span class="li-ico">${ic("lock")}</span><span class="li-main"><b>Konto Google</b><small translate="no">${esc(acc.email)}</small></span>
+          <div class="zn-acc-h"><span class="li-ico">${ic("lock")}</span><span class="li-main"><b>${acc.google && acc.facebook ? "Konto Google i Facebook" : acc.google ? "Konto Google" : "Konto Facebook"}</b><small translate="no">${esc(acc.email || acc.name)}</small></span>
             <button type="button" class="btn small" id="zn-out">Wyloguj</button></div>
           <label class="zn-sw"><input type="checkbox" id="zn-find"${st.findable !== false ? " checked" : ""}><span><b>Znajomi mogą znaleźć mnie po e-mailu</b><small>tylko gdy wpiszą dokładnie ten adres</small></span></label>
+          ${acc.google ? "" : `<button type="button" class="btn wide zn-g2" id="zn-google">${ic("lock")} <span>Dołącz też konto Google</span></button>`}
+          ${SO().fbAvailable() ? acc.facebook ? `<button type="button" class="btn wide zn-fbf" id="zn-fbfriends">${ic("users")} <span>Znajomi z Facebooka w Podróżniku</span></button><div id="zn-fblist"></div>`
+            : `<button type="button" class="btn wide zn-fb" id="zn-facebook">${ic("users")} <span>Połącz z Facebookiem – znajdź znajomych</span></button>` : ""}
           <label class="zn-sw"><input type="checkbox" id="zn-vault"${st.vault !== false ? " checked" : ""}><span><b>Kopia znajomych na koncie</b><small>na nowym telefonie wrócą znajomi, czaty i widoczność podróży (kopia klucza czatu jest chroniona logowaniem do konta, bez osobnego hasła)</small></span></label>
         </section>` : `
         <section class="card zn-acc">
           <p class="zn-acc-t"><b>Zaloguj się kontem Google</b> – znajomi i czaty przejdą z Tobą na nowy telefon, a znajomi znajdą Cię po adresie e-mail.</p>
           <button type="button" class="btn primary wide" id="zn-google">${ic("lock")} <span>Zaloguj kontem Google</span></button>
+          ${SO().fbAvailable() ? `<button type="button" class="btn wide zn-fb" id="zn-facebook">${ic("users")} <span>Zaloguj przez Facebooka</span></button>
+          <p class="f-hint">Przez Facebooka zobaczysz znajomych, którzy też zalogowali się do Podróżnika przez Facebooka.</p>` : ""}
         </section>`}
 
         ${incoming.length ? `<h2 class="section">Zaproszenia <span class="rz-badge">${incoming.length}</span></h2>
@@ -118,6 +132,31 @@
           try { const a = await SO().signInGoogle(); App.toast(`Zalogowano: ${a ? a.email : ""}`); }
           catch (e) { App.toast(e.code === "auth/popup-closed-by-user" || e.code === "CANCELED" ? "Anulowano" : e.code === "auth/operation-not-allowed" ? "Logowanie Google nie jest jeszcze włączone w Firebase" : offlineMsg(e)); }
           App.render();
+        };
+        const fbb = view.querySelector("#zn-facebook");
+        if (fbb) fbb.onclick = async () => {
+          fbb.disabled = true;
+          try { await SO().signInFacebook(); App.toast("Połączono z Facebookiem"); }
+          catch (e) { App.toast(e.code === "auth/popup-closed-by-user" || e.code === "CANCELED" ? "Anulowano" : e.code === "auth/operation-not-allowed" ? "Logowanie przez Facebooka nie jest jeszcze włączone w Firebase" : offlineMsg(e)); }
+          App.render();
+        };
+        const fbf = view.querySelector("#zn-fbfriends");
+        if (fbf) fbf.onclick = async () => {
+          const box = view.querySelector("#zn-fblist");
+          fbf.disabled = true; box.innerHTML = `<p class="muted small">Sprawdzam…</p>`;
+          try {
+            const list = await SO().facebookFriends();
+            box.innerHTML = list.length ? `<div class="list">${list.map(x => `<div class="li zn-row">${av(x.uid, x.name)}
+              <span class="li-main"><b>${esc(x.name || x.fbName)}</b>${x.fbName && x.fbName !== x.name ? `<small>na Facebooku: ${esc(x.fbName)}</small>` : ""}</span>
+              ${x.state === "ok" ? `<span class="chip">znajomi</span>` : x.state === "out" ? `<span class="chip">wysłane</span>` : `<a class="btn small primary" href="#/znajomi/dodaj/${x.uid}">Zaproś</a>`}</div>`).join("")}</div>`
+              : `<p class="muted small">Nikt z Twoich znajomych z Facebooka nie połączył jeszcze Podróżnika z Facebookiem. Wyślij im swój link.</p>`;
+          } catch (e) {
+            box.innerHTML = `<p class="gd-err">${e.code === "fb-expired" || e.code === "no-fb" ? "Połącz ponownie z Facebookiem." : offlineMsg(e)}</p>`;
+            if (e.code === "fb-expired" || e.code === "no-fb") box.insertAdjacentHTML("beforeend", `<button type="button" class="btn wide" id="zn-fbagain">Połącz ponownie</button>`);
+            const again = box.querySelector("#zn-fbagain");
+            if (again) again.onclick = async () => { try { await SO().signInFacebook(); fbf.click(); } catch (er) { App.toast(offlineMsg(er)); } };
+          }
+          fbf.disabled = false;
         };
         const so = view.querySelector("#zn-out");
         if (so) so.onclick = async () => {
@@ -291,20 +330,26 @@
     const segRow = seg => seg.type === "nocleg"
       ? `<div class="zn-ev"><span class="zn-ev-t">${App.time(seg.depart)}</span><span class="zn-ev-ic">${ic("bed")}</span><span><b>${esc(seg.name || "Nocleg")}</b>${seg.city ? `<small>${esc(seg.city)}</small>` : ""}</span></div>`
       : `<div class="zn-ev"><span class="zn-ev-t">${App.time(seg.depart)}</span><span class="zn-ev-ic">${ic(SEG_ICON[seg.type] || "navigate")}</span><span><b>${esc(seg.from)} → ${esc(seg.to)}</b>${seg.arrive ? `<small>przyjazd ${App.time(seg.arrive)}${seg.number ? ` · ${esc(seg.number)}` : ""}</small>` : ""}</span></div>`;
-    const itemRow = it => `<div class="zn-ev"><span class="zn-ev-t">${esc(it.time || "–")}</span><span class="zn-ev-ic" aria-hidden="true">${(CATS[it.cat] || { icon: "📌" }).icon}</span>
-      <span><b>${esc(it.title)}</b>${it.place ? `<small>${esc(it.place)}</small>` : ""}</span></div>`;
+    const idx = new Map((s.items || []).map((it, i) => [it, i]));
+    const itemRow = it => `<div class="zn-ev zn-ev-it"><span class="zn-ev-t">${esc(it.time || "–")}</span><span class="zn-ev-ic" aria-hidden="true">${(CATS[it.cat] || { icon: "📌" }).icon}</span>
+      <span><b>${esc(it.title)}</b>${it.place ? `<small>${esc(it.place)}</small>` : ""}</span>
+      <button type="button" class="icon-btn zn-take" data-take="${idx.get(it)}" aria-label="Weź pomysł: ${esc(it.title)}">${ic("plus", "")}</button></div>`;
     let body = "";
     for (const d of days) {
       const segs = (s.segs || []).filter(x => segAt(x, d)).map(x => ({ k: (x.depart || "").slice(11, 16) || "99", h: segRow(x) }));
       const its = (s.items || []).filter(i => i.date === d).sort((a, b) => (a.order ?? 0) - (b.order ?? 0)).map(i => ({ k: i.time || "", h: itemRow(i) }));
       const all = its.filter(x => x.k).concat(segs).sort((a, b) => a.k.localeCompare(b.k)).concat(its.filter(x => !x.k));
       if (!all.length) continue;
-      body += `<section class="zn-day"><h3>${App.fmtDayLong(d)}</h3>${all.map(x => x.h).join("")}</section>`;
+      const nIt = its.length;
+      body += `<section class="zn-day"><div class="zn-day-h"><h3>${App.fmtDayLong(d)}</h3>
+        ${nIt ? `<button type="button" class="btn small zn-copyday" data-copyday="${d}" aria-label="Skopiuj ten dzień: ${App.fmtDay(d)}">${ic("copy")} <span>Skopiuj dzień</span></button>` : ""}</div>
+        ${all.map(x => x.h).join("")}</section>`;
     }
     const ideas = (s.items || []).filter(i => !i.date);
     if (ideas.length) body += `<section class="zn-day"><h3>💡 Pomysły</h3>${ideas.map(itemRow).join("")}</section>`;
     if (!body) body = `<p class="muted">Plan jest jeszcze pusty.</p>`;
     return `
+      <div class="zn-copybar"><button type="button" class="btn primary wide" id="zn-copytop">${ic("copy")} <span>Skopiuj całą wycieczkę</span></button></div>
       <header class="pl-head zn-thead" style="--c:${esc(t.color || "#0f6e6e")}">
         <p class="zn-owner">${ownerHref ? `<a href="${ownerHref}">${esc(owner || s.owner || "")}</a>` : esc(owner || s.owner || "")}</p>
         <h2>${esc(t.name)}</h2>
@@ -314,14 +359,100 @@
       <button type="button" class="btn wide zn-copy" id="zn-copytrip">${ic("copy")} <span>Skopiuj do moich podróży</span></button>
       <p class="f-hint">Podgląd bez biletów, kodów rezerwacji, cen i notatek · zaktualizowano ${App.fmtDay(String(s.updated || "").slice(0, 10) || today())}</p>`;
   }
-  const copyBtn = (view, s) => {
-    view.querySelector("#zn-copytrip").onclick = async () => {
-      if (!confirm(`Skopiować „${s.trip.name}” jako nową podróż u Ciebie? To będzie Twoja kopia – zmiany autora nie będą się w niej pojawiać.`)) return;
-      const t = await SO().copyTrip(s);
-      App.toast("Skopiowano – to teraz Twoja podróż");
-      location.hash = `#/podroze/${t.id}`;
+  const copyBtn = (view, s, from) => {
+    // „+” przy punkcie: do pomysłów w wybranej mojej podróży
+    view.querySelectorAll("[data-take]").forEach(b => b.onclick = async () => {
+      const it = s.items[+b.dataset.take];
+      const mine = await DB.all("trips");
+      const put = async tripId => {
+        await SO().takeIdea(tripId, it, from || s.owner);
+        const t = mine.find(x => x.id === tripId);
+        b.innerHTML = ic("check", ""); b.classList.add("done");
+        App.toast(`Dodano do pomysłów: ${t ? t.name : ""}`);
+      };
+      if (!mine.length) { App.toast("Najpierw dodaj swoją podróż – albo skopiuj całą"); return; }
+      if (mine.length === 1) return put(mine[0].id);
+      if (App.Plan && App.Plan.tripSheet) App.Plan.tripSheet(mine, null, put);
+    });
+    // „Skopiuj dzień”: punkty tego dnia (z godzinami) → wybrana moja podróż i dzień
+    view.querySelectorAll("[data-copyday]").forEach(b => b.onclick = async () => {
+      const day = b.dataset.copyday;
+      const items = (s.items || []).filter(i => i.date === day).sort((x, y) => (x.order ?? 0) - (y.order ?? 0));
+      const mine = await DB.all("trips");
+      if (!mine.length) { App.toast("Najpierw dodaj swoją podróż – albo skopiuj całą wycieczkę"); return; }
+      const nth = App.dayDiff(s.trip.start, day); // ten sam numer dnia w mojej podróży
+      const go = tripId => {
+        const t = mine.find(x => x.id === tripId);
+        daySheet(t, nth, async target => {
+          const have = (await DB.byIndex("planItems", "tripId", tripId)).filter(i => i.date === target);
+          let order = have.reduce((m, i) => Math.max(m, i.order ?? 0), -1) + 1;
+          for (const it of items) await SO().takeIdea(tripId, it, from || s.owner).then(rec => DB.put("planItems", { ...rec, date: target, time: it.time || "", order: order++ }));
+          b.innerHTML = `${ic("check")} <span>Skopiowano</span>`; b.classList.add("done");
+          App.toast(`Skopiowano ${items.length} ${plural(items.length, "punkt", "punkty", "punktów")} → ${t.name}, ${App.fmtDay(target)}`);
+        });
+      };
+      if (mine.length === 1) go(mine[0].id); else App.Plan.tripSheet(mine, null, go);
+    });
+    view.querySelector("#zn-copytop").onclick = () => view.querySelector("#zn-copytrip").click();
+    // „Skopiuj całą wycieczkę”: nowa podróż u mnie, z wyborem daty wyjazdu (plan przesuwa się razem z nią)
+    view.querySelector("#zn-copytrip").onclick = () => {
+      const old = document.querySelector(".tp-sheet"); if (old) old.remove();
+      const len = App.dayDiff(s.trip.start, s.trip.end) + 1, past = s.trip.start < today();
+      const dlg = document.createElement("dialog");
+      dlg.className = "tp-sheet";
+      dlg.setAttribute("aria-label", "Skopiuj wycieczkę");
+      dlg.innerHTML = `<form class="tp-in zn-copyform" method="dialog">
+          <div class="tp-top"><h2>Skopiuj wycieczkę</h2><button type="button" class="icon-btn" data-close aria-label="Zamknij">${App.icon("close")}</button></div>
+          <p class="muted small">„${esc(s.trip.name)}” – ${len} ${plural(len, "dzień", "dni", "dni")}, ${(s.items || []).length} ${plural((s.items || []).length, "punkt", "punkty", "punktów")} planu. To będzie Twoja kopia – zmiany autora nie będą się w niej pojawiać.</p>
+          <label class="field"><span>Kiedy jedziesz?</span><input type="date" name="start" value="${past ? App.addDays(today(), 30) : esc(s.trip.start)}" required></label>
+          <p class="f-hint" id="zn-copyend"></p>
+          <button class="btn primary wide" type="submit">${App.icon("copy", "sm")} <span>Skopiuj</span></button>
+        </form>`;
+      document.body.appendChild(dlg);
+      const f = dlg.querySelector("form"), endP = dlg.querySelector("#zn-copyend");
+      const showEnd = () => { endP.textContent = f.start.value ? `Powrót: ${App.fmtDayLong(App.addDays(f.start.value, len - 1))}` : ""; };
+      f.start.oninput = showEnd; showEnd();
+      const close = () => { dlg.close(); dlg.remove(); };
+      dlg.addEventListener("click", e => { if (e.target === dlg || e.target.closest("[data-close]")) close(); });
+      dlg.addEventListener("cancel", e => { e.preventDefault(); close(); });
+      f.onsubmit = async e => {
+        e.preventDefault();
+        if (!f.start.value) return;
+        f.querySelector("button[type=submit]").disabled = true;
+        const t = await SO().copyTrip(s, f.start.value);
+        close();
+        App.toast("Skopiowano – to teraz Twoja podróż");
+        location.hash = `#/podroze/${t.id}`;
+      };
+      dlg.showModal();
     };
   };
+
+  // wybór dnia w mojej podróży (arkusz jak przy wyborze podróży)
+  function daySheet(t, nth, onPick) {
+    const old = document.querySelector(".tp-sheet"); if (old) old.remove();
+    const days = [];
+    for (let d = t.start; d <= t.end && days.length < 120; d = App.addDays(d, 1)) days.push(d);
+    const sug = days[Math.min(Math.max(nth, 0), days.length - 1)];
+    const dlg = document.createElement("dialog");
+    dlg.className = "tp-sheet";
+    dlg.setAttribute("aria-label", "Wybierz dzień");
+    dlg.innerHTML = `<div class="tp-in">
+        <div class="tp-top"><h2>Do którego dnia?</h2><button type="button" class="icon-btn" data-close aria-label="Zamknij">${App.icon("close")}</button></div>
+        <p class="muted small" style="margin:0 0 6px">${esc(t.name)}</p>
+        <div class="tp-list">${days.map((d, i) => `<button type="button" class="tp-trip${d === sug ? " on" : ""}" data-day="${d}" style="--c:${esc(t.color || "#0f6e6e")}">
+          <span class="tp-bar" aria-hidden="true"></span><span class="tp-main"><b>Dzień ${i + 1}</b><small>${App.fmtDayLong(d)}</small></span>${d === sug ? `<span class="tp-st tp-soon">ten sam dzień</span>` : ""}</button>`).join("")}</div></div>`;
+    document.body.appendChild(dlg);
+    const close = () => { dlg.close(); dlg.remove(); };
+    dlg.addEventListener("click", e => {
+      if (e.target === dlg || e.target.closest("[data-close]")) return close();
+      const b = e.target.closest("[data-day]");
+      if (b) { close(); onPick(b.dataset.day); }
+    });
+    dlg.addEventListener("cancel", e => { e.preventDefault(); close(); });
+    dlg.showModal();
+    const cur = dlg.querySelector(".tp-trip.on"); if (cur) cur.scrollIntoView({ block: "center" });
+  }
 
   App.route(/^\/znajomy\/([A-Za-z0-9]{20,40})\/p\/([\w-]{12})$/, async ([id, doc]) => {
     if (!SO() || !SO().available()) return notReady();
@@ -340,10 +471,78 @@
     try { s = await SO().publicTrip({ uid, doc, key }); } catch (e) { err = e; }
     if (!s) return { title: "Podróż", html: err ? `<p class="gd-err">${offlineMsg(err)}</p>` : App.empty("🔒", "Niedostępna", "Autor przestał udostępniać tę podróż albo link jest niepełny.") };
     const st = await SO().state(), isFriend = st.friends[uid] && st.friends[uid].state === "ok";
+    const me = await SO().profile().catch(() => ""), mine = uid === me;
     return {
-      title: "Podróż", html: tripView(s, { ownerHref: isFriend ? `#/znajomy/${uid}` : "" }) +
-        (isFriend ? "" : `<a class="btn wide zn-addowner" href="#/znajomi/dodaj/${uid}">${ic("users")} <span>Dodaj autora do znajomych</span></a>`),
+      title: "Podróż", html: tripView(s, { ownerHref: isFriend ? `#/znajomy/${uid}` : mine ? "" : `#/osoba/${uid}` }) +
+        (isFriend || mine ? "" : `<a class="btn wide zn-addowner" href="#/osoba/${uid}">${ic("users")} <span>Profil autora – obserwuj albo dodaj do znajomych</span></a>`),
       after: view => copyBtn(view, s),
+    };
+  });
+
+  /* ================= profil dowolnej osoby (podróże publiczne, obserwowanie) ================= */
+  App.route(/^\/osoba\/([A-Za-z0-9]{20,40})$/, async ([uid]) => {
+    if (!SO() || !SO().available()) return notReady();
+    const st = await SO().state();
+    if (st.friends[uid] && st.friends[uid].state === "ok") { location.replace(`#/znajomy/${uid}`); return ""; }
+    let ix = null, p = null, err = null;
+    try { await SO().enable(); [ix, p] = await Promise.all([SO().publicTrips(uid), SO().person(uid)]); } catch (e) { err = e; }
+    const name = (p && p.name) || (ix && ix.name) || "Podróżnik", fol = await SO().isFollowing(uid);
+    const trips = (ix && ix.trips) || [];
+    return {
+      title: name, back: "#/obserwowani",
+      html: err ? `<p class="gd-err">${offlineMsg(err)}</p>` : `
+        <div class="gd-intro zn-prof">${av(uid, name, "xl")}<h2>${esc(name)}</h2>
+          <p class="muted small">${trips.length} ${plural(trips.length, "podróż publiczna", "podróże publiczne", "podróży publicznych")}</p></div>
+        <div class="zn-acts">
+          <button type="button" class="btn ${fol ? "" : "primary"}" id="zn-follow">${ic(fol ? "check" : "star")} <span>${fol ? "Obserwujesz" : "Obserwuj"}</span></button>
+          ${st.friends[uid] ? "" : `<a class="btn" href="#/znajomi/dodaj/${uid}">${ic("users")} <span>Dodaj do znajomych</span></a>`}
+        </div>
+        <h2 class="section">Podróże</h2>
+        ${trips.length ? trips.map(t => feedCard({ ...t, uid, owner: name })).join("") : `<p class="muted small">Brak podróży publicznych.</p>`}
+        <p class="f-hint">Obserwując widzisz tylko podróże publiczne. Znajomi widzą też te „dla znajomych” i mogą pisać na czacie.</p>`,
+      after(view) {
+        const b = view.querySelector("#zn-follow");
+        if (b) b.onclick = async () => { b.disabled = true; try { if (fol) await SO().unfollow(uid); else await SO().follow(uid); App.toast(fol ? "Nie obserwujesz" : `Obserwujesz: ${name}`); } catch (e) { App.toast(offlineMsg(e)); } App.render(); };
+      },
+    };
+  });
+
+  /* ================= obserwowani: nowe podróże ================= */
+  App.route(/^\/obserwowani$/, async () => {
+    if (!SO() || !SO().available()) return notReady();
+    let feed = [], err = null, nFol = 0;
+    try { await SO().enable(); feed = await SO().followingFeed(); nFol = await SO().followersCount().catch(() => 0); } catch (e) { err = e; }
+    const st = await SO().state(), fol = Object.entries(st.following || {});
+    return {
+      title: "Znajomi",
+      html: `${tabs("o")}
+        ${err ? `<p class="gd-err">${offlineMsg(err)}</p>` : ""}
+        ${fol.length ? `<div class="st-chips zn-folchips">${fol.map(([id, f]) => `<a class="st-chip" href="#/osoba/${id}">${av(id, f.name, "xs")} ${esc(f.name || "Podróżnik")}</a>`).join("")}</div>` : ""}
+        <h2 class="section">Podróże obserwowanych</h2>
+        ${feed.length ? feed.map(feedCard).join("") : `<p class="muted small zn-none">${fol.length ? "Obserwowane osoby nie mają jeszcze podróży publicznych." : "Nikogo jeszcze nie obserwujesz. Zajrzyj do „Odkrywaj” albo otwórz czyjś link do podróży i wybierz „Obserwuj”."}</p>`}
+        <p class="f-hint">Otwórz podróż i dotknij „+” przy punkcie, żeby wziąć pomysł do swojej podróży.${nFol ? ` · Ciebie obserwuje: ${nFol}` : ""}</p>`,
+    };
+  });
+
+  /* ================= odkrywaj: podróże innych (za ich zgodą) ================= */
+  App.route(/^\/odkrywaj-ludzi$/, async () => {
+    if (!SO() || !SO().available()) return notReady();
+    let list = [], err = null;
+    try { await SO().enable(); list = await SO().explore(); } catch (e) { err = e; }
+    const st = await SO().state();
+    const nPub = Object.values(st.trips).filter(r => r.vis === "public").length;
+    return {
+      title: "Znajomi",
+      html: `${tabs("d")}
+        ${err ? `<p class="gd-err">${offlineMsg(err)}</p>` : ""}
+        <section class="card zn-acc"><label class="zn-sw"><input type="checkbox" id="zn-explore"${st.explore ? " checked" : ""}>
+          <span><b>Pokazuj moje publiczne podróże w Odkrywaj</b><small>${nPub ? `${nPub} ${plural(nPub, "podróż publiczna", "podróże publiczne", "podróży publicznych")} – zobaczą je wszyscy użytkownicy Podróżnika` : "nie masz jeszcze podróży publicznych – ustaw je w „Kto widzi podróż”"}</small></span></label></section>
+        <h2 class="section">Inspiracje od innych</h2>
+        ${list.length ? list.map(feedCard).join("") : `<p class="muted small zn-none">Nikt jeszcze nie pokazuje podróży w Odkrywaj. Bądź pierwszy!</p>`}`,
+      after(view) {
+        const x = view.querySelector("#zn-explore");
+        x.onchange = async () => { try { await SO().setExplore(x.checked); App.toast(x.checked ? "Twoje publiczne podróże są w Odkrywaj" : "Ukryto w Odkrywaj"); } catch (e) { x.checked = !x.checked; App.toast(offlineMsg(e)); } App.render(); };
+      },
     };
   });
 

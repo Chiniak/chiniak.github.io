@@ -83,6 +83,15 @@ service cloud.firestore {
         && request.resource.data.v == 1;
       allow delete: if signedIn() && request.auth.uid == uid;
 
+      // obserwujący: dokument nazwany identyfikatorem obserwującego; licznik widzi właściciel
+      match /followers/{f} {
+        allow get: if signedIn() && (request.auth.uid == uid || request.auth.uid == f);
+        allow list: if signedIn() && request.auth.uid == uid;
+        allow create, update: if signedIn() && request.auth.uid == f && f != uid
+          && request.resource.data.keys().hasOnly(['t']) && request.resource.data.t == request.time;
+        allow delete: if signedIn() && (request.auth.uid == f || request.auth.uid == uid);
+      }
+
       // zaproszenia / odpowiedzi: dokument nazwany identyfikatorem nadawcy; czyta i usuwa tylko odbiorca
       match /inbox/{from} {
         allow get, list, delete: if signedIn() && request.auth.uid == uid;
@@ -126,10 +135,39 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['uid']) && request.resource.data.uid == request.auth.uid;
       allow delete: if signedIn() && resource.data.uid == request.auth.uid;
     }
-    // kopia klucza i listy znajomych na koncie (tylko konto Google – nie anonimowe); czyta i pisze wyłącznie właściciel
+    // kopia klucza i listy znajomych na koncie (tylko konto Google / Facebook – nie anonimowe); czyta i pisze wyłącznie właściciel
     match /vault/{uid} {
-      allow get, create, update, delete: if signedIn() && request.auth.uid == uid && request.auth.token.email != null;
+      allow get, create, update, delete: if signedIn() && request.auth.uid == uid
+        && request.auth.token.firebase.identities.keys().hasAny(['google.com', 'facebook.com']);
       allow list: if false;
+    }
+    // znajomi z Facebooka (etap 3): identyfikator Facebooka (przypisany do aplikacji) → profil; zapisuje tylko właściciel tego konta Facebook
+    match /fbids/{fbid} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create, update: if signedIn() && 'facebook.com' in request.auth.token.firebase.identities
+        && fbid in request.auth.token.firebase.identities['facebook.com']
+        && request.resource.data.keys().hasOnly(['uid']) && request.resource.data.uid == request.auth.uid;
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+    }
+    // spis moich podróży publicznych (dla obserwujących) – czyta każdy zalogowany znający identyfikator
+    match /pub/{uid}/index/{d} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create, update: if signedIn() && request.auth.uid == uid && d == 'public'
+        && request.resource.data.keys().hasOnly(['name', 't', 'v', 'trips'])
+        && request.resource.data.trips is list && request.resource.data.trips.size() <= 50
+        && request.resource.data.t == request.time && request.resource.data.v == 1;
+      allow delete: if signedIn() && request.auth.uid == uid;
+    }
+    // „Odkrywaj”: podróże publiczne osób, które się na to zgodziły (lista dla wszystkich zalogowanych)
+    match /explore/{uid} {
+      allow get, list: if signedIn();
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['name', 't', 'v', 'trips'])
+        && request.resource.data.trips is list && request.resource.data.trips.size() <= 20
+        && request.resource.data.t == request.time && request.resource.data.v == 1;
+      allow delete: if signedIn() && request.auth.uid == uid;
     }
     // lista kluczy podróży dla jednego znajomego (zaszyfrowana kluczem tej pary)
     match /pub/{uid}/keys/{friend} {

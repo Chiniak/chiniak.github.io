@@ -287,6 +287,7 @@
     if (!snap) return setVisibility(tripId, "private");
     const f = await fb(), me = await profile();
     await f.db.collection("pub").doc(me).collection("trips").doc(r.doc).set({ c: await seal(await rawKey(r.key), snap), t: f.now(), v: 1 });
+    if (r.vis === "public") await publicIndex().catch(() => {});
   }
   // lista podróży (dla znajomych i publicznych) dla każdego znajomego – zaszyfrowana jego kluczem
   async function keyMaps() {
@@ -298,6 +299,84 @@
       try { await f.db.collection("pub").doc(me).collection("keys").doc(id).set({ c: await seal(await sharedKey(fr.pub), { trips: list }), t: f.now(), v: 1 }); }
       catch (e) { console.warn("lista podróży dla znajomego:", e.code || e); }
     }
+    await publicIndex().catch(e => console.warn("podróże publiczne:", e.code || e));
+  }
+
+  /* ---------- obserwowanie (bez zgody, tylko podróże publiczne) i Odkrywaj ----------
+     pub/{uid}/index/public  { name, t, trips: [{ doc, key, name, dest, start, end, color }] } – spis moich podróży publicznych
+       (klucze i tak są w publicznych linkach); czyta każdy zalogowany, kto zna identyfikator (obserwujący).
+     explore/{uid}           to samo + widoczne na liście „Odkrywaj” – tylko gdy włączysz „Pokazuj mnie w Odkrywaj”.
+     people/{uid}/followers/{kto}  { t } – kto Cię obserwuje (licznik dla właściciela). */
+  async function publicIndex() {
+    await load();
+    const f = await fb(), me = await profile(), name = (await myName()).slice(0, 40);
+    const trips = [];
+    for (const [tripId, r] of Object.entries(st.trips)) {
+      if (r.vis !== "public") continue;
+      const t = await DB.get("trips", tripId);
+      if (t) trips.push({ doc: r.doc, key: r.key, name: (t.name || "").slice(0, 80), dest: (t.destination || "").slice(0, 80), start: t.start || "", end: t.end || "", color: t.color || "" });
+    }
+    trips.sort((a, b) => b.start.localeCompare(a.start));
+    const ix = f.db.collection("pub").doc(me).collection("index").doc("public");
+    if (trips.length) await ix.set({ name, t: f.now(), v: 1, trips: trips.slice(0, 50) }); else await ix.delete().catch(() => {});
+    const ex = f.db.collection("explore").doc(me);
+    if (st.explore && trips.length) await ex.set({ name, t: f.now(), v: 1, trips: trips.slice(0, 20) }); else await ex.delete().catch(() => {});
+  }
+  async function setExplore(on) { await load(); st.explore = !!on; await save(); await publicIndex(); }
+  async function follow(id) {
+    await load();
+    const f = await fb(), me = await profile();
+    if (id === me) return;
+    const p = await person(id);
+    st.following = st.following || {};
+    st.following[id] = { name: (p && p.name) || "", since: new Date().toISOString() };
+    await save();
+    await f.db.collection("people").doc(id).collection("followers").doc(me).set({ t: f.now() }).catch(() => {});
+    emit("following");
+  }
+  async function unfollow(id) {
+    await load();
+    const f = await fb(), me = await profile();
+    if (st.following) delete st.following[id];
+    await save();
+    await f.db.collection("people").doc(id).collection("followers").doc(me).delete().catch(() => {});
+    emit("following");
+  }
+  const isFollowing = async id => { await load(); return !!(st.following && st.following[id]); };
+  async function followersCount() {
+    const f = await fb(), me = await profile();
+    return (await f.db.collection("people").doc(me).collection("followers").get()).size;
+  }
+  // podróże publiczne jednej osoby (spis bez otwierania) i pełne migawki
+  async function publicTrips(id) {
+    const d = await (await fb()).db.collection("pub").doc(id).collection("index").doc("public").get();
+    return d.exists ? d.data() : { name: "", trips: [] };
+  }
+  // „Obserwowani”: najnowsze podróże publiczne obserwowanych osób
+  async function followingFeed() {
+    await load();
+    const out = [];
+    for (const [id, fo] of Object.entries(st.following || {})) {
+      try {
+        const ix = await publicTrips(id);
+        if (ix.name && ix.name !== fo.name) { fo.name = ix.name; }
+        for (const t of ix.trips || []) out.push({ ...t, uid: id, owner: ix.name || fo.name, t: ix.t && ix.t.toDate ? ix.t.toDate().toISOString() : "" });
+      } catch (e) { console.warn("obserwowani:", e.code || e); }
+    }
+    return out.sort((a, b) => (b.t || "").localeCompare(a.t || "") || b.start.localeCompare(a.start));
+  }
+  // „Odkrywaj”: ostatnio aktualizowane podróże osób, które się na to zgodziły
+  async function explore(limit = 30) {
+    const f = await fb(), me = await profile();
+    const snap = await f.db.collection("explore").orderBy("t", "desc").limit(limit).get();
+    const out = [];
+    snap.forEach(d => { if (d.id === me) return; const x = d.data(); for (const t of (x.trips || []).slice(0, 3)) out.push({ ...t, uid: d.id, owner: x.name || "" }); });
+    return out;
+  }
+  // pomysł od kogoś → moje pomysły (punkt bez dnia) w wybranej podróży
+  async function takeIdea(tripId, it, from) {
+    return DB.put("planItems", { tripId, date: "", time: "", title: (it.title || "").slice(0, 100), cat: it.cat || "inne", place: it.place || "",
+      ...(typeof it.lat === "number" && typeof it.lon === "number" ? { lat: it.lat, lon: it.lon } : {}), note: from ? `Pomysł od: ${from}` : "", cost: "", currency: "PLN", order: 1e6 });
   }
   // zmiany w udostępnionej podróży → nowa migawka (najwyżej co kilka sekund)
   const timers = {};
@@ -347,10 +426,13 @@
     return { doc, ...(await unseal(await rawKey(key), d.data().c)) };
   }
   // kopia cudzej podróży u mnie (bez powiązania – zwykła nowa podróż)
-  async function copyTrip(snap) {
-    const t = await DB.put("trips", { name: snap.trip.name, destination: snap.trip.destination, start: snap.trip.start, end: snap.trip.end, color: snap.trip.color || "#0f6e6e", note: snap.owner ? `Plan od: ${snap.owner}` : "" });
-    for (const s of snap.segs || []) await DB.put("segments", { ...s, tripId: t.id });
-    for (const i of snap.items || []) await DB.put("planItems", { ...i, tripId: t.id, note: "", cost: "", currency: "PLN" });
+  // start – nowa data początku (cała wycieczka przesunięta o tyle samo dni); bez – te same daty co u autora
+  async function copyTrip(snap, start) {
+    const shift = start && start !== snap.trip.start ? App.dayDiff(snap.trip.start, start) : 0;
+    const sd = d => (d && shift ? App.addDays(d.slice(0, 10), shift) + d.slice(10) : d);
+    const t = await DB.put("trips", { name: snap.trip.name, destination: snap.trip.destination, start: sd(snap.trip.start), end: sd(snap.trip.end), color: snap.trip.color || "#0f6e6e", note: snap.owner ? `Plan od: ${snap.owner}` : "" });
+    for (const s of snap.segs || []) await DB.put("segments", { ...s, tripId: t.id, depart: sd(s.depart), arrive: sd(s.arrive) });
+    for (const i of snap.items || []) await DB.put("planItems", { ...i, tripId: t.id, date: i.date ? sd(i.date) : "", note: "", cost: "", currency: "PLN" });
     return t;
   }
 
@@ -361,9 +443,12 @@
      Kopia jest chroniona regułami (czyta ją tylko zalogowany właściciel), ale nie jest zaszyfrowana hasłem – można ją wyłączyć.
      emails/{email} → { uid }: znajomi znajdą Cię po dokładnym adresie (bez listowania); można wyłączyć. */
   const googleOf = u => u && u.providerData && u.providerData.find(p => p.providerId === "google.com");
+  const linked = u => !!(u && u.providerData && u.providerData.some(p => p.providerId === "google.com" || p.providerId === "facebook.com"));
   async function account() {
-    const u = (await fb()).auth.currentUser, g = googleOf(u);
-    return g ? { email: String(u.email || g.email || "").toLowerCase(), name: g.displayName || "" } : null;
+    const u = (await fb()).auth.currentUser;
+    if (!linked(u)) return null;
+    const g = googleOf(u), fbp = u.providerData.find(p => p.providerId === "facebook.com");
+    return { email: String(u.email || (g && g.email) || (fbp && fbp.email) || "").toLowerCase(), name: (g || fbp).displayName || "", google: !!g, facebook: !!fbp };
   }
   async function credential(idToken) {
     if (idToken) return firebase.auth.GoogleAuthProvider.credential(idToken); // testy (emulator)
@@ -375,26 +460,88 @@
     return null; // przeglądarka: okno logowania Google (popup)
   }
   async function signInGoogle({ idToken } = {}) {
+    await linkOrSignIn(await credential(idToken), () => new firebase.auth.GoogleAuthProvider());
+    return account();
+  }
+  // dołącz konto (Google / Facebook) do obecnego profilu albo przełącz się na profil, do którego to konto już należy
+  async function linkOrSignIn(cred, popupProvider) {
     await load();
     const f = await fb(), auth = f.auth, before = auth.currentUser && auth.currentUser.uid;
-    const cred = await credential(idToken);
+    let res = null;
     try {
-      if (cred) await auth.currentUser.linkWithCredential(cred);
-      else await auth.currentUser.linkWithPopup(new firebase.auth.GoogleAuthProvider());
+      if (cred) res = await auth.currentUser.linkWithCredential(cred);
+      else res = await auth.currentUser.linkWithPopup(popupProvider());
     } catch (e) {
       if (e.code !== "auth/credential-already-in-use" && e.code !== "auth/email-already-in-use") throw e;
       const c = e.credential || cred;
       if (!c) throw e;
-      await auth.signInWithCredential(c); // to konto ma już swój identyfikator (np. z poprzedniego telefonu)
+      res = await auth.signInWithCredential(c); // to konto ma już swój identyfikator (np. z poprzedniego telefonu)
     }
-    await auth.currentUser.getIdToken(true); // e-mail w tokenie – potrzebny regułom
+    await auth.currentUser.getIdToken(true); // e-mail i dostawcy w tokenie – potrzebne regułom
     profileDone = null;
     if (auth.currentUser.uid !== before) await restore();
     if (st.findable !== false) await setFindable(true).catch(e => console.warn("e-mail:", e.code || e));
+    await registerFacebook().catch(e => console.warn("facebook:", e.code || e));
     await profile();
     await writeVault();
     emit("account");
+    return res;
+  }
+
+  /* ---------- Facebook (etap 3): logowanie i znajomi z Facebooka, którzy też używają Podróżnika ----------
+     Facebook podaje tylko tych znajomych, którzy zalogowali się do Podróżnika przez Facebooka i zgodzili się na
+     „user_friends” (identyfikatory przypisane do tej aplikacji). fbids/{idFacebooka} → { uid } łączy je z profilami.
+     Włączone, gdy w sync-config.js jest facebookAppId (i – na Androidzie – wtyczka @capacitor-community/facebook-login). */
+  const FB_PERMS = ["public_profile", "email", "user_friends"];
+  const fbConfigured = () => !!(self.SYNC_CONFIG && self.SYNC_CONFIG.facebookAppId) || !!(S() && S().configured() && localStorage.getItem("podroznik-emu-fb"));
+  const fbNative = () => window.PodroznikNative && PodroznikNative.isNative && window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.FacebookLogin;
+  const fbAvailable = () => available() && fbConfigured() && (!(window.PodroznikNative && PodroznikNative.isNative) || !!fbNative());
+  let fbToken = null; // token dostępu Facebooka (tylko w pamięci i w ustawieniu „social.fbToken” na tym telefonie)
+  async function signInFacebook({ accessToken } = {}) {
+    if (!accessToken && fbNative()) {
+      const r = await fbNative().login({ permissions: FB_PERMS });
+      if (!r || !r.accessToken) throw Object.assign(new Error("Anulowano"), { code: "CANCELED" });
+      accessToken = r.accessToken.token;
+    }
+    const prov = () => { const p = new firebase.auth.FacebookAuthProvider(); FB_PERMS.forEach(s => p.addScope(s)); return p; };
+    const res = await linkOrSignIn(accessToken ? firebase.auth.FacebookAuthProvider.credential(accessToken) : null, prov);
+    const tok = accessToken || (res && res.credential && res.credential.accessToken);
+    if (tok) { fbToken = tok; await DB.setSetting("social.fbToken", tok); }
+    await registerFacebook();
+    emit("account");
     return account();
+  }
+  const fbOf = u => u && u.providerData && u.providerData.find(p => p.providerId === "facebook.com");
+  async function registerFacebook() {
+    const f = await fb(), u = f.auth.currentUser, p = fbOf(u);
+    if (!p) return;
+    await f.db.collection("fbids").doc(p.uid).set({ uid: u.uid });
+  }
+  // znajomi z Facebooka, którzy też są w Podróżniku: [{ uid, name, fbName, state }]
+  async function facebookFriends({ graph } = {}) {
+    await load();
+    const tok = fbToken || await DB.getSetting("social.fbToken", null);
+    if (!tok) throw Object.assign(new Error("Połącz najpierw konto Facebook."), { code: "no-fb" });
+    let list = [];
+    if (graph) list = graph; // testy
+    else {
+      let url = `https://graph.facebook.com/v19.0/me/friends?limit=500&access_token=${encodeURIComponent(tok)}`;
+      while (url && list.length < 2000) {
+        const r = await fetch(url);
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) throw Object.assign(new Error((j.error && j.error.message) || "Facebook nie odpowiada"), { code: j.error && j.error.code === 190 ? "fb-expired" : "fb-error" });
+        list = list.concat(j.data || []);
+        url = j.paging && j.paging.next;
+      }
+    }
+    const f = await fb(), me = await profile(), out = [];
+    for (const fr of list) {
+      const d = await f.db.collection("fbids").doc(String(fr.id)).get().catch(() => null);
+      if (!d || !d.exists || d.data().uid === me) continue;
+      const id = d.data().uid, p = await person(id).catch(() => null);
+      out.push({ uid: id, name: (p && p.name) || fr.name || "", fbName: fr.name || "", state: (st.friends[id] || {}).state || "" });
+    }
+    return out;
   }
   function stopAll() {
     if (inboxOff) { inboxOff(); inboxOff = null; }
@@ -411,7 +558,8 @@
     if (v && v.keys) { await DB.setSetting("social.keys", v.keys); myKeys = null; for (const k of Object.keys(shared)) delete shared[k]; }
     // imię: z kopii albo z profilu na serwerze (gdy na tym telefonie jeszcze go nie ma)
     if (!(await myName())) { const nm = (v && v.name) || ((await person(me).catch(() => null)) || {}).name; if (nm) await DB.setSetting("myName", nm); }
-    st = { friends: (v && v.friends) || {}, trips: (v && v.trips) || {}, since: {}, read: (v && v.read) || {}, findable: v ? v.findable : undefined, vault: v ? v.vault : undefined };
+    st = { friends: (v && v.friends) || {}, trips: (v && v.trips) || {}, since: {}, read: (v && v.read) || {}, findable: v ? v.findable : undefined, vault: v ? v.vault : undefined,
+      following: (v && v.following) || {}, explore: !!(v && v.explore) };
     await DB.setSetting("social", st);
     if (!v || !v.keys) await keyMaps().catch(() => {});
     await start(true);
@@ -421,11 +569,11 @@
   async function writeVault() {
     if (!st || !available() || !fb) return;
     const f = await fb(), u = f.auth.currentUser;
-    if (!googleOf(u)) return;
+    if (!linked(u)) return;
     const ref = f.db.collection("vault").doc(u.uid);
     if (st.vault === false) { await ref.delete().catch(() => {}); return; }
     const keysRaw = await DB.getSetting("social.keys", null);
-    await ref.set({ v: 1, t: f.now(), vault: true, name: (await myName()).slice(0, 40), findable: st.findable !== false, keys: keysRaw, friends: st.friends, trips: st.trips, read: st.read });
+    await ref.set({ v: 1, t: f.now(), vault: true, name: (await myName()).slice(0, 40), findable: st.findable !== false, keys: keysRaw, friends: st.friends, trips: st.trips, read: st.read, following: st.following || {}, explore: !!st.explore });
   }
   async function setFindable(on) {
     await load();
@@ -449,6 +597,8 @@
     stopAll();
     await f.auth.signOut();
     await f.auth.signInAnonymously();
+    if (window.Capacitor && fbNative()) fbNative().logout().catch(() => {});
+    fbToken = null; await DB.setSetting("social.fbToken", null);
     await DB.setSetting("social.keys", null); myKeys = null; for (const k of Object.keys(shared)) delete shared[k];
     for (const m of await DB.all("dms")) await DB.delRaw("dms", m.id);
     st = { friends: {}, trips: {}, since: {}, read: {} }; await DB.setSetting("social", st);
@@ -477,7 +627,8 @@
     available, enable, start, load, state: async () => (await load(), st), myLink, myName, rename, profile, parseFriend, person,
     addFriend, accept, remove, sendMessage, messages, markRead, unread, unreadAll, startChat,
     VIS, setVisibility, visibility, publicLink, friendTrips, parsePublic, publicTrip, copyTrip, snapshot,
-    account, signInGoogle, signOut, setFindable, setVault, findByEmail,
+    publicIndex, setExplore, follow, unfollow, isFollowing, followersCount, publicTrips, followingFeed, explore, takeIdea,
+    account, signInGoogle, signInFacebook, fbAvailable, facebookFriends, signOut, setFindable, setVault, findByEmail,
     on: fn => { listeners.add(fn); return () => listeners.delete(fn); },
     _publish: publish, _keyMaps: keyMaps,
   };
