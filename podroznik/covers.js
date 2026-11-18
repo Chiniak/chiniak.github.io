@@ -135,5 +135,5 @@
   // zdjęcie do pokazania (bez sprawdzania własnej okładki)
   const of = t => (has(t) && !off(t) ? t.coverAuto : null);
 
-  App.Covers = { find, fetchFor, fill, needs, remove, allow, of, query };
+  App.Covers = { toData, canFetch, find, fetchFor, fill, needs, remove, allow, of, query };
 })();

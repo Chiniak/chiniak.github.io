@@ -2007,3 +2007,35 @@ mark.gd-mark { background: var(--accent-soft); color: inherit; border-radius: 3p
 .gd-foot .f-hint { margin-top: 4px; }
 .gd-foot .f-hint a { color: var(--accent); }
 .gd-li-h .muted { flex-basis: 100%; font-size: var(--fs-sm); font-weight: 400; }
+
+/* Plan: wyczyść plan / usuń podróż (na samym dole) */
+.pl-danger { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 12px; margin: 28px 0 8px; padding-top: 14px; border-top: 1px solid var(--line); }
+.pl-danger .btn { min-height: 44px; font-size: var(--fs-sm); }
+
+/* przełącznik podróży: przycisk na całym nagłówku + arkusz z kartami (plan, pakowanie) */
+.pl-switch-btn { position: absolute; inset: -4px; width: calc(100% + 8px); height: calc(100% + 8px); background: transparent; border: 0; border-radius: 12px; cursor: pointer; padding: 0; }
+.pl-switch-btn:focus-visible { outline: 2px solid var(--accent); }
+.tp-sheet { border: 0; padding: 0; margin: auto auto 0; width: 100%; max-width: 560px; max-height: 86vh; border-radius: 22px 22px 0 0; background: var(--bg, var(--surface)); color: var(--text); box-shadow: 0 -8px 40px rgba(0,0,0,.25); }
+.tp-sheet::backdrop { background: rgba(10, 20, 20, .5); }
+.tp-sheet[open] { animation: tp-up .22s ease-out; }
+@keyframes tp-up { from { transform: translateY(40px); opacity: .4; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .tp-sheet[open] { animation: none; } }
+.tp-in { display: flex; flex-direction: column; max-height: 86vh; padding: 10px 16px calc(16px + env(safe-area-inset-bottom)); }
+.tp-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 0 6px; }
+.tp-top h2 { margin: 0; font-size: var(--fs-xl, 1.3rem); }
+.tp-list { overflow-y: auto; margin: 0 -4px; padding: 0 4px 8px; }
+.tp-h { margin: 12px 2px 6px; font-size: var(--fs-cap); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.tp-trip { width: 100%; display: flex; align-items: center; gap: 12px; text-align: left; font: inherit; color: inherit; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 12px 12px 0; margin: 0 0 8px; cursor: pointer; overflow: hidden; }
+.tp-trip.on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.tp-bar { align-self: stretch; width: 6px; flex: none; background: var(--c); border-radius: 0 4px 4px 0; margin: -12px 0; }
+.tp-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.tp-main b { font-size: var(--fs-body); line-height: 1.25; overflow-wrap: anywhere; }
+.tp-main small { color: var(--muted); font-size: var(--fs-sm); }
+.tp-st { flex: none; font-size: var(--fs-cap); font-weight: 600; padding: 4px 9px; border-radius: 99px; background: var(--surface-2); color: var(--muted); white-space: nowrap; }
+.tp-now { background: var(--accent-fill); color: var(--accent-ink); }
+.tp-soon { background: var(--accent-soft); color: var(--accent); }
+.tp-check { flex: none; color: var(--accent); display: grid; }
+.tp-past summary { list-style: none; display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 12px 2px; color: var(--muted); font-size: var(--fs-sm); font-weight: 600; }
+.tp-past summary::-webkit-details-marker { display: none; }
+.tp-past .tp-trip { opacity: .85; }
+.tp-new { margin-top: 6px; flex: none; }

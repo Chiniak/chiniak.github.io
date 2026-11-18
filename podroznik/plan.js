@@ -129,6 +129,58 @@
     return now[0] || fut[0] || past[0];
   }
 
+  /* przełącznik podróży: arkusz z kartami (nazwa, cel, termin, „trwa / za X dni / minęła”), pogrupowany:
+     teraz, nadchodzące, minione (zwinięte). onPick(id) – wybór. Używany w planie i pakowaniu. */
+  function tripSheet(trips, id, onPick) {
+    const today = App.todayStr();
+    const old = document.querySelector(".tp-sheet");
+    if (old) old.remove();
+    const status = t => {
+      if (t.start <= today && today <= t.end) { const n = App.dayDiff(t.start, today) + 1, all = App.dayDiff(t.start, t.end) + 1; return { cls: "now", txt: `trwa · dzień ${n} z ${all}` }; }
+      if (t.start > today) { const n = App.dayDiff(today, t.start); return { cls: "soon", txt: n === 1 ? "jutro" : `za ${n} ${plural(n, "dzień", "dni", "dni")}` }; }
+      return { cls: "past", txt: "minęła" };
+    };
+    const card = t => {
+      const s = status(t), dest = t.destination && t.destination.trim() !== t.name.trim() ? t.destination : "";
+      return `<button type="button" class="tp-trip${t.id === id ? " on" : ""}" data-pick="${t.id}"${t.id === id ? ' aria-current="true"' : ""} style="--c:${esc(t.color || "#0f6e6e")}">
+          <span class="tp-bar" aria-hidden="true"></span>
+          <span class="tp-main"><b>${esc(t.name)}</b><small>${dest ? `${esc(dest)} · ` : ""}${App.fmtRange(t.start, t.end)}</small></span>
+          <span class="tp-st tp-${s.cls}">${s.txt}</span>${t.id === id ? `<span class="tp-check" aria-hidden="true">${App.icon("check", "sm")}</span>` : ""}
+        </button>`;
+    };
+    const now = trips.filter(t => t.start <= today && today <= t.end).sort((a, b) => a.start.localeCompare(b.start));
+    const fut = trips.filter(t => t.start > today).sort((a, b) => a.start.localeCompare(b.start));
+    const past = trips.filter(t => t.end < today).sort((a, b) => b.end.localeCompare(a.end));
+    const sec = (title, list) => list.length ? `<h3 class="tp-h">${title}</h3>${list.map(card).join("")}` : "";
+    const curPast = past.some(t => t.id === id);
+    const dlg = document.createElement("dialog");
+    dlg.className = "tp-sheet";
+    dlg.setAttribute("aria-label", "Wybierz podróż");
+    dlg.innerHTML = `
+      <div class="tp-in">
+        <div class="tp-top"><h2>Wybierz podróż</h2><button type="button" class="icon-btn" data-close aria-label="Zamknij">${App.icon("close")}</button></div>
+        <div class="tp-list">
+          ${sec("Teraz", now)}${sec("Nadchodzące", fut)}
+          ${past.length ? `<details class="tp-past"${curPast || (!now.length && !fut.length) ? " open" : ""}><summary>Minione <span class="chip">${past.length}</span>${App.icon("chev", "pl-sum-chev")}</summary>${past.map(card).join("")}</details>` : ""}
+        </div>
+        <a class="btn wide tp-new" href="#/podroze/nowa">${App.icon("plus", "sm")} <span>Nowa podróż</span></a>
+      </div>`;
+    document.body.appendChild(dlg);
+    const close = () => { dlg.close(); dlg.remove(); };
+    dlg.addEventListener("click", e => {
+      if (e.target === dlg || e.target.closest("[data-close]")) return close();
+      if (e.target.closest(".tp-new")) return close();
+      const b = e.target.closest("[data-pick]");
+      if (b) { close(); if (b.dataset.pick !== id) onPick(b.dataset.pick); }
+    });
+    dlg.addEventListener("cancel", e => { e.preventDefault(); close(); });
+    dlg.showModal();
+    const cur = dlg.querySelector(".tp-trip.on");
+    if (cur) cur.scrollIntoView({ block: "center" });
+  }
+  // przycisk przełącznika w nagłówku (zastępuje listę rozwijaną)
+  const switchBtn = (bid, trip) => `<button type="button" class="pl-switch-btn" id="${bid}" aria-haspopup="dialog" aria-label="Zmień podróż (teraz: ${esc(trip.name)})"></button>`;
+
   // opcje przełącznika podróży: trwające, nadchodzące, potem archiwum (także dla pakowania)
   function tripOptions(trips, id) {
     const today = App.todayStr();
@@ -224,7 +276,7 @@
         <div class="pl-head-name">
           <h2>${esc(trip.name)}</h2>
           ${trips.length > 1 ? `<span class="pl-head-chev" aria-hidden="true">${App.icon("chev")}</span>
-            <label class="pl-switch"><span class="sr">Podróż</span><select id="pl-trip">${tripOptions(trips, id)}</select></label>` : ""}
+            ${switchBtn("pl-trip", trip)}` : ""}
         </div>
         <p class="pl-info">${info}</p>
         ${ongoing ? `<div class="bar" aria-hidden="true"><i style="width:${Math.round(n0 / total * 100)}%"></i></div>` : ""}
@@ -380,6 +432,13 @@
     const sum = Object.entries(costs).map(([c, v]) => money(v, c)).join(" + ");
     if (sum) html += `<p class="pl-total">Koszty planu razem: <b>${sum}</b> <span class="muted">(bez transportu i noclegów)</span></p>`;
 
+    // na dole: wyczyszczenie planu (punkty i pomysły) albo usunięcie całej podróży
+    html += `
+      <div class="pl-danger">
+        ${items.length ? `<button type="button" class="btn danger" id="pl-clear">${App.icon("trash", "sm")} <span>Wyczyść plan</span></button>` : ""}
+        <button type="button" class="btn danger" id="pl-deltrip">${App.icon("trash", "sm")} <span>Usuń całą podróż</span></button>
+      </div>`;
+
     let timer = null;
     return {
       title: "Plan",
@@ -388,7 +447,7 @@
       after(view) {
         if (wx) wx.refresh().then(changed => { if (changed) App.render(); }).catch(() => {});
         const sel = view.querySelector("#pl-trip");
-        if (sel) sel.onchange = () => location.replace(`#/plan/${sel.value}`);
+        if (sel) sel.onclick = () => tripSheet(trips, id, v => location.replace(`#/plan/${v}`));
         bindTripTabs(view, "pl-arch", x => `#/plan/${x}`);
         if (ongoing) {
           // co minutę odśwież tylko kartę „Dziś” (liczniki „za X min”), bez przewijania strony
@@ -418,6 +477,22 @@
         };
         // zdjęcia miejsc: dociągane w tle (Wikipedia) i wstawiane bez przeładowania ekranu
         if (App.Photos) App.Photos.fill(items, (it, ph) => { if (view.isConnected) App.Photos.paint(view, it, ph); });
+        const clr = view.querySelector("#pl-clear");
+        if (clr) clr.onclick = async () => {
+          const n = items.length;
+          if (!confirm(`Usunąć wszystkie punkty planu i pomysły z podróży „${trip.name}” (${n})? Loty, pociągi i noclegi zostają. Tego nie da się cofnąć.`)) return;
+          const tk = await DB.byIndex("files", "tripId", id);
+          for (const f of tk) if (String(f.segmentId).startsWith("p:")) await DB.del("files", f.id); // bilety przypięte do punktów
+          for (const it of items) await DB.del("planItems", it.id);
+          lastOpt = null;
+          App.toast("Plan wyczyszczony");
+          App.render();
+        };
+        view.querySelector("#pl-deltrip").onclick = async () => {
+          if (!App.Trips || !App.Trips.removeTrip || !(await App.Trips.removeTrip(trip))) return;
+          DB.setSetting("planTrip", "");
+          location.replace("#/plan");
+        };
         view.querySelectorAll("[data-opt]").forEach(b => b.onclick = async () => {
           b.disabled = true;
           const day = b.dataset.opt;
@@ -799,5 +874,5 @@
   App.route(/^\/plan\/([\w-]+)\/nowy$/, ([tripId], q) => itemForm({ tripId, date: q.d, q }));
   App.route(/^\/punkt\/([\w-]+)$/, ([itemId]) => itemForm({ itemId }));
 
-  App.Plan = { infoFromText, segEvents, CATS, catOf, pickTrip, tripOptions, tripTabs, bindTripTabs, routeIcon, placeInDay, todayCard, mergeDay, byOrder, inTime };
+  App.Plan = { tripSheet, switchBtn, infoFromText, segEvents, CATS, catOf, pickTrip, tripOptions, tripTabs, bindTripTabs, routeIcon, placeInDay, todayCard, mergeDay, byOrder, inTime };
 })();

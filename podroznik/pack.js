@@ -119,7 +119,7 @@
         <div class="pl-head-name">
           <h2>${esc(trip.name)}</h2>
           ${trips.length > 1 ? `<span class="pl-head-chev" aria-hidden="true">${App.icon("chev")}</span>
-            <label class="pl-switch"><span class="sr">Podróż</span><select id="pk-trip">${App.Plan.tripOptions(trips, id)}</select></label>` : ""}
+            ${App.Plan.switchBtn("pk-trip", trip)}` : ""}
         </div>
         <p class="pl-info">${App.fmtRange(trip.start, trip.end)} · ${when}</p>
       </header>`;
@@ -250,7 +250,7 @@
         const draw = () => { $("#pk-progress").innerHTML = progress(); $("#pk-list").innerHTML = listHtml(); $("#pk-tabs").innerHTML = tabs(); $("#pk-next").innerHTML = nextTask(); bindTabs();
           $(".pk-toggle").hidden = !items.some(i => (i.list === "todo") === (mode === "todo")); };
         const sel = $("#pk-trip");
-        if (sel) sel.onchange = () => location.replace(`#/pakowanie/${sel.value}${mode === "todo" ? "?l=todo" : ""}`);
+        if (sel) sel.onclick = () => App.Plan.tripSheet(trips, id, v => location.replace(`#/pakowanie/${v}${mode === "todo" ? "?l=todo" : ""}`));
         App.Plan.bindTripTabs(view, "pk-arch", x => `#/pakowanie/${x}${mode === "todo" ? "?l=todo" : ""}`);
         const bindTabs = () => view.querySelectorAll("[data-l]").forEach(b => b.onclick = () => location.replace(`#/pakowanie/${id}${b.dataset.l === "todo" ? "?l=todo" : ""}`));
         bindTabs();

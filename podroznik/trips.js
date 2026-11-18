@@ -291,7 +291,7 @@
     const v = t || { name: "", destination: "", start: "", end: "", color: COLORS[0], note: "" };
     const shown = t ? (await covers(t.id))[t.id] : null;
     const cover = shown && !shown.auto ? shown : null, auto = shown && shown.auto ? shown : null; // własna okładka / zdjęcie celu
-    let newCover = null, dropCover = false, dropAuto = false, unpaint = null, previewUrl = null;
+    let newCover = null, dropCover = false, dropAuto = false, unpaint = null, previewUrl = null, autoTimer = null;
     const swatches = COLORS.map(c => `
       <label class="swatch" style="--c:${c}">
         <input type="radio" name="color" value="${c}" aria-label="kolor ${c}" ${c === v.color ? "checked" : ""}><span aria-hidden="true"></span>
@@ -322,10 +322,10 @@
                 <div class="cp-btns">
                   <label class="glass cp-btn">${ic("image", "sm")}<span>${cover ? "Zmień zdjęcie" : "Wybierz zdjęcie"}</span><input type="file" id="cover" accept="image/*" hidden></label>
                   ${cover ? `<button type="button" class="glass cp-btn" id="cover-del">${ic("trash", "sm")}<span>Usuń</span></button>` : ""}
-                  ${auto ? `<button type="button" class="glass cp-btn" id="cover-auto-del">${ic("close", "sm")}<span>Usuń zdjęcie celu</span></button>` : ""}
+                  <button type="button" class="glass cp-btn" id="cover-auto-del"${auto ? "" : " hidden"}>${ic("close", "sm")}<span>Usuń zdjęcie celu</span></button>
                 </div>
               </div>
-              ${auto ? `<small class="f-hint" id="cover-auto-txt">Zdjęcie celu dobrane automatycznie · ${esc(auto.credit)}</small>` : `<small class="f-hint">Bez zdjęcia okładka ma kolor podróży.</small>`}</div>
+              <small class="f-hint" id="cover-auto-txt" aria-live="polite">${auto ? `Zdjęcie celu dobrane automatycznie · ${esc(auto.credit)}` : App.Covers ? "Zdjęcie celu dobierze się samo po wpisaniu celu podróży. Możesz też wybrać własne." : "Bez zdjęcia okładka ma kolor podróży."}</small></div>
             <fieldset class="field"><legend>Kolor</legend><div class="swatches">${swatches}</div></fieldset>
           </div>
           <div class="fsec"><h2 class="section">Notatka</h2>
@@ -360,8 +360,42 @@
         f.destination.addEventListener("input", () => { view.querySelector("#cp-dest").textContent = f.destination.value.trim(); });
         f.addEventListener("change", e => { if (e.target.name === "color") box.style.setProperty("--c", e.target.value); });
         if (shown) unpaint = paintCovers(view, { [t.id]: shown });
-        const adel = view.querySelector("#cover-auto-del");
-        if (adel) adel.onclick = () => { dropAuto = true; if (!newCover) box.classList.remove("has-photo"); adel.hidden = true; view.querySelector("#cover-auto-txt").hidden = true; };
+        const adel = view.querySelector("#cover-auto-del"), atxt = view.querySelector("#cover-auto-txt");
+        adel.onclick = () => {
+          dropAuto = true; autoPick = null;
+          if (!newCover && !(cover && !dropCover)) { box.classList.remove("has-photo"); box.style.removeProperty("--photo"); }
+          adel.hidden = true; atxt.textContent = "Bez zdjęcia okładka ma kolor podróży.";
+        };
+        // zdjęcie celu dobierane od razu w formularzu (Wikipedia / Commons), gdy nie ma własnego
+        let autoPick = null, autoQ = auto && auto.q ? auto.q : "", autoSeq = 0;
+        const ownPhoto = () => !!newCover || (!!cover && !dropCover);
+        const findAuto = async () => {
+          const q = (f.destination.value.trim() || f.name.value.trim());
+          if (!App.Covers || ownPhoto() || q.length < 3 || q === autoQ || (dropAuto && t && q === App.Covers.query(t))) return;
+          if (!App.Covers.canFetch()) { if (!auto) atxt.textContent = "Zdjęcie celu dobierze się samo, gdy będzie internet."; return; }
+          const seq = ++autoSeq;
+          autoQ = q;
+          atxt.textContent = `Szukam zdjęcia: ${q}…`;
+          try {
+            const hit = await App.Covers.find(q);
+            if (seq !== autoSeq || ownPhoto()) return;
+            if (!hit) { atxt.textContent = "Nie znaleziono zdjęcia celu – możesz wybrać własne."; return; }
+            const data = await App.Covers.toData(hit.src);
+            if (seq !== autoSeq || ownPhoto()) return;
+            autoPick = { data, credit: hit.credit, page: hit.page, q };
+            dropAuto = false;
+            box.style.setProperty("--photo", `url("${data}")`);
+            box.classList.add("has-photo");
+            adel.hidden = false;
+            atxt.textContent = `Zdjęcie celu dobrane automatycznie · ${hit.credit}`;
+          } catch (e) {
+            if (seq === autoSeq) { autoQ = ""; atxt.textContent = "Nie udało się pobrać zdjęcia celu – możesz wybrać własne."; }
+          }
+        };
+        const later = () => { clearTimeout(autoTimer); autoTimer = setTimeout(findAuto, 1100); };
+        f.destination.addEventListener("input", later);
+        f.destination.addEventListener("change", () => { clearTimeout(autoTimer); findAuto(); });
+        f.name.addEventListener("input", () => { if (!f.destination.value.trim()) later(); });
         view.querySelector("#cover").addEventListener("change", async e => {
           const file = e.target.files[0];
           if (!file) return;
@@ -386,26 +420,20 @@
           if ((newCover || dropCover) && cover) await DB.del("files", cover.id);
           if (dropAuto && App.Covers) await App.Covers.remove(rec.id);
           if (newCover) await DB.put("files", { tripId: rec.id, segmentId: "cover", kind: "cover", mime: "image/jpeg", name: "tlo.jpg", label: "Tło podróży", blob: newCover });
+          // zdjęcie celu znalezione w formularzu – zapisane od razu (bez ponownego szukania)
+          if (autoPick && !dropAuto && !newCover && App.Covers && App.Covers.query(rec) === autoPick.q) {
+            const cur = await DB.get("trips", rec.id);
+            await DB.putRaw("trips", { ...cur, coverAuto: autoPick, coverOff: null, coverTry: null, coverTryQ: null });
+          }
           App.toast(t ? "Zapisano zmiany" : "Podróż utworzona");
           if (t) App.back(`#/podroze/${rec.id}`); else location.replace(`#/podroze/${rec.id}`);
         });
         const del = view.querySelector("#del");
         if (del) del.addEventListener("click", async () => {
-          const segs = await DB.byIndex("segments", "tripId", t.id);
-          const shared = App.Sync && await App.Sync.isShared(t.id);
-          if (!confirm(`Usunąć podróż „${t.name}”${segs.length ? ` razem z ${segs.length} ${plural(segs.length, "odcinkiem", "odcinkami", "odcinkami")}` : ""}? Tego nie da się cofnąć.${shared ? " To podróż wspólna – zniknie tylko u Ciebie, u innych zostanie." : ""}`)) return;
-          if (shared) await App.Sync.leave(t.id); // najpierw wyjście, żeby usuwanie nie poszło do innych
-          for (const store of ["segments", "files", "planItems", "packItems", "reminders", "expenses", "journal", "journalPhotos", "chat", "votes", "members"]) {
-            for (const r of await DB.byIndex(store, "tripId", t.id)) await DB.del(store, r.id);
-          }
-          if (App.Guide) await App.Guide.detachAll(t.id);
-          await DB.del("trips", t.id);
-          if (self.caches) caches.delete(`mapa-offline-${t.id}`).catch(() => {}); // pobrana mapa offline tej podróży
-          App.toast("Podróż usunięta");
-          location.replace("#/podroze");
+          if (await removeTrip(t)) location.replace("#/podroze");
         });
       },
-      cleanup() { if (unpaint) unpaint(); if (previewUrl) URL.revokeObjectURL(previewUrl); },
+      cleanup() { if (unpaint) unpaint(); if (previewUrl) URL.revokeObjectURL(previewUrl); clearTimeout(autoTimer); },
     };
   }
   App.route(/^\/podroze\/nowa$/, () => tripForm(null));
@@ -811,5 +839,22 @@
   App.route(/^\/odcinek\/([\w-]+)\/edytuj$/, ([segId]) => segForm({ segId }));
 
   // wspólne elementy dla biletów (tickets.js)
-  App.Trips = { TYPES, typeOf, chips, status, COLORS, bySegTime, editIcon, plusIcon };
+  // usunięcie całej podróży (z pytaniem); true, gdy usunięta
+  async function removeTrip(t) {
+    const segs = await DB.byIndex("segments", "tripId", t.id);
+    const shared = App.Sync && await App.Sync.isShared(t.id);
+    if (!confirm(`Usunąć podróż „${t.name}”${segs.length ? ` razem z ${segs.length} ${plural(segs.length, "odcinkiem", "odcinkami", "odcinkami")}` : ""}? Tego nie da się cofnąć.${shared ? " To podróż wspólna – zniknie tylko u Ciebie, u innych zostanie." : ""}`)) return false;
+    if (shared) await App.Sync.leave(t.id); // najpierw wyjście, żeby usuwanie nie poszło do innych
+    for (const store of ["segments", "files", "planItems", "packItems", "reminders", "expenses", "journal", "journalPhotos", "chat", "votes", "members"]) {
+      for (const r of await DB.byIndex(store, "tripId", t.id)) await DB.del(store, r.id);
+    }
+    if (App.Guide) await App.Guide.detachAll(t.id);
+    await DB.del("trips", t.id);
+    if (self.caches) caches.delete(`mapa-offline-${t.id}`).catch(() => {}); // pobrana mapa offline tej podróży
+    if (App.Reminders && App.Reminders.syncNative) Promise.resolve(App.Reminders.syncNative()).catch(() => {}); // powiadomienia usuniętej podróży
+    App.toast("Podróż usunięta");
+    return true;
+  }
+
+  App.Trips = { removeTrip, TYPES, typeOf, chips, status, COLORS, bySegTime, editIcon, plusIcon };
 })();
