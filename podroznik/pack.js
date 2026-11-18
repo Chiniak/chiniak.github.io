@@ -114,7 +114,7 @@
 
     const left = App.dayDiff(today, trip.start);
     const when = left > 1 ? `wyjazd za ${left} dni` : left === 1 ? "wyjazd jutro" : left === 0 ? "wyjazd dziś" : trip.end >= today ? "podróż trwa" : "podróż zakończona";
-    const head = `
+    const head = App.Plan.tripTabs(trips, id, x => `#/pakowanie/${x}${mode === "todo" ? "?l=todo" : ""}`, "pk-arch") + `
       <header class="pl-head">
         <div class="pl-head-name">
           <h2>${esc(trip.name)}</h2>
@@ -251,6 +251,7 @@
           $(".pk-toggle").hidden = !items.some(i => (i.list === "todo") === (mode === "todo")); };
         const sel = $("#pk-trip");
         if (sel) sel.onchange = () => location.replace(`#/pakowanie/${sel.value}${mode === "todo" ? "?l=todo" : ""}`);
+        App.Plan.bindTripTabs(view, "pk-arch", x => `#/pakowanie/${x}${mode === "todo" ? "?l=todo" : ""}`);
         const bindTabs = () => view.querySelectorAll("[data-l]").forEach(b => b.onclick = () => location.replace(`#/pakowanie/${id}${b.dataset.l === "todo" ? "?l=todo" : ""}`));
         bindTabs();
 

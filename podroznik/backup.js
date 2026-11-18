@@ -188,7 +188,8 @@
         <h2 class="section">Przywróć z kopii</h2>
         <div class="bg-cfg bk-restore">
           <p class="f-hint bk-r-hint">Np. po zmianie telefonu albo wyczyszczeniu danych przeglądarki.</p>
-          <label class="btn wide">${App.icon("doc", "sm")} Wybierz plik kopii (.json)<input type="file" id="bk-file" accept=".json,application/json" hidden></label>
+          <label class="btn wide">${App.icon("doc", "sm")} Wybierz plik kopii (.json)<input type="file" id="bk-file" hidden></label>
+          <p class="f-hint">Pokazujemy wszystkie pliki – telefon często zapisuje pobrany .json jako „tekst” albo „plik binarny” i z filtrem by go ukrył. Szukaj w „Pobranych” albo na Dysku Google.</p>
           <div id="bk-preview"></div>
         </div>`,
       after(view) {
