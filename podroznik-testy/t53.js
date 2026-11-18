@@ -106,7 +106,7 @@ const get = url => new Promise(res => { const r = http.request(url, x => { let d
   ok(/Hieronimici/.test(await T.textContent('main, body')), 'zmiana planu widoczna u znajomego');
 
   // kopia do siebie
-  await T.click('#zn-copytrip'); await T.waitForTimeout(1200);
+  await T.click('#zn-copytrip'); await T.waitForSelector('.tp-sheet[open] form'); await T.click('.tp-sheet button[type=submit]'); await T.waitForTimeout(1200);
   const copy = await T.evaluate(async () => { const t = (await DB.all('trips')).find(x => x.name === 'Lizbona'); return t && { items: (await DB.byIndex('planItems', 'tripId', t.id)).length, segs: (await DB.byIndex('segments', 'tripId', t.id)).length }; });
   ok(copy && copy.items === 2 && copy.segs === 2, 'kopia podróży u Tomka: ' + JSON.stringify(copy));
 
