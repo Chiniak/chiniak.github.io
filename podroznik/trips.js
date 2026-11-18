@@ -10,7 +10,7 @@
 (function () {
   const { esc, todayStr, dayDiff, plural } = App;
 
-  const COLORS = ["#43BDB5", "#4C7FD9", "#D9645A", "#E0A23F", "#8A6BD6", "#3E9B74", "#E26FA6"]; // redesign: kolory dopasowane do palety
+  const COLORS = ["#43BDB5", "#4C7FD9", "#D9645A", "#E0A23F", "#8A6BD6", "#3E9B74"]; // redesign: kolory dopasowane do palety
 
   /* ---------- rodzaje odcinków ----------
      extra: [pole, etykieta, podpowiedź]; route=false oznacza nocleg (nazwa + adres zamiast skąd/dokąd) */
