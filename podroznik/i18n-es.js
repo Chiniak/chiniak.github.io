@@ -2508,5 +2508,34 @@
   "Czat podróży i znajomych": "Chat del viaje y de amigos",
   // 2.19.1: mapa bez klucza CARTO
   "Pobieranie mapy offline jest chwilowo wyłączone: dostawca map (CARTO) wymaga teraz klucza. Mapa online działa (OpenStreetMap); obejrzane fragmenty zostają w telefonie.": "La descarga del mapa sin conexión está desactivada por ahora: el proveedor de mapas (CARTO) ahora exige una clave. El mapa en línea funciona (OpenStreetMap); las zonas vistas se quedan en el teléfono.",
-  "chwilowo niedostępna (dostawca map wymaga klucza)": "no disponible por ahora (el proveedor de mapas exige una clave)"
+  "chwilowo niedostępna (dostawca map wymaga klucza)": "no disponible por ahora (el proveedor de mapas exige una clave)",
+  // 2.19.2: przylot, zameldowanie po przylocie, rozdzielanie punktów
+  "Przylot: {}": "Llegada: {}",
+  "Przyjazd: {}": "Llegada: {}",
+  "Zameldowanie przed przylotem ({}) · ustaw {}": "Entrada antes de la llegada ({}) · poner {}",
+  "Rozdziel na punkty z godzinami": "Dividir en puntos con horas",
+  "Rozdziel na osobne punkty z godzinami": "Dividir en puntos separados con horas",
+  "Rozdziel na punkty": "Dividir en puntos",
+  "Każdy wiersz będzie osobnym punktem dnia {}. Wpisz godzinę, o której chcesz to zobaczyć – albo zostaw pustą.": "Cada línea será un punto distinto el {}. Escribe la hora a la que quieres verlo, o déjala vacía.",
+  "Każdy wiersz będzie osobnym punktem w pomysłach. Wpisz godzinę, o której chcesz to zobaczyć – albo zostaw pustą.": "Cada línea será una idea distinta. Escribe la hora a la que quieres verlo, o déjala vacía.",
+  "Dodaj z notatki ({})": "Añadir desde la nota ({})",
+  "Dodaj wiersz": "Añadir línea",
+  "Usuń punkt „{}” po rozdzieleniu": "Eliminar «{}» después de dividir",
+  "Miejsce („{}”) i dzień zostają takie same – zmienisz je potem w każdym punkcie. Punkty z godziną ułożą się według godzin.": "El lugar («{}») y el día se mantienen; podrás cambiarlos luego en cada punto. Los puntos con hora se ordenan por hora.",
+  "Miejsce i dzień zostają takie same – zmienisz je potem w każdym punkcie. Punkty z godziną ułożą się według godzin.": "El lugar y el día se mantienen; podrás cambiarlos luego en cada punto. Los puntos con hora se ordenan por hora.",
+  "Utwórz punkty": "Crear puntos",
+  "Wpisz co najmniej jeden punkt": "Escribe al menos un punto",
+  "Utworzono {} punkt": "{} punto creado",
+  "Utworzono {} punkty": "{} puntos creados",
+  "Utworzono {} punktów": "{} puntos creados",
+  "Usuń wiersz": "Quitar línea",
+  "np. Muzeum, kolacja": "p. ej. Museo, cena",
+  // 2.19.2: usuwanie noclegów
+  "Usuń noclegi ({})": "Eliminar alojamientos ({})",
+  "Usuń wszystkie noclegi ({})": "Eliminar todos los alojamientos ({})",
+  "zostaną loty, pociągi i plan – noclegi dodasz, gdy zarezerwujesz": "se quedan vuelos, trenes y el plan; añade alojamientos al reservarlos",
+  "Usunąć wszystkie noclegi z podróży „{}” ({})? Loty, pociągi i plan zostają.": "¿Eliminar todos los alojamientos de «{}» ({})? Vuelos, trenes y plan se quedan.",
+  "Usunięto {} nocleg": "{} alojamiento eliminado",
+  "Usunięto {} noclegi": "{} alojamientos eliminados",
+  "Usunięto {} noclegów": "{} alojamientos eliminados"
 };

@@ -2508,5 +2508,34 @@
   "Czat podróży i znajomych": "旅行和好友聊天",
   // 2.19.1: mapa bez klucza CARTO
   "Pobieranie mapy offline jest chwilowo wyłączone: dostawca map (CARTO) wymaga teraz klucza. Mapa online działa (OpenStreetMap); obejrzane fragmenty zostają w telefonie.": "离线地图下载暂时关闭：地图提供商（CARTO）现在需要密钥。在线地图可用（OpenStreetMap）；看过的区域会保存在手机上。",
-  "chwilowo niedostępna (dostawca map wymaga klucza)": "暂时不可用（地图提供商需要密钥）"
+  "chwilowo niedostępna (dostawca map wymaga klucza)": "暂时不可用（地图提供商需要密钥）",
+  // 2.19.2: przylot, zameldowanie po przylocie, rozdzielanie punktów
+  "Przylot: {}": "抵达：{}",
+  "Przyjazd: {}": "到达：{}",
+  "Zameldowanie przed przylotem ({}) · ustaw {}": "入住早于抵达（{}）· 改为 {}",
+  "Rozdziel na punkty z godzinami": "拆分为带时间的项目",
+  "Rozdziel na osobne punkty z godzinami": "拆分为单独的带时间项目",
+  "Rozdziel na punkty": "拆分项目",
+  "Każdy wiersz będzie osobnym punktem dnia {}. Wpisz godzinę, o której chcesz to zobaczyć – albo zostaw pustą.": "每一行会成为 {} 的单独项目。填写想去的时间——也可以留空。",
+  "Każdy wiersz będzie osobnym punktem w pomysłach. Wpisz godzinę, o której chcesz to zobaczyć – albo zostaw pustą.": "每一行会成为单独的灵感。填写时间——也可以留空。",
+  "Dodaj z notatki ({})": "从备注添加（{}）",
+  "Dodaj wiersz": "添加一行",
+  "Usuń punkt „{}” po rozdzieleniu": "拆分后删除“{}”",
+  "Miejsce („{}”) i dzień zostają takie same – zmienisz je potem w każdym punkcie. Punkty z godziną ułożą się według godzin.": "地点（“{}”）和日期保持不变——之后可在每个项目中修改。有时间的项目按时间排序。",
+  "Miejsce i dzień zostają takie same – zmienisz je potem w każdym punkcie. Punkty z godziną ułożą się według godzin.": "地点和日期保持不变——之后可在每个项目中修改。有时间的项目按时间排序。",
+  "Utwórz punkty": "创建项目",
+  "Wpisz co najmniej jeden punkt": "请至少填写一个项目",
+  "Utworzono {} punkt": "已创建 {} 个项目",
+  "Utworzono {} punkty": "已创建 {} 个项目",
+  "Utworzono {} punktów": "已创建 {} 个项目",
+  "Usuń wiersz": "删除此行",
+  "np. Muzeum, kolacja": "例如：博物馆、晚餐",
+  // 2.19.2: usuwanie noclegów
+  "Usuń noclegi ({})": "删除住宿（{}）",
+  "Usuń wszystkie noclegi ({})": "删除全部住宿（{}）",
+  "zostaną loty, pociągi i plan – noclegi dodasz, gdy zarezerwujesz": "航班、火车和行程保留——预订后再添加住宿",
+  "Usunąć wszystkie noclegi z podróży „{}” ({})? Loty, pociągi i plan zostają.": "删除“{}”的全部住宿（{}）？航班、火车和行程保留。",
+  "Usunięto {} nocleg": "已删除 {} 个住宿",
+  "Usunięto {} noclegi": "已删除 {} 个住宿",
+  "Usunięto {} noclegów": "已删除 {} 个住宿"
 };

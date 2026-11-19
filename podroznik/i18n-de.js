@@ -2508,5 +2508,34 @@
   "Czat podróży i znajomych": "Reise- und Freundeschat",
   // 2.19.1: mapa bez klucza CARTO
   "Pobieranie mapy offline jest chwilowo wyłączone: dostawca map (CARTO) wymaga teraz klucza. Mapa online działa (OpenStreetMap); obejrzane fragmenty zostają w telefonie.": "Das Herunterladen der Offline-Karte ist vorübergehend aus: Der Kartenanbieter (CARTO) verlangt jetzt einen Schlüssel. Die Online-Karte funktioniert (OpenStreetMap); angesehene Bereiche bleiben auf dem Handy.",
-  "chwilowo niedostępna (dostawca map wymaga klucza)": "vorübergehend nicht verfügbar (Kartenanbieter verlangt einen Schlüssel)"
+  "chwilowo niedostępna (dostawca map wymaga klucza)": "vorübergehend nicht verfügbar (Kartenanbieter verlangt einen Schlüssel)",
+  // 2.19.2: przylot, zameldowanie po przylocie, rozdzielanie punktów
+  "Przylot: {}": "Ankunft: {}",
+  "Przyjazd: {}": "Ankunft: {}",
+  "Zameldowanie przed przylotem ({}) · ustaw {}": "Check-in vor der Ankunft ({}) · auf {} setzen",
+  "Rozdziel na punkty z godzinami": "In Punkte mit Uhrzeiten aufteilen",
+  "Rozdziel na osobne punkty z godzinami": "In einzelne Punkte mit Uhrzeiten aufteilen",
+  "Rozdziel na punkty": "In Punkte aufteilen",
+  "Każdy wiersz będzie osobnym punktem dnia {}. Wpisz godzinę, o której chcesz to zobaczyć – albo zostaw pustą.": "Jede Zeile wird ein eigener Punkt am {}. Gib die gewünschte Uhrzeit ein – oder lass sie leer.",
+  "Każdy wiersz będzie osobnym punktem w pomysłach. Wpisz godzinę, o której chcesz to zobaczyć – albo zostaw pustą.": "Jede Zeile wird eine eigene Idee. Gib die gewünschte Uhrzeit ein – oder lass sie leer.",
+  "Dodaj z notatki ({})": "Aus der Notiz hinzufügen ({})",
+  "Dodaj wiersz": "Zeile hinzufügen",
+  "Usuń punkt „{}” po rozdzieleniu": "„{}“ nach dem Aufteilen löschen",
+  "Miejsce („{}”) i dzień zostają takie same – zmienisz je potem w każdym punkcie. Punkty z godziną ułożą się według godzin.": "Ort („{}“) und Tag bleiben gleich – du kannst sie später in jedem Punkt ändern. Punkte mit Uhrzeit werden nach Zeit sortiert.",
+  "Miejsce i dzień zostają takie same – zmienisz je potem w każdym punkcie. Punkty z godziną ułożą się według godzin.": "Ort und Tag bleiben gleich – du kannst sie später in jedem Punkt ändern. Punkte mit Uhrzeit werden nach Zeit sortiert.",
+  "Utwórz punkty": "Punkte erstellen",
+  "Wpisz co najmniej jeden punkt": "Gib mindestens einen Punkt ein",
+  "Utworzono {} punkt": "{} Punkt erstellt",
+  "Utworzono {} punkty": "{} Punkte erstellt",
+  "Utworzono {} punktów": "{} Punkte erstellt",
+  "Usuń wiersz": "Zeile entfernen",
+  "np. Muzeum, kolacja": "z. B. Museum, Abendessen",
+  // 2.19.2: usuwanie noclegów
+  "Usuń noclegi ({})": "Unterkünfte löschen ({})",
+  "Usuń wszystkie noclegi ({})": "Alle Unterkünfte löschen ({})",
+  "zostaną loty, pociągi i plan – noclegi dodasz, gdy zarezerwujesz": "Flüge, Züge und Plan bleiben – Unterkünfte fügst du nach der Buchung hinzu",
+  "Usunąć wszystkie noclegi z podróży „{}” ({})? Loty, pociągi i plan zostają.": "Alle Unterkünfte aus „{}“ löschen ({})? Flüge, Züge und Plan bleiben.",
+  "Usunięto {} nocleg": "{} Unterkunft gelöscht",
+  "Usunięto {} noclegi": "{} Unterkünfte gelöscht",
+  "Usunięto {} noclegów": "{} Unterkünfte gelöscht"
 };
