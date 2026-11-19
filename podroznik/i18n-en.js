@@ -1214,5 +1214,10 @@ self.I18N_EN = {
   "{} obserwujących": "{} followers",
   "{} podróż widoczna": "{} visible trip",
   "{} podróże widoczne": "{} visible trips",
-  "{} podróży widocznych": "{} visible trips"
+  "{} podróży widocznych": "{} visible trips",
+  "Przytrzymaj, żeby edytować albo usunąć": "Press and hold to edit or delete",
+  "nazwa, daty, cel, kolor, zdjęcie": "name, dates, destination, colour, photo",
+  "Szczegóły podróży": "Trip details",
+  "bilety, noclegi, narzędzia": "tickets, stays, tools",
+  "razem z biletami, planem i pakowaniem": "together with tickets, plan and packing"
 };
