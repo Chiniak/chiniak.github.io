@@ -57,9 +57,25 @@
       } else {
         const bits = [T.name, s.number, s.arrive ? `przyjazd ${App.time(s.arrive)}${s.arrive.slice(0, 10) !== s.depart.slice(0, 10) ? " (+1)" : ""}` : ""].filter(Boolean);
         ev.push({ at: s.depart, end: s.arrive, icon: T.icon, ico: ic(s.type), title: `${s.from || "?"} → ${s.to || "?"}`, sub: bits.join(" · "), href: `#/odcinek/${s.id}`, nav: s.from, seg: s });
+        // przylot innego dnia (np. lot nocny) – osobny wpis w dniu przylotu
+        if (s.arrive && s.arrive.slice(0, 10) !== s.depart.slice(0, 10))
+          ev.push({ at: s.arrive, icon: T.icon, ico: ic(s.type), title: `${s.type === "lot" ? "Przylot" : "Przyjazd"}: ${s.to || "?"}`, sub: `${s.from || "?"} → ${s.to || "?"}`, href: `#/odcinek/${s.id}`, nav: s.to, arr: true });
       }
     }
+    // zameldowanie w czasie podróży (przed przylotem / przyjazdem) – propozycja godziny po przylocie
+    for (const e of ev) {
+      if (!/^Zameldowanie/.test(e.title)) continue;
+      const s = segs.find(x => `#/odcinek/${x.id}` === e.href);
+      const t = segs.filter(x => x.type !== "nocleg" && x.depart && x.arrive && x.depart < s.depart && x.arrive > s.depart).sort((a, b) => b.arrive.localeCompare(a.arrive))[0];
+      if (t) e.warn = { seg: s.id, arrive: t.arrive, fix: checkinAfter(t.arrive) };
+    }
     return ev.sort((a, b) => a.at.localeCompare(b.at));
+  }
+  // godzina zameldowania po przylocie: +1 h, w górę do pełnego kwadransa (najpóźniej 23:45 tego dnia)
+  function checkinAfter(arrive) {
+    const [h, m] = arrive.slice(11, 16).split(":").map(Number);
+    const min = Math.min(23 * 60 + 45, Math.ceil((h * 60 + m + 60) / 15) * 15);
+    return `${arrive.slice(0, 10)}T${pad(Math.floor(min / 60))}:${pad(min % 60)}`;
   }
 
   // lista dnia: punkty w ręcznej kolejności, odcinki wstawione przed pierwszym późniejszym punktem z godziną
@@ -363,7 +379,8 @@
         ${placeTxt(it) ? `<div class="pl-sub">${App.icon("pin")}<span>${esc(placeTxt(it))}</span></div>` : ""}
         ${num(it.cost) ? `<div class="pl-price">${money(num(it.cost), it.currency || "PLN")}</div>` : ""}
         ${it.note ? `<div class="pl-note">${esc(it.note)}</div>` : ""}
-      </a>`;
+      </a>
+      ${App.Divide && App.Divide.splittable(it) && !it.time ? `<a class="pl-split-chip" href="#/punkt/${it.id}/rozdziel">${App.icon("list", "sm")}<span>Rozdziel na punkty z godzinami</span></a>` : ""}`;
 
     // trasa dnia: długość + „Ułóż trasę” (places.js); po ułożeniu – wynik i „Cofnij”, dopóki kolejność się nie zmieni
     const kmTxt = k => App.Places.fmtDist(k / 1.3);
@@ -412,6 +429,7 @@
               <div class="pl-title">${esc(ev.title)}</div>
               ${ev.sub ? `<div class="pl-sub">${esc(ev.sub)}</div>` : ""}
             </a>
+            ${ev.warn ? `<button type="button" class="pl-warn" data-fixci="${ev.warn.seg}" data-at="${ev.warn.fix}">${App.icon("alert", "sm")}<span>Zameldowanie przed przylotem (${App.time(ev.warn.arrive)}) · ustaw ${App.time(ev.warn.fix)}</span></button>` : ""}
             ${navLink(ev.nav)}
           </div>
           <span class="pl-dot" aria-hidden="true">${ev.ico || ev.icon}</span>
@@ -517,6 +535,13 @@
         });
         const strip = view.querySelector(".pl-days"), cur = strip && strip.querySelector(".is-today");
         if (cur) strip.scrollLeft = Math.max(0, cur.offsetLeft - strip.clientWidth / 2 + cur.offsetWidth / 2);
+        view.querySelectorAll("[data-fixci]").forEach(b => b.onclick = async () => {
+          const sg = await DB.get("segments", b.dataset.fixci);
+          if (!sg) return;
+          await DB.put("segments", { ...sg, depart: b.dataset.at });
+          App.toast(`Zameldowanie: ${App.time(b.dataset.at)}`);
+          App.render();
+        });
         const ff = view.querySelector("#pl-from-file");
         if (ff) ff.onchange = () => {
           const files = [...ff.files];
@@ -744,6 +769,7 @@
           <div class="fsec">
             <label class="field"><span>Co</span>
               <input name="title" required maxlength="100" placeholder="np. Oceanarium, kolacja w Time Out Market" value="${esc(v.title)}"></label>
+            ${it && App.Divide && App.Divide.splittable(it) ? `<a class="btn wide pl-split" href="#/punkt/${it.id}/rozdziel">${App.icon("list", "sm")} Rozdziel na osobne punkty z godzinami</a>` : ""}
           </div>
           <div class="fsec"><h2 class="section">Kiedy</h2>
             <div class="grid2">
@@ -930,5 +956,5 @@
   App.route(/^\/plan\/([\w-]+)\/nowy$/, ([tripId], q) => itemForm({ tripId, date: q.d, q }));
   App.route(/^\/punkt\/([\w-]+)$/, ([itemId]) => itemForm({ itemId }));
 
-  App.Plan = { fromFiles, tripMenu, tripSheet, switchBtn, infoFromText, segEvents, CATS, catOf, pickTrip, tripOptions, tripTabs, bindTripTabs, routeIcon, placeInDay, todayCard, mergeDay, byOrder, inTime };
+  App.Plan = { checkinAfter, fromFiles, tripMenu, tripSheet, switchBtn, infoFromText, segEvents, CATS, catOf, pickTrip, tripOptions, tripTabs, bindTripTabs, routeIcon, placeInDay, todayCard, mergeDay, byOrder, inTime };
 })();

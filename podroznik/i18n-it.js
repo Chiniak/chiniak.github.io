@@ -2508,5 +2508,26 @@
   "Czat podróży i znajomych": "Chat del viaggio e degli amici",
   // 2.19.1: mapa bez klucza CARTO
   "Pobieranie mapy offline jest chwilowo wyłączone: dostawca map (CARTO) wymaga teraz klucza. Mapa online działa (OpenStreetMap); obejrzane fragmenty zostają w telefonie.": "Il download della mappa offline è temporaneamente disattivato: il fornitore di mappe (CARTO) ora richiede una chiave. La mappa online funziona (OpenStreetMap); le zone viste restano sul telefono.",
-  "chwilowo niedostępna (dostawca map wymaga klucza)": "temporaneamente non disponibile (il fornitore di mappe richiede una chiave)"
+  "chwilowo niedostępna (dostawca map wymaga klucza)": "temporaneamente non disponibile (il fornitore di mappe richiede una chiave)",
+  // 2.19.2: przylot, zameldowanie po przylocie, rozdzielanie punktów
+  "Przylot: {}": "Arrivo: {}",
+  "Przyjazd: {}": "Arrivo: {}",
+  "Zameldowanie przed przylotem ({}) · ustaw {}": "Check-in prima dell'arrivo ({}) · imposta {}",
+  "Rozdziel na punkty z godzinami": "Dividi in tappe con orari",
+  "Rozdziel na osobne punkty z godzinami": "Dividi in tappe separate con orari",
+  "Rozdziel na punkty": "Dividi in tappe",
+  "Każdy wiersz będzie osobnym punktem dnia {}. Wpisz godzinę, o której chcesz to zobaczyć – albo zostaw pustą.": "Ogni riga diventa una tappa separata del {}. Inserisci l'orario in cui vuoi vederla – o lascialo vuoto.",
+  "Każdy wiersz będzie osobnym punktem w pomysłach. Wpisz godzinę, o której chcesz to zobaczyć – albo zostaw pustą.": "Ogni riga diventa un'idea separata. Inserisci l'orario – o lascialo vuoto.",
+  "Dodaj z notatki ({})": "Aggiungi dalla nota ({})",
+  "Dodaj wiersz": "Aggiungi riga",
+  "Usuń punkt „{}” po rozdzieleniu": "Elimina «{}» dopo la divisione",
+  "Miejsce („{}”) i dzień zostają takie same – zmienisz je potem w każdym punkcie. Punkty z godziną ułożą się według godzin.": "Luogo («{}») e giorno restano uguali – potrai cambiarli poi in ogni tappa. Le tappe con orario vengono ordinate per ora.",
+  "Miejsce i dzień zostają takie same – zmienisz je potem w każdym punkcie. Punkty z godziną ułożą się według godzin.": "Luogo e giorno restano uguali – potrai cambiarli poi in ogni tappa. Le tappe con orario vengono ordinate per ora.",
+  "Utwórz punkty": "Crea tappe",
+  "Wpisz co najmniej jeden punkt": "Inserisci almeno una tappa",
+  "Utworzono {} punkt": "{} tappa creata",
+  "Utworzono {} punkty": "{} tappe create",
+  "Utworzono {} punktów": "{} tappe create",
+  "Usuń wiersz": "Rimuovi riga",
+  "np. Muzeum, kolacja": "es. Museo, cena"
 };

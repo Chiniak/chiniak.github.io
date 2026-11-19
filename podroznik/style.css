@@ -2254,3 +2254,18 @@ a.tp-trip { text-decoration: none; }
 .sh-opt-h small { color: var(--muted); }
 .sh-opt .field { margin: 0; }
 .sh-drop { margin-top: 16px; }
+
+/* zameldowanie przed przylotem (plan.js segEvents → warn) */
+.pl-seg .pl-card { flex-wrap: wrap; }
+.pl-warn { order: 3; flex-basis: 100%; display: flex; align-items: center; gap: 8px; margin: 4px 6px 4px 0; padding: 8px 10px; border-radius: var(--r-sm); border: 1px solid var(--err-text); background: transparent; color: var(--err-text); font: inherit; font-size: var(--fs-sm); text-align: left; cursor: pointer; }
+.pl-warn .ic { flex: none; }
+/* rozdzielanie punktu (rozdziel.js) */
+.rd-rows { display: grid; gap: 8px; }
+.rd-row { display: grid; grid-template-columns: 96px 1fr 40px; gap: 8px; align-items: center; }
+.rd-row input { min-width: 0; }
+.rd-note { white-space: pre-wrap; }
+.pl-split { margin-top: 10px; }
+.pl-split-chip { order: 3; flex-basis: 100%; display: inline-flex; align-items: center; gap: 6px; margin: 2px 0 6px 12px; color: var(--accent-text, var(--accent)); font-size: var(--fs-sm); text-decoration: none; }
+.pl-card:has(.pl-split-chip) { flex-wrap: wrap; }
+.pl-card:has(.pl-split-chip) .pl-main { flex: 1 1 0; }
+.pl-card:has(.pl-split-chip) .pl-acts { order: 2; }

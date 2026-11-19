@@ -1294,5 +1294,26 @@ self.I18N_EN = {
   "Czat podróży i znajomych": "Trip and friends chat",
   // 2.19.1: mapa bez klucza CARTO
   "Pobieranie mapy offline jest chwilowo wyłączone: dostawca map (CARTO) wymaga teraz klucza. Mapa online działa (OpenStreetMap); obejrzane fragmenty zostają w telefonie.": "Offline map download is temporarily off: the map provider (CARTO) now requires a key. The online map works (OpenStreetMap); areas you have viewed stay on the phone.",
-  "chwilowo niedostępna (dostawca map wymaga klucza)": "temporarily unavailable (the map provider requires a key)"
+  "chwilowo niedostępna (dostawca map wymaga klucza)": "temporarily unavailable (the map provider requires a key)",
+  // 2.19.2: przylot, zameldowanie po przylocie, rozdzielanie punktów
+  "Przylot: {}": "Arrival: {}",
+  "Przyjazd: {}": "Arrival: {}",
+  "Zameldowanie przed przylotem ({}) · ustaw {}": "Check-in before arrival ({}) · set {}",
+  "Rozdziel na punkty z godzinami": "Split into stops with times",
+  "Rozdziel na osobne punkty z godzinami": "Split into separate stops with times",
+  "Rozdziel na punkty": "Split into stops",
+  "Każdy wiersz będzie osobnym punktem dnia {}. Wpisz godzinę, o której chcesz to zobaczyć – albo zostaw pustą.": "Each line becomes a separate stop on {}. Enter the time you want to see it – or leave it empty.",
+  "Każdy wiersz będzie osobnym punktem w pomysłach. Wpisz godzinę, o której chcesz to zobaczyć – albo zostaw pustą.": "Each line becomes a separate idea. Enter the time you want to see it – or leave it empty.",
+  "Dodaj z notatki ({})": "Add from the note ({})",
+  "Dodaj wiersz": "Add a line",
+  "Usuń punkt „{}” po rozdzieleniu": "Delete “{}” after splitting",
+  "Miejsce („{}”) i dzień zostają takie same – zmienisz je potem w każdym punkcie. Punkty z godziną ułożą się według godzin.": "The place (“{}”) and day stay the same – you can change them in each stop later. Stops with a time are ordered by time.",
+  "Miejsce i dzień zostają takie same – zmienisz je potem w każdym punkcie. Punkty z godziną ułożą się według godzin.": "The place and day stay the same – you can change them in each stop later. Stops with a time are ordered by time.",
+  "Utwórz punkty": "Create stops",
+  "Wpisz co najmniej jeden punkt": "Enter at least one stop",
+  "Utworzono {} punkt": "Created {} stop",
+  "Utworzono {} punkty": "Created {} stops",
+  "Utworzono {} punktów": "Created {} stops",
+  "Usuń wiersz": "Remove line",
+  "np. Muzeum, kolacja": "e.g. Museum, dinner"
 };
