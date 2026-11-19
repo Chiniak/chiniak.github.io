@@ -4,7 +4,8 @@
    - navigator.share / canShare z plikami (kopia zapasowa, .ics, podróż, rozliczenie) → wtyczka Share,
    - otwieranie plików z blob: (np. skan PDF w Dokumentach) → zapis w pamięci podręcznej i „Otwórz w…”,
    - link zaproszenia do wspólnej podróży otwarty z WhatsAppa itp. → wtyczka App (appUrlOpen),
-   - pliki i tekst udostępnione z innych aplikacji → wtyczka ShareIn (udostepnione.js). */
+   - pliki i tekst udostępnione z innych aplikacji → wtyczka ShareIn (udostepnione.js),
+   - dotknięcie powiadomienia o wiadomości → wtyczka Push (push.js). */
 (function () {
   "use strict";
   const C = window.Capacitor;
@@ -39,6 +40,8 @@
     const data = { text: (d && d.text) || "", files };
     if (window.App && App.Shared) App.Shared.receive(data); else window.PodroznikNative.pendingShare = data;
   });
+  // dotknięte powiadomienie o wiadomości (PushPlugin) → czat
+  if (P.Push) P.Push.addListener("open", d => { if (d && /^#\/[\w/?=&-]+$/.test(d.route || "")) location.hash = d.route; });
   const abort = () => new DOMException("Share canceled", "AbortError");
   const isCancel = e => /cancel/i.test(String(e && (e.message || e.errorMessage || e)));
 

@@ -72,8 +72,12 @@ dependencies {
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
     // logowanie Google (Gmail tylko do odczytu) – GoogleAuthPlugin
     implementation "com.google.android.gms:play-services-auth:21.6.0"
+    // powiadomienia o wiadomościach przy zamkniętej aplikacji – PushWorker (co 15 min)
+    implementation "androidx.work:work-runtime:2.10.5"
     implementation project(':capacitor-android')
     testImplementation "junit:junit:$junitVersion"
+    // PushCheckTest: org.json w testach JVM (w Androidzie jest wbudowany)
+    testImplementation "org.json:json:20240303"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')

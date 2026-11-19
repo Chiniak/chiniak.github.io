@@ -387,6 +387,8 @@
           </div>
         </form>
 
+        ${App.Push ? await App.Push.settingsHtml() : ""}
+
         <h2 class="section">Kalendarz</h2>
         <div class="bg-cfg rm-cal">
           <p class="small">Plik .ics z podróżami, transportem, planem i zadaniami – razem z alarmami ustawionymi wyżej.
@@ -403,6 +405,7 @@
             : `<p class="f-hint rm-none">Brak zaplanowanych przypomnień${cfg.enabled ? "" : " – przypomnienia są wyłączone"}.</p>`}
         </div>`,
       after(view) {
+        if (App.Push) App.Push.bindSettings(view);
         const form = view.querySelector("#rm-form");
         form.addEventListener("change", async () => {
           const f = new FormData(form);
