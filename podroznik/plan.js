@@ -476,7 +476,8 @@
           </div>`).join("")}
         <a class="pl-empty" href="#/plan/${id}/nowy?d=pomysl">+ Dodaj pomysł</a>
         </div>
-      </details>`;
+      </details>
+      ${ideas.filter(i => i.lat != null && i.lon != null).length >= 2 && App.Distribute ? `<a class="btn wide pl-distribute" href="#/rozloz/${id}">${App.icon("sparkle", "sm")} Rozłóż pomysły na dni</a>` : ""}`;
 
     const sum = Object.entries(costs).map(([c, v]) => money(v, c)).join(" + ");
     if (sum) html += `<p class="pl-total">Koszty planu razem: <b>${sum}</b> <span class="muted">(bez transportu i noclegów)</span></p>`;
