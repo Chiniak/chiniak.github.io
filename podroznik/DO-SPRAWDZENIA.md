@@ -221,3 +221,7 @@ Adres (po scaleniu pull requesta): https://chiniak.github.io/podroznik/
 - ⬜ Ustawienia → Przypomnienia → „Wiadomości” – wyłączenie zatrzymuje powiadomienia
 - ⬜ **Rozłóż pomysły na dni** (Plan → pod pomysłami): podgląd ma sens (bliskie miejsca razem, właściwe miasto przy kilku noclegach), „Cofnij” przywraca
 - ⬜ **Przygotuj offline**: krok „Przewodnik” pobiera przewodniki Wikivoyage celu i miast noclegów; tryb Dziś ma skrót „Przewodnik”
+- ⬜ **2.19.1 Mapa**: mapa ładuje się (OpenStreetMap, nazwy lokalne), bez napisów „API KEY REQUIRED”; „Mapa offline” pokazuje komunikat o kluczu
+- ⬜ **2.19.2**: w dniu przylotu wpis „Przylot …”; ostrzeżenie „Zameldowanie przed przylotem” i poprawka jednym dotknięciem
+- ⬜ **2.19.2**: „Rozdziel na punkty z godzinami” na karcie dnia – osobne punkty z godzinami, „Dodaj z notatki”
+- ⬜ **2.19.2**: Plan → na dole „Usuń noclegi (n)” – noclegi znikają, loty i plan zostają
