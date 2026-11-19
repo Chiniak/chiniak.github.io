@@ -73,9 +73,10 @@
   let profileDone = null;
   async function profile() {
     const f = await fb(), me = f.auth.currentUser.uid, name = (await myName()).slice(0, 40), pub = (await keys()).pub;
-    const key = `${me}|${name}|${pub}`;
+    const bio = String(await DB.getSetting("myBio", "") || "").slice(0, 300);
+    const key = `${me}|${name}|${pub}|${bio}`;
     if (profileDone === key) return me;
-    await f.db.collection("people").doc(me).set({ name, pub, v: 1 });
+    await f.db.collection("people").doc(me).set({ name, pub, v: 1, ...(bio ? { bio } : {}) });
     profileDone = key;
     return me;
   }
@@ -138,6 +139,8 @@
     for (const m of await DB.byIndex("dms", "peer", id)) await DB.delRaw("dms", m.id);
     emit("friends");
   }
+  // „O mnie” w profilu (jawne – widzi każdy, kto zna identyfikator, np. z biblioteki planów)
+  async function setBio(bio) { await DB.setSetting("myBio", String(bio || "").trim().slice(0, 300)); await profile(); }
   async function rename(name) {
     await DB.setSetting("myName", String(name || "").trim().slice(0, 40));
     await profile();
@@ -629,7 +632,7 @@
     // imię: z kopii albo z profilu na serwerze (gdy na tym telefonie jeszcze go nie ma)
     if (!(await myName())) { const nm = (v && v.name) || ((await person(me).catch(() => null)) || {}).name; if (nm) await DB.setSetting("myName", nm); }
     st = { friends: (v && v.friends) || {}, trips: (v && v.trips) || {}, since: {}, read: (v && v.read) || {}, findable: v ? v.findable : undefined, vault: v ? v.vault : undefined,
-      following: (v && v.following) || {}, explore: !!(v && v.explore) };
+      following: (v && v.following) || {}, explore: !!(v && v.explore), library: (v && v.library) || {}, rated: (v && v.rated) || {} };
     await DB.setSetting("social", st);
     if (!v || !v.keys) await keyMaps().catch(() => {});
     await start(true);
@@ -643,7 +646,7 @@
     const ref = f.db.collection("vault").doc(u.uid);
     if (st.vault === false) { await ref.delete().catch(() => {}); return; }
     const keysRaw = await DB.getSetting("social.keys", null);
-    await ref.set({ v: 1, t: f.now(), vault: true, name: (await myName()).slice(0, 40), findable: st.findable !== false, keys: keysRaw, friends: st.friends, trips: st.trips, read: st.read, following: st.following || {}, explore: !!st.explore });
+    await ref.set({ v: 1, t: f.now(), vault: true, name: (await myName()).slice(0, 40), findable: st.findable !== false, keys: keysRaw, friends: st.friends, trips: st.trips, read: st.read, following: st.following || {}, explore: !!st.explore, library: st.library || {}, rated: st.rated || {} });
   }
   async function setFindable(on) {
     await load();
@@ -676,6 +679,72 @@
     emit("account");
   }
 
+  /* ---------- usunięcie konta (wymóg Google Play) ----------
+     Kasuje z serwera wszystko, co należy do tego profilu: profil, zaproszenia, obserwujących, moje wiadomości w czatach,
+     udostępnione podróże i ich klucze, spis publiczny, wpis w Odkrywaj, wpisy e-mail / Facebook, kopię na koncie –
+     a na końcu samo konto Firebase (z połączonymi Google / Facebookiem). Znajomi dostają „bye” (znikam z ich listy).
+     Zostają: zaszyfrowane zmiany wspólnych podróży (Razem) – należą też do pozostałych uczestników, bez klucza z linku
+     nikt ich nie odczyta – oraz plany na telefonie (usuwa je odinstalowanie albo „Usuń podróż”). */
+  async function reauth(u) {
+    const g = googleOf(u), fp = fbOf(u);
+    if (g) {
+      const c = await credential();
+      return c ? u.reauthenticateWithCredential(c) : u.reauthenticateWithPopup(new firebase.auth.GoogleAuthProvider());
+    }
+    if (fp) {
+      if (fbNative()) {
+        const r = await fbNative().login({ permissions: FB_PERMS });
+        if (!r || !r.accessToken) throw Object.assign(new Error("Anulowano"), { code: "CANCELED" });
+        return u.reauthenticateWithCredential(firebase.auth.FacebookAuthProvider.credential(r.accessToken.token));
+      }
+      return u.reauthenticateWithPopup(new firebase.auth.FacebookAuthProvider());
+    }
+  }
+  async function deleteAccount({ skipReauth } = {}) {
+    await load();
+    const f = await fb(), u = f.auth.currentUser, me = u.uid, acc = await account().catch(() => null);
+    // Firebase pozwala usunąć konto tylko tuż po zalogowaniu – najpierw potwierdzenie (Google / Facebook), potem kasowanie
+    const fresh = Date.now() - Date.parse((u.metadata && u.metadata.lastSignInTime) || 0) < 4 * 60000;
+    if (linked(u) && !fresh && !skipReauth) await reauth(u);
+    stopAll();
+    const del = ref => ref.delete().catch(e => console.warn("usuwanie:", ref.path, e.code || e));
+    if (App.Library) await App.Library.wipe().catch(e => console.warn("biblioteka:", e.code || e)); // moje plany i oceny
+    const delAll = async q => { const s = await q.get().catch(() => null); if (s) await Promise.all(s.docs.map(d => del(d.ref))); };
+    for (const [id, fr] of Object.entries(st.friends)) {
+      if (fr.state !== "in") await send(id, "bye").catch(() => {});
+      await delAll(f.db.collection("dm").doc(conv(me, id)).collection("msgs").where("by", "==", me));
+    }
+    for (const id of Object.keys(st.following || {})) await del(f.db.collection("people").doc(id).collection("followers").doc(me));
+    const pub = f.db.collection("pub").doc(me);
+    await delAll(pub.collection("trips"));
+    await delAll(pub.collection("keys"));
+    await del(pub.collection("index").doc("public"));
+    await del(f.db.collection("explore").doc(me));
+    const people = f.db.collection("people").doc(me);
+    await delAll(people.collection("inbox"));
+    await delAll(people.collection("followers"));
+    await del(people);
+    for (const e of new Set([acc && acc.email, acc && acc.gEmail, acc && acc.fbEmail].filter(Boolean))) {
+      const d = await f.db.collection("emails").doc(e).get().catch(() => null);
+      if (d && d.exists && d.data().uid === me) await del(d.ref);
+    }
+    const fp = fbOf(u);
+    if (fp) await del(f.db.collection("fbids").doc(fp.uid));
+    if (linked(u)) await del(f.db.collection("vault").doc(me));
+    await u.delete();
+    // telefon: jak po wylogowaniu, ale bez kopii na koncie – i bez automatycznego łączenia przy starcie
+    if (fbNative()) fbNative().logout().catch(() => {});
+    fbToken = null; await DB.setSetting("social.fbToken", null);
+    await DB.setSetting("social.keys", null); myKeys = null; for (const k of Object.keys(shared)) delete shared[k];
+    for (const m of await DB.all("dms")) await DB.delRaw("dms", m.id);
+    for (const id of Object.keys(st.friends)) await DB.setSetting(`social.cache.${id}`, null);
+    st = { friends: {}, trips: {}, since: {}, read: {} }; await DB.setSetting("social", st);
+    await DB.setSetting("social.on", false);
+    profileDone = null;
+    await f.auth.signInAnonymously().catch(() => {}); // wspólne podróże (Razem) dalej działają na nowym, pustym identyfikatorze
+    emit("account"); emit("friends");
+  }
+
   /* ---------- start ---------- */
   let started = false;
   async function start(force) {
@@ -698,7 +767,7 @@
     addFriend, accept, remove, sendMessage, shareTrip, messages, markRead, unread, unreadAll, startChat,
     VIS, setVisibility, visibility, publicLink, friendTrips, parsePublic, publicTrip, copyTrip, snapshot,
     publicIndex, setExplore, follow, unfollow, isFollowing, followersCount, publicTrips, followingFeed, explore, takeIdea,
-    account, signInGoogle, signInFacebook, unlink, fbAvailable, facebookFriends, signOut, setFindable, setVault, findByEmail,
+    setBio, account, signInGoogle, signInFacebook, unlink, fbAvailable, facebookFriends, signOut, deleteAccount, setFindable, setVault, findByEmail,
     on: fn => { listeners.add(fn); return () => listeners.delete(fn); },
     _publish: publish, _keyMaps: keyMaps,
   };

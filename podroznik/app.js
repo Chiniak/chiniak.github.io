@@ -8,7 +8,7 @@
 
   /* ---------- pomocniki ---------- */
   // wersja aplikacji – ta sama co versionName APK (podroznik-app/android/app/build.gradle); podbijaj razem
-  App.VERSION = "2.16.0";
+  App.VERSION = "2.18.0";
   App.esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const pad = n => String(n).padStart(2, "0");
   App.todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };

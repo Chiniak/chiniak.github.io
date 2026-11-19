@@ -17,10 +17,10 @@
 
 <article id="pl" lang="pl">
 <h1>Polityka prywatności</h1>
-<p class="meta">Aplikacja <b>Tripwillow</b> (Android: <code>io.github.chiniak.podroznik</code>, strona: chiniak.github.io/podroznik) · obowiązuje od 17 listopada 2026</p>
+<p class="meta">Aplikacja <b>Tripwillow</b> (Android: <code>io.github.chiniak.podroznik</code>, strona: chiniak.github.io/podroznik) · obowiązuje od 18 listopada 2026</p>
 
 <h2>Najkrócej</h2>
-<p>Tripwillow to planer podróży, który działa <b>na Twoim telefonie</b>. Nie mamy własnego serwera, kont użytkowników ani reklam. Twoje podróże, bilety, wydatki, dziennik i dane z Gmaila zostają w pamięci urządzenia i nie są nam wysyłane, sprzedawane ani udostępniane. Wyjątki, które sam włączasz: <a href="#razem-pl">wspólne planowanie</a> oraz <a href="#znajomi-pl">znajomi i udostępnione podróże</a> (szyfrowane w telefonie) – wtedy zmiany podróży idą do pozostałych uczestników przez serwer Google Firebase, <b>zaszyfrowane</b> kluczem, którego serwer nie zna.</p>
+<p>Tripwillow to planer podróży, który działa <b>na Twoim telefonie</b>. Nie mamy własnego serwera ani reklam, a konto jest nieobowiązkowe. Twoje podróże, bilety, wydatki, dziennik i dane z Gmaila zostają w pamięci urządzenia i nie są nam wysyłane, sprzedawane ani udostępniane. Wyjątki, które sam włączasz: <a href="#razem-pl">wspólne planowanie</a> oraz <a href="#znajomi-pl">znajomi i udostępnione podróże</a> (szyfrowane w telefonie) – wtedy zmiany podróży idą do pozostałych uczestników przez serwer Google Firebase, <b>zaszyfrowane</b> kluczem, którego serwer nie zna.</p>
 
 <h2>Jakie dane przetwarza aplikacja</h2>
 <ul>
@@ -73,9 +73,20 @@
   <li><b>Szyfrowane end-to-end</b> (tylko szyfr na serwerze): treść wiadomości czatu (AES-256-GCM kluczem wyliczonym z kluczy obu osób – ECDH P-256; klucz prywatny nie opuszcza telefonu) oraz udostępnione podróże: nazwa, cel, termin, trasa (skąd–dokąd, godziny, numer lotu/pociągu), noclegi (nazwa i miasto), plan dni i pomysły. <b>Nie</b> są wysyłane: bilety, kody rezerwacji, ceny, notatki, adresy noclegów, wydatki, dokumenty, dziennik ani żadne dane z Gmaila.</li>
   <li><b>Kto widzi podróż:</b> „Prywatna” – tylko Ty; „Dla znajomych” – osoby, które przyjęły zaproszenie; „Publiczna” – każdy, kto ma link (klucz jest w części linku po #). Minione podróże o takiej widoczności znajomi widzą jako historię. Zmiana na „Prywatna” usuwa podróż z serwera i wyłącza link.</li>
   <li><b>Konto Google (nieobowiązkowe):</b> po „Zaloguj kontem Google” Twój profil znajomych jest przypisany do konta (Firebase Authentication otrzymuje adres e-mail i identyfikator konta Google; nie mamy dostępu do hasła ani do Gmaila – to osobna zgoda). Gdy włączysz „Znajomi mogą znaleźć mnie po e-mailu”, na serwerze jest wpis „adres e-mail → identyfikator”, który odczyta tylko ktoś, kto zna dokładnie ten adres. Gdy włączysz „Kopia znajomych na koncie”, na serwerze jest kopia klucza czatu, listy znajomych i ustawień widoczności – czyta ją tylko osoba zalogowana na Twoje konto (reguły bazy), ale <b>nie jest zaszyfrowana osobnym hasłem</b>, więc przy tej opcji szyfrowanie czatu nie jest w pełni end-to-end wobec operatora serwera. Obie opcje można wyłączyć na ekranie Znajomi; wylogowanie usuwa znajomych i czaty z telefonu.</li>
-  <li><b>Facebook (nieobowiązkowe):</b> po „Zaloguj przez Facebooka” Firebase otrzymuje identyfikator Twojego konta Facebook przypisany do Tripwillow, imię i e-mail (jeśli Facebook go poda). Na serwerze jest wpis „identyfikator Facebooka → profil”, żeby Twoi znajomi z Facebooka, którzy też używają Tripwillow, mogli Cię znaleźć. Listę znajomych pobiera telefon prosto z Facebooka (uprawnienie user_friends – Facebook podaje tylko znajomych, którzy też połączyli Tripwillow) i nie jest ona nigdzie zapisywana. Nie publikujemy niczego na Facebooku. Aby usunąć te dane: Wyloguj w Tripwillow, usuń Tripwillow w ustawieniach Facebooka (Aplikacje i witryny) i napisz do nas (kontakt niżej) – usuniemy wpis i profil z serwera.</li>
+  <li><b>Facebook (nieobowiązkowe):</b> po „Zaloguj przez Facebooka” Firebase otrzymuje identyfikator Twojego konta Facebook przypisany do Tripwillow, imię i e-mail (jeśli Facebook go poda). Na serwerze jest wpis „identyfikator Facebooka → profil”, żeby Twoi znajomi z Facebooka, którzy też używają Tripwillow, mogli Cię znaleźć. Listę znajomych pobiera telefon prosto z Facebooka (uprawnienie user_friends – Facebook podaje tylko znajomych, którzy też połączyli Tripwillow) i nie jest ona nigdzie zapisywana. Nie publikujemy niczego na Facebooku. Aby usunąć te dane: Wyloguj w Tripwillow, usuń Tripwillow w ustawieniach Facebooka (Aplikacje i witryny) i użyj „Usuń konto” w aplikacji (<a href="usun-konto.html">instrukcja</a>) – wpis i profil znikną z serwera.</li>
   <li><b>Obserwowanie i „Odkrywaj”:</b> spis Twoich podróży <b>publicznych</b> (nazwa, cel, termin i klucz do podglądu) jest dostępny dla osób, które znają Twój identyfikator (obserwujących). Jeśli włączysz „Pokazuj moje publiczne podróże w Odkrywaj”, ten spis i Twoje imię zobaczą wszyscy użytkownicy Tripwillow. Serwer zapisuje też, kto kogo obserwuje (liczbę obserwujących widzi tylko właściciel profilu). Podróże prywatne i „dla znajomych” nigdy tam nie trafiają.</li>
-  <li><b>Usuwanie:</b> „Usuń ze znajomych” usuwa czat z telefonu i dostęp tej osoby do Twoich podróży. Na prośbę (kontakt niżej) usuniemy z serwera Twój profil, zaproszenia, czaty i podróże.</li>
+  <li><b>Usuwanie:</b> „Usuń ze znajomych” usuwa czat z telefonu i dostęp tej osoby do Twoich podróży. Ustawienia → Twoje konto → „Usuń konto i dane z serwera” od razu usuwa z serwera Twój profil, zaproszenia, wiadomości, udostępnione podróże i samo konto. Bez dostępu do aplikacji – <a href="usun-konto.html">prośba o usunięcie</a>.</li>
+</ul>
+
+<h2 id="biblioteka-pl">Biblioteka planów i profil</h2>
+<ul>
+  <li><b>Kiedy:</b> tylko gdy sam opublikujesz podróż albo jeden dzień w bibliotece („Opublikuj w bibliotece”). Nic nie trafia tam automatycznie.</li>
+  <li><b>Plany w bibliotece są jawne</b> (nie są szyfrowane – inaczej nie dałoby się ich wyszukiwać): tytuł i opis, miasta i kraje, liczba dni i miesiąc wyjazdu, punkty planu (nazwa, godzina, kategoria, miejsce i jego współrzędne), przejazdy (skąd–dokąd, godziny), noclegi (nazwa i miasto), Twoje imię z profilu. <b>Nie</b> są publikowane: bilety, numery lotów i pociągów, kody rezerwacji, ceny, notatki, adresy noclegów, zdjęcia ani prawdziwe daty wyjazdu (daty są zastępowane numerami dni). Plan może zobaczyć, ocenić i skopiować każdy użytkownik Tripwillow.</li>
+  <li><b>Miasta w innych językach:</b> przy publikacji telefon pyta OpenStreetMap (Nominatim) o nazwy wpisanych miast w innych językach i o kraj – wysyłana jest tylko nazwa miasta.</li>
+  <li><b>Oceny:</b> serwer zapisuje Twoją ocenę (1–10) przy planie razem z Twoim identyfikatorem (żeby można było oceniać tylko raz); inni widzą tylko średnią i liczbę ocen.</li>
+  <li><b>Profil:</b> imię i nieobowiązkowe „O mnie” są widoczne dla osób, które otworzą Twój profil (np. z biblioteki).</li>
+  <li><b>Zgłoszenia i blokowanie:</b> „Zgłoś plan” zapisuje identyfikator planu, Twój identyfikator i opis problemu – czyta je tylko twórca aplikacji, żeby usuwać treści naruszające zasady. „Zablokuj” działa tylko na Twoim telefonie.</li>
+  <li><b>Usuwanie:</b> „Usuń z biblioteki” usuwa plan i jego oceny od razu; usunięcie konta usuwa wszystkie Twoje plany i oceny.</li>
 </ul>
 
 <h2 id="usuwanie">Bezpieczeństwo i usuwanie danych</h2>
@@ -96,10 +107,10 @@
 
 <article id="en" lang="en">
 <h1>Privacy Policy</h1>
-<p class="meta"><b>Tripwillow</b> app (Android: <code>io.github.chiniak.podroznik</code>, web: chiniak.github.io/podroznik) · effective 17 November 2026</p>
+<p class="meta"><b>Tripwillow</b> app (Android: <code>io.github.chiniak.podroznik</code>, web: chiniak.github.io/podroznik) · effective 18 November 2026</p>
 
 <h2>In short</h2>
-<p>Tripwillow is a travel planner that runs <b>on your phone</b>. We have no server of our own, no user accounts and no advertising. Your trips, tickets, expenses, journal and Gmail data stay in the device's storage and are never sent to us, sold or shared. The exceptions, which you switch on yourself: <a href="#together-en">planning together</a> and <a href="#friends-en">friends and shared trips</a> (encrypted on the phone) – then a trip's changes go to the other participants through Google Firebase, <b>encrypted</b> with a key the server does not know.</p>
+<p>Tripwillow is a travel planner that runs <b>on your phone</b>. We have no server of our own and no advertising, and an account is optional. Your trips, tickets, expenses, journal and Gmail data stay in the device's storage and are never sent to us, sold or shared. The exceptions, which you switch on yourself: <a href="#together-en">planning together</a> and <a href="#friends-en">friends and shared trips</a> (encrypted on the phone) – then a trip's changes go to the other participants through Google Firebase, <b>encrypted</b> with a key the server does not know.</p>
 
 <h2>Data the app processes</h2>
 <ul>
@@ -152,9 +163,20 @@
   <li><b>End-to-end encrypted</b> (only ciphertext on the server): chat message content (AES-256-GCM with a key derived from both people's keys – ECDH P-256; the private key never leaves the phone) and shared trips: name, destination, dates, route (from–to, times, flight/train number), stays (name and city), day plan and ideas. <b>Not</b> sent: tickets, booking codes, prices, notes, stay addresses, expenses, documents, the journal or any Gmail data.</li>
   <li><b>Who can see a trip:</b> "Private" – only you; "Friends" – people who accepted your invitation; "Public" – anyone with the link (the key is in the part of the link after #). Friends see past trips with such visibility as history. Switching to "Private" removes the trip from the server and turns the link off.</li>
   <li><b>Google account (optional):</b> after "Sign in with Google" your friends profile is tied to the account (Firebase Authentication receives your e-mail address and Google account ID; we never get your password or Gmail – that is a separate consent). If "Friends can find me by e-mail" is on, the server keeps an "e-mail address → identifier" entry that only someone who knows the exact address can read. If "Friends backup on the account" is on, the server keeps a copy of the chat key, friends list and visibility settings – only someone signed in to your account can read it (database rules), but it is <b>not encrypted with a separate password</b>, so with this option chat encryption is not fully end-to-end towards the server operator. Both options can be turned off on the Friends screen; signing out removes friends and chats from the phone.</li>
-  <li><b>Facebook (optional):</b> after "Sign in with Facebook" Firebase receives your app-scoped Facebook ID, name and e-mail (if Facebook provides it). The server keeps a "Facebook ID → profile" entry so your Facebook friends who also use Tripwillow can find you. The phone reads the friends list directly from Facebook (user_friends permission – Facebook only returns friends who also connected Tripwillow) and it is not stored anywhere. We never post to Facebook. To delete this data: sign out in Tripwillow, remove Tripwillow in Facebook settings (Apps and websites) and write to us (contact below) – we will delete the entry and profile from the server.</li>
+  <li><b>Facebook (optional):</b> after "Sign in with Facebook" Firebase receives your app-scoped Facebook ID, name and e-mail (if Facebook provides it). The server keeps a "Facebook ID → profile" entry so your Facebook friends who also use Tripwillow can find you. The phone reads the friends list directly from Facebook (user_friends permission – Facebook only returns friends who also connected Tripwillow) and it is not stored anywhere. We never post to Facebook. To delete this data: sign out in Tripwillow, remove Tripwillow in Facebook settings (Apps and websites) and use "Delete account" in the app (<a href="usun-konto.html#en">how to</a>) – the entry and profile are removed from the server.</li>
   <li><b>Following and "Explore":</b> a list of your <b>public</b> trips (name, destination, dates and the preview key) is available to people who know your identifier (followers). If you turn on "Show my public trips in Explore", that list and your name are visible to all Tripwillow users. The server also stores who follows whom (only the profile owner sees the follower count). Private and "friends" trips never appear there.</li>
-  <li><b>Deletion:</b> "Remove friend" deletes the chat from the phone and that person's access to your trips. On request (contact below) we will delete your profile, invitations, chats and trips from the server.</li>
+  <li><b>Deletion:</b> "Remove friend" deletes the chat from the phone and that person's access to your trips. Settings → Your account → "Delete account and server data" immediately deletes your profile, invitations, messages, shared trips and the account itself from the server. Without access to the app – <a href="usun-konto.html#en">request deletion</a>.</li>
+</ul>
+
+<h2 id="library-en">Plan library and profile</h2>
+<ul>
+  <li><b>When:</b> only when you publish a trip or a single day in the library yourself ("Publish to library"). Nothing gets there automatically.</li>
+  <li><b>Library plans are public</b> (not encrypted – otherwise they could not be searched): title and description, cities and countries, number of days and month of travel, plan items (name, time, category, place and its coordinates), journeys (from–to, times), stays (name and city), your profile name. <b>Not</b> published: tickets, flight and train numbers, booking codes, prices, notes, accommodation addresses, photos or your real travel dates (dates are replaced with day numbers). Any Tripwillow user can see, rate and copy the plan.</li>
+  <li><b>City names in other languages:</b> when publishing, the phone asks OpenStreetMap (Nominatim) for the names of the cities you entered in other languages and their country – only the city name is sent.</li>
+  <li><b>Ratings:</b> the server stores your rating (1–10) with the plan together with your identifier (so you can rate only once); others only see the average and the number of ratings.</li>
+  <li><b>Profile:</b> your name and the optional "About me" are visible to people who open your profile (e.g. from the library).</li>
+  <li><b>Reports and blocking:</b> "Report plan" stores the plan identifier, your identifier and your description of the problem – only the app developer reads it, to remove content that breaks the rules. "Block" only works on your phone.</li>
+  <li><b>Deletion:</b> "Remove from library" deletes the plan and its ratings immediately; deleting your account deletes all your plans and ratings.</li>
 </ul>
 
 <h2 id="deletion">Security and deletion</h2>
@@ -171,6 +193,6 @@
 <p>Changes to this policy will be published on this page (date at the top). Privacy questions and requests: <a href="https://github.com/Chiniak/chiniak.github.io/issues">github.com/Chiniak/chiniak.github.io/issues</a>.</p>
 </article>
 </main>
-<footer><a href="aplikacja.html">Tripwillow</a> · <a href="./">Otwórz aplikację w przeglądarce / Open web app</a></footer>
+<footer><a href="aplikacja.html">Tripwillow</a> · <a href="./">Otwórz aplikację w przeglądarce / Open web app</a> · <a href="usun-konto.html">Usuwanie konta / Delete account</a></footer>
 </body>
 </html>

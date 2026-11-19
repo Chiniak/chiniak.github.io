@@ -248,6 +248,7 @@
     let trips = [], err = null;
     try { trips = await SO().friendTrips(id); } catch (e) { err = e; }
     const n = await SO().unread(id);
+    const pr = await SO().person(id).catch(() => null), lib = await libSec(id, { name: f.name });
     const by = s => trips.filter(x => statusOf(x.trip) === s);
     const now = by("now"), soon = by("soon").sort((a, b) => a.trip.start.localeCompare(b.trip.start)), past = by("past").sort((a, b) => b.trip.start.localeCompare(a.trip.start));
     const ideas = ideasOf(trips);
@@ -256,13 +257,14 @@
       title: f.name || "Znajomy", back: "#/znajomi",
       html: `
         <div class="gd-intro zn-prof">${av(id, f.name, "xl")}<h2>${esc(f.name || "Bez imienia")}</h2>
-          <p class="muted small">znajomi od ${App.fmtDay(String(f.since || "").slice(0, 10) || today())}</p>
+          <p class="muted small">znajomi od ${App.fmtDay(String(f.since || "").slice(0, 10) || today())}</p>${bioHtml(pr && pr.bio)}
           ${trips.length ? `<p class="zn-stats"><span class="chip">${trips.length} ${plural(trips.length, "podróż", "podróże", "podróży")}</span>${ideas.length ? `<span class="chip">${ideas.length} ${plural(ideas.length, "pomysł", "pomysły", "pomysłów")}</span>` : ""}</p>` : ""}</div>
         <a class="btn primary wide" href="#/czat/${id}">${ic("chat")} <span>Czat</span>${n ? ` <span class="rz-badge">${n}</span>` : ""}</a>
         <h2 class="section">Podróże</h2>
         ${err ? `<p class="gd-err">${offlineMsg(err)}</p>` : ""}${trips.offline ? `<p class="muted small">Bez internetu – pokazuję ostatnio pobrane.</p>` : ""}
         ${trips.length ? sec("Teraz", now) + sec("Nadchodzące", soon) + (past.length ? `<h3 class="tp-h">Historia</h3>${past.map(s => tripCard(`#/znajomy/${id}/p/${s.doc}`, s)).join("")}` : "")
           : err ? "" : `<p class="muted small">${esc(f.name || "Znajomy")} nie udostępnia jeszcze żadnej podróży.</p>`}
+        ${lib}
         ${ideasHtml(ideas, f.name || "znajomego")}
         <div class="pl-danger"><button type="button" class="btn danger" id="zn-del">${ic("trash")} <span>Usuń ze znajomych</span></button></div>`,
       after(view) {
@@ -389,7 +391,7 @@
 
   /* ================= podgląd cudzej podróży ================= */
   const SEG_ICON = { lot: "plane", pociag: "train", autobus: "bus", prom: "ferry", auto: "car", nocleg: "bed" };
-  function tripView(s, { owner, back, ownerHref }) {
+  function tripView(s, { owner, back, ownerHref, rel = false }) {
     const t = s.trip, CATS = App.Plan ? App.Plan.CATS : {};
     const days = [];
     for (let d = t.start; d && d <= t.end && days.length < 120; d = App.addDays(d, 1)) days.push(d);
@@ -399,7 +401,7 @@
       : `<div class="zn-ev"><span class="zn-ev-t">${App.time(seg.depart)}</span><span class="zn-ev-ic">${ic(SEG_ICON[seg.type] || "navigate")}</span><span><b>${esc(seg.from)} → ${esc(seg.to)}</b>${seg.arrive ? `<small>przyjazd ${App.time(seg.arrive)}${seg.number ? ` · ${esc(seg.number)}` : ""}</small>` : ""}</span></div>`;
     const idx = new Map((s.items || []).map((it, i) => [it, i]));
     const itemRow = it => `<div class="zn-ev zn-ev-it"><span class="zn-ev-t">${esc(it.time || "–")}</span><span class="zn-ev-ic" aria-hidden="true">${(CATS[it.cat] || { icon: "📌" }).icon}</span>
-      <span><b>${esc(it.title)}</b>${it.place ? `<small>${esc(it.place)}</small>` : ""}</span>
+      <span translate="no"><b>${esc(it.title)}</b>${it.place ? `<small>${esc(it.place)}</small>` : ""}</span>
       <button type="button" class="icon-btn zn-take" data-take="${idx.get(it)}" aria-label="Weź pomysł: ${esc(it.title)}">${ic("plus", "")}</button></div>`;
     let body = "";
     for (const d of days) {
@@ -408,7 +410,7 @@
       const all = its.filter(x => x.k).concat(segs).sort((a, b) => a.k.localeCompare(b.k)).concat(its.filter(x => !x.k));
       if (!all.length) continue;
       const nIt = its.length;
-      body += `<section class="zn-day"><div class="zn-day-h"><h3>${App.fmtDayLong(d)}</h3>
+      body += `<section class="zn-day"><div class="zn-day-h"><h3>${rel ? `Dzień ${App.dayDiff(t.start, d) + 1}` : App.fmtDayLong(d)}</h3>
         ${nIt ? `<button type="button" class="btn small zn-copyday" data-copyday="${d}" aria-label="Skopiuj ten dzień: ${App.fmtDay(d)}">${ic("copy")} <span>Skopiuj dzień</span></button>` : ""}</div>
         ${all.map(x => x.h).join("")}</section>`;
     }
@@ -419,12 +421,12 @@
       <div class="zn-copybar"><button type="button" class="btn primary wide" id="zn-copytop">${ic("copy")} <span>Skopiuj całą wycieczkę</span></button></div>
       <header class="pl-head zn-thead" style="--c:${esc(t.color || "#0f6e6e")}">
         <p class="zn-owner">${ownerHref ? `<a href="${ownerHref}">${esc(owner || s.owner || "")}</a>` : esc(owner || s.owner || "")}</p>
-        <h2>${esc(t.name)}</h2>
-        <p class="pl-info">${t.destination && t.destination !== t.name ? `${esc(t.destination)} · ` : ""}${App.fmtRange(t.start, t.end)} · ${statusTxt(t)}</p>
+        <h2 translate="no">${esc(t.name)}</h2>
+        <p class="pl-info">${t.destination && t.destination !== t.name ? `${esc(t.destination)} · ` : ""}${rel ? (() => { const n = App.dayDiff(t.start, t.end) + 1; return `${n} ${plural(n, "dzień", "dni", "dni")}`; })() : `${App.fmtRange(t.start, t.end)} · ${statusTxt(t)}`}</p>
       </header>
       ${body}
       <button type="button" class="btn wide zn-copy" id="zn-copytrip">${ic("copy")} <span>Skopiuj do moich podróży</span></button>
-      <p class="f-hint">Podgląd bez biletów, kodów rezerwacji, cen i notatek · zaktualizowano ${App.fmtDay(String(s.updated || "").slice(0, 10) || today())}</p>`;
+      ${rel ? "" : `<p class="f-hint">Podgląd bez biletów, kodów rezerwacji, cen i notatek · zaktualizowano ${App.fmtDay(String(s.updated || "").slice(0, 10) || today())}</p>`}`;
   }
   // „+” przy punkcie: do pomysłów w wybranej mojej podróży (items – lista punktów, data-take = numer na liście)
   const bindTake = (view, items, from) => view.querySelectorAll("[data-take]").forEach(b => b.onclick = async () => {
@@ -540,6 +542,10 @@
     const cur = dlg.querySelector(".tp-trip.on"); if (cur) cur.scrollIntoView({ block: "center" });
   }
 
+  App.People = { tripView, copyBtn };
+  const bioHtml = bio => bio ? `<p class="zn-bio" translate="no">${esc(bio)}</p>` : "";
+  const libSec = async (uid, opts) => App.Library ? App.Library.profileSection(uid, opts) : "";
+
   App.route(/^\/znajomy\/([A-Za-z0-9]{20,40})\/p\/([\w-]{12})$/, async ([id, doc]) => {
     if (!SO() || !SO().available()) return notReady();
     const st = await SO().state(), f = st.friends[id];
@@ -577,21 +583,30 @@
     const snaps = [];
     for (const t of trips.slice(0, 4)) { const sn = await SO().publicTrip({ uid, doc: t.doc, key: t.key }).catch(() => null); if (sn) snaps.push(sn); }
     const ideas = ideasOf(snaps);
+    const lib = err ? "" : await libSec(uid, { name });
+    const isBlocked = App.Library ? (await App.Library.blocked()).includes(uid) : false;
     return {
       title: name, back: "#/obserwowani",
       html: err ? `<p class="gd-err">${offlineMsg(err)}</p>` : `
         <div class="gd-intro zn-prof">${av(uid, name, "xl")}<h2>${esc(name)}</h2>
-          <p class="muted small">${trips.length} ${plural(trips.length, "podróż publiczna", "podróże publiczne", "podróży publicznych")}</p></div>
+          <p class="muted small">${trips.length} ${plural(trips.length, "podróż publiczna", "podróże publiczne", "podróży publicznych")}</p>${bioHtml(p && p.bio)}</div>
         <div class="zn-acts">
           <button type="button" class="btn ${fol ? "" : "primary"}" id="zn-follow">${ic(fol ? "check" : "star")} <span>${fol ? "Obserwujesz" : "Obserwuj"}</span></button>
           ${st.friends[uid] ? "" : `<a class="btn" href="#/znajomi/dodaj/${uid}">${ic("users")} <span>Dodaj do znajomych</span></a>`}
         </div>
         <h2 class="section">Podróże</h2>
         ${trips.length ? trips.map(t => feedCard({ ...t, uid, owner: name })).join("") : `<p class="muted small">Brak podróży publicznych.</p>`}
+        ${lib}
         ${ideasHtml(ideas, name)}
+        ${App.Library ? `<button type="button" class="btn wide zn-block" id="zn-block">${ic("close")} <span>${isBlocked ? "Odblokuj" : "Zablokuj"}</span></button>` : ""}
         <p class="f-hint">Obserwując widzisz tylko podróże publiczne. Znajomi widzą też te „dla znajomych” i mogą pisać na czacie.</p>`,
       after(view) {
         bindTake(view, ideas, name);
+        const bl = view.querySelector("#zn-block");
+        if (bl) bl.onclick = async () => {
+          if (!isBlocked && !confirm(`Zablokować ${name}? Plany tej osoby przestaną się pokazywać w bibliotece na tym telefonie.`)) return;
+          await App.Library.block(uid, !isBlocked); App.toast(isBlocked ? "Odblokowano" : "Zablokowano"); App.render();
+        };
         const b = view.querySelector("#zn-follow");
         if (b) b.onclick = async () => { b.disabled = true; try { if (fol) await SO().unfollow(uid); else await SO().follow(uid); App.toast(fol ? "Nie obserwujesz" : `Obserwujesz: ${name}`); } catch (e) { App.toast(offlineMsg(e)); } App.render(); };
       },
@@ -628,6 +643,7 @@
         ${err ? `<p class="gd-err">${offlineMsg(err)}</p>` : ""}
         <section class="card zn-acc"><label class="zn-sw"><input type="checkbox" id="zn-explore"${st.explore ? " checked" : ""}>
           <span><b>Pokazuj moje publiczne podróże w Odkrywaj</b><small>${nPub ? `${nPub} ${plural(nPub, "podróż publiczna", "podróże publiczne", "podróży publicznych")} – zobaczą je wszyscy użytkownicy Tripwillow` : "nie masz jeszcze podróży publicznych – ustaw je w „Kto widzi podróż”"}</small></span></label></section>
+        ${App.Library ? `<a class="card lb-promo" href="#/biblioteka">${ic("layers")}<span><b>Biblioteka planów</b><small>Gotowe plany dni i wypraw z ocenami – szukaj po mieście albo kraju</small></span>${ic("chev", "")}</a>` : ""}
         <h2 class="section">Inspiracje od innych</h2>
         ${list.length ? list.map(feedCard).join("") : `<p class="muted small zn-none">Nikt jeszcze nie pokazuje podróży w Odkrywaj. Bądź pierwszy!</p>`}`,
       after(view) {
@@ -740,6 +756,7 @@
     const nf = Object.values(st.friends).filter(f => f.state === "ok").length;
     const shown = trips.filter(t => vis[t.id] !== "private");
     const VI = { friends: ["users", "dla znajomych"], public: ["globe", "publiczna"] };
+    const bio = await DB.getSetting("myBio", ""), lib = err ? "" : await libSec(me, { own: true });
     return {
       title: "Mój profil", back: "#/znajomi",
       html: `${err ? `<p class="gd-err">${offlineMsg(err)}</p>` : ""}
@@ -747,11 +764,22 @@
           <p class="zn-stats"><span class="chip">${nf} ${plural(nf, "znajomy", "znajomych", "znajomych")}</span><span class="chip">${fol} ${plural(fol, "obserwujący", "obserwujących", "obserwujących")}</span><span class="chip">${shown.length} ${plural(shown.length, "podróż widoczna", "podróże widoczne", "podróży widocznych")}</span></p></div>
         <div class="zn-acts"><a class="btn" href="#/znajomi">${ic("edit")} <span>Zmień imię</span></a>
           <a class="btn" href="#/widocznosc">${ic("lock")} <span>Kto widzi podróże</span></a></div>
+        <form class="zn-bioform" id="zn-bioform"><label class="field"><span>O mnie</span>
+          <textarea name="bio" maxlength="300" rows="2" placeholder="Np. jak lubisz podróżować, ulubione kierunki">${esc(bio)}</textarea></label>
+          <button class="btn small" type="submit">Zapisz</button></form>
+        ${lib}
         <h2 class="section">Moje podróże w oczach innych</h2>
         ${trips.length ? `<div class="list">${trips.map(t => `<a class="li" href="#/widocznosc/${t.id}"><span class="li-ico">${ic(vis[t.id] === "private" ? "lock" : VI[vis[t.id]][0])}</span>
           <span class="li-main"><b>${esc(t.name)}</b><small>${App.fmtRange(t.start, t.end)} · ${vis[t.id] === "private" ? "tylko Ty" : VI[vis[t.id]][1]}</small></span>${ic("chev", "")}</a>`).join("")}</div>`
           : `<p class="muted small">Dodaj podróż, a potem wybierz, kto ją widzi.</p>`}
         <p class="f-hint">Znajomi i obserwujący mogą oglądać plany i brać z nich pomysły. Bilety, kody rezerwacji, ceny i notatki nigdy nie są pokazywane.</p>`,
+      after(view) {
+        const f = view.querySelector("#zn-bioform");
+        if (f) f.onsubmit = async e => {
+          e.preventDefault();
+          try { await SO().setBio(f.bio.value); App.toast("Zapisano"); } catch (er) { App.toast(offlineMsg(er)); }
+        };
+      },
     };
   });
 

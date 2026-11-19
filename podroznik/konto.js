@@ -87,6 +87,14 @@
       </div>
       <button type="button" class="btn wide danger ac-out" id="ac-out">Wyloguj z tego telefonu</button>`;
     }
+    // usunięcie konta i danych z serwera – także profilu bez konta Google/Facebook (znajomi, udostępnione podróże)
+    const hasData = acc || Object.keys(st.friends || {}).length || Object.keys(st.trips || {}).length || Object.keys(st.following || {}).length;
+    if (!err && hasData) body += `
+      <section class="ac-del">
+        <h2 class="section">Usuń konto</h2>
+        <p class="f-hint">Usuwa z serwera Twój profil, znajomych, wiadomości, udostępnione podróże i połączenia z Google / Facebookiem. Plany, bilety i dokumenty na tym telefonie zostają. Tego nie da się cofnąć.</p>
+        <button type="button" class="btn wide danger" id="ac-del">${ic("trash")} <span>Usuń konto i dane z serwera</span></button>
+      </section>`;
     return {
       title: "Twoje konto",
       html: body,
@@ -112,6 +120,13 @@
             return;
           try { await SO().signOut(); App.toast("Wylogowano"); } catch (e) { App.toast(errMsg(e)); }
           App.render();
+        };
+        const del = view.querySelector("#ac-del");
+        if (del) del.onclick = async () => {
+          if (!confirm("Usunąć konto? Znikną z serwera: profil, znajomi, wiadomości, udostępnione podróże i połączone konta Google / Facebook. Plany na telefonie zostaną. Tego nie da się cofnąć.")) return;
+          del.disabled = true;
+          try { await SO().deleteAccount(); App.toast("Konto usunięte"); location.hash = "#/ustawienia"; }
+          catch (e) { App.toast(errMsg(e)); App.render(); }
         };
       },
     };

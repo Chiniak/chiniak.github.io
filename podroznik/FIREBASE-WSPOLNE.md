@@ -113,7 +113,9 @@ service cloud.firestore {
         && request.resource.data.t == request.time
         && request.resource.data.c is string && request.resource.data.c.size() < 20000
         && request.resource.data.v == 1;
-      allow update, delete: if false;
+      allow update: if false;
+      // własne wiadomości można usunąć (usunięcie konta)
+      allow delete: if signedIn() && resource.data.by == request.auth.uid;
     }
 
     // podróże udostępnione: zaszyfrowane migawki; odczyt po identyfikatorze (z listy kluczy albo z linku), pisze tylko właściciel

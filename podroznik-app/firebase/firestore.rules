@@ -1,5 +1,5 @@
 rules_version = '2';
-// Podróżnik – reguły Firestore.
+// Tripwillow – reguły Firestore.
 // 1) Wspólne planowanie (podroznik/sync.js): dane zaszyfrowane w telefonie (AES-256-GCM, klucz tylko w linku zaproszenia).
 //    Operacje można tylko dopisywać; odczyt tylko pojedynczego pokoju, którego losowy identyfikator jest w linku.
 // 2) Znajomi (podroznik/social.js): profil (imię + klucz publiczny), zaproszenia, czat 1:1 i podróże dla znajomych /
@@ -27,8 +27,9 @@ service cloud.firestore {
       allow get: if signedIn();
       allow list: if false;
       allow create, update: if signedIn() && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['name', 'pub', 'v'])
+        && request.resource.data.keys().hasOnly(['name', 'pub', 'v', 'bio'])
         && request.resource.data.name is string && request.resource.data.name.size() <= 40
+        && (!('bio' in request.resource.data) || (request.resource.data.bio is string && request.resource.data.bio.size() <= 300))
         && request.resource.data.pub is string && request.resource.data.pub.size() <= 300
         && request.resource.data.v == 1;
       allow delete: if signedIn() && request.auth.uid == uid;
@@ -63,7 +64,9 @@ service cloud.firestore {
         && request.resource.data.t == request.time
         && request.resource.data.c is string && request.resource.data.c.size() < 20000
         && request.resource.data.v == 1;
-      allow update, delete: if false;
+      allow update: if false;
+      // własne wiadomości można usunąć (usunięcie konta)
+      allow delete: if signedIn() && resource.data.by == request.auth.uid;
     }
 
     // podróże udostępnione: zaszyfrowane migawki; odczyt po identyfikatorze (z listy kluczy albo z linku), pisze tylko właściciel
@@ -128,6 +131,64 @@ service cloud.firestore {
         && request.resource.data.c is string && request.resource.data.c.size() < 100000
         && request.resource.data.t == request.time && request.resource.data.v == 1;
       allow delete: if signedIn() && request.auth.uid == uid;
+    }
+      // ===== Biblioteka planów (biblioteka.js): plany JAWNE (do wyszukiwania), oceny 1–10 – jedna na osobę =====
+    function libPath(id) { return /databases/$(database)/documents/library/$(id); }
+    function ratePath(id, u) { return /databases/$(database)/documents/library/$(id)/ratings/$(u); }
+    function libFields(d) {
+      return d.owner is string && d.ownerName is string && d.ownerName.size() <= 40
+        && d.title is string && d.title.size() >= 1 && d.title.size() <= 80
+        && d.desc is string && d.desc.size() <= 1000
+        && d.kind in ['day', 'trip'] && d.days is int && d.days >= 1 && d.days <= 366 && d.month is int && d.month >= 0 && d.month <= 12
+        && d.cities is list && d.cities.size() <= 8 && d.countries is list && d.countries.size() <= 12
+        && d.tags is list && d.tags.size() <= 80 && d.lang is string && d.lang.size() <= 5
+        && d.plan is map && d.t == request.time && d.v == 1;
+    }
+    // zmiana sumy i liczby ocen musi odpowiadać mojej ocenie zapisanej w tej samej transakcji
+    function ratingDeltaOk(id) {
+      let u = request.auth.uid;
+      let before = exists(ratePath(id, u));
+      let after = existsAfter(ratePath(id, u));
+      let oldR = before ? get(ratePath(id, u)).data.r : 0;
+      let newR = after ? getAfter(ratePath(id, u)).data.r : 0;
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ratingSum', 'ratingCount'])
+        && request.resource.data.ratingSum == resource.data.ratingSum + newR - oldR
+        && request.resource.data.ratingCount == resource.data.ratingCount + (after ? 1 : 0) - (before ? 1 : 0);
+    }
+    match /library/{id} {
+      allow get, list: if signedIn();
+      allow create: if signedIn() && request.resource.data.owner == request.auth.uid
+        && request.resource.data.keys().hasOnly(['owner', 'ownerName', 'title', 'desc', 'kind', 'days', 'month', 'cities', 'countries', 'tags', 'lang', 'plan', 'ratingSum', 'ratingCount', 'created', 't', 'v'])
+        && libFields(request.resource.data)
+        && request.resource.data.ratingSum == 0 && request.resource.data.ratingCount == 0 && request.resource.data.created == request.time;
+      allow update: if signedIn() && (
+        (resource.data.owner == request.auth.uid && request.resource.data.owner == resource.data.owner
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ownerName', 'title', 'desc', 'kind', 'days', 'month', 'cities', 'countries', 'tags', 'lang', 'plan', 't'])
+          && libFields(request.resource.data))
+        || (resource.data.owner != request.auth.uid && ratingDeltaOk(id)));
+      allow delete: if signedIn() && resource.data.owner == request.auth.uid;
+
+      match /ratings/{u} {
+        allow get, list: if signedIn();
+        allow create, update: if signedIn() && request.auth.uid == u && get(libPath(id)).data.owner != u
+          && request.resource.data.keys().hasOnly(['r', 't'])
+          && request.resource.data.r is int && request.resource.data.r >= 1 && request.resource.data.r <= 10
+          && request.resource.data.t == request.time
+          && getAfter(libPath(id)).data.ratingSum == get(libPath(id)).data.ratingSum + request.resource.data.r - (resource == null ? 0 : resource.data.r)
+          && getAfter(libPath(id)).data.ratingCount == get(libPath(id)).data.ratingCount + (resource == null ? 1 : 0);
+        // własną ocenę (z poprawką sumy) albo dowolną ocenę planu, którego już nie ma
+        allow delete: if signedIn() && (!exists(libPath(id))
+          || (request.auth.uid == u
+            && getAfter(libPath(id)).data.ratingSum == get(libPath(id)).data.ratingSum - resource.data.r
+            && getAfter(libPath(id)).data.ratingCount == get(libPath(id)).data.ratingCount - 1));
+      }
+    }
+    // zgłoszenia nadużyć: tylko dopisywanie; czyta właściciel projektu w konsoli Firebase
+    match /reports/{r} {
+      allow create: if signedIn() && request.resource.data.keys().hasOnly(['plan', 'by', 'why', 't'])
+        && request.resource.data.by == request.auth.uid && request.resource.data.plan is string && request.resource.data.plan.size() <= 40
+        && request.resource.data.why is string && request.resource.data.why.size() <= 300 && request.resource.data.t == request.time;
+      allow get, list, update, delete: if false;
     }
   }
 }
