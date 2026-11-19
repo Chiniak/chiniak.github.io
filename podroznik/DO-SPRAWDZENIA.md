@@ -210,3 +210,14 @@ Adres (po scaleniu pull requesta): https://chiniak.github.io/podroznik/
 - ✅ Ekran Dziś: teraz / dalej, nocleg (Nawiguj, Zadzwoń, Dla kierowcy), bilety na dziś („Pokaż”), plan dnia, strzałki ‹ › między dniami, „Jutro”
 - ✅ Szybki wydatek: kwota + waluta + kategoria jednym dotknięciem; suma dnia i „ok. X na dzień”
 - ✅ Ustawienia → Podróżowanie → „Ekran startowy w trakcie podróży: Dziś” – aplikacja otwiera się od razu na ekranie Dziś
+
+## Wersja 2.19.0 (APK 2.19.0 / versionCode 30)
+- ⬜ **Udostępnij → Tripwillow**: w Gmailu przytrzymaj załącznik PDF z biletem → Udostępnij → Tripwillow → „Odczytaj” – lot/pociąg/hotel się dodaje (z biletem)
+- ⬜ To samo ze zdjęciem/screenem z galerii → „Bilet do lotu, pociągu, noclegu” albo „Punkt planu”; skan paszportu → „Dokument”
+- ⬜ Plik .ics (zaproszenie z kalendarza) i karta .pkpass przez Udostępnij
+- ⬜ Udostępnienie samego tekstu maila (Gmail → ⋮ → Udostępnij) otwiera „Dodaj z maila”
+- ⬜ **Powiadomienia o wiadomościach**: zamknij aplikację, niech ktoś napisze na czacie wspólnej podróży albo w czacie znajomych – powiadomienie w ciągu ok. 15 min; dotknięcie otwiera właściwy czat
+- ⬜ Zaproszenie do znajomych przy zamkniętej aplikacji → powiadomienie
+- ⬜ Ustawienia → Przypomnienia → „Wiadomości” – wyłączenie zatrzymuje powiadomienia
+- ⬜ **Rozłóż pomysły na dni** (Plan → pod pomysłami): podgląd ma sens (bliskie miejsca razem, właściwe miasto przy kilku noclegach), „Cofnij” przywraca
+- ⬜ **Przygotuj offline**: krok „Przewodnik” pobiera przewodniki Wikivoyage celu i miast noclegów; tryb Dziś ma skrót „Przewodnik”

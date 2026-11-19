@@ -82,5 +82,6 @@ Błąd „Aplikacja nie jest zarejestrowana w Google Cloud” (kod 10) = brak kl
 1. ✅ Projekt Capacitor, pliki przez „Udostępnij”, aparat, położenie, ikona (wersja 2.0.0)
 2. ✅ (2.1) Logowanie Google + propozycje z Gmaila
 3. ✅ (2.2) Punktualne powiadomienia (Local Notifications – także po restarcie telefonu) + jasność na maks przy bilecie
-4. ⬜ „Udostępnij → Tripwillow” dla plików (PDF, .ics, zdjęcia biletów z Gmaila i galerii)
-5. ⬜ Widżet na ekranie głównym, OCR z ML Kit, odcisk palca natywnie (WebAuthn w WebView nie działa – teraz tylko PIN)
+4. ✅ (2.19) „Udostępnij → Tripwillow” dla plików (PDF, .ics, .pkpass, .eml, zdjęcia) – `ShareInPlugin.java` (intent SEND / SEND_MULTIPLE) → `podroznik/udostepnione.js`
+5. ✅ (2.19) Powiadomienia o wiadomościach przy zamkniętej aplikacji – `PushWorker` (WorkManager co 15 min) + `PushCheck` (Firestore REST, odszyfrowanie AES-GCM w telefonie) + `PushPlugin`; konfiguracja z `podroznik/push.js`. Test: `podroznik-testy/t70.js` (emulator Firebase + `./gradlew testDebugUnitTest`, `PushCheckTest`)
+6. ⬜ Widżet na ekranie głównym, OCR z ML Kit, odcisk palca natywnie (WebAuthn w WebView nie działa – teraz tylko PIN)
