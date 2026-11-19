@@ -254,10 +254,24 @@
     }
   }
 
+  // usunięcie wszystkich noclegów podróży (np. plan z noclegami „na próbę”, a rezerwacje będą na bieżąco)
+  async function delStays(t) {
+    const stays = (await DB.byIndex("segments", "tripId", t.id)).filter(x => x.type === "nocleg");
+    if (!stays.length) return false;
+    if (!confirm(`Usunąć wszystkie noclegi z podróży „${t.name}” (${stays.length})? Loty, pociągi i plan zostają.`)) return false;
+    for (const x of stays) {
+      for (const f of await DB.byIndex("files", "segmentId", x.id)) await DB.del("files", f.id);
+      await DB.del("segments", x.id);
+    }
+    App.toast(`Usunięto ${stays.length} ${App.plural(stays.length, "nocleg", "noclegi", "noclegów")}`);
+    return true;
+  }
+
   // menu podróży z paska „Twoje podróże” (Plan, Pakowanie)
   async function tripMenu(tripId) {
     const t = await DB.get("trips", tripId);
     if (!t) return;
+    const stays = (await DB.byIndex("segments", "tripId", tripId)).filter(x => x.type === "nocleg");
     const old = document.querySelector(".tp-sheet"); if (old) old.remove();
     const dlg = document.createElement("dialog");
     dlg.className = "tp-sheet";
@@ -270,6 +284,7 @@
         <div class="list tm-list">
           ${item("edit", "edit", "Edytuj podróż", "nazwa, daty, cel, kolor, zdjęcie")}
           ${item("open", "trips", "Szczegóły podróży", "bilety, noclegi, narzędzia")}
+          ${stays.length ? item("delstays", "bed", `Usuń wszystkie noclegi (${stays.length})`, "zostaną loty, pociągi i plan – noclegi dodasz, gdy zarezerwujesz", "danger") : ""}
           ${item("del", "trash", "Usuń podróż", "razem z biletami, planem i pakowaniem", "danger")}
         </div></div>`;
     document.body.appendChild(dlg);
@@ -282,6 +297,7 @@
       const act = b.dataset.act;
       if (act === "edit") { close(); location.hash = `#/podroze/${t.id}/edytuj`; return; }
       if (act === "open") { close(); location.hash = `#/podroze/${t.id}`; return; }
+      if (act === "delstays") { close(); if (await delStays(t)) App.render(); return; }
       if (act === "del") {
         close();
         if (!App.Trips || !(await App.Trips.removeTrip(t))) return;
@@ -503,6 +519,7 @@
     // na dole: wyczyszczenie planu (punkty i pomysły) albo usunięcie całej podróży
     html += `
       <div class="pl-danger">
+        ${segs.some(x => x.type === "nocleg") ? `<button type="button" class="btn danger" id="pl-delstays">${App.icon("bed", "sm")} <span>Usuń noclegi (${segs.filter(x => x.type === "nocleg").length})</span></button>` : ""}
         ${items.length ? `<button type="button" class="btn danger" id="pl-clear">${App.icon("trash", "sm")} <span>Wyczyść plan</span></button>` : ""}
         <button type="button" class="btn danger" id="pl-deltrip">${App.icon("trash", "sm")} <span>Usuń całą podróż</span></button>
       </div>`;
@@ -552,6 +569,8 @@
         };
         // zdjęcia miejsc: dociągane w tle (Wikipedia) i wstawiane bez przeładowania ekranu
         if (App.Photos) App.Photos.fill(items, (it, ph) => { if (view.isConnected) App.Photos.paint(view, it, ph); });
+        const ds = view.querySelector("#pl-delstays");
+        if (ds) ds.onclick = async () => { if (await delStays(trip)) App.render(); };
         const clr = view.querySelector("#pl-clear");
         if (clr) clr.onclick = async () => {
           const n = items.length;

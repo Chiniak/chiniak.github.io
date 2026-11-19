@@ -2529,5 +2529,13 @@
   "Utworzono {} punkty": "{} Punkte erstellt",
   "Utworzono {} punktów": "{} Punkte erstellt",
   "Usuń wiersz": "Zeile entfernen",
-  "np. Muzeum, kolacja": "z. B. Museum, Abendessen"
+  "np. Muzeum, kolacja": "z. B. Museum, Abendessen",
+  // 2.19.2: usuwanie noclegów
+  "Usuń noclegi ({})": "Unterkünfte löschen ({})",
+  "Usuń wszystkie noclegi ({})": "Alle Unterkünfte löschen ({})",
+  "zostaną loty, pociągi i plan – noclegi dodasz, gdy zarezerwujesz": "Flüge, Züge und Plan bleiben – Unterkünfte fügst du nach der Buchung hinzu",
+  "Usunąć wszystkie noclegi z podróży „{}” ({})? Loty, pociągi i plan zostają.": "Alle Unterkünfte aus „{}“ löschen ({})? Flüge, Züge und Plan bleiben.",
+  "Usunięto {} nocleg": "{} Unterkunft gelöscht",
+  "Usunięto {} noclegi": "{} Unterkünfte gelöscht",
+  "Usunięto {} noclegów": "{} Unterkünfte gelöscht"
 };

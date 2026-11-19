@@ -2529,5 +2529,13 @@
   "Utworzono {} punkty": "已创建 {} 个项目",
   "Utworzono {} punktów": "已创建 {} 个项目",
   "Usuń wiersz": "删除此行",
-  "np. Muzeum, kolacja": "例如：博物馆、晚餐"
+  "np. Muzeum, kolacja": "例如：博物馆、晚餐",
+  // 2.19.2: usuwanie noclegów
+  "Usuń noclegi ({})": "删除住宿（{}）",
+  "Usuń wszystkie noclegi ({})": "删除全部住宿（{}）",
+  "zostaną loty, pociągi i plan – noclegi dodasz, gdy zarezerwujesz": "航班、火车和行程保留——预订后再添加住宿",
+  "Usunąć wszystkie noclegi z podróży „{}” ({})? Loty, pociągi i plan zostają.": "删除“{}”的全部住宿（{}）？航班、火车和行程保留。",
+  "Usunięto {} nocleg": "已删除 {} 个住宿",
+  "Usunięto {} noclegi": "已删除 {} 个住宿",
+  "Usunięto {} noclegów": "已删除 {} 个住宿"
 };

@@ -1315,5 +1315,13 @@ self.I18N_EN = {
   "Utworzono {} punkty": "Created {} stops",
   "Utworzono {} punktów": "Created {} stops",
   "Usuń wiersz": "Remove line",
-  "np. Muzeum, kolacja": "e.g. Museum, dinner"
+  "np. Muzeum, kolacja": "e.g. Museum, dinner",
+  // 2.19.2: usuwanie noclegów
+  "Usuń noclegi ({})": "Delete stays ({})",
+  "Usuń wszystkie noclegi ({})": "Delete all stays ({})",
+  "zostaną loty, pociągi i plan – noclegi dodasz, gdy zarezerwujesz": "flights, trains and the plan stay – add stays once you book them",
+  "Usunąć wszystkie noclegi z podróży „{}” ({})? Loty, pociągi i plan zostają.": "Delete all stays from “{}” ({})? Flights, trains and the plan stay.",
+  "Usunięto {} nocleg": "Deleted {} stay",
+  "Usunięto {} noclegi": "Deleted {} stays",
+  "Usunięto {} noclegów": "Deleted {} stays"
 };

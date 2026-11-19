@@ -56,6 +56,13 @@ let bad = 0; const ok = (c, m) => { console.log((c ? 'ok   ' : 'FAIL ') + m); if
   ok(after.length === 3 && after.includes('19:00|Wieczór nad jeziorem Cuihu|natura|Kunming, Chiny|25.04') && after.includes('|Kolacja w Kunming|jedzenie|Kunming, Chiny|25.04') && after.includes('|Pociągiem do Kunming|inne|Kunming, Chiny|25.04'),
     '3 osobne punkty z godzinami, kategoriami i miejscem: ' + after.join(' ; '));
   ok(await p.evaluate(id => DB.get('planItems', id), ids.it) == null && p.url().endsWith(`#/plan/${ids.t}`), 'oryginał usunięty, powrót do planu');
+  // „Usuń noclegi” na dole planu (rezerwacje na bieżąco) – loty i plan zostają
+  p.on('dialog', d => d.accept());
+  await p.goto(`http://localhost:8765/podroznik/#/plan/${ids.t}`); await p.waitForSelector('#pl-delstays');
+  ok(/Usuń noclegi \(1\)/.test(await p.textContent('#pl-delstays')), 'przycisk „Usuń noclegi (1)”');
+  await p.click('#pl-delstays'); await p.waitForTimeout(800);
+  const left = await p.evaluate(async id => (await DB.byIndex('segments', 'tripId', id)).map(s => s.type).join(), ids.t);
+  ok(left === 'lot' && await p.$('#pl-delstays') === null, 'noclegi usunięte, lot został: ' + left);
   ok(!errs.length, 'bez błędów strony ' + errs.join(' | '));
   await b.close(); console.log(bad ? `BŁĘDY: ${bad}` : 'WSZYSTKO OK'); process.exit(bad ? 1 : 0);
 })();

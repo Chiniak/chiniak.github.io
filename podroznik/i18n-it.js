@@ -2529,5 +2529,13 @@
   "Utworzono {} punkty": "{} tappe create",
   "Utworzono {} punktów": "{} tappe create",
   "Usuń wiersz": "Rimuovi riga",
-  "np. Muzeum, kolacja": "es. Museo, cena"
+  "np. Muzeum, kolacja": "es. Museo, cena",
+  // 2.19.2: usuwanie noclegów
+  "Usuń noclegi ({})": "Elimina alloggi ({})",
+  "Usuń wszystkie noclegi ({})": "Elimina tutti gli alloggi ({})",
+  "zostaną loty, pociągi i plan – noclegi dodasz, gdy zarezerwujesz": "restano voli, treni e piano – aggiungerai gli alloggi quando prenoti",
+  "Usunąć wszystkie noclegi z podróży „{}” ({})? Loty, pociągi i plan zostają.": "Eliminare tutti gli alloggi da «{}» ({})? Voli, treni e piano restano.",
+  "Usunięto {} nocleg": "{} alloggio eliminato",
+  "Usunięto {} noclegi": "{} alloggi eliminati",
+  "Usunięto {} noclegów": "{} alloggi eliminati"
 };
