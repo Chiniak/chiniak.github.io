@@ -1291,5 +1291,8 @@ self.I18N_EN = {
   "Powiadomienia o wiadomościach wyłączone": "Message notifications off",
   "Zaproszenie do znajomych": "Friend request",
   "{} chce dodać Cię do znajomych": "{} wants to add you as a friend",
-  "Czat podróży i znajomych": "Trip and friends chat"
+  "Czat podróży i znajomych": "Trip and friends chat",
+  // 2.19.1: mapa bez klucza CARTO
+  "Pobieranie mapy offline jest chwilowo wyłączone: dostawca map (CARTO) wymaga teraz klucza. Mapa online działa (OpenStreetMap); obejrzane fragmenty zostają w telefonie.": "Offline map download is temporarily off: the map provider (CARTO) now requires a key. The online map works (OpenStreetMap); areas you have viewed stay on the phone.",
+  "chwilowo niedostępna (dostawca map wymaga klucza)": "temporarily unavailable (the map provider requires a key)"
 };

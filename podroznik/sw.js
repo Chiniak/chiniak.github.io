@@ -2,12 +2,12 @@
    Pliki aplikacji: najpierw sieć (aktualizacje od razu), zapisana kopia gdy brak internetu.
    Przy każdej zmianie plików podbij numer CACHE. Dane użytkownika są w IndexedDB, nie tutaj. */
 // baza i wyliczanie przypomnień – do sprawdzania w tle (Periodic Background Sync)
-importScripts("i18n-en.js", "i18n-de.js", "i18n-es.js", "i18n-it.js", "i18n-pt.js", "i18n-zh.js", "i18n.js", "db.js", "lib/airports.js", "lib/visa-world.js", "visas.js", "reminders-core.js");
+importScripts("mapy-config.js", "i18n-en.js", "i18n-de.js", "i18n-es.js", "i18n-it.js", "i18n-pt.js", "i18n-zh.js", "i18n.js", "db.js", "lib/airports.js", "lib/visa-world.js", "visas.js", "reminders-core.js");
 
-const CACHE = "podroznik-v90";
+const CACHE = "podroznik-v91";
 const APP = [
   "./", "./index.html", "./style.css", "./i18n-en.js", "./i18n-de.js", "./i18n-es.js", "./i18n-it.js", "./i18n-pt.js", "./i18n-zh.js", "./i18n.js", "./native.js", "./db.js", "./app.js", "./trips.js", "./manifest.webmanifest",
-  "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png", "./tickets.js", "./plan.js", "./pack.js", "./reminders-core.js", "./reminders.js", "./backup.js", "./lock.js", "./docs.js", "./budget.js", "./stats.js", "./weather.js", "./email.js", "./places.js", "./rozloz.js", "./udostepnione.js", "./push.js", "./discover.js", "./split.js", "./share.js", "./offline.js", "./phrases.js", "./photos.js", "./backdrop.js", "./prep.js", "./ocr.js", "./gmail.js", "./icons.js", "./covers.js", "./settings.js", "./dzis.js", "./visas.js", "./waluty.js", "./journal.js", "./sync-config.js", "./sync.js", "./razem.js", "./guide.js", "./social.js", "./znajomi.js", "./konto.js", "./biblioteka.js", "./dolacz.html",
+  "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png", "./tickets.js", "./plan.js", "./pack.js", "./reminders-core.js", "./reminders.js", "./backup.js", "./lock.js", "./docs.js", "./budget.js", "./stats.js", "./weather.js", "./email.js", "./places.js", "./rozloz.js", "./udostepnione.js", "./push.js", "./mapy-config.js", "./discover.js", "./split.js", "./share.js", "./offline.js", "./phrases.js", "./photos.js", "./backdrop.js", "./prep.js", "./ocr.js", "./gmail.js", "./icons.js", "./covers.js", "./settings.js", "./dzis.js", "./visas.js", "./waluty.js", "./journal.js", "./sync-config.js", "./sync.js", "./razem.js", "./guide.js", "./social.js", "./znajomi.js", "./konto.js", "./biblioteka.js", "./dolacz.html",
   // czcionki (lib/fonts) – wygląd bez internetu
   "./lib/fonts/plus-jakarta-sans-latin-wght-normal.woff2", "./lib/fonts/plus-jakarta-sans-latin-ext-wght-normal.woff2", "./lib/fonts/plus-jakarta-sans-vietnamese-wght-normal.woff2",
   "./lib/fonts/newsreader-latin-500-normal.woff2", "./lib/fonts/newsreader-latin-ext-500-normal.woff2", "./lib/fonts/newsreader-vietnamese-500-normal.woff2",
@@ -26,6 +26,11 @@ self.addEventListener("install", e => {
 self.addEventListener("activate", e => {
   e.waitUntil((async () => {
     for (const k of await caches.keys()) if (k.startsWith("podroznik-") && k !== CACHE) await caches.delete(k);
+    // stare kafelki CARTO (mogą być obrazkami „API KEY REQUIRED”) – z pamięci oglądanych i z map offline
+    for (const k of await caches.keys()) if (k === "mapa-kafelki" || k.startsWith("mapa-offline-")) {
+      const c = await caches.open(k);
+      for (const r of await c.keys()) { const x = new URL(r.url); if (isCarto(x) && x.searchParams.get("v") !== "2") await c.delete(r); }
+    }
     await self.clients.claim();
   })());
 });
@@ -37,7 +42,9 @@ const TILE_HOSTS = /(^|\.)(tile\.openstreetmap\.org|basemaps\.cartocdn\.com)$/;
 let tileCount = null;
 // klucz kafelka bez poddomeny (a/b/c/d.basemaps…) – ten sam kafelek nie jest zapisywany 4 razy;
 // tak samo zapisuje kafelki „Mapa offline” (offline.js) w pamięciach „mapa-offline-<podróż>”
-const canon = u => { const x = new URL(u); if (/basemaps\.cartocdn\.com$/.test(x.hostname)) x.hostname = "a.basemaps.cartocdn.com"; x.search = ""; return x.href; };
+// CARTO: bez klucza w adresie, z „v=2” – kafelki sprzed zmiany CARTO (2026, bez klucza = obrazek „API KEY REQUIRED”) mają inny adres i są usuwane przy aktywacji
+const isCarto = x => /basemaps\.cartocdn\.com$/.test(x.hostname);
+const canon = u => { const x = new URL(u); const c = isCarto(x); if (c) x.hostname = "a.basemaps.cartocdn.com"; x.search = c ? "?v=2" : ""; return x.href; };
 async function tileFetch(req) {
   const key = canon(req.url);
   const hit = await caches.match(key); // obejrzane albo pobrane na offline (wszystkie pamięci)

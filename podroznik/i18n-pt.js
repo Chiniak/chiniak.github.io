@@ -2505,5 +2505,8 @@
   "Powiadomienia o wiadomościach wyłączone": "Notificações de mensagens desativadas",
   "Zaproszenie do znajomych": "Pedido de amizade",
   "{} chce dodać Cię do znajomych": "{} quer adicionar-te como amigo",
-  "Czat podróży i znajomych": "Chat da viagem e de amigos"
+  "Czat podróży i znajomych": "Chat da viagem e de amigos",
+  // 2.19.1: mapa bez klucza CARTO
+  "Pobieranie mapy offline jest chwilowo wyłączone: dostawca map (CARTO) wymaga teraz klucza. Mapa online działa (OpenStreetMap); obejrzane fragmenty zostają w telefonie.": "A transferência do mapa offline está temporariamente desligada: o fornecedor de mapas (CARTO) exige agora uma chave. O mapa online funciona (OpenStreetMap); as zonas vistas ficam no telemóvel.",
+  "chwilowo niedostępna (dostawca map wymaga klucza)": "temporariamente indisponível (o fornecedor de mapas exige uma chave)"
 };
