@@ -207,7 +207,7 @@
       return `${n === 1 ? "jutro" : `za ${n} ${plural(n, "dzień", "dni", "dni")}`} · ${App.fmtRange(t.start, t.end)}`;
     };
     const card = t => `
-      <a class="pl-tcard${t.id === id ? " is-on" : ""}${t.start <= today && today <= t.end ? " is-now" : ""}" href="${href(t.id)}"${t.id === id ? ` aria-current="page"` : ""} style="--c:${esc(t.color || "#0f6e6e")}">
+      <a class="pl-tcard${t.id === id ? " is-on" : ""}${t.start <= today && today <= t.end ? " is-now" : ""}" href="${href(t.id)}" data-trip="${t.id}"${t.id === id ? ` aria-current="page"` : ""} title="Przytrzymaj, żeby edytować albo usunąć" style="--c:${esc(t.color || "#0f6e6e")}">
         <b><i aria-hidden="true"></i>${esc(t.name)}</b><small>${sub(t)}</small></a>`;
     const arch = past.filter(t => t.id !== id);
     return `<nav class="pl-trips" aria-label="Twoje podróże">${active.map(card).join("")}
@@ -218,7 +218,17 @@
 
   // przełączanie bez dokładania historii (wstecz wraca do poprzedniego ekranu, nie do poprzedniej podróży)
   function bindTripTabs(view, selId, href) {
-    view.querySelectorAll("a.pl-tcard").forEach(a => a.onclick = e => { e.preventDefault(); if (!a.classList.contains("is-on")) location.replace(a.getAttribute("href")); });
+    let pressed = false; // po przytrzymaniu nie przełączaj podróży
+    view.querySelectorAll("a.pl-tcard").forEach(a => {
+      a.onclick = e => { e.preventDefault(); if (pressed) { pressed = false; return; } if (!a.classList.contains("is-on")) location.replace(a.getAttribute("href")); };
+      // przytrzymanie (albo prawy przycisk / klawisz menu) → menu podróży: edycja, szczegóły, usunięcie
+      let timer = null, x0 = 0, y0 = 0;
+      const open = () => { clearTimeout(timer); timer = null; pressed = true; tripMenu(a.dataset.trip); };
+      a.addEventListener("contextmenu", e => { e.preventDefault(); if (timer || !pressed) open(); });
+      a.addEventListener("pointerdown", e => { if (e.button) return; pressed = false; x0 = e.clientX; y0 = e.clientY; timer = setTimeout(open, 550); });
+      a.addEventListener("pointermove", e => { if (timer && Math.hypot(e.clientX - x0, e.clientY - y0) > 10) { clearTimeout(timer); timer = null; } });
+      for (const ev of ["pointerup", "pointercancel", "pointerleave"]) a.addEventListener(ev, () => { clearTimeout(timer); timer = null; });
+    });
     const arch = view.querySelector(`#${selId}`);
     if (arch) arch.onchange = () => location.replace(href(arch.value));
     const on = view.querySelector(".pl-tcard.is-on"), bar = view.querySelector(".pl-trips");
@@ -226,6 +236,45 @@
       const r = on.getBoundingClientRect(), b = bar.getBoundingClientRect();
       if (r.left < b.left || r.right > b.right) bar.scrollLeft += r.left + r.width / 2 - (b.left + b.width / 2);
     }
+  }
+
+  // menu podróży z paska „Twoje podróże” (Plan, Pakowanie)
+  async function tripMenu(tripId) {
+    const t = await DB.get("trips", tripId);
+    if (!t) return;
+    const old = document.querySelector(".tp-sheet"); if (old) old.remove();
+    const dlg = document.createElement("dialog");
+    dlg.className = "tp-sheet";
+    dlg.setAttribute("aria-label", `Podróż: ${t.name}`);
+    const item = (act, icon, title, sub, cls = "") => `<button type="button" class="li tm-act ${cls}" data-act="${act}"><span class="li-ico">${App.icon(icon, "sm")}</span>
+      <span class="li-main"><b>${title}</b>${sub ? `<small>${sub}</small>` : ""}</span></button>`;
+    dlg.innerHTML = `<div class="tp-in">
+        <div class="tp-top"><h2 translate="no">${esc(t.name)}</h2><button type="button" class="icon-btn" data-close aria-label="Zamknij">${App.icon("close")}</button></div>
+        <p class="muted small" style="margin:0 0 8px">${App.fmtRange(t.start, t.end)}${t.destination ? ` · <span translate="no">${esc(t.destination)}</span>` : ""}</p>
+        <div class="list tm-list">
+          ${item("edit", "edit", "Edytuj podróż", "nazwa, daty, cel, kolor, zdjęcie")}
+          ${item("open", "trips", "Szczegóły podróży", "bilety, noclegi, narzędzia")}
+          ${item("del", "trash", "Usuń podróż", "razem z biletami, planem i pakowaniem", "danger")}
+        </div></div>`;
+    document.body.appendChild(dlg);
+    const close = () => { dlg.close(); dlg.remove(); };
+    dlg.addEventListener("cancel", e => { e.preventDefault(); close(); });
+    dlg.addEventListener("click", async e => {
+      if (e.target === dlg || e.target.closest("[data-close]")) return close();
+      const b = e.target.closest("[data-act]");
+      if (!b) return;
+      const act = b.dataset.act;
+      if (act === "edit") { close(); location.hash = `#/podroze/${t.id}/edytuj`; return; }
+      if (act === "open") { close(); location.hash = `#/podroze/${t.id}`; return; }
+      if (act === "del") {
+        close();
+        if (!App.Trips || !(await App.Trips.removeTrip(t))) return;
+        const here = location.hash.includes(t.id);
+        if ((await DB.getSetting("planTrip", "")) === t.id) await DB.setSetting("planTrip", "");
+        if (here) location.replace(location.hash.split("?")[0].split("/").slice(0, 2).join("/")); else App.render();
+      }
+    });
+    dlg.showModal();
   }
 
   App.route(/^\/plan$/, async () => {
@@ -874,5 +923,5 @@
   App.route(/^\/plan\/([\w-]+)\/nowy$/, ([tripId], q) => itemForm({ tripId, date: q.d, q }));
   App.route(/^\/punkt\/([\w-]+)$/, ([itemId]) => itemForm({ itemId }));
 
-  App.Plan = { tripSheet, switchBtn, infoFromText, segEvents, CATS, catOf, pickTrip, tripOptions, tripTabs, bindTripTabs, routeIcon, placeInDay, todayCard, mergeDay, byOrder, inTime };
+  App.Plan = { tripMenu, tripSheet, switchBtn, infoFromText, segEvents, CATS, catOf, pickTrip, tripOptions, tripTabs, bindTripTabs, routeIcon, placeInDay, todayCard, mergeDay, byOrder, inTime };
 })();

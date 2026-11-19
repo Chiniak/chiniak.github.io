@@ -2428,5 +2428,10 @@
   "{} obserwujących": "{} follower",
   "{} podróż widoczna": "{} viaggio visibile",
   "{} podróże widoczne": "{} viaggi visibili",
-  "{} podróży widocznych": "{} viaggi visibili"
+  "{} podróży widocznych": "{} viaggi visibili",
+  "Przytrzymaj, żeby edytować albo usunąć": "Tieni premuto per modificare o eliminare",
+  "nazwa, daty, cel, kolor, zdjęcie": "nome, date, destinazione, colore, foto",
+  "Szczegóły podróży": "Dettagli del viaggio",
+  "bilety, noclegi, narzędzia": "biglietti, alloggi, strumenti",
+  "razem z biletami, planem i pakowaniem": "insieme a biglietti, piano e valigia"
 };

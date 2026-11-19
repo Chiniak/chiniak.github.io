@@ -2428,5 +2428,10 @@
   "{} obserwujących": "{} 位关注者",
   "{} podróż widoczna": "{} 趟可见旅行",
   "{} podróże widoczne": "{} 趟可见旅行",
-  "{} podróży widocznych": "{} 趟可见旅行"
+  "{} podróży widocznych": "{} 趟可见旅行",
+  "Przytrzymaj, żeby edytować albo usunąć": "长按可编辑或删除",
+  "nazwa, daty, cel, kolor, zdjęcie": "名称、日期、目的地、颜色、照片",
+  "Szczegóły podróży": "旅行详情",
+  "bilety, noclegi, narzędzia": "票据、住宿、工具",
+  "razem z biletami, planem i pakowaniem": "连同票据、行程和行李清单"
 };

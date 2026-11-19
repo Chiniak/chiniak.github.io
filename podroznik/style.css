@@ -2224,3 +2224,10 @@ a.tp-trip { text-decoration: none; }
 .zn-bioform .field { width: 100%; }
 .zn-bioform textarea { width: 100%; }
 .zn-block { margin-top: var(--s3); }
+
+/* ---------- menu podróży po przytrzymaniu karty (plan.js tripMenu) ---------- */
+.pl-tcard { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+.tm-list { margin: 0; }
+.tm-act { width: 100%; text-align: left; font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+.tm-act.danger, .tm-act.danger .li-ico { color: var(--err-text); }
+.tm-act.danger .li-ico { background: var(--err-soft); }
