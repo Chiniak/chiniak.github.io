@@ -90,10 +90,17 @@ it works only for listed test users – all other features are fully usable with
 | Dane osobowe → **Adres e-mail** | logowanie Google/Facebook, szukanie znajomych po e-mailu |
 | Dane osobowe → **Identyfikatory użytkownika** | identyfikator konta Firebase |
 | Wiadomości → **Inne wiadomości w aplikacji** | czat ze znajomymi (szyfrowany end-to-end) |
-| Aktywność w aplikacji → **Inne treści użytkownika** | udostępnione podróże i wspólne planowanie (szyfrowane end-to-end) |
+| Aktywność w aplikacji → **Inne treści użytkownika** | udostępnione podróże i wspólne planowanie (szyfrowane end-to-end) oraz plany opublikowane w **bibliotece planów** i opis „O mnie” (jawne – publikuje je sam użytkownik; to nie jest „udostępnianie” w rozumieniu formularza, bo dzieje się na wyraźne polecenie użytkownika) |
+| Aktywność w aplikacji → **Inne działania w aplikacji** | oceny planów w bibliotece (1–10) i zgłoszenia nadużyć |
 | Lokalizacja → **Przybliżona** i **Dokładna** | „W pobliżu”, pogoda, mapa – współrzędne idą do Wikipedii/OpenStreetMap/pogody tylko na chwilę (zaznacz **„przetwarzane tymczasowo”**), nie zapisujemy ich |
 
 **Nie zaznaczaj**: e-maile (Gmail jest czytany tylko na telefonie i nic nie wychodzi), zdjęcia, pliki, kontakty, finanse, zdrowie, dane o aplikacji i wydajności (brak analityki i raportów awarii), identyfikatory urządzenia.
+
+**Treści od użytkowników (biblioteka planów)** – Google sprawdza to przy recenzji, osobnego formularza nie ma. Aplikacja spełnia wymagania zasad „User Generated Content”:
+- przed publikacją użytkownik zaznacza zgodę „Plan będzie publiczny… Nie publikuj danych osobowych ani treści obraźliwych”,
+- przy każdym planie jest **„Zgłoś plan”** (zgłoszenia w Firestore: kolekcja `reports` – przeglądaj je w konsoli Firebase i usuwaj naruszające plany z kolekcji `library`),
+- **„Zablokuj autora”** (plan i profil) ukrywa jego treści,
+- autor może w każdej chwili usunąć plan, a usunięcie konta kasuje wszystkie jego plany.
 
 ## 8. Uprawnienia, o które Google może zapytać
 | Uprawnienie | Do czego |

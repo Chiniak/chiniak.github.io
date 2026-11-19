@@ -111,7 +111,7 @@ automatycznego czytania Gmaila (wymaga weryfikacji aplikacji przez Google) – z
 
 ## Pomysły do zrobienia (zgłoszone przez właściciela)
 
-### Biblioteka planów z ocenami (18.11.2026)
+### Biblioteka planów z ocenami (18.11.2026) – ✅ ZROBIONE 19.11 (wersja 2.18.0, `biblioteka.js`, test t65)
 Publiczna biblioteka gotowych planów, z której każdy może skorzystać:
 - **Rodzaje planów:** plan jednego dnia w mieście (np. „1 dzień w Rzymie”) oraz plany długoterminowe – zwiedzanie kraju
   albo kilku krajów (np. „3 tygodnie w Wietnamie”, „Bałkany: Chorwacja, Czarnogóra, Albania w 14 dni”).

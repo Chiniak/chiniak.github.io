@@ -73,9 +73,10 @@
   let profileDone = null;
   async function profile() {
     const f = await fb(), me = f.auth.currentUser.uid, name = (await myName()).slice(0, 40), pub = (await keys()).pub;
-    const key = `${me}|${name}|${pub}`;
+    const bio = String(await DB.getSetting("myBio", "") || "").slice(0, 300);
+    const key = `${me}|${name}|${pub}|${bio}`;
     if (profileDone === key) return me;
-    await f.db.collection("people").doc(me).set({ name, pub, v: 1 });
+    await f.db.collection("people").doc(me).set({ name, pub, v: 1, ...(bio ? { bio } : {}) });
     profileDone = key;
     return me;
   }
@@ -138,6 +139,8 @@
     for (const m of await DB.byIndex("dms", "peer", id)) await DB.delRaw("dms", m.id);
     emit("friends");
   }
+  // „O mnie” w profilu (jawne – widzi każdy, kto zna identyfikator, np. z biblioteki planów)
+  async function setBio(bio) { await DB.setSetting("myBio", String(bio || "").trim().slice(0, 300)); await profile(); }
   async function rename(name) {
     await DB.setSetting("myName", String(name || "").trim().slice(0, 40));
     await profile();
@@ -629,7 +632,7 @@
     // imię: z kopii albo z profilu na serwerze (gdy na tym telefonie jeszcze go nie ma)
     if (!(await myName())) { const nm = (v && v.name) || ((await person(me).catch(() => null)) || {}).name; if (nm) await DB.setSetting("myName", nm); }
     st = { friends: (v && v.friends) || {}, trips: (v && v.trips) || {}, since: {}, read: (v && v.read) || {}, findable: v ? v.findable : undefined, vault: v ? v.vault : undefined,
-      following: (v && v.following) || {}, explore: !!(v && v.explore) };
+      following: (v && v.following) || {}, explore: !!(v && v.explore), library: (v && v.library) || {}, rated: (v && v.rated) || {} };
     await DB.setSetting("social", st);
     if (!v || !v.keys) await keyMaps().catch(() => {});
     await start(true);
@@ -643,7 +646,7 @@
     const ref = f.db.collection("vault").doc(u.uid);
     if (st.vault === false) { await ref.delete().catch(() => {}); return; }
     const keysRaw = await DB.getSetting("social.keys", null);
-    await ref.set({ v: 1, t: f.now(), vault: true, name: (await myName()).slice(0, 40), findable: st.findable !== false, keys: keysRaw, friends: st.friends, trips: st.trips, read: st.read, following: st.following || {}, explore: !!st.explore });
+    await ref.set({ v: 1, t: f.now(), vault: true, name: (await myName()).slice(0, 40), findable: st.findable !== false, keys: keysRaw, friends: st.friends, trips: st.trips, read: st.read, following: st.following || {}, explore: !!st.explore, library: st.library || {}, rated: st.rated || {} });
   }
   async function setFindable(on) {
     await load();
@@ -705,6 +708,7 @@
     if (linked(u) && !fresh && !skipReauth) await reauth(u);
     stopAll();
     const del = ref => ref.delete().catch(e => console.warn("usuwanie:", ref.path, e.code || e));
+    if (App.Library) await App.Library.wipe().catch(e => console.warn("biblioteka:", e.code || e)); // moje plany i oceny
     const delAll = async q => { const s = await q.get().catch(() => null); if (s) await Promise.all(s.docs.map(d => del(d.ref))); };
     for (const [id, fr] of Object.entries(st.friends)) {
       if (fr.state !== "in") await send(id, "bye").catch(() => {});
@@ -763,7 +767,7 @@
     addFriend, accept, remove, sendMessage, shareTrip, messages, markRead, unread, unreadAll, startChat,
     VIS, setVisibility, visibility, publicLink, friendTrips, parsePublic, publicTrip, copyTrip, snapshot,
     publicIndex, setExplore, follow, unfollow, isFollowing, followersCount, publicTrips, followingFeed, explore, takeIdea,
-    account, signInGoogle, signInFacebook, unlink, fbAvailable, facebookFriends, signOut, deleteAccount, setFindable, setVault, findByEmail,
+    setBio, account, signInGoogle, signInFacebook, unlink, fbAvailable, facebookFriends, signOut, deleteAccount, setFindable, setVault, findByEmail,
     on: fn => { listeners.add(fn); return () => listeners.delete(fn); },
     _publish: publish, _keyMaps: keyMaps,
   };

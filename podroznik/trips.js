@@ -134,6 +134,7 @@
         ${gm ? `<a class="hm-qa" href="#/gmail"><i>${ic("mail")}</i><span>Z Gmaila</span></a>` : ""}
         <a class="hm-qa" href="#/wklej"><i>${ic("doc")}</i><span>Z maila lub PDF</span></a>
         <a class="hm-qa" href="#/udostepnij"><i>${ic("download")}</i><span>Otwórz od kogoś</span></a>
+        ${App.Library && App.Library.available() ? `<a class="hm-qa" href="#/biblioteka"><i>${ic("layers")}</i><span>Biblioteka planów</span></a>` : ""}
       </div>`;
   };
 
@@ -595,6 +596,7 @@
         ${row(`#/waluty/${t.id}`, "currency", "Przelicznik walut", "działa offline, kursy na drogę")}
         ${App.Sync ? row(`#/razem/${t.id}`, "chat", "Razem", shared ? `czat i pomysły${unread ? ` · <b class="rz-new">${unread} ${plural(unread, "nowa wiadomość", "nowe wiadomości", "nowych wiadomości")}</b>` : ""}` : "planujcie wspólnie – czat, pomysły, zmiany na żywo") : ""}
         ${App.Social && App.Social.available() ? row(`#/widocznosc/${t.id}`, vis === "private" ? "lock" : vis === "public" ? "globe" : "users", "Kto widzi podróż", vis === "public" ? "publiczna – każdy z linkiem" : vis === "friends" ? "widzą ją Twoi znajomi" : "prywatna – tylko Ty") : ""}
+        ${App.Library && App.Library.available() ? row(`#/biblioteka/opublikuj/${t.id}`, "layers", "Biblioteka planów", "opublikuj podróż albo jeden dzień – inni ocenią i skopiują") : ""}
         ${row(`#/udostepnij/${t.id}`, "share", "Wyślij podróż", "jako plik albo plan w wiadomości")}
         ${row(null, "bell", "Do kalendarza", "plik .ics z przypomnieniami", ` id="ics-trip"`)}
       </div>`;

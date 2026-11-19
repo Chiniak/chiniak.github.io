@@ -78,6 +78,17 @@
   <li><b>Usuwanie:</b> „Usuń ze znajomych” usuwa czat z telefonu i dostęp tej osoby do Twoich podróży. Ustawienia → Twoje konto → „Usuń konto i dane z serwera” od razu usuwa z serwera Twój profil, zaproszenia, wiadomości, udostępnione podróże i samo konto. Bez dostępu do aplikacji – <a href="usun-konto.html">prośba o usunięcie</a>.</li>
 </ul>
 
+<h2 id="biblioteka-pl">Biblioteka planów i profil</h2>
+<ul>
+  <li><b>Kiedy:</b> tylko gdy sam opublikujesz podróż albo jeden dzień w bibliotece („Opublikuj w bibliotece”). Nic nie trafia tam automatycznie.</li>
+  <li><b>Plany w bibliotece są jawne</b> (nie są szyfrowane – inaczej nie dałoby się ich wyszukiwać): tytuł i opis, miasta i kraje, liczba dni i miesiąc wyjazdu, punkty planu (nazwa, godzina, kategoria, miejsce i jego współrzędne), przejazdy (skąd–dokąd, godziny), noclegi (nazwa i miasto), Twoje imię z profilu. <b>Nie</b> są publikowane: bilety, numery lotów i pociągów, kody rezerwacji, ceny, notatki, adresy noclegów, zdjęcia ani prawdziwe daty wyjazdu (daty są zastępowane numerami dni). Plan może zobaczyć, ocenić i skopiować każdy użytkownik Tripwillow.</li>
+  <li><b>Miasta w innych językach:</b> przy publikacji telefon pyta OpenStreetMap (Nominatim) o nazwy wpisanych miast w innych językach i o kraj – wysyłana jest tylko nazwa miasta.</li>
+  <li><b>Oceny:</b> serwer zapisuje Twoją ocenę (1–10) przy planie razem z Twoim identyfikatorem (żeby można było oceniać tylko raz); inni widzą tylko średnią i liczbę ocen.</li>
+  <li><b>Profil:</b> imię i nieobowiązkowe „O mnie” są widoczne dla osób, które otworzą Twój profil (np. z biblioteki).</li>
+  <li><b>Zgłoszenia i blokowanie:</b> „Zgłoś plan” zapisuje identyfikator planu, Twój identyfikator i opis problemu – czyta je tylko twórca aplikacji, żeby usuwać treści naruszające zasady. „Zablokuj” działa tylko na Twoim telefonie.</li>
+  <li><b>Usuwanie:</b> „Usuń z biblioteki” usuwa plan i jego oceny od razu; usunięcie konta usuwa wszystkie Twoje plany i oceny.</li>
+</ul>
+
 <h2 id="usuwanie">Bezpieczeństwo i usuwanie danych</h2>
 <ul>
   <li>Dane są w prywatnej pamięci aplikacji, chronionej przez system Android. Możesz dodatkowo włączyć blokadę PIN-em, a kopię zapasową zaszyfrować hasłem.</li>
@@ -155,6 +166,17 @@
   <li><b>Facebook (optional):</b> after "Sign in with Facebook" Firebase receives your app-scoped Facebook ID, name and e-mail (if Facebook provides it). The server keeps a "Facebook ID → profile" entry so your Facebook friends who also use Tripwillow can find you. The phone reads the friends list directly from Facebook (user_friends permission – Facebook only returns friends who also connected Tripwillow) and it is not stored anywhere. We never post to Facebook. To delete this data: sign out in Tripwillow, remove Tripwillow in Facebook settings (Apps and websites) and use "Delete account" in the app (<a href="usun-konto.html#en">how to</a>) – the entry and profile are removed from the server.</li>
   <li><b>Following and "Explore":</b> a list of your <b>public</b> trips (name, destination, dates and the preview key) is available to people who know your identifier (followers). If you turn on "Show my public trips in Explore", that list and your name are visible to all Tripwillow users. The server also stores who follows whom (only the profile owner sees the follower count). Private and "friends" trips never appear there.</li>
   <li><b>Deletion:</b> "Remove friend" deletes the chat from the phone and that person's access to your trips. Settings → Your account → "Delete account and server data" immediately deletes your profile, invitations, messages, shared trips and the account itself from the server. Without access to the app – <a href="usun-konto.html#en">request deletion</a>.</li>
+</ul>
+
+<h2 id="library-en">Plan library and profile</h2>
+<ul>
+  <li><b>When:</b> only when you publish a trip or a single day in the library yourself ("Publish to library"). Nothing gets there automatically.</li>
+  <li><b>Library plans are public</b> (not encrypted – otherwise they could not be searched): title and description, cities and countries, number of days and month of travel, plan items (name, time, category, place and its coordinates), journeys (from–to, times), stays (name and city), your profile name. <b>Not</b> published: tickets, flight and train numbers, booking codes, prices, notes, accommodation addresses, photos or your real travel dates (dates are replaced with day numbers). Any Tripwillow user can see, rate and copy the plan.</li>
+  <li><b>City names in other languages:</b> when publishing, the phone asks OpenStreetMap (Nominatim) for the names of the cities you entered in other languages and their country – only the city name is sent.</li>
+  <li><b>Ratings:</b> the server stores your rating (1–10) with the plan together with your identifier (so you can rate only once); others only see the average and the number of ratings.</li>
+  <li><b>Profile:</b> your name and the optional "About me" are visible to people who open your profile (e.g. from the library).</li>
+  <li><b>Reports and blocking:</b> "Report plan" stores the plan identifier, your identifier and your description of the problem – only the app developer reads it, to remove content that breaks the rules. "Block" only works on your phone.</li>
+  <li><b>Deletion:</b> "Remove from library" deletes the plan and its ratings immediately; deleting your account deletes all your plans and ratings.</li>
 </ul>
 
 <h2 id="deletion">Security and deletion</h2>
