@@ -73,8 +73,8 @@
       txt: !wx ? "podróż już minęła" : wx.data ? `zapisana ${App.fmtDay(new Date(wx.data.at).toISOString().slice(0, 10))}${wx.data.kind === "lastyear" ? " (zeszły rok – prognoza 16 dni przed)" : ""}` : "nie pobrana" });
 
     // 6. mapa offline (wszystkie obszary podróży + przegląd)
-    let map = { done: null, txt: "brak miejsc na mapie", tiles: [] };
-    if (App.Offline) {
+    let map = { done: null, txt: App.Offline && !App.Offline.ready ? "chwilowo niedostępna (dostawca map wymaga klucza)" : "brak miejsc na mapie", tiles: [] };
+    if (App.Offline && App.Offline.ready) {
       const areas = await App.Offline.areasOf(trip);
       // przegląd całej podróży najpierw – przyda się nawet przy limicie
       const tiles = [...new Set(areas.slice().sort((a, b) => (b.key === "overview") - (a.key === "overview")).flatMap(a => a.tiles))];

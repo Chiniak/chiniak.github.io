@@ -276,9 +276,11 @@
   /* ---------- podkład mapy ----------
      „latin”: CARTO Voyager – nazwy alfabetem łacińskim (Chiny, Laos, Wietnam, Tajlandia czytelne bez znajomości pisma),
      „osm”: OpenStreetMap – nazwy w lokalnym języku. Kafelki obejrzane online zostają w telefonie (sw.js) i działają offline. */
+  const CARTO_KEY = (self.MAP_CONFIG && self.MAP_CONFIG.cartoKey) || "";
   const LAYERS = {
-    latin: { name: "Napisy łacińskie", url: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
-      attr: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>, © <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>' },
+    // CARTO wymaga klucza (mapy-config.js) – bez niego warstwy nie ma (zamiast mapy byłby napis „API KEY REQUIRED”)
+    ...(CARTO_KEY ? { latin: { name: "Napisy łacińskie", url: `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key=${encodeURIComponent(CARTO_KEY)}`,
+      attr: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>, © <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>' } } : {}),
     osm: { name: "Nazwy lokalne", url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
       attr: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>' },
   };
@@ -287,13 +289,14 @@
   async function baseLayer(map, at) {
     let pick = await DB.getSetting("mapLayer", "auto");
     if (!LAYERS[pick]) pick = at && !nonLatin(at[0], at[1]) ? "osm" : "latin";
+    if (!LAYERS[pick]) pick = "osm";
     // bez internetu: mapy pobrane na offline (offline.js) są w wersji „Napisy łacińskie”, do zoomu 16 (dalej powiększone)
     const off = !navigator.onLine;
-    if (off && pick !== "latin" && App.Offline && await App.Offline.any()) pick = "latin";
+    if (off && pick !== "latin" && LAYERS.latin && App.Offline && await App.Offline.any()) pick = "latin";
     const layers = {};
     for (const [k, L0] of Object.entries(LAYERS)) layers[k] = L.tileLayer(L0.url, { maxZoom: 19, ...(off ? { maxNativeZoom: 16 } : {}), subdomains: "abcd", crossOrigin: true, _k: k });
     layers[pick].addTo(map);
-    const ctl = L.control.layers(Object.fromEntries(Object.entries(layers).map(([k, l]) => [LAYERS[k].name, l])), null, { position: "bottomleft" }).addTo(map);
+    const ctl = Object.keys(layers).length < 2 ? null : L.control.layers(Object.fromEntries(Object.entries(layers).map(([k, l]) => [LAYERS[k].name, l])), null, { position: "bottomleft" }).addTo(map);
     const attr = document.querySelector("#mp-attr-src");
     const setAttr = k => { if (attr) attr.innerHTML = LAYERS[k].attr; };
     setAttr(pick);
@@ -303,8 +306,8 @@
     for (const [k, l] of Object.entries(layers)) {
       l.on("tileload", () => { good++; });
       l.on("tileerror", () => {
-        if (++bad >= 6 && !good && navigator.onLine && map.hasLayer(l)) {
-          const other = Object.keys(layers).find(x => x !== k);
+        const other = Object.keys(layers).find(x => x !== k);
+        if (other && ++bad >= 6 && !good && navigator.onLine && map.hasLayer(l)) {
           map.removeLayer(l); layers[other].addTo(map); setAttr(other); bad = 0;
         }
       });

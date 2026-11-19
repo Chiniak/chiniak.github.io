@@ -2,13 +2,16 @@
    Trasa:
      #/mapa-offline/:tripId            obszary podróży (noclegi, punkty planu, cel) – pobierz / usuń
      #/mapa-offline/:tripId?v=S,W,N,E  dodatkowo „widoczny fragment mapy” (z ekranu mapy)
-   Kafelki: CARTO Voyager (napisy łacińskie) – w pamięci podręcznej „mapa-offline-<id podróży>”, której nie kasuje
+   Kafelki: CARTO Voyager (napisy łacińskie, wymaga klucza z mapy-config.js – bez niego pobieranie jest wyłączone) – w pamięci podręcznej „mapa-offline-<id podróży>”, której nie kasuje
    ani nowa wersja aplikacji, ani limit kafelków oglądanych (sw.js szuka kafelka we wszystkich pamięciach).
    Klucz kafelka bez poddomeny (a/b/c/d) – patrz canon() i sw.js. OpenStreetMap nie pozwala pobierać masowo,
    dlatego pobieramy tylko podkład CARTO i z umiarem: najwyżej ok. 6000 kafelków na podróż, 4 naraz. */
 (function () {
   const { esc, plural } = App;
-  const TILE_URL = (z, x, y, s = "a") => `https://${s}.basemaps.cartocdn.com/rastertiles/voyager/${z}/${x}/${y}.png`;
+  // adres w pamięci (bez klucza, „v=2” = po zmianie CARTO z 2026 – starsze wpisy mogą być kafelkami „API KEY REQUIRED”) i adres pobierania (z kluczem)
+  const KEY = (self.MAP_CONFIG && self.MAP_CONFIG.cartoKey) || "";
+  const TILE_URL = (z, x, y) => `https://a.basemaps.cartocdn.com/rastertiles/voyager/${z}/${x}/${y}.png?v=2`;
+  const FETCH_URL = (z, x, y, s) => `https://${s}.basemaps.cartocdn.com/rastertiles/voyager/${z}/${x}/${y}.png?key=${encodeURIComponent(KEY)}&podroznik-off=1`;
   const KB_PER_TILE = 18; // średnio – do szacowania rozmiaru
   const MAX_TILES = 6000;
   const cacheName = tripId => `mapa-offline-${tripId}`;
@@ -98,7 +101,7 @@
         for (let attempt = 0; attempt < 2 && !ok && !state.stopped; attempt++) {
           try {
             // poddomena dla szybkości; „podroznik-off” – sw.js przepuszcza bez zapisu w pamięci oglądanych kafelków
-            const res = await fetch(TILE_URL(...t, "abcd"[(+t[1] + +t[2]) % 4]) + "?podroznik-off=1", { mode: "cors" });
+            const res = await fetch(FETCH_URL(...t, "abcd"[(+t[1] + +t[2]) % 4]), { mode: "cors" });
             if (res.ok) { await c.put(TILE_URL(...t), res); ok = true; }
           } catch (e) { await new Promise(r => setTimeout(r, 800)); }
         }
@@ -125,7 +128,7 @@
     return new Set();
   }
   const busy = () => job;
-  App.Offline = { any, tilesOf, countOf, areasOf, download, haveOf, busy, tileUrl: TILE_URL, MAX_TILES, KB_PER_TILE };
+  App.Offline = { ready: !!KEY, any, tilesOf, countOf, areasOf, download, haveOf, busy, tileUrl: TILE_URL, MAX_TILES, KB_PER_TILE };
 
   const mb = n => `${Math.max(1, Math.round(n * KB_PER_TILE / 1024))} MB`;
 
@@ -165,7 +168,8 @@
           ${free != null ? `<div class="hm-stat"><small>Wolne miejsce</small><b>${free > 2 ** 30 ? `${(free / 2 ** 30).toFixed(1).replace(".", ",")} GB` : `${Math.round(free / 2 ** 20)} MB`}</b></div>` : ""}
           ${meta && meta.at ? `<div class="hm-stat"><small>Ostatnio</small><b>${App.fmtDay(meta.at.slice(0, 10))}</b></div>` : ""}
         </div>
-        ${areas.length ? `<h2 class="section">Obszary</h2><form id="of-form" class="list of-list">${rows}</form>
+        ${!KEY ? `<p class="td-note">${App.icon("alert", "sm")}<span>Pobieranie mapy offline jest chwilowo wyłączone: dostawca map (CARTO) wymaga teraz klucza. Mapa online działa (OpenStreetMap); obejrzane fragmenty zostają w telefonie.</span></p>`
+        : areas.length ? `<h2 class="section">Obszary</h2><form id="of-form" class="list of-list">${rows}</form>
           <button type="button" class="btn primary wide of-go" id="of-go">${App.icon("download", "sm")} Pobierz zaznaczone</button>
           <div class="of-prog" id="of-prog" hidden><div class="bar"><i id="of-bar"></i></div><p class="muted small" id="of-txt"></p>
             <button type="button" class="btn wide" id="of-stop">Zatrzymaj</button></div>`

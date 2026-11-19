@@ -2505,5 +2505,8 @@
   "Powiadomienia o wiadomościach wyłączone": "已关闭消息通知",
   "Zaproszenie do znajomych": "好友邀请",
   "{} chce dodać Cię do znajomych": "{} 想添加你为好友",
-  "Czat podróży i znajomych": "旅行和好友聊天"
+  "Czat podróży i znajomych": "旅行和好友聊天",
+  // 2.19.1: mapa bez klucza CARTO
+  "Pobieranie mapy offline jest chwilowo wyłączone: dostawca map (CARTO) wymaga teraz klucza. Mapa online działa (OpenStreetMap); obejrzane fragmenty zostają w telefonie.": "离线地图下载暂时关闭：地图提供商（CARTO）现在需要密钥。在线地图可用（OpenStreetMap）；看过的区域会保存在手机上。",
+  "chwilowo niedostępna (dostawca map wymaga klucza)": "暂时不可用（地图提供商需要密钥）"
 };

@@ -2505,5 +2505,8 @@
   "Powiadomienia o wiadomościach wyłączone": "Nachrichten-Benachrichtigungen aus",
   "Zaproszenie do znajomych": "Freundschaftsanfrage",
   "{} chce dodać Cię do znajomych": "{} möchte dich als Freund hinzufügen",
-  "Czat podróży i znajomych": "Reise- und Freundeschat"
+  "Czat podróży i znajomych": "Reise- und Freundeschat",
+  // 2.19.1: mapa bez klucza CARTO
+  "Pobieranie mapy offline jest chwilowo wyłączone: dostawca map (CARTO) wymaga teraz klucza. Mapa online działa (OpenStreetMap); obejrzane fragmenty zostają w telefonie.": "Das Herunterladen der Offline-Karte ist vorübergehend aus: Der Kartenanbieter (CARTO) verlangt jetzt einen Schlüssel. Die Online-Karte funktioniert (OpenStreetMap); angesehene Bereiche bleiben auf dem Handy.",
+  "chwilowo niedostępna (dostawca map wymaga klucza)": "vorübergehend nicht verfügbar (Kartenanbieter verlangt einen Schlüssel)"
 };
