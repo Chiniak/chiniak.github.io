@@ -93,6 +93,7 @@
 <ul>
   <li>Dane są w prywatnej pamięci aplikacji, chronionej przez system Android. Możesz dodatkowo włączyć blokadę PIN-em, a kopię zapasową zaszyfrować hasłem.</li>
   <li>Połączenia z usługami zewnętrznymi, z Gmail API i z Firebase są szyfrowane (HTTPS); dane wspólnej podróży są dodatkowo szyfrowane end-to-end.</li>
+  <li><b>Powiadomienia o wiadomościach (aplikacja na Androida, można wyłączyć w Ustawienia → Przypomnienia):</b> gdy masz wspólne podróże albo znajomych, telefon co ok. 15 minut sam pyta Firebase o nowe zaszyfrowane wiadomości i odszyfrowuje je u siebie. Klucze potrzebne do tego są zapisane tylko w pamięci aplikacji w telefonie. Nie używamy usługi push ani żadnego serwera pośredniczącego.</li>
   <li>Usunięcie podróży usuwa jej bilety, plan, wydatki i dziennik. Odinstalowanie aplikacji albo „Wyczyść dane” w ustawieniach Androida usuwa wszystko.</li>
 </ul>
 
@@ -183,6 +184,7 @@
 <ul>
   <li>Data is kept in the app's private storage, protected by Android. You can also enable a PIN lock and encrypt backups with a password.</li>
   <li>Connections to third-party services, the Gmail API and Firebase are encrypted (HTTPS); shared-trip data is additionally end-to-end encrypted.</li>
+  <li><b>Message notifications (Android app, can be turned off in Settings → Reminders):</b> if you have shared trips or friends, the phone checks Firebase for new encrypted messages about every 15 minutes and decrypts them itself. The keys needed for this are stored only in the app's storage on the phone. No push service or intermediary server is used.</li>
   <li>Deleting a trip deletes its tickets, plan, expenses and journal. Uninstalling the app or "Clear data" in Android settings deletes everything.</li>
 </ul>
 

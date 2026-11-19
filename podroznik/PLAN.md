@@ -156,6 +156,9 @@ Publiczna biblioteka gotowych planów, z której każdy może skorzystać:
 | `backdrop.js` | Etap 11: tło ze zdjęć zmieniane przy przejściu między ekranami |
 | `photos.js` | Etap 11: zdjęcia miejsc (Wikipedia / Commons / własne) |
 | `tickets.js` | Etap 2: szczegóły odcinka, bilety, pełny ekran, skaner kodów |
+| `rozloz.js` | 2.19: „Rozłóż pomysły na dni” – grupowanie pomysłów po położeniu i noclegach, limit dzienny, układanie trasy, cofnięcie |
+| `udostepnione.js` | 2.19: „Udostępnij → Tripwillow” dla plików – wybór: rezerwacja, punkt planu, bilet do odcinka, dokument |
+| `push.js` | 2.19: konfiguracja powiadomień o wiadomościach przy zamkniętej aplikacji (Android: PushWorker) |
 | `lib/` | pdf.js, bwip-js (rysowanie kodów), ZXing (odczyt kodów) – dołączone, działają offline |
 | `sw.js` | Offline – przy każdej zmianie plików aplikacji podbić `CACHE` (`podroznik-vN`) |
 | `manifest.webmanifest` | Instalacja na ekranie głównym |

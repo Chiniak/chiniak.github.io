@@ -152,6 +152,8 @@
     if (id && !d) { location.replace("#/dokumenty"); return ""; }
     const v = d || { type: "paszport", person: "", number: "", country: "", issued: "", expires: "", remind: 90, note: "" };
     let newBlob = undefined; // undefined = bez zmian, null = usuń
+    // nowy dokument z udostępnionego pliku (udostepnione.js)
+    if (!id && App.sharedDoc) { newBlob = App.sharedDoc; App.sharedDoc = null; }
     const types = Object.entries(TYPES).map(([k, T]) => `
       <label class="type-chip"><input type="radio" name="type" value="${k}" ${k === v.type ? "checked" : ""}>
         <span><b aria-hidden="true">${App.icon(T.ic, "sm")}</b>${T.name}</span></label>`).join("");
@@ -182,7 +184,7 @@
           <div class="fsec"><h2 class="section">Skan i notatka</h2>
             <div class="field"><span>Skan / zdjęcie (opcjonalnie, zostaje tylko w telefonie)</span>
               <div class="doc-file">
-                <span id="doc-file-name" class="muted small">${d && d.blob ? "dodano skan" : "brak"}</span>
+                <span id="doc-file-name" class="muted small">${newBlob ? esc(newBlob.name || "udostępniony plik") : d && d.blob ? "dodano skan" : "brak"}</span>
                 <label class="btn">${App.icon("camera", "sm")} Wybierz<input type="file" id="doc-pick" accept="image/*,application/pdf,.pdf" hidden></label>
                 ${d && d.blob ? `<button type="button" class="btn" id="doc-rm">${App.icon("trash", "sm")} Usuń skan</button>` : ""}
               </div>

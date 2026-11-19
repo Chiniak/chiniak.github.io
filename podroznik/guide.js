@@ -180,6 +180,31 @@
   }
   async function detachAll(tripId) { for (const g of await forTrip(tripId)) await detach(tripId, g.id); }
 
+  // „Przygotuj offline”: przewodniki dla celu podróży i miast noclegów, których jeszcze nie ma (najwyżej `max`).
+  // Każde miasto: języki po kolei (aplikacji, polski, angielski); brak artykułu – następny język. Zwraca liczbę pobranych.
+  async function missing(trip) {
+    const have = new Set((await forTrip(trip.id)).map(g => norm(g.title)));
+    const none = new Set(await DB.getSetting(`guideNone:${trip.id}`, []) || []); // nie ma w Wikivoyage – nie proponuj w kółko
+    return (await suggestions(trip)).filter(n => !have.has(norm(n)) && !none.has(norm(n))).map(n => ({ name: n }));
+  }
+  async function prefetch(trip, say = () => {}, max = 3, stopped = () => false) {
+    let n = 0;
+    for (const { name } of (await missing(trip)).slice(0, max)) {
+      if (stopped()) break;
+      say(`pobieram „${name}”…`);
+      let found = false;
+      for (const lang of GLANGS()) {
+        // ten sam artykuł już jest w telefonie (z innej podróży) – tylko dopisz podróż
+        const own = await DB.get(STORE, gid(lang, name));
+        if (own) { await DB.put(STORE, { ...own, tripIds: [...new Set((own.tripIds || []).concat(trip.id))] }); n++; found = true; break; }
+        const rec = await download(trip.id, lang, name); // błąd sieci przerywa (krok do powtórzenia); null = brak artykułu
+        if (rec) { n++; found = true; break; }
+      }
+      if (!found) await DB.setSetting(`guideNone:${trip.id}`, [...new Set((await DB.getSetting(`guideNone:${trip.id}`, []) || []).concat(norm(name)))]);
+    }
+    return n;
+  }
+
   // propozycja: cel podróży (bez kraju po przecinku), potem miasta noclegów
   async function suggestions(trip) {
     const segs = await DB.byIndex("segments", "tripId", trip.id);
@@ -393,5 +418,5 @@
     }
   }
 
-  App.Guide = { clean, download, forTrip, detach, detachAll, fetchArticle, searchTitles, suggestions };
+  App.Guide = { clean, download, missing, prefetch, forTrip, detach, detachAll, fetchArticle, searchTitles, suggestions };
 })();

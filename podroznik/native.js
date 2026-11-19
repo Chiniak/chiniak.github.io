@@ -3,7 +3,9 @@
    W aplikacji (podroznik-app/) zastępuje to, czego WebView nie umie:
    - navigator.share / canShare z plikami (kopia zapasowa, .ics, podróż, rozliczenie) → wtyczka Share,
    - otwieranie plików z blob: (np. skan PDF w Dokumentach) → zapis w pamięci podręcznej i „Otwórz w…”,
-   - link zaproszenia do wspólnej podróży otwarty z WhatsAppa itp. → wtyczka App (appUrlOpen). */
+   - link zaproszenia do wspólnej podróży otwarty z WhatsAppa itp. → wtyczka App (appUrlOpen),
+   - pliki i tekst udostępnione z innych aplikacji → wtyczka ShareIn (udostepnione.js),
+   - dotknięcie powiadomienia o wiadomości → wtyczka Push (push.js). */
 (function () {
   "use strict";
   const C = window.Capacitor;
@@ -26,6 +28,20 @@
     P.App.addListener("appUrlOpen", e => openLink(e.url));
     P.App.getLaunchUrl().then(r => r && openLink(r.url)).catch(() => {});
   }
+  // „Udostępnij → Tripwillow” z innej aplikacji (ShareInPlugin): pliki z pamięci podręcznej → File → udostepnione.js
+  if (P.ShareIn) P.ShareIn.addListener("shared", async d => {
+    const files = [];
+    for (const f of (d && d.files) || []) {
+      try {
+        const blob = await (await fetch(C.convertFileSrc(f.path))).blob();
+        files.push(new File([blob], f.name || "plik", { type: f.mime || blob.type || "" }));
+      } catch (e) { console.warn("udostępniony plik:", e); }
+    }
+    const data = { text: (d && d.text) || "", files };
+    if (window.App && App.Shared) App.Shared.receive(data); else window.PodroznikNative.pendingShare = data;
+  });
+  // dotknięte powiadomienie o wiadomości (PushPlugin) → czat
+  if (P.Push) P.Push.addListener("open", d => { if (d && /^#\/[\w/?=&-]+$/.test(d.route || "")) location.hash = d.route; });
   const abort = () => new DOMException("Share canceled", "AbortError");
   const isCancel = e => /cancel/i.test(String(e && (e.message || e.errorMessage || e)));
 

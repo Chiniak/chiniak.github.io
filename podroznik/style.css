@@ -2231,3 +2231,26 @@ a.tp-trip { text-decoration: none; }
 .tm-act { width: 100%; text-align: left; font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
 .tm-act.danger, .tm-act.danger .li-ico { color: var(--err-text); }
 .tm-act.danger .li-ico { background: var(--err-soft); }
+
+/* Rozłóż pomysły na dni (rozloz.js) */
+.pl-distribute { margin-top: 10px; }
+.rz-max { margin-top: 18px; }
+.rz-opt { margin: 14px 0 6px; }
+.rz-prev { display: grid; gap: 10px; margin-bottom: 16px; }
+.rz-pday { padding: 12px 14px; border-radius: var(--r-sm); background: var(--surface); border: 1px solid var(--line); }
+.rz-ph { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.rz-pday ol { margin: 8px 0 0; padding-left: 22px; }
+.rz-pday li { margin: 2px 0; }
+.rz-left { margin-top: 4px; }
+.rz-day .of-name b { color: var(--text, inherit); font-size: 1rem; }
+.rz-day .of-name .small { color: var(--muted); }
+
+/* Udostępnione pliki (udostepnione.js) */
+.sh-files { margin-bottom: 18px; }
+.sh-opts { display: grid; gap: 12px; }
+.sh-opt { display: grid; gap: 10px; padding: 14px; border-radius: var(--r-feature); background: var(--surface); border: 1px solid var(--line); }
+.sh-opt-h { display: flex; align-items: center; gap: 12px; }
+.sh-opt-h .li-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.sh-opt-h small { color: var(--muted); }
+.sh-opt .field { margin: 0; }
+.sh-drop { margin-top: 16px; }
