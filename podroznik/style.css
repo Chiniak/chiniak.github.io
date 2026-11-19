@@ -2244,3 +2244,13 @@ a.tp-trip { text-decoration: none; }
 .rz-left { margin-top: 4px; }
 .rz-day .of-name b { color: var(--text, inherit); font-size: 1rem; }
 .rz-day .of-name .small { color: var(--muted); }
+
+/* Udostępnione pliki (udostepnione.js) */
+.sh-files { margin-bottom: 18px; }
+.sh-opts { display: grid; gap: 12px; }
+.sh-opt { display: grid; gap: 10px; padding: 14px; border-radius: var(--r-feature); background: var(--surface); border: 1px solid var(--line); }
+.sh-opt-h { display: flex; align-items: center; gap: 12px; }
+.sh-opt-h .li-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.sh-opt-h small { color: var(--muted); }
+.sh-opt .field { margin: 0; }
+.sh-drop { margin-top: 16px; }

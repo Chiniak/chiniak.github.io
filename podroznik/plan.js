@@ -618,6 +618,12 @@
 
   /* ================= FORMULARZ PUNKTU ================= */
   let pending = []; // pliki wybrane w planie („Z biletu lub screena”) – czekają na formularz nowego punktu
+  // to samo z zewnątrz (udostępnione do aplikacji – udostepnione.js): nowy punkt planu z plików
+  async function fromFiles(tripId, files) {
+    const trip = await DB.get("trips", tripId), today = App.todayStr();
+    pending = files;
+    location.hash = `#/plan/${tripId}/nowy?d=${trip && trip.start <= today && today <= trip.end ? today : trip ? trip.start : today}&plik=1`;
+  }
 
   /* pola nowego punktu z tekstu biletu (PDF albo zdjęcie/screen po OCR): dzień, godzina, nazwa, miejsce, cena.
      Dzień: pierwsza data w dniach podróży (albo pierwsza przyszła, albo pierwsza w ogóle), godzina tuż przy niej. */
@@ -924,5 +930,5 @@
   App.route(/^\/plan\/([\w-]+)\/nowy$/, ([tripId], q) => itemForm({ tripId, date: q.d, q }));
   App.route(/^\/punkt\/([\w-]+)$/, ([itemId]) => itemForm({ itemId }));
 
-  App.Plan = { tripMenu, tripSheet, switchBtn, infoFromText, segEvents, CATS, catOf, pickTrip, tripOptions, tripTabs, bindTripTabs, routeIcon, placeInDay, todayCard, mergeDay, byOrder, inTime };
+  App.Plan = { fromFiles, tripMenu, tripSheet, switchBtn, infoFromText, segEvents, CATS, catOf, pickTrip, tripOptions, tripTabs, bindTripTabs, routeIcon, placeInDay, todayCard, mergeDay, byOrder, inTime };
 })();

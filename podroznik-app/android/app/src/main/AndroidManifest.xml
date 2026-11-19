@@ -31,6 +31,31 @@
                 <data android:scheme="https" android:host="chiniak.github.io" android:pathPrefix="/podroznik/dolacz" />
             </intent-filter>
 
+
+            <!-- „Udostępnij → Tripwillow”: bilety PDF, screeny, zaproszenia .ics, karty .pkpass, maile (ShareInPlugin) -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/pdf" />
+                <data android:mimeType="image/*" />
+                <data android:mimeType="text/calendar" />
+                <data android:mimeType="text/x-vcalendar" />
+                <data android:mimeType="application/vnd.apple.pkpass" />
+                <data android:mimeType="message/rfc822" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/pdf" />
+                <data android:mimeType="image/*" />
+                <data android:mimeType="text/calendar" />
+                <data android:mimeType="text/x-vcalendar" />
+                <data android:mimeType="application/vnd.apple.pkpass" />
+                <data android:mimeType="message/rfc822" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+
         </activity>
 
         <provider

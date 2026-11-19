@@ -9,6 +9,7 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         // własne wtyczki aplikacji – rejestrowane przed startem mostka
         registerPlugin(GoogleAuthPlugin.class);
+        registerPlugin(ShareInPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

@@ -7,7 +7,7 @@ importScripts("i18n-en.js", "i18n-de.js", "i18n-es.js", "i18n-it.js", "i18n-pt.j
 const CACHE = "podroznik-v89";
 const APP = [
   "./", "./index.html", "./style.css", "./i18n-en.js", "./i18n-de.js", "./i18n-es.js", "./i18n-it.js", "./i18n-pt.js", "./i18n-zh.js", "./i18n.js", "./native.js", "./db.js", "./app.js", "./trips.js", "./manifest.webmanifest",
-  "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png", "./tickets.js", "./plan.js", "./pack.js", "./reminders-core.js", "./reminders.js", "./backup.js", "./lock.js", "./docs.js", "./budget.js", "./stats.js", "./weather.js", "./email.js", "./places.js", "./rozloz.js", "./discover.js", "./split.js", "./share.js", "./offline.js", "./phrases.js", "./photos.js", "./backdrop.js", "./prep.js", "./ocr.js", "./gmail.js", "./icons.js", "./covers.js", "./settings.js", "./dzis.js", "./visas.js", "./waluty.js", "./journal.js", "./sync-config.js", "./sync.js", "./razem.js", "./guide.js", "./social.js", "./znajomi.js", "./konto.js", "./biblioteka.js", "./dolacz.html",
+  "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png", "./tickets.js", "./plan.js", "./pack.js", "./reminders-core.js", "./reminders.js", "./backup.js", "./lock.js", "./docs.js", "./budget.js", "./stats.js", "./weather.js", "./email.js", "./places.js", "./rozloz.js", "./udostepnione.js", "./discover.js", "./split.js", "./share.js", "./offline.js", "./phrases.js", "./photos.js", "./backdrop.js", "./prep.js", "./ocr.js", "./gmail.js", "./icons.js", "./covers.js", "./settings.js", "./dzis.js", "./visas.js", "./waluty.js", "./journal.js", "./sync-config.js", "./sync.js", "./razem.js", "./guide.js", "./social.js", "./znajomi.js", "./konto.js", "./biblioteka.js", "./dolacz.html",
   // czcionki (lib/fonts) – wygląd bez internetu
   "./lib/fonts/plus-jakarta-sans-latin-wght-normal.woff2", "./lib/fonts/plus-jakarta-sans-latin-ext-wght-normal.woff2", "./lib/fonts/plus-jakarta-sans-vietnamese-wght-normal.woff2",
   "./lib/fonts/newsreader-latin-500-normal.woff2", "./lib/fonts/newsreader-latin-ext-500-normal.woff2", "./lib/fonts/newsreader-vietnamese-500-normal.woff2",
@@ -68,8 +68,31 @@ async function ocrFetch(req) {
   return res;
 }
 
+/* ---------- „Udostępnij → Tripwillow” (manifest share_target, POST): pliki i tekst do pamięci, potem aplikacja (udostepnione.js) ---------- */
+async function shareIn(req) {
+  const form = await req.formData();
+  const c = await caches.open("tw-udostepnione");
+  for (const k of await c.keys()) await c.delete(k); // poprzednie, nieodebrane
+  const base = new URL("./udostepnione/", self.registration.scope).href;
+  let n = 0;
+  for (const f of form.getAll("files")) {
+    if (!f || typeof f === "string" || !f.size) continue;
+    await c.put(`${base}${n++}`, new Response(f, { headers: { "content-type": f.type || "application/octet-stream", "x-name": encodeURIComponent(f.name || "plik") } }));
+  }
+  const text = ["title", "text", "url"].map(k => form.get(k)).filter(v => typeof v === "string" && v.trim()).join("\n");
+  if (n) {
+    if (text) await c.put(`${base}tekst`, new Response(text));
+    return Response.redirect(new URL("./index.html?udostepnione=1#/udostepnione", self.registration.scope).href, 303);
+  }
+  // sam tekst – jak dawniej (app.js: ?title=&text=&url= → „Dodaj z maila”)
+  const u = new URL("./index.html", self.registration.scope);
+  if (text) u.searchParams.set("text", text);
+  return Response.redirect(u.href, 303);
+}
+
 self.addEventListener("fetch", e => {
   const req = e.request;
+  if (req.method === "POST" && new URL(req.url).pathname.endsWith("/udostepnij-do")) { e.respondWith(shareIn(req).catch(() => Response.redirect(new URL("./index.html", self.registration.scope).href, 303))); return; }
   if (req.method !== "GET") return;
   const url = new URL(req.url);
   if (TILE_HOSTS.test(url.hostname) && url.searchParams.has("podroznik-off")) return; // pobieranie „Mapa offline” – wprost z sieci

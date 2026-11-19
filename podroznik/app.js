@@ -163,7 +163,7 @@
     for (const [re, fn] of routes) { match = path.match(re); if (match) { handler = fn; break; } }
     if (!handler) { location.replace("#/podroze"); return; }
 
-    const TAB_OF = { odcinek: "podroze", bilet: "bilety", skanuj: "bilety", punkt: "plan", rzecz: "pakowanie", dokumenty: "bilety", dokument: "bilety", budzet: "podroze", wydatek: "podroze", statystyki: "podroze", wklej: "podroze", mapa: "plan", odkrywaj: "plan", rozliczenie: "podroze", udostepnij: "podroze", "mapa-offline": "plan", karty: "plan", przygotuj: "podroze", dzis: "podroze", waluty: "podroze", dziennik: "podroze", razem: "podroze", dolacz: "podroze", przewodnik: "podroze", znajomi: "podroze", znajomy: "podroze", czat: "podroze", publiczna: "podroze", widocznosc: "podroze", osoba: "podroze", obserwowani: "podroze", "odkrywaj-ludzi": "podroze", rozloz: "plan" };
+    const TAB_OF = { odcinek: "podroze", bilet: "bilety", skanuj: "bilety", punkt: "plan", rzecz: "pakowanie", dokumenty: "bilety", dokument: "bilety", budzet: "podroze", wydatek: "podroze", statystyki: "podroze", wklej: "podroze", mapa: "plan", odkrywaj: "plan", rozliczenie: "podroze", udostepnij: "podroze", "mapa-offline": "plan", karty: "plan", przygotuj: "podroze", dzis: "podroze", waluty: "podroze", dziennik: "podroze", razem: "podroze", dolacz: "podroze", przewodnik: "podroze", znajomi: "podroze", znajomy: "podroze", czat: "podroze", publiczna: "podroze", widocznosc: "podroze", osoba: "podroze", obserwowani: "podroze", "odkrywaj-ludzi": "podroze", rozloz: "plan", udostepnione: "podroze" };
     const first = path.split("/")[1];
     const tab = TAB_OF[first] || first;
     document.querySelectorAll(".tabbar a").forEach(a => {

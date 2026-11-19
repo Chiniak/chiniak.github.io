@@ -447,7 +447,8 @@
   App.route(/^\/wklej$/, async (_, q) => {
     const trips = (await DB.all("trips")).sort((a, b) => b.start.localeCompare(a.start));
     const shared = App.sharedText || "";
-    App.sharedText = null;
+    const sharedFile = App.sharedFile || null;
+    App.sharedText = null; App.sharedFile = null;
     let found = [], srcFile = null; // PDF z biletem – dołączany do pierwszego odcinka
     return {
       title: "Dodaj z maila",
@@ -554,10 +555,7 @@
 
         view.querySelector("#em-go").onclick = run;
         ta.addEventListener("input", () => { srcFile = null; });
-        view.querySelector("#em-file").onchange = async e => {
-          const file = e.target.files[0];
-          e.target.value = "";
-          if (!file) return;
+        const loadFile = async file => {
           out.innerHTML = `<p class="muted small">Czytam plik…</p>`;
           try {
             const text = (await fileText(file)).trim();
@@ -567,11 +565,18 @@
             run();
           } catch (err) { out.innerHTML = `<p class="error">Nie udało się odczytać pliku: ${esc(err.message || err)}</p>`; }
         };
+        view.querySelector("#em-file").onchange = e => {
+          const file = e.target.files[0];
+          e.target.value = "";
+          if (file) loadFile(file);
+        };
+
         view.querySelector("#em-paste").onclick = async () => {
           try { ta.value = await navigator.clipboard.readText(); run(); }
           catch (e) { App.toast("Brak dostępu do schowka – wklej ręcznie (przytrzymaj pole)"); ta.focus(); }
         };
-        if (shared) run();
+        if (sharedFile) loadFile(sharedFile); // udostępniony plik (udostepnione.js)
+        else if (shared) run();
       },
     };
   });
