@@ -2,7 +2,7 @@
    wszystko, co potem wymaga internetu. Ważne zwłaszcza przed Chinami (Google, Wikipedia i część map tam nie działa).
    Trasa: #/przygotuj/:tripId
    Kroki (po kolei): ochrona danych przed usunięciem → karty dla kierowcy (lokalne adresy) → zdjęcia miejsc →
-   kursy walut (NBP) → pogoda → mapa offline → odczyt biletów ze zdjęć (największa, na końcu). Każdy krok można powtórzyć – pobiera tylko brakujące. */
+   kursy walut (NBP) → pogoda → mapa offline → przewodnik Wikivoyage → odczyt biletów ze zdjęć (największa, na końcu). Każdy krok można powtórzyć – pobiera tylko brakujące. */
 (function () {
   const { esc, plural } = App;
   const hasXY = p => p && p.lat != null && p.lon != null && isFinite(p.lat) && isFinite(p.lon);
@@ -88,6 +88,16 @@
     }
     steps.push({ key: "map", icon: "🗺️", name: "Mapa offline", href: `#/mapa-offline/${id}`, ...map });
 
+    // 6a. przewodniki Wikivoyage (guide.js) – cel podróży i miasta noclegów
+    if (App.Guide) {
+      const have = await App.Guide.forTrip(id), miss = await App.Guide.missing(trip);
+      steps.push({ key: "guide", icon: "🧭", name: "Przewodnik", href: `#/przewodnik/${id}`,
+        done: have.length || miss.length ? !miss.length : null,
+        txt: !have.length && !miss.length ? "brak celu podróży" : miss.length
+          ? `${have.length ? `${have.map(g => g.title).join(", ")} · ` : ""}do pobrania: ${miss.slice(0, 3).map(m => m.name).join(", ")}`
+          : `${have.map(g => g.title).join(", ")} · offline` });
+    }
+
     // 6b. odczyt biletów ze zdjęć (ocr.js) – ~6 MB, raz na zawsze (wspólne dla wszystkich podróży)
     if (App.Ocr) {
       const ok = await App.Ocr.cached().catch(() => false);
@@ -149,6 +159,10 @@
       const wx = await App.Weather.get(await DB.get("trips", g.trip.id));
       await wx.refresh();
     },
+    async guide(st, g, say) {
+      const n = await App.Guide.prefetch(await DB.get("trips", g.trip.id), say, 3, () => running.stopped);
+      if (!n) say("nie znaleziono w Wikivoyage – wybierz ręcznie");
+    },
     async ocr(st, g, say) {
       say("pobieram ok. 6 MB…");
       await App.Ocr.prefetch();
@@ -175,7 +189,7 @@
     const askPersist = steps.find(s => s.key === "persist" && s.done === false);
     const ready = steps.filter(s => s.done === true).length, total = steps.filter(s => s.done !== null).length;
     const busy = running && running.id === id;
-    const ICON = { persist: "shield", cards: "taxi", photos: "image", rates: "currency", weather: "sun", map: "map", ocr: "scan", backup: "cloud" };
+    const ICON = { persist: "shield", cards: "taxi", photos: "image", rates: "currency", weather: "sun", map: "map", ocr: "scan", guide: "compass", backup: "cloud" };
     const rows = steps.map(s => `<div class="pr-row${s.done === null ? " na" : s.done ? " ok" : ""}" data-k="${s.key}">
         <span class="li-ico pr-ico" aria-hidden="true">${App.icon(ICON[s.key] || "check")}</span>
         <span class="pr-main"><b>${esc(s.name)}</b><span class="muted small pr-txt">${esc(s.txt)}</span></span>

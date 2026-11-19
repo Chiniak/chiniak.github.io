@@ -4,7 +4,7 @@
      #/dzis/:tripId?d=   dzień podróży (domyślnie dziś; poza podróżą – pierwszy albo ostatni dzień)
    Na ekranie: nagłówek (dzień X z Y, pogoda, strzałki dni) · Teraz / Dalej (karta „Dziś” z plan.js, tylko dziś) ·
    nocleg (nawigacja, telefon, karta dla kierowcy) · bilety na ten dzień · plan dnia · wydatki dnia z szybkim dodawaniem ·
-   skróty (mapa dnia, w pobliżu, rozmówki, dokumenty) · jutro (pierwsze punkty następnego dnia).
+   skróty (mapa dnia, w pobliżu, przewodnik, rozmówki, dokumenty) · jutro (pierwsze punkty następnego dnia).
    Ustawienie „startScreen” ("dzis" / "podroze") – ekran startowy w trakcie podróży (app.js). Bez wyboru: w aplikacji (APK,
    zainstalowana na ekranie głównym) „dzis”, w zwykłej karcie przeglądarki „podroze” (link otwiera to, co wskazuje). */
 (function () {
@@ -197,6 +197,7 @@
     html += `<div class="pl-tools dz-tools">
         ${tool(`#/mapa/${id}?d=${day}`, "map", "Mapa dnia")}
         ${tool(`#/odkrywaj/${id}`, "compass", "W pobliżu")}
+        ${App.Guide ? tool(`#/przewodnik/${id}`, "landmark", "Przewodnik") : ""}
         ${tool(`#/karty/${id}`, "chat", "Rozmówki")}
         ${tool(`#/waluty/${id}`, "currency", "Waluty")}
         ${tool(`#/budzet/${id}`, "wallet", "Budżet")}
