@@ -1,9 +1,13 @@
-name: Futbol – dane FPL (kontuzje, forma, wyniki)
+name: Futbol – dane (FPL, ClubElo)
 
 on:
   schedule:
     - cron: "17 */3 * * *"   # co 3 godziny
   workflow_dispatch:
+  # TYMCZASOWE: jednorazowe pobranie na gałęzi PR do testów – usunąć przed scaleniem
+  push:
+    branches: [claude/football-prediction-app-ps2t97]
+    paths: [".github/scripts/futbol-clubelo.mjs"]
 
 permissions:
   contents: write
@@ -22,6 +26,7 @@ jobs:
         with:
           node-version: 20
       - run: node .github/scripts/futbol-fpl.mjs
+      - run: node .github/scripts/futbol-clubelo.mjs
       - name: Zapisz zmiany
         run: |
           if git diff --quiet -- futbol/dane; then echo "brak zmian"; exit 0; fi
