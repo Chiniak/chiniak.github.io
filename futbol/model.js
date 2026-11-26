@@ -7,7 +7,7 @@
 
   const DAY = 86400000;
   const MAX_GOALS = 10;
-  const RHO = -0.08; // korekta Dixona-Colesa: trochę więcej remisów 0-0 i 1-1
+  const RHO = -0.08; // korekta Dixona-Colesa: trochę więcej remisów 0-0 i 1-1 (opts.rho w fit zmienia ją dla modelu)
 
   // mecz: { date: "YYYY-MM-DD", home, away, hg, ag, comp: "PL"|"CL", neutral? }
   function played(m) { return Number.isInteger(m.hg) && Number.isInteger(m.ag); }
@@ -81,7 +81,7 @@
       const md = teams.reduce((s, t) => s + def[t], 0) / teams.length;
       for (const t of teams) { att[t] -= ma; def[t] -= md; }
     }
-    return { mu, home, att, def, games, teams, n: rows.length, asOf };
+    return { mu, home, att, def, games, teams, n: rows.length, asOf, rho: opts.rho };
   }
   /* Zastępcze xG ze strzałów (ESPN): 0,19 za strzał celny, 0,07 za niecelny/zablokowany.
      Współczynniki dopasowane do prawdziwego xG (Opta) z meczów Premier League. */
@@ -133,7 +133,7 @@
     for (let i = 0; i <= MAX_GOALS; i++) {
       grid.push([]);
       for (let j = 0; j <= MAX_GOALS; j++) {
-        const p = ph[i] * pa[j] * dcTau(i, j, xg.home, xg.away, RHO);
+        const p = ph[i] * pa[j] * dcTau(i, j, xg.home, xg.away, model.rho ?? RHO);
         grid[i].push(p); total += p;
       }
     }

@@ -21,6 +21,31 @@
     { code: "EL", name: "Liga Europy", short: "Liga Europy", logo: 2310, cup: true, zones: { top: [8, "1/8 finału"], mid: [9, 24, "baraże"], bottom: [12, "odpada"] } },
   ];
   const COMP = Object.fromEntries(COMPS.map(c => [c.code, c]));
+  const ESPN_SLUG = { PL: "eng.1", ES1: "esp.1", DE1: "ger.1", IT1: "ita.1", FR1: "fra.1", NL1: "ned.1", PT1: "por.1", EN2: "eng.2", CL: "uefa.champions", EL: "uefa.europa" };
+  // kursy amerykańskie → dziesiętne (+150 → 2,50; −200 → 1,50)
+  const amDec = v => { const x = parseFloat(v); return isFinite(x) && x ? Math.round((x > 0 ? 1 + x / 100 : 1 + 100 / -x) * 100) / 100 : null; };
+  /* Szczegóły meczu z ESPN na żywo (przeglądarka, CORS dozwolony): potwierdzone składy i najnowsze kursy. */
+  async function loadLive(m) {
+    // zwykłe zapytanie bez dodatkowych nagłówków (z nimi przeglądarka pyta najpierw OPTIONS, którego ESPN nie obsługuje)
+    const r = await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${ESPN_SLUG[m.comp]}/summary?event=${m.eid}&_=${Math.floor(Date.now() / 60000)}`);
+    if (!r.ok) throw new Error(`${r.status} ESPN`);
+    const js = await r.json();
+    const pc = (js.pickcenter || []).find(x => x.moneyline);
+    let odds = null;
+    if (pc) {
+      const ml = pc.moneyline, t = pc.total || {}, c = v => amDec(v?.close?.odds ?? v?.open?.odds);
+      const line = parseFloat(String(t.over?.close?.line ?? t.over?.open?.line ?? "").replace(/^[ou]/, "")) || pc.overUnder || null;
+      odds = { h: c(ml.home), d: c(ml.draw), a: c(ml.away), line, over: c(t.over), under: c(t.under), book: pc.provider?.name || "",
+        open: { h: amDec(ml.home?.open?.odds), d: amDec(ml.draw?.open?.odds), a: amDec(ml.away?.open?.odds) } };
+      if (!odds.h || !odds.d || !odds.a) odds = null;
+    }
+    const lineups = (js.rosters || []).map(r => ({
+      side: r.homeAway, team: canon(r.team?.displayName || ""), formation: r.formation || "",
+      xi: (r.roster || []).filter(p => p.starter).map(p => ({ n: p.athlete?.displayName || "", pos: p.position?.abbreviation || "", nr: p.jersey || "" })),
+      bench: (r.roster || []).filter(p => !p.starter).map(p => p.athlete?.displayName || ""),
+    })).filter(r => r.xi.length);
+    return { odds, lineups, at: Date.now() };
+  }
   const leagueLogo = code => `https://a.espncdn.com/combiner/i?img=/i/leaguelogos/soccer/500/${COMP[code]?.logo}.png&w=64&h=64`;
 
   // sezon zaczyna się w lipcu: listopad 2026 → 2026, marzec 2027 → 2026
@@ -96,6 +121,7 @@
           comp, round: ROUND[r.st] || "", season: seasonOf(date), neutral: r.st === "final", src: "espn",
           odds: fdOdds || oddsObj(r.o || kursy?.[k]) || null,
           ...(x && x[0] !== null && x[1] !== null ? { xhg: x[0], xag: x[1] } : {}),
+          eid: r.i || null, // id meczu w ESPN (tylko nierozegrane)
           shots: r.s || null, // [gosp. strzały, gosp. celne, gość strzały, gość celne]
         });
       }
@@ -161,7 +187,7 @@
     return out.sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || "")));
   }
 
-  const api = { getJson, parseEspn, parseFpl, parseXg, COMPS, COMP, leagueLogo, loadEspn, loadFpl, loadXg, attachXg, merge, canon, key, seasonStart, seasonLabel, seasonOf };
+  const api = { loadLive, amDec, getJson, parseEspn, parseFpl, parseXg, COMPS, COMP, leagueLogo, loadEspn, loadFpl, loadXg, attachXg, merge, canon, key, seasonStart, seasonLabel, seasonOf };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.FData = api;
 })(typeof self !== "undefined" ? self : this);

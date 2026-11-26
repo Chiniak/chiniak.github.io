@@ -95,8 +95,10 @@
     if (prev.size) for (const t of teamsOf(comp, curSeason())) if (!prev.has(t)) pr[t] = { att: -0.25, def: -0.25 };
     return pr;
   }
+  // puchary: bez poprawki Dixona-Colesa na remisy (test wsteczny: Brier LM 0,552 → 0,549, LE 0,587 → 0,583)
+  const rhoFor = comp => isCup(comp) ? { rho: 0 } : {};
   function modelFor(comp) {
-    return S.models[comp] || (S.models[comp] = M.fit(dataFor(comp), { ...FIT, asOf: today(), priors: priorsFor(comp) }));
+    return S.models[comp] || (S.models[comp] = M.fit(dataFor(comp), { ...FIT, ...rhoFor(comp), asOf: today(), priors: priorsFor(comp) }));
   }
   function modelForPair(h, a) {
     const lh = leagueOf(h), la = leagueOf(a);
@@ -122,7 +124,7 @@
     if (S.bts[comp]) return S.bts[comp];
     const b = M.backtest(dataFor(comp), {
       from: `${D.seasonStart() - 1}-09-15`, filter: m => m.comp === comp,
-      fit: { ...FIT, priors: priorsFor(comp) }, adjFn: fatOn() ? m => M.fatigueAdj(S.rest.get(m.id)) : null,
+      fit: { ...FIT, ...rhoFor(comp), priors: priorsFor(comp) }, adjFn: fatOn() ? m => M.fatigueAdj(S.rest.get(m.id)) : null,
     });
     for (const r of b.records) S.btMap.set(r.m.id, r);
     return (S.bts[comp] = b);
@@ -349,6 +351,7 @@
       <div class="vs"><div class="tm" data-club="${esc(m.home)}">${badge(m.home, "lg")}${esc(short(m.home))}</div>
       <div class="sc">${done ? `${m.hg}–${m.ag}` : m.live ? `${m.live[0]}–${m.live[1]}` : `<span style="color:var(--accent)">${p.top[0].hg}–${p.top[0].ag}</span>`}<div class="small muted">${done ? (m.pens ? `karne ${m.pens[0]}–${m.pens[1]}` : m.aet ? `po dogrywce ${m.aet[0]}–${m.aet[1]}` : m.xhg !== undefined ? `xG ${m.xhg.toFixed(2)} – ${m.xag.toFixed(2)}` : "wynik") : m.live ? "na żywo" : "najbardziej prawdopodobny"}</div></div>
       <div class="tm" data-club="${esc(m.away)}">${badge(m.away, "lg")}${esc(short(m.away))}</div></div>`;
+    if (!done && m.eid) html += `<div id="live"><div class="card small muted">Sprawdzam w ESPN potwierdzone składy i najnowsze kursy…</div></div>`;
     if (done && bt) html += `<div class="card"><b>Przed meczem model dawał:</b> 1 ${pct(bt.probs[0])} · X ${pct(bt.probs[1])} · 2 ${pct(bt.probs[2])}, typ ${bt.top.hg}–${bt.top.ag}. ${bt.hit ? `<span class="tag ok">trafiony</span>` : `<span class="tag bad">nietrafiony</span>`}</div>`;
     html += done ? `<h2>Gdyby zagrali teraz</h2>` : "";
     html += predictionHtml(m.home, m.away, { model: modelFor(m.comp), neutral: m.neutral, adj: adjFor(m), injApplied: !!injAdj(m), match: m, squad: !done, p: done ? null : p });
@@ -359,7 +362,10 @@
       <div><label>${esc(short(m.away))}</label><input type="number" min="0" max="20" name="ag" value="${done ? m.ag : ""}" required></div></div>
       <div class="row"><button class="btn">Zapisz wynik</button><span class="small muted">Wynik po 90 minutach. Zostaje w tej przeglądarce.</span></div></form>`;
     openSheet(html);
+    S.sheetId = m.id;
     bindTipForm(m, p);
+    if (!done && m.eid) D.loadLive(m).then(x => { if (S.sheetId === m.id && $("#live")) $("#live").innerHTML = liveHtml(m, p, x); })
+      .catch(() => { if (S.sheetId === m.id && $("#live")) $("#live").innerHTML = `<div class="card small muted">Nie udało się pobrać składów i najnowszych kursów z ESPN – prognoza wyżej korzysta z ostatnio odświeżonych danych.</div>`; });
     $("#resForm").onsubmit = e => {
       e.preventDefault();
       const f = new FormData(e.target);
@@ -468,6 +474,42 @@
     if (!el) { el = document.createElement("div"); el.id = "toast"; el.className = "toast"; el.setAttribute("role", "status"); document.body.appendChild(el); }
     el.textContent = msg; el.classList.add("on");
     clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove("on"), 2200);
+  }
+
+  /* ---------- na żywo: potwierdzone składy i najnowsze kursy z ESPN (w karcie meczu) ---------- */
+  const norm = t => String(t).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  // kluczowi zawodnicy PL (FPL), których nie ma w pierwszym składzie
+  function keyMissing(team, xi) {
+    const ps = S.players.filter(p => p.team === team && p.min > 0);
+    if (!ps.length) return [];
+    const names = xi.map(x => norm(x.n));
+    const inXi = p => names.some(n => n === norm(p.full) || n.split(" ").includes(norm(p.n)) || n.endsWith(" " + norm(p.n)) || norm(p.full).includes(n));
+    const xgi = ps.reduce((a, p) => a + (p.xg || 0) + (p.xa || 0), 0) || 1, mins = Math.max(...ps.map(p => p.min));
+    return ps.map(p => ({ p, share: ((p.xg || 0) + (p.xa || 0)) / xgi, reg: p.min / mins }))
+      .filter(x => (x.share >= 0.08 || x.reg >= 0.75) && !inXi(x.p)).sort((a, b) => b.share - a.share || b.reg - a.reg);
+  }
+  function liveHtml(m, p, x) {
+    let h = "";
+    if (x.lineups.length) {
+      h += `<h2>Potwierdzone składy</h2>`;
+      for (const side of ["home", "away"]) {
+        const l = x.lineups.find(r => r.side === side); if (!l) continue;
+        const team = side === "home" ? m.home : m.away, miss = m.comp === "PL" ? keyMissing(team, l.xi) : [];
+        h += `<div class="card"><div class="list-row" style="cursor:default">${badge(team)}<b class="x">${esc(short(team))}</b><span class="small muted">${esc(l.formation)}</span></div>
+          <p class="small" style="margin:6px 0 0">${l.xi.map(z => esc(z.n)).join(", ")}</p>
+          ${miss.length ? `<p class="small" style="margin:6px 0 0"><span class="tag wait">poza pierwszym składem</span> ${miss.slice(0, 5).map(z => `${esc(z.p.n)}${z.share >= 0.08 ? ` (${pct(z.share)} xG+xA drużyny)` : ""}`).join(", ")}</p>` : ""}</div>`;
+      }
+    } else h += `<div class="card small muted">Składy jeszcze nieogłoszone – zwykle pojawiają się ok. godzinę przed meczem.</div>`;
+    const o = x.odds;
+    if (o) {
+      const total = (p.model || p).xg.home + (p.model || p).xg.away, f = M.fromOdds(o, { total });
+      const was = m.odds, moved = was && Math.max(Math.abs(1 / was.h - 1 / o.h), Math.abs(1 / was.a - 1 / o.a)) >= 0.03;
+      h += `<h2>Najnowsze kursy (${esc(o.book || "ESPN")})</h2><div class="card small">
+        <div>1 <b>${fx(o.h)}</b> · X <b>${fx(o.d)}</b> · 2 <b>${fx(o.a)}</b>${o.open?.h ? `<span class="muted"> · na otwarciu ${fx(o.open.h)} / ${fx(o.open.d)} / ${fx(o.open.a)}</span>` : ""}</div>
+        ${f ? `<div style="margin-top:6px">Prognoza z nich: 1 <b>${pct(f.win)}</b> · X <b>${pct(f.draw)}</b> · 2 <b>${pct(f.loss)}</b> · typ ${f.top[0].hg}–${f.top[0].ag}</div>` : ""}
+        <p class="muted" style="margin-bottom:0">${x.lineups.length ? "Kursy po ogłoszeniu składów już je uwzględniają – to najświeższa prognoza." : "Pobrane przed chwilą."}${moved ? ` <span class="tag wait">kursy wyraźnie się zmieniły</span> od ostatniego odświeżenia danych (${esc(was.book || "")} 1 ${fx(was.h)} · X ${fx(was.d)} · 2 ${fx(was.a)}).` : ""}</p></div>`;
+    }
+    return h;
   }
 
   /* ---------- kursy i zakłady ---------- */
@@ -1006,7 +1048,7 @@
   });
   document.addEventListener("keydown", e => { if (e.key === "Escape") closeSheet(); });
   function openSheet(html) { $("#sheet-body").innerHTML = html; $("#sheet").hidden = false; $(".sheet-card").scrollTop = 0; document.body.style.overflow = "hidden"; }
-  function closeSheet() { $("#sheet").hidden = true; document.body.style.overflow = ""; }
+  function closeSheet() { S.sheetId = null;  $("#sheet").hidden = true; document.body.style.overflow = ""; }
   $("#refresh").onclick = () => load(true);
 
   if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
