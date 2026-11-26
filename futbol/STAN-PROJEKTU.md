@@ -9,7 +9,7 @@ Użytkownik mieszka w Anglii – zakłady w £, ostrzeżenie UK Gambling Commiss
   wynikiem; wyszukiwarka wszystkich klubów; niżej siatka klubów wybranych rozgrywek. Typuj – wybór klubów z wyszukiwarką.
 - `model.js` – model: Poisson + Dixon-Coles, ważenie świeżości, Elo, symulacja sezonu, test wsteczny, rynki zakładów
 - `data.js` – wczytywanie i łączenie danych z `dane/`
-- `sw.js` – offline; **przy każdej zmianie plików podbij `CACHE`** (teraz `futbol-v19`)
+- `sw.js` – offline; **przy każdej zmianie plików podbij `CACHE`** (teraz `futbol-v20`)
 - `dane/` – pliki odświeżane przez GitHub Action (nie edytować ręcznie)
 
 ## Dane (`.github/workflows/futbol-dane.yml`, co 3 godziny, commit tylko przy zmianie)
@@ -70,6 +70,12 @@ Użytkownik mieszka w Anglii – zakłady w £, ostrzeżenie UK Gambling Commiss
   (użytkownik potwierdził 26.11.2026: na telefonie najnowsze kursy się pokazują);
   ważne: zwykłe `fetch` bez nagłówków (z `cache: "no-cache"` przeglądarka wysyła OPTIONS, którego ESPN nie obsługuje)
 - puchary: bez poprawki Dixona-Colesa (`rho: 0`; Brier LM 0,552 → 0,549, LE 0,587 → 0,583)
+
+## Opis prognozy („Dlaczego taka prognoza?”)
+`explain(m)` w `app.js`: reguły na danych aplikacji, bez LLM – tabela, bilans u siebie/na wyjeździe, atak/obrona wg modelu
+(miejsce w lidze), forma z 5 meczów, gole a xG, nieobecni (PL), zmęczenie, Elo, oczekiwane gole, bezpośrednie mecze,
+różnica model–rynek. Każdy argument ma wagę i stronę; karta meczu pokazuje nagłówek i 2 najmocniejsze argumenty,
+szczegóły meczu – do 5 na drużynę. Nazw klubów nie odmieniamy („Na korzyść: Raków”).
 
 ## Karta klubu – ostatnie 5 meczów z prognozami
 `historyHtml`/`preMatch` w `app.js`: prognoza sprzed meczu z kursów zamknięcia (gdy są), inaczej model z testu wstecznego

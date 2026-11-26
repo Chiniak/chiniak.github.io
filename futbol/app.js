@@ -74,7 +74,7 @@
     S.elo = M.elo(S.matches);
     S.rest = new Map([...M.restDays(S.matches)].map(([m, x]) => [m.id, x]));
     S.calib = null;
-    S.models = {}; S.bts = {}; S.btMap = new Map(); S.sims = {}; S.absCache = new Map(); S._teamsOf = {}; S._league = null; S.predCache = new Map(); S.pmCache = new Map();
+    S.models = {}; S.bts = {}; S.btMap = new Map(); S.sims = {}; S.absCache = new Map(); S._teamsOf = {}; S._league = null; S.predCache = new Map(); S.pmCache = new Map(); S._expl = new Map(); S._tbl = {};
   }
   function teamsOf(comp, season) {
     const k = comp + season;
@@ -279,6 +279,7 @@
       <div class="m-meta"><span>${compTag(m.comp)}${m.round ? ` · ${esc(m.round)}` : ""}</span><span>${tag} ${fmtDate(m.date)}${m.time ? " · " + esc(m.time) : ""}</span></div>
       <div class="m-row">${teamEl(m.home)}${mid}${teamEl(m.away, true)}</div>
       ${done && !bt ? "" : probBar(bt ? { win: bt.probs[0], draw: bt.probs[1], loss: bt.probs[2] } : p)}
+      ${!done && !m.live ? explainLine(m) : ""}
       ${miss}
       ${!done && m.odds ? `<div class="oddsline">Kursy${m.odds.book ? ` ${esc(m.odds.book)}` : ""}: 1 <b>${fx(m.odds.h)}</b> · X <b>${fx(m.odds.d)}</b> · 2 <b>${fx(m.odds.a)}</b>${p.src ? " · prognoza z kursów" : ""}</div>` : ""}
       ${tipLine(m)}
@@ -363,6 +364,7 @@
     if (!done && m.eid) html += `<div id="live"><div class="card small muted">Sprawdzam w ESPN potwierdzone składy i najnowsze kursy…</div></div>`;
     if (done && bt) html += `<div class="card"><b>Przed meczem model dawał:</b> 1 ${pct(bt.probs[0])} · X ${pct(bt.probs[1])} · 2 ${pct(bt.probs[2])}, typ ${bt.top.hg}–${bt.top.ag}. ${bt.hit ? `<span class="tag ok">trafiony</span>` : `<span class="tag bad">nietrafiony</span>`}</div>`;
     html += done ? `<h2>Gdyby zagrali teraz</h2>` : "";
+    if (!done) html += explainHtml(m);
     html += predictionHtml(m.home, m.away, { model: modelFor(m.comp), neutral: m.neutral, adj: adjFor(m), injApplied: !!injAdj(m), match: m, squad: !done, p: done ? null : p });
     html += oddsHtml(m, p);
     html += tipSectionHtml(m, p);
@@ -520,6 +522,124 @@
         <p class="muted" style="margin-bottom:0">${x.lineups.length ? "Kursy po ogłoszeniu składów już je uwzględniają – to najświeższa prognoza." : "Pobrane przed chwilą."}${moved ? ` <span class="tag wait">kursy wyraźnie się zmieniły</span> od ostatniego odświeżenia danych (${esc(was.book || "")} 1 ${fx(was.h)} · X ${fx(was.d)} · 2 ${fx(was.a)}).` : ""}</p></div>`;
     }
     return h;
+  }
+
+  /* ---------- opis prognozy: dlaczego ten faworyt (tylko z danych, które ma aplikacja) ---------- */
+  function seasonTable(comp) {
+    S._tbl = S._tbl || {};
+    return S._tbl[comp] || (S._tbl[comp] = M.table(S.matches.filter(m => m.comp === comp && m.season === curSeason())));
+  }
+  const num1 = x => x.toFixed(1).replace(".", ",");
+  const plural = (n, a, b, c) => n === 1 ? a : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? b : c;
+  const winsTxt = n => `${n} ${plural(n, "zwycięstwo", "zwycięstwa", "zwycięstw")}`;
+  function explain(m) {
+    S._expl = S._expl || new Map();
+    if (S._expl.has(m.id)) return S._expl.get(m.id);
+    const p = pred(m), H = m.home, A = m.away, pr = [p.win, p.draw, p.loss], i = pr.indexOf(Math.max(...pr));
+    const fav = pr[i] >= 0.42 && i !== 1 ? (i === 0 ? H : A) : null, und = fav === H ? A : fav === A ? H : null;
+    const R = []; // { team: za kim przemawia, w: waga, tag: krótko, t: zdanie }
+    const add = (team, w, tag, t) => R.push({ team, w, tag, t });
+    const other = t => t === H ? A : H;
+    // tabela (ta sama liga, bieżący sezon)
+    const lg = !isCup(m.comp) ? m.comp : null;
+    if (lg) {
+      const tb = seasonTable(lg), rh = tb.findIndex(r => r.team === H), ra = tb.findIndex(r => r.team === A);
+      if (rh >= 0 && ra >= 0 && tb[rh].p >= 3 && Math.abs(rh - ra) >= 3) {
+        const [b, w] = rh < ra ? [rh, ra] : [ra, rh];
+        add(tb[b].team, Math.min(3, (w - b) / 4), "wyżej w tabeli", `${short(tb[b].team)} jest ${b + 1}. w tabeli (${tb[b].pts} pkt), ${short(tb[w].team)} – ${w + 1}. (${tb[w].pts} pkt).`);
+      }
+      // bilans u siebie / na wyjeździe w tym sezonie
+      const rec = (t, home) => { const ms = S.matches.filter(x => x.comp === lg && x.season === curSeason() && M.played(x) && (home ? x.home === t : x.away === t));
+        const w = ms.filter(x => home ? x.hg > x.ag : x.ag > x.hg).length, l = ms.filter(x => home ? x.hg < x.ag : x.ag < x.hg).length; return { n: ms.length, w, d: ms.length - w - l, l }; };
+      const hh = rec(H, true), aa = rec(A, false);
+      if (hh.n >= 3 && hh.w / hh.n >= 0.6) add(H, 1.2, "mocny u siebie", `${short(H)} u siebie: ${winsTxt(hh.w)} w ${hh.n} meczach tego sezonu (${hh.w}-${hh.d}-${hh.l}).`);
+      else if (hh.n >= 4 && hh.w / hh.n <= 0.2) add(A, 1, "słaby gospodarz", `${short(H)} u siebie ma tylko ${winsTxt(hh.w)} w ${hh.n} meczach (${hh.w}-${hh.d}-${hh.l}).`);
+      if (aa.n >= 3 && aa.w / aa.n >= 0.5) add(A, 1.2, "mocny na wyjazdach", `${short(A)} na wyjazdach: ${winsTxt(aa.w)} w ${aa.n} meczach (${aa.w}-${aa.d}-${aa.l}).`);
+      else if (aa.n >= 4 && aa.w / aa.n <= 0.15) add(H, 1, "słaby na wyjazdach", `${short(A)} na wyjazdach ma tylko ${winsTxt(aa.w)} w ${aa.n} meczach (${aa.w}-${aa.d}-${aa.l}).`);
+      // siła ataku i obrony według modelu (miejsce w lidze)
+      const mdl = modelFor(lg), ts = teamsOf(lg, curSeason()).filter(t => t in mdl.att), n = ts.length;
+      if (n >= 10) for (const t of [H, A]) {
+        if (!(t in mdl.att)) continue;
+        const ra2 = ts.slice().sort((x, y) => mdl.att[y] - mdl.att[x]).indexOf(t) + 1, rd = ts.slice().sort((x, y) => mdl.def[y] - mdl.def[x]).indexOf(t) + 1;
+        const gf = Math.exp(mdl.mu + mdl.att[t] + mdl.home / 2), ga = Math.exp(mdl.mu - mdl.def[t] + mdl.home / 2);
+        if (ra2 <= 3) add(t, 1.4 - ra2 * 0.2, "mocny atak", `${short(t)} ma ${ra2}. atak ligi według modelu (ok. ${num1(gf)} gola na mecz).`);
+        if (rd <= 3) add(t, 1.4 - rd * 0.2, "szczelna obrona", `${short(t)} ma ${rd}. obronę ligi według modelu (ok. ${num1(ga)} straconego gola na mecz).`);
+        if (ra2 > n - 3) add(other(t), 0.8, "słaby atak rywala", `${short(t)} ma jeden z najsłabszych ataków ligi (${ra2}. z ${n}).`);
+        if (rd > n - 3) add(other(t), 0.8, "słaba obrona rywala", `${short(t)} ma jedną z najsłabszych obron ligi (${rd}. z ${n}).`);
+      }
+    }
+    // forma: ostatnie 5 meczów we wszystkich rozgrywkach
+    const fm = t => { const f = formOf(t, 5); const c = k => f.filter(x => x.r === k).length; return { n: f.length, w: c("W"), d: c("R"), l: c("P"), pts: c("W") * 3 + c("R") }; };
+    const fh = fm(H), fa = fm(A);
+    if (fh.n >= 4 && fa.n >= 4 && Math.abs(fh.pts - fa.pts) >= 4) {
+      const [b, bf, w, wf] = fh.pts > fa.pts ? [H, fh, A, fa] : [A, fa, H, fh];
+      add(b, Math.min(2.5, Math.abs(fh.pts - fa.pts) / 3), "lepsza forma", `Forma z 5 ostatnich meczów: ${short(b)} ${bf.w}W ${bf.d}R ${bf.l}P, ${short(w)} ${wf.w}W ${wf.d}R ${wf.l}P.`);
+    }
+    // gole a xG (ostatnie mecze z xG): czy wyniki są „na kredyt”
+    for (const t of [H, A]) {
+      const xs = S.matches.filter(x => M.played(x) && x.xhg !== undefined && (x.home === t || x.away === t)).slice(-8);
+      if (xs.length < 5) continue;
+      const g = xs.reduce((s, x) => s + (x.home === t ? x.hg : x.ag), 0), xg = xs.reduce((s, x) => s + (x.home === t ? x.xhg : x.xag), 0), d = g - xg;
+      if (d >= 3) add(other(t), 0.7, "rywal strzela ponad stan", `${short(t)} strzela więcej, niż wskazują sytuacje: ${g} goli przy xG ${num1(xg)} w ${xs.length} ostatnich meczach – taka skuteczność zwykle nie trwa.`);
+      else if (d <= -3) add(t, 0.7, "pech pod bramką", `${short(t)} strzela mniej, niż wskazują sytuacje: ${g} goli przy xG ${num1(xg)} w ${xs.length} ostatnich meczach – gra lepiej, niż mówią wyniki.`);
+    }
+    // nieobecni (PL) i zmęczenie
+    if (injAdj(m)) for (const t of [H, A]) {
+      const k = (absences(t)?.list || []).filter(x => x.weight > 0.06).map(x => x.p.n);
+      if (k.length) add(other(t), Math.min(2, k.length * 0.6), "kontuzje rywala", `${short(t)} bez ważnych zawodników: ${k.slice(0, 3).join(", ")}${k.length > 3 ? ` i ${k.length - 3} innych` : ""}.`);
+    }
+    const fa2 = fatAdj(m), rs = S.rest.get(m.id);
+    if (fa2 && rs) { const tired = fa2.home.att ? H : A; add(other(tired), 0.8, "zmęczony rywal", `${short(tired)} gra po ${tired === H ? rs.h : rs.a} dniach przerwy, a rywal odpoczywał ${tired === H ? rs.a : rs.h} dni.`); }
+    // przewaga własnego boiska
+    if (!m.neutral && fav === H) add(H, 0.6, "gra u siebie", `${short(H)} gra u siebie – gospodarze w tych rozgrywkach strzelają średnio ok. ${Math.round((Math.exp(modelFor(m.comp).home) - 1) * 100)}% więcej goli.`);
+    // bezpośrednie mecze (2 sezony)
+    const h2h = S.matches.filter(x => M.played(x) && ((x.home === H && x.away === A) || (x.home === A && x.away === H))).slice(-5);
+    if (h2h.length >= 3) {
+      const wins = t => h2h.filter(x => (x.home === t ? x.hg > x.ag : x.ag > x.hg)).length, wh = wins(H), wa = wins(A);
+      if (Math.abs(wh - wa) >= 2) { const b = wh > wa ? H : A; add(b, 0.5, "bilans bezpośredni", `Ostatnie ${h2h.length} spotkania: ${short(b)} ${Math.max(wh, wa)} wygranych, ${short(other(b))} ${Math.min(wh, wa)}.`); }
+    }
+    // ranking Elo (siła z wyników, wszystkie rozgrywki) – główny argument zwłaszcza w pucharach
+    const eh = S.elo.ratings[H], ea = S.elo.ratings[A];
+    if (eh && ea && Math.abs(eh - ea) >= 80) { const b = eh > ea ? H : A;
+      add(b, Math.min(2.5, Math.abs(eh - ea) / 100), "silniejszy wg rankingu", `Ranking Elo (siła z wyników 2 sezonów): ${short(H)} ${Math.round(eh)}, ${short(A)} ${Math.round(ea)} – różnica ${Math.round(Math.abs(eh - ea))} pkt na korzyść ${short(b)}.`); }
+    // model a rynek
+    const pm = p.model;
+    if (pm) {
+      const dh = pm.win - p.win, da = pm.loss - p.loss;
+      if (Math.max(Math.abs(dh), Math.abs(da)) >= 0.1) { const t = Math.abs(dh) >= Math.abs(da) ? (dh > 0 ? H : A) : (da > 0 ? A : H);
+        add(t, 0.4, "model", `Sam model daje ${short(t)} więcej szans (${pct(t === H ? pm.win : pm.loss)} zamiast ${pct(t === H ? p.win : p.loss)}) – ale rynek zwykle wie więcej, np. o składach.`); }
+    }
+    // przewaga w oczekiwanych golach według modelu (siła ataku i obrony, także w pucharach)
+    const mx = (p.model || p).xg;
+    if (mx && mx.home > 0 && mx.away > 0) { const r = mx.home / mx.away;
+      if (r >= 1.5 || r <= 1 / 1.5) { const b = r > 1 ? H : A;
+        add(b, Math.min(2.6, Math.abs(Math.log(r)) * 1.6), "dużo silniejszy", `Model spodziewa się wyraźnej przewagi ${short(b)}: oczekiwane gole ${num1(mx.home)} : ${num1(mx.away)} (z siły ataku i obrony obu drużyn w ostatnich meczach).`); } }
+    // faworyt bez innych argumentów: zdanie rynku
+    if (fav && p.src && !R.some(r => r.team === fav && r.w >= 0.6)) add(fav, 0.9, "kursy bukmacherów", `Bukmacherzy (${p.book}) wyraźnie stawiają na ${short(fav)} – kursy uwzględniają też składy i wiadomości, których model nie zna.`);
+    R.sort((x, y) => y.w - x.w);
+    let head;
+    if (!fav) head = i === 1 ? `Wyrównany mecz – najbardziej prawdopodobny jest remis (${pct(p.draw)}).` : `Wyrównany mecz – minimalnie bliżej ${short(i === 0 ? H : A)} (${pct(pr[i])}).`;
+    else head = `${pr[i] >= 0.6 ? "Wyraźny faworyt" : "Lekki faworyt"}: ${short(fav)} – ${pct(pr[i])} szans na wygraną.`;
+    // bez wyraźnego faworyta: argumenty grupowane według drużyn (najpierw ta, której daje się więcej szans)
+    const first = fav || (p.win >= p.loss ? H : A), second = other(first);
+    const pro = R.filter(r => r.team === first), con = R.filter(r => r.team === second);
+    const res = { head, fav, first, second, pro, con, src: p.src ? p.book : null, p };
+    S._expl.set(m.id, res);
+    return res;
+  }
+  function explainLine(m) {
+    const e = explain(m), tags = [...new Set(e.pro.slice(0, 2).map(r => r.tag))];
+    return `<div class="why small">${esc(e.head)}${e.fav && tags.length ? ` Dlaczego: ${esc(tags.join(", "))}.` : ""}</div>`;
+  }
+  function explainHtml(m) {
+    const e = explain(m), li = rs => rs.slice(0, 5).map(r => `<li>${esc(r.t)}</li>`).join("");
+    const pf = Math.max(e.p.win, e.p.loss);
+    return `<h2>Dlaczego taka prognoza?</h2><div class="card small why-card">
+      <p style="margin-top:0"><b>${esc(e.head)}</b></p>
+      ${e.pro.length ? `<p class="why-h">Na korzyść: ${esc(short(e.first))}</p><ul>${li(e.pro)}</ul>` : ""}
+      ${e.con.length ? `<p class="why-h">Na korzyść: ${esc(short(e.second))}</p><ul>${li(e.con)}</ul>` : ""}
+      ${!e.pro.length && !e.con.length ? `<p>Brak wyraźnych różnic w tabeli, formie i sile drużyn.</p>` : ""}
+      <p class="muted" style="margin-bottom:0">${e.src ? `Procenty pochodzą z kursów ${esc(e.src)} (bez marży) – rynek uwzględnia też składy i wiadomości, więc bywa trafniejszy niż powyższe liczby. ` : "Procenty pochodzą z modelu statystycznego (brak kursów). "}${e.fav ? `Faworyt z ${pct(pf)} nie wygrywa średnio w ${Math.round((1 - pf) * 10)} meczach na 10.` : "W takim meczu każdy wynik jest realny – żadna drużyna nie ma nawet 45% szans."}</p></div>`;
   }
 
   /* ---------- kursy i zakłady ---------- */
@@ -1181,9 +1301,9 @@
     }
     if (S.tab === "dane") {
       $("#dRefresh").onclick = () => load(true);
-      $("#injT").onchange = e => { store.set(LS.inj, e.target.checked); S.absCache = new Map(); S.predCache = new Map(); render(); };
-      $("#fatT").onchange = e => { store.set(LS.fat, e.target.checked); S.bts = {}; S.btMap = new Map(); S.predCache = new Map(); render(); };
-      $("#mktT").onchange = e => { store.set(LS.mkt, e.target.checked); S.predCache = new Map(); render(); };
+      $("#injT").onchange = e => { store.set(LS.inj, e.target.checked); S.absCache = new Map(); S.predCache = new Map(); S._expl = new Map(); render(); };
+      $("#fatT").onchange = e => { store.set(LS.fat, e.target.checked); S.bts = {}; S.btMap = new Map(); S.predCache = new Map(); S._expl = new Map(); render(); };
+      $("#mktT").onchange = e => { store.set(LS.mkt, e.target.checked); S.predCache = new Map(); S._expl = new Map(); render(); };
       const ba = $("#btAll");
       if (ba) ba.onclick = () => { ba.disabled = true; ba.textContent = "Liczę…"; setTimeout(() => { D.COMPS.forEach(c => btFor(c.code)); render(); }, 30); };
       $("#manForm").onsubmit = e => {
