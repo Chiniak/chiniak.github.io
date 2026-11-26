@@ -771,7 +771,9 @@
     const recent = mine.filter(M.played).slice(-12).reverse();
     let h = compBar(c);
     h += `<h2>Najbliższe mecze · ${esc(compName(c))}</h2>`;
-    h += next.length ? next.map(matchCard).join("") : `<div class="card empty">Brak zaplanowanych meczów w najbliższym czasie.</div>`;
+    h += next.length ? next.map(matchCard).join("") : `<div class="card empty">${D.COMP[c]?.src === "football-data"
+      ? `Terminarz ${esc(compName(c))} chwilowo niedostępny. ESPN nie ma tej ligi – najbliższe kolejki pobieramy z TheSportsDB, a kursy z football-data.co.uk (ok. 1–2 dni przed kolejką). Mecze pojawią się tu same – dane odświeżane co 3 godziny.`
+      : "Brak zaplanowanych meczów w najbliższym czasie."}</div>`;
     if (overdue.length) {
       h += `<h2>Czekają na wynik (${overdue.length})</h2>`;
       h += overdue.slice(-(S.showOverdue ? overdue.length : 6)).reverse().map(matchCard).join("");
@@ -1057,7 +1059,7 @@
       <div class="list-row" style="cursor:default"><span class="res W">✓</span><span class="x" style="white-space:normal"><b>ESPN</b> – wyniki, terminarze, kluby i loga<br><span class="small muted">stan z ${S.updated ? new Date(S.updated).toLocaleString("pl-PL") : "–"}</span></span></div>`;
     for (const s of S.status) h += `<div class="list-row" style="cursor:default">${compLogo(s.comp, "sm")}<span class="x">${esc(compName(s.comp))}</span><span class="small muted">${s.played}/${s.n} meczów${s.last ? ` · ostatni ${fmtDate(s.last, false)}` : ""}</span></div>`;
     h += `<div class="list-row" style="cursor:default"><span class="res ${S.fplInfo ? "W" : "P"}">${S.fplInfo ? "✓" : "!"}</span><span class="x" style="white-space:normal"><b>Fantasy Premier League</b> – kontuzje, forma zawodników, xG (Opta)<br><span class="small muted">${S.fplInfo ? `${S.fplInfo.players} zawodników · xG dla ${S.xgCount} meczów · stan z ${new Date(S.fplInfo.updated).toLocaleString("pl-PL")}` : "niedostępne"}</span></span></div>`;
-    if (S.raw.ek) h += `<div class="list-row" style="cursor:default"><span class="res W">✓</span><span class="x" style="white-space:normal"><b>Ekstraklasa</b> – wyniki, kursy i najbliższe mecze z football-data.co.uk (ESPN jej nie ma)<br><span class="small muted">stan z ${new Date(S.raw.ek.updated).toLocaleString("pl-PL")} · najbliższe mecze pojawiają się ok. 2 dni wcześniej</span></span></div>`;
+    if (S.raw.ek) h += `<div class="list-row" style="cursor:default"><span class="res W">✓</span><span class="x" style="white-space:normal"><b>Ekstraklasa</b> – wyniki i kursy z football-data.co.uk, terminarz 3 najbliższych kolejek z TheSportsDB (ESPN jej nie ma)<br><span class="small muted">stan z ${new Date(S.raw.ek.updated).toLocaleString("pl-PL")} · kursy na najbliższe mecze ok. 1–2 dni przed kolejką</span></span></div>`;
     const fdN = S.matches.filter(m => m.odds?.book === "bet365").length;
     h += `<div class="list-row" style="cursor:default"><span class="res ${S.raw.fd ? "W" : "P"}">${S.raw.fd ? "✓" : "!"}</span><span class="x" style="white-space:normal"><b>football-data.co.uk</b> – xG 8 lig i kursy bet365 rozegranych meczów (do sprawdzania zakładów)<br><span class="small muted">${S.raw.fd ? `kursy dla ${fdN} meczów · stan z ${new Date(S.raw.fd.updated).toLocaleString("pl-PL")}` : "niedostępne"}</span></span></div>`;
     h += `<div class="row"><button class="btn" id="dRefresh">Odśwież teraz</button><span class="small muted">Dane na stronie odświeżane automatycznie co 3 godziny.${S.manual.length ? ` Wpisanych ręcznie: ${S.manual.length}.` : ""}</span></div></div>`;
