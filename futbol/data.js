@@ -21,6 +21,31 @@
     { code: "EL", name: "Liga Europy", short: "Liga Europy", logo: 2310, cup: true, zones: { top: [8, "1/8 finału"], mid: [9, 24, "baraże"], bottom: [12, "odpada"] } },
   ];
   const COMP = Object.fromEntries(COMPS.map(c => [c.code, c]));
+  const ESPN_SLUG = { PL: "eng.1", ES1: "esp.1", DE1: "ger.1", IT1: "ita.1", FR1: "fra.1", NL1: "ned.1", PT1: "por.1", EN2: "eng.2", CL: "uefa.champions", EL: "uefa.europa" };
+  // kursy amerykańskie → dziesiętne (+150 → 2,50; −200 → 1,50)
+  const amDec = v => { const x = parseFloat(v); return isFinite(x) && x ? Math.round((x > 0 ? 1 + x / 100 : 1 + 100 / -x) * 100) / 100 : null; };
+  /* Szczegóły meczu z ESPN na żywo (przeglądarka, CORS dozwolony): potwierdzone składy i najnowsze kursy. */
+  async function loadLive(m) {
+    // zwykłe zapytanie bez dodatkowych nagłówków (z nimi przeglądarka pyta najpierw OPTIONS, którego ESPN nie obsługuje)
+    const r = await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${ESPN_SLUG[m.comp]}/summary?event=${m.eid}&_=${Math.floor(Date.now() / 60000)}`);
+    if (!r.ok) throw new Error(`${r.status} ESPN`);
+    const js = await r.json();
+    const pc = (js.pickcenter || []).find(x => x.moneyline);
+    let odds = null;
+    if (pc) {
+      const ml = pc.moneyline, t = pc.total || {}, c = v => amDec(v?.close?.odds ?? v?.open?.odds);
+      const line = parseFloat(String(t.over?.close?.line ?? t.over?.open?.line ?? "").replace(/^[ou]/, "")) || pc.overUnder || null;
+      odds = { h: c(ml.home), d: c(ml.draw), a: c(ml.away), line, over: c(t.over), under: c(t.under), book: pc.provider?.name || "",
+        open: { h: amDec(ml.home?.open?.odds), d: amDec(ml.draw?.open?.odds), a: amDec(ml.away?.open?.odds) } };
+      if (!odds.h || !odds.d || !odds.a) odds = null;
+    }
+    const lineups = (js.rosters || []).map(r => ({
+      side: r.homeAway, team: canon(r.team?.displayName || ""), formation: r.formation || "",
+      xi: (r.roster || []).filter(p => p.starter).map(p => ({ n: p.athlete?.displayName || "", pos: p.position?.abbreviation || "", nr: p.jersey || "" })),
+      bench: (r.roster || []).filter(p => !p.starter).map(p => p.athlete?.displayName || ""),
+    })).filter(r => r.xi.length);
+    return { odds, lineups, at: Date.now() };
+  }
   const leagueLogo = code => `https://a.espncdn.com/combiner/i?img=/i/leaguelogos/soccer/500/${COMP[code]?.logo}.png&w=64&h=64`;
 
   // sezon zaczyna się w lipcu: listopad 2026 → 2026, marzec 2027 → 2026
@@ -66,7 +91,8 @@
   const loadEspn = async (url = "dane/espn.json") => parseEspn(await getJson(url));
   // kursy: [1, X, 2, linia gola, powyżej, poniżej, bukmacher] → obiekt
   const oddsObj = o => o && { h: o[0], d: o[1], a: o[2], line: o[3], over: o[4], under: o[5], book: o[6] || "" };
-  /* fd – dane z football-data.co.uk: { m: { klucz: [xG gosp., xG gość, 1, X, 2, >2.5, <2.5] } } (kursy bet365) */
+  /* fd – dane z football-data.co.uk (kursy bet365): { m: { klucz: [xG gosp., xG gość, 1, X, 2, >2.5, <2.5] } – rozegrane,
+     n: { klucz: [1, X, 2, >2.5, <2.5] } – nadchodzące } */
   function parseEspn(js, kursy, fd) {
     const teams = {}, byId = {};
     for (const [id, t] of Object.entries(js.teams)) {
@@ -85,15 +111,17 @@
         const played = Array.isArray(r.f);
         const reg = r.r || r.f;
         const k = `${comp}|${r.k}|${r.h}|${r.a}`, x = fd?.m?.[k];
-        // kursy: przed meczem – z ESPN; po meczu – bet365 z football-data, a gdy ich brak – z archiwum ESPN
-        const fdOdds = x && x[2] && x[3] && x[4] ? { h: x[2], d: x[3], a: x[4], line: x[5] && x[6] ? 2.5 : null, over: x[5], under: x[6], book: "bet365" } : null;
+        // kursy: bet365 z football-data (po meczu – zamknięcia), a gdy ich brak – DraftKings z ESPN (przed meczem) lub z archiwum
+        const b365 = v => v && v[0] && v[1] && v[2] ? { h: v[0], d: v[1], a: v[2], line: v[3] && v[4] ? 2.5 : null, over: v[3], under: v[4], book: "bet365" } : null;
+        const fdOdds = played ? b365(x?.slice(2)) : b365(fd?.n?.[k]);
         matches.push({
           date, time: d.toTimeString().slice(0, 5), home: byId[r.h], away: byId[r.a],
           hg: played ? reg[0] : null, ag: played ? reg[1] : null,
           aet: r.x ? r.f : null, pens: r.p && r.p[0] !== null ? r.p : null, live: r.live || null,
           comp, round: ROUND[r.st] || "", season: seasonOf(date), neutral: r.st === "final", src: "espn",
-          odds: (played && fdOdds) || oddsObj(r.o || kursy?.[k]) || null,
+          odds: fdOdds || oddsObj(r.o || kursy?.[k]) || null,
           ...(x && x[0] !== null && x[1] !== null ? { xhg: x[0], xag: x[1] } : {}),
+          eid: r.i || null, // id meczu w ESPN (tylko nierozegrane)
           shots: r.s || null, // [gosp. strzały, gosp. celne, gość strzały, gość celne]
         });
       }
@@ -159,7 +187,7 @@
     return out.sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || "")));
   }
 
-  const api = { getJson, parseEspn, parseFpl, parseXg, COMPS, COMP, leagueLogo, loadEspn, loadFpl, loadXg, attachXg, merge, canon, key, seasonStart, seasonLabel, seasonOf };
+  const api = { loadLive, amDec, getJson, parseEspn, parseFpl, parseXg, COMPS, COMP, leagueLogo, loadEspn, loadFpl, loadXg, attachXg, merge, canon, key, seasonStart, seasonLabel, seasonOf };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.FData = api;
 })(typeof self !== "undefined" ? self : this);

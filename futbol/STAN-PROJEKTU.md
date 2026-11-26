@@ -7,20 +7,22 @@ Użytkownik mieszka w Anglii – zakłady w £, ostrzeżenie UK Gambling Commiss
 - `index.html`, `style.css`, `app.js` – interfejs (zakładki: Mecze, Tabela, Kluby, Typuj, Typy, Dane)
 - `model.js` – model: Poisson + Dixon-Coles, ważenie świeżości, Elo, symulacja sezonu, test wsteczny, rynki zakładów
 - `data.js` – wczytywanie i łączenie danych z `dane/`
-- `sw.js` – offline; **przy każdej zmianie plików podbij `CACHE`** (teraz `futbol-v10`)
+- `sw.js` – offline; **przy każdej zmianie plików podbij `CACHE`** (teraz `futbol-v12`)
 - `dane/` – pliki odświeżane przez GitHub Action (nie edytować ręcznie)
 
 ## Dane (`.github/workflows/futbol-dane.yml`, co 3 godziny, commit tylko przy zmianie)
 - `futbol-espn.mjs` → `dane/espn.json`: wyniki, terminarze, kluby z logami – PL, LaLiga, Bundesliga, Serie A, Ligue 1,
   Eredivisie, Liga Portugal, Championship, Liga Mistrzów, Liga Europy (publiczne, nieudokumentowane API ESPN;
   `dates=RRRR&limit=1000` działa, zakresy dat zwracają 400). Kursy DraftKings przy nadchodzących meczach.
-  Od 26.11.2026 także strzały i strzały celne każdego rozegranego meczu (`s`) – z nich „xG ze strzałów”.
+  Od 26.11.2026 także strzały i strzały celne każdego rozegranego meczu (`s`) – z nich „xG ze strzałów”,
+  oraz id meczu ESPN (`i`, tylko nierozegrane) – do pobierania składów i kursów na żywo.
 - `dane/kursy.json` – archiwum przedmeczowych kursów (ESPN kasuje je po meczu); zbierane od 26.11.2026
 - `futbol-fpl.mjs` → `dane/fpl.json`: Fantasy Premier League – kontuzje, forma, xG/xA zawodników PL
 - `futbol-xg.mjs` → `dane/xg.json`: xG drużyn mecz po meczu w PL (suma xG zawodników; Opta przez FPL); pobiera tylko po nowych meczach
 - `futbol-fd.mjs` → `dane/fd.json`: football-data.co.uk (darmowe CSV, bez klucza) – xG 8 lig (od sezonu 2026-27) i kursy
   bet365 (zamknięcia) rozegranych meczów z 2 sezonów; kluby dopasowane do ID ESPN głosowaniem (data ±1 dzień + wynik).
   Pucharów (LM, LE) tam nie ma. W aplikacji: kursy rozegranych meczów i xG mają pierwszeństwo przed ESPN/FPL.
+  `n` – kursy bet365 na nadchodzące mecze z `fixtures.csv` (plik uzupełniany ok. 2× w tygodniu; mają pierwszeństwo przed DraftKings).
   Środowisko chmurowe ma dozwolone hosty `football-data.co.uk` i `www.football-data.co.uk` (przekierowuje bez www).
 - W chmurowym środowisku Node potrzebuje `NODE_USE_ENV_PROXY=1`, żeby skrypty sięgnęły do sieci.
 
@@ -42,7 +44,21 @@ Użytkownik mieszka w Anglii – zakłady w £, ostrzeżenie UK Gambling Commiss
   zawsze faworyt bukmachera −4,5%. Liczone w aplikacji na żywo: Typy → „Czy model mówi prawdę?”
 - kurs podwójnej szansy z 1X2: szansa bez marży × (1 + marża/2) – zwykłe sumowanie 1/kurs liczyło marżę podwójnie
 
+## Prognoza z kursów (26.11.2026) – główna prognoza na stronie
+- `model.fromOdds`: z kursów 1X2 (+ linia 2,5 gola) po zdjęciu marży dopasowane oczekiwane gole obu drużyn → pełny rozkład wyników
+- test na 3527 meczach (bet365): trafniejsza od modelu na każdym rynku, także pochodnych (BTTS, 1,5/3,5 gola);
+  każda domieszka modelu pogarszała wynik. Model zostaje jako drugie zdanie, ostrzeżenie przy różnicy ≥ 10 pkt proc.,
+  przełącznik w Danych. Najpewniejszy zakład z kursów: weszło 80,9% (zapowiedź 80,4%), zwrot −2,3%; kupon z 3 – 61%
+- karta meczu pobiera na żywo z ESPN (`summary?event=`) potwierdzone składy i najnowsze kursy DraftKings (z kursem otwarcia);
+  w PL pokazuje kluczowych zawodników (FPL: ≥ 8% xG+xA drużyny albo ≥ 75% minut lidera) poza pierwszym składem.
+  ESPN odpowiada 403 przeglądarce testowej (Playwright, także przez proxy) – w zwykłych przeglądarkach 200 z CORS `*`;
+  ważne: zwykłe `fetch` bez nagłówków (z `cache: "no-cache"` przeglądarka wysyła OPTIONS, którego ESPN nie obsługuje)
+- puchary: bez poprawki Dixona-Colesa (`rho: 0`; Brier LM 0,552 → 0,549, LE 0,587 → 0,583)
+
 ## Odrzucone (sprawdzone, nie działało)
+- osobna przewaga własnego boiska dla każdego klubu (ściąganie 10–40 pseudo-meczów) – bez poprawy
+- dostrajanie poprawki na remisy w ligach (rho od −0,16 do 0) – różnice ±0,0005 Briera
+- ruch kursów jako osobny sygnał – prognoza i tak bierze najnowsze kursy
 - ClubElo – nie odpowiada ani z chmury, ani z GitHub Actions
 - Championship w modelu PL i ligi zagraniczne w modelu PL – pogarszały PL
 - openfootball (opóźniony) i football-data.org (potrzebny klucz) – zastąpione przez ESPN
@@ -53,7 +69,6 @@ Użytkownik mieszka w Anglii – zakłady w £, ostrzeżenie UK Gambling Commiss
 - (odrzucone przez użytkownika 26.11.2026) kursy bet365 przez API-Football z kluczem
 - archiwum `kursy.json` (DraftKings z ESPN) przyda się głównie dla LM i LE – ligi mają już kursy bet365 z football-data
 - football-data ma też `fixtures.csv` z kursami bet365 na nadchodzące mecze (użytkownik na razie nie chce bet365 przez API-Football)
-- ewentualnie: prognoza z kursów rynku jako główna, model jako drugie zdanie (rynek jest trafniejszy)
 - Remote Control: użytkownik chce później połączyć komputer (Claude Desktop → Ustawienia → Claude Code → Remote Control)
 
 ## Sposób pracy

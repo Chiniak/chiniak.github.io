@@ -1,7 +1,9 @@
 // xG i kursy bet365 z football-data.co.uk (darmowe pliki CSV, bez klucza) dla 8 lig, bieżący i poprzedni sezon.
 // Mecze dopasowane do danych ESPN (musi być już pobrany futbol/dane/espn.json).
-// Zapis: futbol/dane/fd.json = { updated, m: { "kod|start|idGosp|idGość": [xG gosp., xG gość, 1, X, 2, >2.5, <2.5] } }
-// Kursy: bet365 zamknięcia (tuż przed meczem), a gdy ich brak – wcześniejsze. Brak wartości = null.
+// Zapis: futbol/dane/fd.json = { updated, m: { "kod|start|idGosp|idGość": [xG gosp., xG gość, 1, X, 2, >2.5, <2.5] },
+//                               n: { ten sam klucz: [1, X, 2, >2.5, <2.5] } }
+// m – rozegrane: kursy bet365 zamknięcia (tuż przed meczem), a gdy ich brak – wcześniejsze. Brak wartości = null.
+// n – nadchodzące: aktualne kursy bet365 z fixtures.csv (plik uzupełniany ok. 2 razy w tygodniu).
 // Uruchomienie: node .github/scripts/futbol-fd.mjs
 import { writeFile, readFile } from "node:fs/promises";
 
@@ -40,7 +42,9 @@ const day = s => Math.round(new Date(s).getTime() / 86400000);
 const fdDay = d => { const [dd, mm, yy] = d.split("/"); return day(`${yy.length === 2 ? "20" + yy : yy}-${mm}-${dd}T12:00:00Z`); };
 
 const espn = JSON.parse(await readFile(ESPN, "utf8"));
-const out = { updated: null, m: {} };
+const out = { updated: null, m: {}, n: {} };
+const ids = {}; // kod ligi → { nazwa w football-data → id ESPN }
+const upcoming = {}; // kod ligi → nierozegrane mecze ESPN
 let total = 0, matched = 0;
 for (const [fd, comp] of LEAGUES) {
   const rows = [];
@@ -58,7 +62,8 @@ for (const [fd, comp] of LEAGUES) {
     const c = (byDay.get(fdDay(r.Date)) || []).filter(e => e.f[0] === +r.FTHG && e.f[1] === +r.FTAG);
     for (const e of c) { vote(r.HomeTeam, e.h, 1 / c.length); vote(r.AwayTeam, e.a, 1 / c.length); }
   }
-  const idOf = {};
+  const idOf = ids[comp] = {};
+  upcoming[comp] = (espn.comps[comp] || []).filter(r => !r.f).map(r => ({ ...r, d: day(r.k) }));
   for (const [n, v] of Object.entries(votes)) idOf[n] = Object.entries(v).sort((a, b) => b[1] - a[1])[0][0];
   for (const r of rows) {
     total++;
@@ -73,11 +78,26 @@ for (const [fd, comp] of LEAGUES) {
   console.log(`${comp}: ${rows.length} meczów w CSV, kluby ${Object.keys(idOf).length}`);
 }
 console.log(`dopasowano ${matched}/${total}`);
+
+// nadchodzące mecze z kursami bet365
+const FD = Object.fromEntries(LEAGUES);
+const fx = csv(await get("https://football-data.co.uk/fixtures.csv"));
+let nf = 0, nm = 0;
+for (const r of fx) {
+  const comp = FD[r.Div];
+  if (!comp || !r.HomeTeam || !r.Date) continue;
+  nf++;
+  const h = ids[comp][r.HomeTeam], a = ids[comp][r.AwayTeam], d = fdDay(r.Date);
+  const e = h && a && upcoming[comp].find(x => x.h === h && x.a === a && Math.abs(x.d - d) <= 2);
+  const v = [num(r.B365H), num(r.B365D), num(r.B365A), num(r["B365>2.5"]), num(r["B365<2.5"])];
+  if (e && v[0] && v[1] && v[2]) { out.n[`${comp}|${e.k}|${e.h}|${e.a}`] = v; nm++; }
+}
+console.log(`nadchodzące z kursami bet365: ${nm}/${nf}`);
 if (total < 1000 || matched / total < 0.95) throw new Error("za mało dopasowanych meczów – nie zapisuję");
 
 let prev = null;
 try { prev = JSON.parse(await readFile(OUT, "utf8")); } catch { /* brak pliku */ }
-if (prev && JSON.stringify(prev.m) === JSON.stringify(out.m)) { console.log("bez zmian"); process.exit(0); }
+if (prev && JSON.stringify([prev.m, prev.n]) === JSON.stringify([out.m, out.n])) { console.log("bez zmian"); process.exit(0); }
 out.updated = new Date().toISOString();
 await writeFile(OUT, JSON.stringify(out));
 console.log(`zapisano: ${Object.keys(out.m).length} meczów`);

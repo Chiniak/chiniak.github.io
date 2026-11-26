@@ -84,6 +84,7 @@ for (const [slug, code] of COMPS) {
       const name = st.name || "";
       if (/POSTPONED|CANCELED|CANCELLED|ABANDONED|DELAYED/.test(name)) continue;
       const row = { k: e.date, h: H.team.id, a: A.team.id };
+      if (!st.completed) row.i = e.id; // id meczu – aplikacja pobiera z ESPN składy i najnowsze kursy na żywo
       const od = !st.completed && st.state !== "in" ? odds(c) : null;
       if (od) { row.o = od; archive[`${code}|${e.date}|${H.team.id}|${A.team.id}`] = od; }
       if (st.completed) {
