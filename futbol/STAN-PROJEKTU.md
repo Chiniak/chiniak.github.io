@@ -7,7 +7,7 @@ Użytkownik mieszka w Anglii – zakłady w £, ostrzeżenie UK Gambling Commiss
 - `index.html`, `style.css`, `app.js` – interfejs (zakładki: Mecze, Tabela, Kluby, Typuj, Typy, Dane)
 - `model.js` – model: Poisson + Dixon-Coles, ważenie świeżości, Elo, symulacja sezonu, test wsteczny, rynki zakładów
 - `data.js` – wczytywanie i łączenie danych z `dane/`
-- `sw.js` – offline; **przy każdej zmianie plików podbij `CACHE`** (teraz `futbol-v12`)
+- `sw.js` – offline; **przy każdej zmianie plików podbij `CACHE`** (teraz `futbol-v14`)
 - `dane/` – pliki odświeżane przez GitHub Action (nie edytować ręcznie)
 
 ## Dane (`.github/workflows/futbol-dane.yml`, co 3 godziny, commit tylko przy zmianie)
@@ -24,6 +24,12 @@ Użytkownik mieszka w Anglii – zakłady w £, ostrzeżenie UK Gambling Commiss
   Pucharów (LM, LE) tam nie ma. W aplikacji: kursy rozegranych meczów i xG mają pierwszeństwo przed ESPN/FPL.
   `n` – kursy bet365 na nadchodzące mecze z `fixtures.csv` (plik uzupełniany ok. 2× w tygodniu; mają pierwszeństwo przed DraftKings).
   Środowisko chmurowe ma dozwolone hosty `football-data.co.uk` i `www.football-data.co.uk` (przekierowuje bez www).
+- `futbol-ekstraklasa.mjs` → `dane/ekstraklasa.json`: Ekstraklasa z football-data.co.uk (`new/POL.csv` – wyniki i kursy
+  zamknięcia bet365, a gdy brak – średnia rynku; `new_league_fixtures.csv` – najbliższe mecze, ok. 2 dni wcześniej).
+  Godziny w plikach są czasu brytyjskiego. ESPN nie ma Ekstraklasy (`pol.1` → 400). Brak xG, strzałów, składów, logo
+  (barwy i polskie nazwy w `data.js`, `EK_TEAMS`; Lech i Jagiellonia mają logo z ESPN dzięki pucharom).
+  Pełnego terminarza brak – symulacja tabeli dopisuje brakujące pary (każdy z każdym u siebie i na wyjeździe, `rr: true`).
+  Test: model 42,2% trafności (Brier 0,653), kursy 45,9% (0,632) – liga bardzo nieprzewidywalna.
 - W chmurowym środowisku Node potrzebuje `NODE_USE_ENV_PROXY=1`, żeby skrypty sięgnęły do sieci.
 
 ## Model – decyzje i wyniki testu wstecznego (mecze od 15.09.2025, tylko dane sprzed meczu)
@@ -51,9 +57,14 @@ Użytkownik mieszka w Anglii – zakłady w £, ostrzeżenie UK Gambling Commiss
   przełącznik w Danych. Najpewniejszy zakład z kursów: weszło 80,9% (zapowiedź 80,4%), zwrot −2,3%; kupon z 3 – 61%
 - karta meczu pobiera na żywo z ESPN (`summary?event=`) potwierdzone składy i najnowsze kursy DraftKings (z kursem otwarcia);
   w PL pokazuje kluczowych zawodników (FPL: ≥ 8% xG+xA drużyny albo ≥ 75% minut lidera) poza pierwszym składem.
-  ESPN odpowiada 403 przeglądarce testowej (Playwright, także przez proxy) – w zwykłych przeglądarkach 200 z CORS `*`;
+  ESPN odpowiada 403 przeglądarce testowej (Playwright, także przez proxy) – w zwykłych przeglądarkach 200 z CORS `*`
+  (użytkownik potwierdził 26.11.2026: na telefonie najnowsze kursy się pokazują);
   ważne: zwykłe `fetch` bez nagłówków (z `cache: "no-cache"` przeglądarka wysyła OPTIONS, którego ESPN nie obsługuje)
 - puchary: bez poprawki Dixona-Colesa (`rho: 0`; Brier LM 0,552 → 0,549, LE 0,587 → 0,583)
+
+## Karta klubu – ostatnie 5 meczów z prognozami
+`historyHtml`/`preMatch` w `app.js`: prognoza sprzed meczu z kursów zamknięcia (gdy są), inaczej model z testu wstecznego
+(tylko dane sprzed meczu); podsumowanie trafień 1X2, dokładnego wyniku i samego modelu.
 
 ## Odrzucone (sprawdzone, nie działało)
 - osobna przewaga własnego boiska dla każdego klubu (ściąganie 10–40 pseudo-meczów) – bez poprawy
@@ -62,7 +73,7 @@ Użytkownik mieszka w Anglii – zakłady w £, ostrzeżenie UK Gambling Commiss
 - ClubElo – nie odpowiada ani z chmury, ani z GitHub Actions
 - Championship w modelu PL i ligi zagraniczne w modelu PL – pogarszały PL
 - openfootball (opóźniony) i football-data.org (potrzebny klucz) – zastąpione przez ESPN
-- Ekstraklasa – brak w darmowych źródłach (ESPN, openfootball)
+- Ekstraklasa w ESPN i openfootball – brak (dodana z football-data.co.uk)
 - Transfermarkt / Opta / bet365 bezpośrednio – brak publicznego API, regulamin zabrania pobierania
 
 ## Pomysły na dalej
