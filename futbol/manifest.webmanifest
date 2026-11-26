@@ -1,7 +1,7 @@
 {
-  "name": "Futbol – prognozy PL i LM",
+  "name": "Futbol – prognozy meczów",
   "short_name": "Futbol",
-  "description": "Angielskie kluby w Premier League i Lidze Mistrzów: wyniki, tabela, forma i prognozy meczów.",
+  "description": "Najważniejsze ligi piłkarskie i puchary europejskie: wyniki, tabele, forma, kontuzje i prognozy meczów.",
   "lang": "pl",
   "start_url": "./",
   "scope": "./",
