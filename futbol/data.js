@@ -1,205 +1,118 @@
-/* Futbol – zbieranie danych.
-   1) openfootball (domena publiczna, bez klucza): Premier League i Liga Mistrzów, bieżący i poprzedni sezon.
-   2) football-data.org (opcjonalnie, darmowy klucz): świeże wyniki i terminarz PL i LM.
-   3) Wyniki i mecze wpisane ręcznie (zapisane w przeglądarce).
+/* Futbol – zbieranie danych. Wszystkie pliki są na tej samej stronie (dane/), odświeża je GitHub Action:
+   1) dane/espn.json – wyniki, terminarze i kluby z logami: 8 lig i 2 puchary europejskie (publiczne API ESPN)
+   2) dane/fpl.json  – Fantasy Premier League: kontuzje, zawieszenia, forma zawodników PL, wyniki PL
+   3) dane/xg.json   – xG drużyn mecz po meczu w PL (statystyki Opta przez FPL)
+   4) wyniki i mecze wpisane ręcznie (zapisane w przeglądarce)
    Wszystko łączone w jedną listę meczów { id, date, time, home, away, hg, ag, comp, round, season, src }. */
 (function (root) {
   "use strict";
 
-  const OF = "https://raw.githubusercontent.com/openfootball";
-  const MONTHS = { Jan: 1, Feb: 2, Mar: 3, Apr: 4, May: 5, Jun: 6, Jul: 7, Aug: 8, Sep: 9, Oct: 10, Nov: 11, Dec: 12 };
+  /* Rozgrywki: kod, nazwa, skrót, id logo ESPN, strefy tabeli (top – awans/LM, mid – baraże/puchary, bottom – spadek). */
+  const COMPS = [
+    { code: "PL", name: "Premier League", short: "Premier League", logo: 23, cc: "ENG", zones: { top: [4, "Liga Mistrzów"], mid: [5, 5, "miejsce 5 (często też LM)"], bottom: [3, "spadek"] } },
+    { code: "ES1", name: "LaLiga", short: "LaLiga", logo: 15, cc: "ESP", zones: { top: [4, "Liga Mistrzów"], mid: [5, 6, "Liga Europy"], bottom: [3, "spadek"] } },
+    { code: "DE1", name: "Bundesliga", short: "Bundesliga", logo: 10, cc: "GER", zones: { top: [4, "Liga Mistrzów"], mid: [5, 6, "Liga Europy"], bottom: [2, "spadek (16. – baraż)"] } },
+    { code: "IT1", name: "Serie A", short: "Serie A", logo: 12, cc: "ITA", zones: { top: [4, "Liga Mistrzów"], mid: [5, 6, "Liga Europy"], bottom: [3, "spadek"] } },
+    { code: "FR1", name: "Ligue 1", short: "Ligue 1", logo: 9, cc: "FRA", zones: { top: [3, "Liga Mistrzów"], mid: [4, 5, "el. LM / Liga Europy"], bottom: [2, "spadek (16. – baraż)"] } },
+    { code: "NL1", name: "Eredivisie", short: "Eredivisie", logo: 11, cc: "NED", zones: { top: [2, "Liga Mistrzów"], mid: [3, 3, "el. LM"], bottom: [2, "spadek (16. – baraż)"] } },
+    { code: "PT1", name: "Liga Portugal", short: "Portugalia", logo: 14, cc: "POR", zones: { top: [2, "Liga Mistrzów"], mid: [3, 3, "el. LM"], bottom: [2, "spadek (16. – baraż)"] } },
+    { code: "EN2", name: "Championship", short: "Championship", logo: 24, cc: "ENG", zones: { top: [2, "awans"], mid: [3, 6, "baraże o awans"], bottom: [3, "spadek"] } },
+    { code: "CL", name: "Liga Mistrzów", short: "Liga Mistrzów", logo: 2, cup: true, zones: { top: [8, "1/8 finału"], mid: [9, 24, "baraże"], bottom: [12, "odpada"] } },
+    { code: "EL", name: "Liga Europy", short: "Liga Europy", logo: 2310, cup: true, zones: { top: [8, "1/8 finału"], mid: [9, 24, "baraże"], bottom: [12, "odpada"] } },
+  ];
+  const COMP = Object.fromEntries(COMPS.map(c => [c.code, c]));
+  const leagueLogo = code => `https://a.espncdn.com/combiner/i?img=/i/leaguelogos/soccer/500/${COMP[code]?.logo}.png&w=64&h=64`;
 
   // sezon zaczyna się w lipcu: listopad 2026 → 2026, marzec 2027 → 2026
   function seasonStart(d = new Date()) { return d.getMonth() >= 6 ? d.getFullYear() : d.getFullYear() - 1; }
   function seasonLabel(y) { return `${y}-${String((y + 1) % 100).padStart(2, "0")}`; }
+  const seasonOf = date => seasonLabel(seasonStart(new Date(date + "T12:00:00")));
 
-  /* Nazwy klubów z różnych źródeł → jedna nazwa. */
-  const ALIAS = {
-    "brighton hove albion": "Brighton & Hove Albion FC", "brighton": "Brighton & Hove Albion FC",
-    "wolverhampton wanderers": "Wolverhampton Wanderers FC", "wolves": "Wolverhampton Wanderers FC",
-    "tottenham hotspur": "Tottenham Hotspur FC", "spurs": "Tottenham Hotspur FC", "tottenham": "Tottenham Hotspur FC",
-    "manchester united": "Manchester United FC", "man united": "Manchester United FC", "man utd": "Manchester United FC",
-    "manchester city": "Manchester City FC", "man city": "Manchester City FC",
-    "nott m forest": "Nottingham Forest FC",
-    "newcastle united": "Newcastle United FC", "newcastle": "Newcastle United FC",
-    "nottingham forest": "Nottingham Forest FC", "nottm forest": "Nottingham Forest FC",
-    "west ham united": "West Ham United FC", "west ham": "West Ham United FC",
-    "bournemouth": "AFC Bournemouth", "afc bournemouth": "AFC Bournemouth",
-    "leeds united": "Leeds United FC", "leeds": "Leeds United FC",
-    "ipswich town": "Ipswich Town FC", "ipswich": "Ipswich Town FC",
-    "hull city": "Hull City AFC", "hull": "Hull City AFC",
-    "coventry city": "Coventry City FC", "coventry": "Coventry City FC",
-    "leicester city": "Leicester City FC", "leicester": "Leicester City FC",
-    "sheffield united": "Sheffield United FC", "sunderland": "Sunderland AFC",
-    "aston villa": "Aston Villa FC", "crystal palace": "Crystal Palace FC",
+  /* Nazwy klubów z różnych źródeł → jedna nazwa (nazwa z ESPN, wczytywanego jako pierwszy). */
+  const ALIAS = { // klucz → klucz
+    "brighton": "brighton hove albion", "wolves": "wolverhampton wanderers", "spurs": "tottenham hotspur", "tottenham": "tottenham hotspur",
+    "man utd": "manchester united", "man united": "manchester united", "man city": "manchester city",
+    "nott m forest": "nottingham forest", "nottm forest": "nottingham forest", "newcastle": "newcastle united",
+    "west ham": "west ham united", "leeds": "leeds united", "ipswich": "ipswich town", "hull": "hull city", "coventry": "coventry city",
+    "leicester": "leicester city", "sheffield utd": "sheffield united",
   };
   function key(name) {
-    return name.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
+    const k = String(name).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
       .replace(/&/g, " ").replace(/\b(fc|afc|cf|sc|ac|sk|fk|cp|sad)\b/g, " ").replace(/[^a-z0-9 ]/g, " ")
       .replace(/\s+/g, " ").trim();
+    return ALIAS[k] || k;
   }
-  const known = new Map(); // klucz → nazwa kanoniczna
+  const known = new Map(); // klucz → nazwa
   function canon(name) {
-    const raw = name.replace(/\s*\([A-Z]{3}\)\s*$/, "").trim();
-    const k = key(raw);
-    if (ALIAS[k]) return ALIAS[k];
-    const prev = known.get(k);
-    if (!prev || raw.length > prev.length) known.set(k, raw); // „Liverpool” → „Liverpool FC”
+    const k = key(name);
+    if (!known.has(k)) known.set(k, String(name).trim());
     return known.get(k);
   }
 
-  /* Parser formatu football.txt (openfootball) – PL i LM. */
-  function parseTxt(text, { comp, season }) {
-    const y0 = parseInt(season, 10);
-    const out = [];
-    let date = null, round = "", time = "";
-    const countries = {};
-    for (const line0 of text.split("\n")) {
-      const line = line0.replace(/\s+$/, "");
-      if (!line.trim() || line.trim().startsWith("#") || line.startsWith("=")) continue;
-      const st = line.match(/^\s*▪\s*(.+)$/);
-      if (st) { round = st[1].trim(); continue; }
-      const dl = line.match(/^\s*(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+([A-Z][a-z]{2})\s+(\d{1,2})(?:\s+(\d{4}))?\s*$/);
-      if (dl) {
-        const mon = MONTHS[dl[1]], day = +dl[2];
-        const y = dl[3] ? +dl[3] : (mon >= 7 ? y0 : y0 + 1);
-        date = `${y}-${String(mon).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-        time = "";
-        continue;
-      }
-      if (!date || /^\s*\(/.test(line)) continue; // linie ze strzelcami
-      let rest = line.trim();
-      const tm = rest.match(/^(\d{1,2}:\d{2})\s+(.*)$/);
-      if (tm) { time = tm[1]; rest = tm[2]; }
-      rest = rest.replace(/\s+@\s.*$/, "").trim();
-      let left, away, sc = null;
-      const vi = rest.search(/\s+v\s+/);
-      if (vi >= 0) {
-        // „Drużyna A  v Drużyna B   2-1 (1-0)”
-        left = rest.slice(0, vi).trim();
-        const right = rest.slice(vi).replace(/^\s+v\s+/, "");
-        const sm = right.match(/^(.+?)\s+(\d+-\d+.*)$/);
-        if (sm) { away = sm[1].trim(); sc = sm[2]; } else away = right.trim();
-      } else {
-        // „Drużyna A  2-1 (1-0)  Drużyna B”
-        const bm = rest.match(/^(.+?)\s+(\d+-\d+(?:\s+pen\.\s+\d+-\d+)?(?:\s+a\.e\.t\.)?(?:\s+\([\d\s,-]*\))?)\s+(\D.*)$/);
-        if (!bm) continue;
-        left = bm[1].trim(); sc = bm[2]; away = bm[3].trim();
-      }
-      let hg = null, ag = null, aet = null, pens = null;
-      if (sc) {
-        if (/a\.e\.t\./.test(sc)) {
-          // „4-3 pen. 1-1 a.e.t. (1-1, 0-1)” albo „3-2 a.e.t. (3-0, 1-0)” – do modelu bierzemy wynik po 90 min
-          const a = sc.match(/(\d+)-(\d+)\s+a\.e\.t\./); aet = a ? [+a[1], +a[2]] : null;
-          const p = sc.match(/^(\d+)-(\d+)\s+pen\./); pens = p ? [+p[1], +p[2]] : null;
-          const r90 = sc.match(/\((\d+)-(\d+)/);
-          if (r90 && (!aet || (+r90[1] <= aet[0] && +r90[2] <= aet[1]))) { hg = +r90[1]; ag = +r90[2]; }
-          else if (aet) { [hg, ag] = aet; }
-        } else {
-          const r = sc.match(/^(\d+)-(\d+)/); hg = +r[1]; ag = +r[2];
-        }
-      }
-      if (!left || !away) continue;
-      const cc1 = left.match(/\(([A-Z]{3})\)$/), cc2 = away.match(/\(([A-Z]{3})\)$/);
-      const home = canon(left), aw = canon(away);
-      if (cc1) countries[home] = cc1[1];
-      if (cc2) countries[aw] = cc2[1];
-      out.push({ date, time, home, away: aw, hg, ag, aet, pens, comp, round, season, src: "openfootball" });
-    }
-    return { matches: out, countries };
-  }
-
-  async function getText(url) {
+  async function getJson(url) {
     const r = await fetch(url, { cache: "no-cache" });
     if (!r.ok) throw new Error(`${r.status} ${url}`);
-    return r.text();
+    return r.json();
   }
+  const pad = n => String(n).padStart(2, "0");
+  const localDate = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
-  /* openfootball: bieżący i poprzedni sezon PL i LM. Brakujące pliki są pomijane. */
-  async function loadOpenfootball(log = () => {}) {
-    const y = seasonStart();
-    const jobs = [];
-    for (const yy of [y, y - 1]) {
-      const s = seasonLabel(yy);
-      jobs.push({ url: `${OF}/england/master/${s}/1-premierleague.txt`, comp: "PL", season: s });
-      jobs.push({ url: `${OF}/champions-league/master/${s}/cl.txt`, comp: "CL", season: s });
+  const ROUND = {
+    "league-phase": "Faza ligowa", "knockout-round-playoffs": "Baraże", "round-of-16": "1/8 finału",
+    "quarterfinals": "Ćwierćfinał", "semifinals": "Półfinał", "final": "Finał",
+  };
+
+  /* ESPN: { updated, teams: { id: { n, s, a, c, l } }, comps: { kod: [ { k, h, a, f?, r?, x?, p?, live?, st? } ] } } */
+  const loadEspn = async (url = "dane/espn.json") => parseEspn(await getJson(url));
+  function parseEspn(js) {
+    const teams = {}, byId = {};
+    for (const [id, t] of Object.entries(js.teams)) {
+      const name = canon(t.n);
+      byId[id] = name;
+      teams[name] = {
+        short: t.s || t.n, abbr: t.a || t.n.slice(0, 3).toUpperCase(), color: t.c ? "#" + t.c : null,
+        logo: t.l ? t.l.replace("https://a.espncdn.com/i/", "https://a.espncdn.com/combiner/i?img=/i/") + "&w=80&h=80" : null,
+      };
     }
-    const all = [], countries = {}, status = [];
-    await Promise.all(jobs.map(async j => {
-      try {
-        const res = parseTxt(await getText(j.url), j);
-        all.push(...res.matches); Object.assign(countries, res.countries);
-        const last = res.matches.filter(m => m.hg !== null).map(m => m.date).sort().pop();
-        status.push({ ...j, ok: true, n: res.matches.length, played: res.matches.filter(m => m.hg !== null).length, last });
-      } catch (e) {
-        status.push({ ...j, ok: false, err: String(e.message || e) });
+    const matches = [], status = [];
+    for (const [comp, rows] of Object.entries(js.comps)) {
+      for (const r of rows) {
+        const d = new Date(r.k);
+        const date = localDate(d);
+        const played = Array.isArray(r.f);
+        const reg = r.r || r.f;
+        matches.push({
+          date, time: d.toTimeString().slice(0, 5), home: byId[r.h], away: byId[r.a],
+          hg: played ? reg[0] : null, ag: played ? reg[1] : null,
+          aet: r.x ? r.f : null, pens: r.p && r.p[0] !== null ? r.p : null, live: r.live || null,
+          comp, round: ROUND[r.st] || "", season: seasonOf(date), neutral: r.st === "final", src: "espn",
+        });
       }
-    }));
-    log(status);
-    return { matches: all, countries, status };
-  }
-
-  /* football-data.org v4 (darmowy klucz: PL i CL). */
-  async function loadFootballData(token, log = () => {}) {
-    if (!token) return { matches: [], status: [] };
-    const y = seasonStart();
-    const status = [], all = [];
-    for (const comp of ["PL", "CL"]) {
-      const url = `https://api.football-data.org/v4/competitions/${comp}/matches?season=${y}`;
-      try {
-        const r = await fetch(url, { headers: { "X-Auth-Token": token } });
-        if (!r.ok) throw new Error(r.status === 403 ? "403 – klucz nie ma dostępu" : r.status === 429 ? "429 – za dużo zapytań, spróbuj za minutę" : String(r.status));
-        const js = await r.json();
-        const ms = (js.matches || []).map(m => {
-          const ft = m.score?.fullTime || {}, rt = m.score?.regularTime;
-          const done = m.status === "FINISHED";
-          const g = done ? (rt && rt.home !== null ? rt : ft) : {};
-          return {
-            date: m.utcDate.slice(0, 10), time: new Date(m.utcDate).toTimeString().slice(0, 5),
-            home: canon(m.homeTeam?.name || "?"), away: canon(m.awayTeam?.name || "?"),
-            hg: done ? g.home : null, ag: done ? g.away : null,
-            comp, round: m.stage === "REGULAR_SEASON" || m.stage === "LEAGUE_STAGE" ? `${comp === "CL" ? "League, " : ""}Matchday ${m.matchday}` : (m.stage || "").replace(/_/g, " ").toLowerCase(),
-            season: seasonLabel(y), src: "football-data", live: ["IN_PLAY", "PAUSED"].includes(m.status),
-          };
-        }).filter(m => m.home !== "?" && m.away !== "?");
-        all.push(...ms);
-        status.push({ comp, url, ok: true, n: ms.length, played: ms.filter(m => m.hg !== null).length });
-      } catch (e) {
-        status.push({ comp, url, ok: false, err: e instanceof TypeError ? "brak połączenia lub przeglądarka zablokowała zapytanie" : String(e.message || e) });
-      }
+      const pl = rows.filter(r => r.f);
+      status.push({ comp, n: rows.length, played: pl.length, last: pl.length ? localDate(new Date(pl[pl.length - 1].k)) : null });
     }
-    log(status);
-    return { matches: all, status };
+    return { matches, teams, status, updated: js.updated };
   }
 
-  /* Fantasy Premier League – plik dane/fpl.json odświeżany co 3 godziny przez GitHub Action
-     (FPL nie pozwala pobierać danych bezpośrednio z przeglądarki).
-     Daje aktualne wyniki i terminarz PL oraz zawodników: kontuzje, zawieszenia, formę, xG. */
-  async function loadFpl(url = "dane/fpl.json") {
-    const r = await fetch(url, { cache: "no-cache" });
-    if (!r.ok) throw new Error(`${r.status} ${url}`);
-    const js = await r.json();
+  /* Fantasy Premier League: kontuzje, forma, wyniki PL. */
+  const loadFpl = async (url = "dane/fpl.json") => parseFpl(await getJson(url));
+  function parseFpl(js) {
     const team = Object.fromEntries(js.teams.map(t => [t.id, canon(t.name)]));
-    const season = seasonLabel(seasonStart());
     const matches = js.fixtures.filter(f => f.ko && team[f.h] && team[f.a]).map(f => {
-      const d = new Date(f.ko);
-      const ld = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      const d = new Date(f.ko), date = localDate(d);
       return {
-        date: ld, time: d.toTimeString().slice(0, 5), home: team[f.h], away: team[f.a],
-        hg: f.hs ?? null, ag: f.as ?? null, comp: "PL", round: f.ev ? `Matchday ${f.ev}` : "", season, src: "fpl", live: !!f.live,
+        date, time: d.toTimeString().slice(0, 5), home: team[f.h], away: team[f.a],
+        hg: f.hs ?? null, ag: f.as ?? null, comp: "PL", round: "", season: seasonOf(date), src: "fpl", live: f.live ? [0, 0] : null,
       };
     });
     const players = js.players.map(p => ({ ...p, team: team[p.t] })).filter(p => p.team);
-    const status = [{ comp: "PL", season, url, ok: true, n: matches.length, played: matches.filter(m => m.hg !== null).length,
-      last: matches.filter(m => m.hg !== null).map(m => m.date).sort().pop(), players: players.length, updated: js.updated }];
-    return { matches, players, updated: js.updated, nextDeadline: js.nextDeadline, status };
+    return { matches, players, updated: js.updated, played: matches.filter(m => m.hg !== null).length };
   }
 
-  /* xG mecz po meczu (PL, bieżący sezon) – plik dane/xg.json z GitHub Action, statystyki Opta przez FPL. */
-  async function loadXg(url = "dane/xg.json") {
-    const r = await fetch(url, { cache: "no-cache" });
-    if (!r.ok) throw new Error(`${r.status} ${url}`);
-    return (await r.json()).map(x => ({ ...x, home: canon(x.h), away: canon(x.a) }));
+  /* xG mecz po meczu (PL, bieżący sezon). */
+  const loadXg = async (url = "dane/xg.json") => parseXg(await getJson(url));
+  function parseXg(js) {
+    return js.map(x => ({ ...x, home: canon(x.h), away: canon(x.a) }));
   }
   // dopisuje xhg/xag do meczów PL z tego sezonu (ta sama para drużyn gra u siebie raz w sezonie)
   function attachXg(matches, xg) {
@@ -214,63 +127,29 @@
     return n;
   }
 
-  /* Ligi krajowe (openfootball football.json): Championship – skąd przychodzą beniaminkowie –
-     i ligi rywali z Ligi Mistrzów. Służą tylko do lepszej oceny siły drużyn, nie są pokazywane w terminarzu. */
-  const LEAGUES = [
-    ["en.2", "EN2", "Championship"], ["de.1", "DE1", "Bundesliga"], ["es.1", "ES1", "LaLiga"], ["it.1", "IT1", "Serie A"],
-    ["fr.1", "FR1", "Ligue 1"], ["pt.1", "PT1", "Liga Portugal"], ["nl.1", "NL1", "Eredivisie"], ["be.1", "BE1", "Pro League"],
-    ["tr.1", "TR1", "Süper Lig"], ["sco.1", "SCO1", "Premiership"],
-  ];
-  const LEAGUE_NAME = Object.fromEntries(LEAGUES.map(l => [l[1], l[2]]));
-  async function loadLeagues() {
-    const y = seasonStart();
-    const jobs = [];
-    for (const yy of [y, y - 1]) for (const [file, comp] of LEAGUES) jobs.push({ url: `${OF}/football.json/master/${seasonLabel(yy)}/${file}.json`, comp, season: seasonLabel(yy) });
-    const matches = [], status = [];
-    await Promise.all(jobs.map(async j => {
-      try {
-        const r = await fetch(j.url, { cache: "no-cache" });
-        if (!r.ok) throw new Error(`${r.status} ${j.url}`);
-        const js = await r.json();
-        const ms = (js.matches || (js.rounds || []).flatMap(x => x.matches || [])).map(m => {
-          const ft = Array.isArray(m.score) ? m.score : m.score?.ft;
-          return { date: m.date, time: m.time || "", home: canon(m.team1), away: canon(m.team2), hg: ft ? ft[0] : null, ag: ft ? ft[1] : null,
-            comp: j.comp, round: m.round || "", season: j.season, src: "openfootball" };
-        }).filter(m => m.date);
-        matches.push(...ms);
-        status.push({ ...j, ok: true, n: ms.length, played: ms.filter(m => m.hg !== null).length, last: ms.filter(m => m.hg !== null).map(m => m.date).sort().pop() });
-      } catch (e) { status.push({ ...j, ok: false, err: String(e.message || e) }); }
-    }));
-    return { matches, status };
-  }
-
-  /* Łączenie źródeł: ten sam mecz (rozgrywki + drużyny + data ±3 dni) występuje raz.
-     Pierwszeństwo: wynik ręczny > football-data > openfootball. */
-  const RANK = { manual: 4, "football-data": 3, fpl: 2, openfootball: 1 };
+  /* Łączenie źródeł: ten sam mecz (rozgrywki + drużyny + data ±3 dni; w lidze – ta sama para w sezonie) występuje raz.
+     Pierwszeństwo wyniku: ręczny > FPL > ESPN; wynik nie znika, jeśli lepsze źródło go jeszcze nie ma. */
+  const RANK = { manual: 3, fpl: 2, espn: 1 };
   function merge(lists) {
-    const map = new Map();
+    const out = [], byPair = new Map();
     const dayNum = d => Math.round(new Date(d).getTime() / 86400000);
-    const byPair = new Map();
-    const fix = n => ALIAS[key(n)] || known.get(key(n)) || n;
+    const has = x => x.hg !== null && x.hg !== undefined;
     for (const m of lists.flat()) {
-      m.home = fix(m.home); m.away = fix(m.away);
+      if (!m.home || !m.away) continue;
+      m.home = canon(m.home); m.away = canon(m.away);
       const pk = `${m.comp}|${m.home}|${m.away}`;
       const cands = byPair.get(pk) || [];
-      const same = cands.find(c => Math.abs(dayNum(c.date) - dayNum(m.date)) <= 3 || (m.comp === "PL" && c.season === m.season));
-      if (!same) { cands.push(m); byPair.set(pk, cands); map.set(m, m); continue; }
+      const same = cands.find(c => Math.abs(dayNum(c.date) - dayNum(m.date)) <= 3 || (!COMP[m.comp]?.cup && c.season === m.season));
+      if (!same) { cands.push(m); byPair.set(pk, cands); out.push(m); continue; }
       const better = (RANK[m.src] || 0) >= (RANK[same.src] || 0);
-      const hasScore = x => x.hg !== null && x.hg !== undefined;
-      // nowsze źródło wygrywa, ale wynik nie znika, jeśli lepsze źródło go jeszcze nie ma
-      if (better && (hasScore(m) || !hasScore(same))) Object.assign(same, { ...m });
-      else if (!hasScore(same) && hasScore(m)) Object.assign(same, { hg: m.hg, ag: m.ag, src: m.src });
-      else if (better && !hasScore(m)) Object.assign(same, { date: m.date, time: m.time || same.time });
+      if (better && (has(m) || !has(same))) Object.assign(same, { ...m, round: m.round || same.round, neutral: m.neutral ?? same.neutral, aet: m.aet ?? same.aet, pens: m.pens ?? same.pens });
+      else if (!has(same) && has(m)) Object.assign(same, { hg: m.hg, ag: m.ag, src: m.src });
     }
-    const out = [...map.keys()];
-    out.forEach((m, i) => { m.id = `${m.comp}-${m.season}-${key(m.home)}-${key(m.away)}-${m.date}`.replace(/\s/g, "_"); });
+    for (const m of out) m.id = `${m.comp}-${m.season}-${key(m.home)}-${key(m.away)}-${m.date}`.replace(/\s/g, "_");
     return out.sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || "")));
   }
 
-  const api = { loadXg, attachXg, LEAGUE_NAME, loadLeagues, parseTxt, loadOpenfootball, loadFootballData, loadFpl, merge, canon, key, seasonStart, seasonLabel };
+  const api = { getJson, parseEspn, parseFpl, parseXg, COMPS, COMP, leagueLogo, loadEspn, loadFpl, loadXg, attachXg, merge, canon, key, seasonStart, seasonLabel, seasonOf };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.FData = api;
 })(typeof self !== "undefined" ? self : this);
