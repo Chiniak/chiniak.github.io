@@ -486,7 +486,8 @@
   }
 
   /* ---------- na żywo: potwierdzone składy i najnowsze kursy z ESPN (w karcie meczu) ---------- */
-  const norm = t => String(t).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  // bez polskich i innych znaków diakrytycznych („ł” nie rozkłada się w NFD, więc osobno)
+  const norm = t => String(t).normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ł/g, "l").replace(/Ł/g, "L").replace(/ø/g, "o").replace(/ß/g, "ss").toLowerCase();
   // kluczowi zawodnicy PL (FPL), których nie ma w pierwszym składzie
   function keyMissing(team, xi) {
     const ps = S.players.filter(p => p.team === team && p.min > 0);
@@ -953,18 +954,47 @@
     openSheet(h);
   }
 
-  function viewTypuj() {
-    const groups = D.COMPS.filter(c => !c.cup).map(c => [c, teamsOf(c.code, curSeason())]).filter(([, ts]) => ts.length);
+  // kluby do wyboru: ligi (bieżący sezon) i pozostałe kluby z pucharów
+  function teamGroups() {
+    const groups = D.COMPS.filter(c => !c.cup).map(c => [c.name, teamsOf(c.code, curSeason())]).filter(([, ts]) => ts.length);
     const inLeagues = new Set(groups.flatMap(([, ts]) => ts));
     const others = [...new Set(S.matches.filter(m => EURO.has(m.comp) && m.season === curSeason()).flatMap(m => [m.home, m.away]))].filter(t => !inLeagues.has(t)).sort((a, b) => short(a).localeCompare(short(b)));
-    const opt = sel => groups.map(([c, ts]) => `<optgroup label="${esc(c.name)}">${ts.map(t => `<option value="${esc(t)}"${t === sel ? " selected" : ""}>${esc(short(t))}</option>`).join("")}</optgroup>`).join("")
-      + (others.length ? `<optgroup label="Inne kluby z pucharów">${others.map(t => `<option value="${esc(t)}"${t === sel ? " selected" : ""}>${esc(short(t))}</option>`).join("")}</optgroup>` : "");
+    if (others.length) groups.push(["Inne kluby z pucharów", others]);
+    return groups;
+  }
+  /* Wybór klubu z wyszukiwarką (zamiast długiej listy): wpisz kilka liter, polskie znaki niepotrzebne. */
+  function openPicker(side) {
+    openSheet(`<h2 style="margin-top:0">${side === "home" ? "Gospodarz" : "Gość"}</h2>
+      <input type="text" id="pq" placeholder="Wpisz nazwę klubu lub ligi…" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
+      <div id="plist" style="margin-top:10px"></div>`);
+    const groups = teamGroups();
+    const draw = () => {
+      const q = norm($("#pq").value.trim());
+      let html = "", n = 0, firstT = null;
+      for (const [g, ts] of groups) {
+        const hit = q ? (norm(g).includes(q) ? ts : ts.filter(t => norm(t).includes(q) || norm(short(t)).includes(q))) : ts;
+        if (!hit.length) continue;
+        n += hit.length; firstT = firstT || hit[0];
+        html += `<div class="small muted" style="margin:10px 2px 2px;font-weight:700">${esc(g)}</div><div class="card" style="padding:2px 12px">${hit.map(t => `<div class="list-row" data-pick="${side}" data-team="${esc(t)}">${badge(t)}<span class="x">${esc(short(t))}${short(t) !== t ? ` <span class="small muted">${esc(t)}</span>` : ""}</span>${S.typ?.[side] === t ? "✓" : ""}</div>`).join("")}</div>`;
+      }
+      $("#plist").innerHTML = html || `<div class="empty">Nie znaleziono klubu „${esc($("#pq").value)}”.</div>`;
+      $("#pq").dataset.first = n === 1 ? firstT : "";
+    };
+    $("#pq").oninput = draw;
+    $("#pq").onkeydown = e => { if (e.key === "Enter" && e.target.dataset.first) pickTeam(side, e.target.dataset.first); };
+    draw();
+    $("#pq").focus({ preventScroll: true }); // od razu, w obsłudze dotknięcia – wtedy telefon wysuwa klawiaturę
+  }
+  function pickTeam(side, t) { S.typ = { ...S.typ, [side]: t }; closeSheet(); render(); }
+  function viewTypuj() {
+    const groups = teamGroups();
+    const pick = (side, t) => `<button class="pick" data-picker="${side}" aria-label="${side === "home" ? "Gospodarz" : "Gość"}: ${esc(short(t))} – zmień">${badge(t)}<span>${esc(short(t))}</span><b aria-hidden="true">⌕</b></button>`;
     const first = groups[0]?.[1] || [];
     const st = S.typ || (S.typ = { home: first[0], away: first[1], neutral: false });
     const adj = adjFor({ home: st.home, away: st.away, date: today() }, true);
     const p = M.predict(modelForPair(st.home, st.away), st.home, st.away, { neutral: st.neutral, adj });
     return `<h2>Typuj dowolny mecz</h2><div class="card">
-      <div class="two"><div><label for="th">Gospodarz</label><select id="th">${opt(st.home)}</select></div><div><label for="ta">Gość</label><select id="ta">${opt(st.away)}</select></div></div>
+      <div class="two"><div><label>Gospodarz</label>${pick("home", st.home)}</div><div><label>Gość</label>${pick("away", st.away)}</div></div>
       <div class="row"><label class="check" style="margin:0"><input type="checkbox" id="tn"${st.neutral ? " checked" : ""}> Teren neutralny (np. finał)</label><button class="btn sec" id="tswap">⇄ Zamień</button></div></div>
       <div class="vs"><div class="tm">${badge(st.home, "lg")}${esc(short(st.home))}</div><div class="sc" style="color:var(--accent)">${p.top[0].hg}–${p.top[0].ag}<div class="small muted">najbardziej prawdopodobny</div></div><div class="tm">${badge(st.away, "lg")}${esc(short(st.away))}</div></div>
       ${st.home === st.away ? `<div class="empty">Wybierz dwie różne drużyny.</div>` : predictionHtml(st.home, st.away, { neutral: st.neutral, adj })}
@@ -1040,8 +1070,7 @@
   function bindView() {
     const v = $("#view");
     if (S.tab === "typuj") {
-      const upd = () => { S.typ = { home: $("#th").value, away: $("#ta").value, neutral: $("#tn").checked }; render(); };
-      $("#th").onchange = upd; $("#ta").onchange = upd; $("#tn").onchange = upd;
+      $("#tn").onchange = () => { S.typ = { ...S.typ, neutral: $("#tn").checked }; render(); };
       $("#tswap").onclick = () => { S.typ = { ...S.typ, home: S.typ.away, away: S.typ.home }; render(); };
     }
     if (S.tab === "typy") {
@@ -1074,10 +1103,12 @@
     }
   }
   document.addEventListener("click", e => {
-    const el = e.target.closest("[data-savebet],[data-betdays],[data-typysub],[data-deltip],[data-tipf],[data-tab],[data-comp],[data-season],[data-more],[data-match],[data-club],[data-close],[data-go]");
+    const el = e.target.closest("[data-savebet],[data-betdays],[data-typysub],[data-deltip],[data-tipf],[data-tab],[data-comp],[data-season],[data-more],[data-match],[data-club],[data-close],[data-go],[data-picker],[data-pick]");
     if (!el) return;
     const d = el.dataset;
     if (d.close !== undefined) return closeSheet();
+    if (d.picker) return openPicker(d.picker);
+    if (d.pick) return pickTeam(d.pick, d.team);
     if (d.deltip) { e.stopPropagation(); return deleteTip(d.deltip); }
     if (d.tipf) { S.tipFilter = d.tipf; render(); return; }
     if (d.typysub) { S.typySub = d.typysub; render(); return; }
