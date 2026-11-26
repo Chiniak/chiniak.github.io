@@ -66,7 +66,8 @@
   const loadEspn = async (url = "dane/espn.json") => parseEspn(await getJson(url));
   // kursy: [1, X, 2, linia gola, powyżej, poniżej, bukmacher] → obiekt
   const oddsObj = o => o && { h: o[0], d: o[1], a: o[2], line: o[3], over: o[4], under: o[5], book: o[6] || "" };
-  function parseEspn(js, kursy) {
+  /* fd – dane z football-data.co.uk: { m: { klucz: [xG gosp., xG gość, 1, X, 2, >2.5, <2.5] } } (kursy bet365) */
+  function parseEspn(js, kursy, fd) {
     const teams = {}, byId = {};
     for (const [id, t] of Object.entries(js.teams)) {
       const name = canon(t.n);
@@ -83,12 +84,17 @@
         const date = localDate(d);
         const played = Array.isArray(r.f);
         const reg = r.r || r.f;
+        const k = `${comp}|${r.k}|${r.h}|${r.a}`, x = fd?.m?.[k];
+        // kursy: przed meczem – z ESPN; po meczu – bet365 z football-data, a gdy ich brak – z archiwum ESPN
+        const fdOdds = x && x[2] && x[3] && x[4] ? { h: x[2], d: x[3], a: x[4], line: x[5] && x[6] ? 2.5 : null, over: x[5], under: x[6], book: "bet365" } : null;
         matches.push({
           date, time: d.toTimeString().slice(0, 5), home: byId[r.h], away: byId[r.a],
           hg: played ? reg[0] : null, ag: played ? reg[1] : null,
           aet: r.x ? r.f : null, pens: r.p && r.p[0] !== null ? r.p : null, live: r.live || null,
           comp, round: ROUND[r.st] || "", season: seasonOf(date), neutral: r.st === "final", src: "espn",
-          odds: oddsObj(r.o || kursy?.[`${comp}|${r.k}|${r.h}|${r.a}`]) || null,
+          odds: (played && fdOdds) || oddsObj(r.o || kursy?.[k]) || null,
+          ...(x && x[0] !== null && x[1] !== null ? { xhg: x[0], xag: x[1] } : {}),
+          shots: r.s || null, // [gosp. strzały, gosp. celne, gość strzały, gość celne]
         });
       }
       const pl = rows.filter(r => r.f);
@@ -125,6 +131,7 @@
     for (const m of matches) {
       if (m.comp !== "PL" || m.season !== season) continue;
       const x = by.get(`${m.home}|${m.away}`);
+      if (m.xhg !== undefined) { n++; continue; } // xG z football-data ma pierwszeństwo (to samo źródło dla wszystkich lig)
       if (x && m.hg === x.hg && m.ag === x.ag) { m.xhg = x.hxg; m.xag = x.axg; n++; }
     }
     return n;
