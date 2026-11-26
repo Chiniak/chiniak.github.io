@@ -2,7 +2,7 @@
 (function () {
   "use strict";
   const M = window.FModel, D = window.FData;
-  const LS = { cache: "futbol.cache.v1", manual: "futbol.manual.v1", key: "futbol.fdkey", tab: "futbol.tab", filter: "futbol.filter" };
+  const LS = { inj: "futbol.injuries", cache: "futbol.cache.v1", manual: "futbol.manual.v1", key: "futbol.fdkey", tab: "futbol.tab", filter: "futbol.filter" };
   const $ = s => document.querySelector(s);
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const pct = (x, d = 0) => (x * 100).toFixed(d) + "%";
@@ -69,7 +69,7 @@
 
   /* ---------- stan ---------- */
   const S = {
-    of: null, fd: null, manual: store.get(LS.manual, []), countries: {}, status: [],
+    of: null, fd: null, fpl: null, players: [], manual: store.get(LS.manual, []), countries: {}, status: [],
     matches: [], model: null, elo: null, sim: null, bt: null, btMap: new Map(),
     tab: store.get(LS.tab, "mecze"), filter: store.get(LS.filter, "all"), season: null, tableSeason: null,
   };
@@ -80,6 +80,7 @@
     const lists = [];
     if (S.of) lists.push(S.of.matches.map(m => ({ ...m })));
     if (S.fd) lists.push(S.fd.matches.map(m => ({ ...m })));
+    if (S.fpl) lists.push(S.fpl.matches.map(m => ({ ...m })));
     lists.push(S.manual.map(m => ({ ...m, src: "manual" })));
     S.matches = D.merge(lists);
     S.matches.forEach(m => { m.neutral = isNeutral(m); });
@@ -90,6 +91,8 @@
     S.priors = priors;
     S.model = M.fit(S.matches, { asOf: today(), priors, shrink: 6, halfLife: 240 });
     S.elo = M.elo(S.matches, { start: eloStart });
+    S.players = (S.fpl?.players || []).map(p => ({ ...p, team: D.canon(p.team) }));
+    S.absCache = new Map();
     S.sim = null; S.bt = null; S.btMap = new Map();
   }
   function teamsOf(comp, season) {
@@ -121,9 +124,9 @@
   async function load(force) {
     const cache = store.get(LS.cache, null);
     if (cache && !S.of) {
-      S.of = cache.of; S.fd = cache.fd; S.countries = cache.countries || {}; S.status = cache.status || []; S.fetchedAt = cache.at;
+      S.of = cache.of; S.fd = cache.fd; S.fpl = cache.fpl || null; S.countries = cache.countries || {}; S.status = cache.status || []; S.fetchedAt = cache.at;
       // nazwy z pamięci podręcznej trzeba „nauczyć” moduł danych, żeby ujednolicanie działało tak samo
-      for (const m of [...(S.of?.matches || []), ...(S.fd?.matches || [])]) { D.canon(m.home); D.canon(m.away); }
+      for (const m of [...(S.of?.matches || []), ...(S.fd?.matches || []), ...(S.fpl?.matches || [])]) { D.canon(m.home); D.canon(m.away); }
       compute(); render();
     }
     const fresh = !cache || force || Date.now() - (cache.at || 0) > 30 * 60 * 1000;
@@ -133,12 +136,16 @@
       const of = await D.loadOpenfootball();
       const key = store.get(LS.key, "");
       const fd = key ? await D.loadFootballData(key) : { matches: [], status: [] };
-      if (!of.matches.length && !fd.matches.length && S.of) throw new Error("offline");
+      let fpl = null, fplStatus = [];
+      try { fpl = await D.loadFpl(); fplStatus = fpl.status; }
+      catch (e) { fplStatus = [{ comp: "PL", season: curSeason(), ok: false, err: String(e.message || e) }]; }
+      if (!of.matches.length && !fd.matches.length && !fpl && S.of) throw new Error("offline");
       S.of = { matches: of.matches }; S.fd = { matches: fd.matches };
+      if (fpl) S.fpl = { matches: fpl.matches, players: fpl.players, updated: fpl.updated };
       S.countries = { ...S.countries, ...of.countries };
-      S.status = [...of.status.map(s => ({ ...s, src: "openfootball" })), ...fd.status.map(s => ({ ...s, src: "football-data" }))];
+      S.status = [...of.status.map(s => ({ ...s, src: "openfootball" })), ...fd.status.map(s => ({ ...s, src: "football-data" })), ...fplStatus.map(s => ({ ...s, src: "Fantasy Premier League" }))];
       S.fetchedAt = Date.now();
-      store.set(LS.cache, { of: S.of, fd: S.fd, countries: S.countries, status: S.status, at: S.fetchedAt });
+      store.set(LS.cache, { of: S.of, fd: S.fd, fpl: S.fpl, countries: S.countries, status: S.status, at: S.fetchedAt });
       compute(); render();
     } catch (e) {
       if (!S.of) $("#view").innerHTML = `<div class="empty">Nie udało się pobrać danych. Sprawdź internet i spróbuj ponownie.<div class="row" style="justify-content:center"><button class="btn" onclick="location.reload()">Spróbuj ponownie</button></div></div>`;
@@ -156,7 +163,7 @@
     const last = S.matches.filter(M.played).map(m => m.date).sort().pop();
     const n = $("#notice");
     if (overdue.length >= 3) {
-      n.innerHTML = `Darmowe dane openfootball kończą się na <b>${last ? fmtDate(last, false) : "?"}</b> – ${overdue.length} meczów PL czeka na wynik. ` +
+      n.innerHTML = `Dane z wynikami kończą się na <b>${last ? fmtDate(last, false) : "?"}</b> – ${overdue.length} meczów PL czeka na wynik. ` +
         `Dodaj darmowy klucz <b>football-data.org</b> albo wpisz wyniki ręcznie. <button class="link" style="background:none;border:0;padding:0;cursor:pointer;text-decoration:underline" data-go="dane">Przejdź do Danych</button>`;
       n.hidden = false;
     } else n.hidden = true;
@@ -167,7 +174,91 @@
     return `<div class="bar"><i class="w" style="width:${p.win * 100}%"></i><i class="d" style="width:${p.draw * 100}%"></i><i class="l" style="width:${p.loss * 100}%"></i></div>
       <div class="bar-l"><span>1 <b>${pct(p.win)}</b></span><span>X <b>${pct(p.draw)}</b></span><span>2 <b>${pct(p.loss)}</b></span></div>`;
   }
-  const pred = m => M.predict(S.model, m.home, m.away, { neutral: m.neutral });
+  const pred = m => M.predict(S.model, m.home, m.away, { neutral: m.neutral, adj: adjFor(m) });
+
+  /* ---------- zawodnicy: kontuzje, zawieszenia, forma (Fantasy Premier League) ---------- */
+  const POS = { 1: "BR", 2: "OBR", 3: "POM", 4: "NAP" };
+  const injOn = () => store.get(LS.inj, true);
+  // szansa gry w najbliższym meczu: status FPL a – dostępny, d – wątpliwy, i – kontuzja, s – zawieszenie, n – nie może grać,
+  // u – niedostępny (zwykle odszedł lub wypożyczony – pomijamy, bo nie należy już do kadry)
+  function availability(p) {
+    if (p.st === "a") return 1;
+    if (p.st === "u") return null;
+    if (p.ch !== null && p.ch !== undefined) return p.ch / 100;
+    return p.st === "d" ? 0.5 : 0;
+  }
+  /* Wpływ nieobecnych na drużynę.
+     Atak: jaki udział w xG + xA drużyny mają brakujący zawodnicy (zmiennicy odrabiają ok. 40%).
+     Obrona: jaki udział w minutach bramkarzy i obrońców mają brakujący. */
+  function absences(team) {
+    if (S.absCache.has(team)) return S.absCache.get(team);
+    const ps = S.players.filter(p => p.team === team && p.st !== "u");
+    let res = null;
+    if (ps.length) {
+      const xgiAll = ps.reduce((a, p) => a + (p.xg || 0) + (p.xa || 0), 0) || 1;
+      const defMin = ps.filter(p => p.pos <= 2).reduce((a, p) => a + p.min, 0) || 1;
+      const out = [];
+      let attLoss = 0, defLoss = 0;
+      for (const p of ps) {
+        const av = availability(p);
+        if (av === null || av >= 1) continue;
+        const miss = 1 - av;
+        const xgiShare = ((p.xg || 0) + (p.xa || 0)) / xgiAll;
+        const defShare = p.pos <= 2 ? p.min / defMin : 0;
+        attLoss += miss * xgiShare; defLoss += miss * defShare;
+        out.push({ p, av, xgiShare, defShare, weight: Math.max(xgiShare, defShare, p.min / 3000 / 4) });
+      }
+      out.sort((a, b) => b.weight - a.weight);
+      res = {
+        list: out, attLoss, defLoss,
+        att: 1 - Math.min(0.25, 0.6 * attLoss),
+        def: 1 + Math.min(0.2, 0.3 * defLoss),
+      };
+    }
+    S.absCache.set(team, res);
+    return res;
+  }
+  // poprawka tylko dla meczów w najbliższych 10 dniach – dalej stan kadry jest nieznany
+  function adjFor(m, force) {
+    if (!injOn() || M.played(m)) return null;
+    if (!force) {
+      const d = (new Date(m.date) - new Date(today())) / 86400000;
+      if (d < 0 || d > 10) return null;
+    }
+    const h = absences(m.home), a = absences(m.away);
+    if (!h && !a) return null;
+    return { home: h ? { att: h.att, def: h.def } : {}, away: a ? { att: a.att, def: a.def } : {} };
+  }
+  const PL_WORDS = [
+    [/Expected back (\d+ \w+)/i, "powrót ok. $1"], [/Unknown return date/i, "nieznany termin powrotu"],
+    [/(\d+)% chance of playing/i, "$1% szans na grę"], [/Suspended until (.+)/i, "zawieszony do $1"],
+    [/Suspended for (\d+) match(es)?/i, "zawieszony na $1 mecz(e)"], [/Muscular injury/i, "uraz mięśniowy"], [/Hamstring/i, "ścięgno podkolanowe"], [/Knee/i, "kolano"],
+    [/Ankle/i, "kostka"], [/Thigh/i, "udo"], [/Groin/i, "pachwina"], [/Calf/i, "łydka"], [/Shoulder/i, "bark"], [/Back injury/i, "uraz pleców"],
+    [/Foot/i, "stopa"], [/Hip/i, "biodro"], [/Illness/i, "choroba"], [/Muscle/i, "mięsień"], [/Achilles/i, "ścięgno Achillesa"],
+    [/Knock/i, "stłuczenie"], [/Head injury/i, "uraz głowy"], [/Concussion/i, "wstrząśnienie mózgu"], [/Lack of match fitness/i, "brak formy meczowej"],
+    [/ injury/i, " – uraz"], [/ - /g, " · "], [/Broken (\w+)/i, "złamanie: $1"],
+  ];
+  const plNews = t => PL_WORDS.reduce((s, [re, r]) => s.replace(re, r), t || "");
+  function statusTag(x) {
+    const p = x.p;
+    if (p.st === "s") return `<span class="tag bad">zawieszony</span>`;
+    if (x.av === 0) return `<span class="tag bad">nie zagra</span>`;
+    return `<span class="tag wait">${Math.round(x.av * 100)}% szans</span>`;
+  }
+  function absenceHtml(team, limit = 8) {
+    const a = absences(team);
+    if (!a) return `<div class="muted small">Brak danych o kadrze (dane FPL są tylko dla klubów Premier League).</div>`;
+    if (!a.list.length) return `<div class="muted small">Wszyscy zawodnicy dostępni.</div>`;
+    const rows = a.list.slice(0, limit).map(x => `<div class="list-row" style="cursor:default;align-items:flex-start">
+        <span class="res N" style="width:auto;padding:0 5px">${POS[x.p.pos]}</span>
+        <span class="x" style="white-space:normal"><b>${esc(x.p.n)}</b> ${statusTag(x)}<br><span class="small muted">${esc(plNews(x.p.news))}${x.xgiShare > 0.03 ? ` · ${pct(x.xgiShare)} xG+xA drużyny` : ""}</span></span></div>`).join("");
+    const more = a.list.length > limit ? `<div class="small muted" style="padding-top:6px">i ${a.list.length - limit} innych (mało grających)</div>` : "";
+    return rows + more + `<div class="small muted" style="padding-top:8px">Wpływ na prognozę: atak ${a.att < 0.995 ? "−" + pct(1 - a.att) : "bez zmian"}, obrona ${a.def > 1.005 ? "+" + pct(a.def - 1) + " straconych goli" : "bez zmian"}.</div>`;
+  }
+  function restDays(team, date) {
+    const prev = S.matches.filter(m => M.played(m) && m.date < date && (m.home === team || m.away === team)).pop();
+    return prev ? Math.round((new Date(date) - new Date(prev.date)) / 86400000) : null;
+  }
 
   function matchCard(m) {
     const done = M.played(m);
@@ -184,6 +275,7 @@
       <div class="m-meta"><span><span class="comp ${m.comp}">${m.comp === "PL" ? "PL" : "LM"}</span> ${esc(roundPl(m.round))}</span><span>${tag} ${fmtDate(m.date)}${m.time ? " · " + esc(m.time) : ""}</span></div>
       <div class="m-row">${teamEl(m.home)}${mid}${teamEl(m.away, true)}</div>
       ${done && !bt ? "" : probBar(bt ? { win: bt.probs[0], draw: bt.probs[1], loss: bt.probs[2] } : p)}
+      ${!done && adjFor(m) ? (() => { const n = t => (absences(t)?.list || []).filter(x => x.weight > 0.04).map(x => x.p.n); const k = [...n(m.home), ...n(m.away)]; return k.length ? `<div class="small muted" style="margin-top:6px">Brakuje: ${esc(k.slice(0, 4).join(", "))}${k.length > 4 ? ` i ${k.length - 4} innych` : ""}</div>` : ""; })() : ""}
     </button>`;
   }
 
@@ -198,7 +290,7 @@
 
   /* ---------- szczegóły meczu / prognoza ---------- */
   function predictionHtml(home, away, opts = {}) {
-    const p = M.predict(S.model, home, away, { neutral: opts.neutral });
+    const p = M.predict(S.model, home, away, { neutral: opts.neutral, adj: opts.adj });
     const er = S.elo.ratings;
     const N = 6;
     let grid = `<div class="sgrid"><div class="h">${esc(abbr(home))}↓</div>${[...Array(N).keys()].map(j => `<div class="h">${j}</div>`).join("")}`;
@@ -228,6 +320,10 @@
       <h2>Najbardziej prawdopodobne wyniki</h2>
       <div class="card">${p.top.map(s => `<div class="list-row" style="cursor:default"><span class="x">${esc(short(home))} <b>${s.hg}–${s.ag}</b> ${esc(short(away))}</span><span class="s">${pct(s.p, 1)}</span></div>`).join("")}</div>
       <h2>Rozkład wyników</h2><div class="card">${grid}</div>
+      ${opts.squad !== false ? `<h2>Kadra przed meczem${opts.adj ? "" : injOn() ? " (poza oknem 10 dni – nieuwzględniona)" : " (wyłączone w Danych)"}</h2>
+      <div class="card"><div class="list-row" style="cursor:default">${badge(home)}<b class="x">${esc(short(home))}</b></div>${absenceHtml(home, 6)}</div>
+      <div class="card"><div class="list-row" style="cursor:default">${badge(away)}<b class="x">${esc(short(away))}</b></div>${absenceHtml(away, 6)}</div>` : ""}
+      ${opts.date ? (() => { const rh = restDays(home, opts.date), ra = restDays(away, opts.date); return rh !== null && ra !== null ? `<h2>Odpoczynek przed meczem</h2><div class="card small">${esc(short(home))}: <b>${rh} dni</b> od poprzedniego meczu · ${esc(short(away))}: <b>${ra} dni</b>${Math.abs(rh - ra) >= 3 && Math.min(rh, ra) <= 3 ? ` – <b>${esc(short(rh < ra ? home : away))}</b> grał niedawno (np. w LM), możliwe zmęczenie i rotacja.` : ""}</div>` : ""; })() : ""}
       <h2>Forma (ostatnie 5)</h2>
       <div class="card">
         <div class="list-row" style="cursor:default">${badge(home)}<span class="x">${esc(short(home))}</span>${formHtml(fh)}</div>
@@ -250,7 +346,7 @@
     ensureBacktest();
     const done = M.played(m), bt = S.btMap.get(m.id);
     const p = pred(m);
-    let html = `<div class="m-meta"><span><span class="comp ${m.comp}">${compName(m.comp)}</span> ${esc(roundPl(m.round))}</span><span>${fmtDate(m.date)}${m.time ? " · " + esc(m.time) : ""}</span></div>
+    let html = `<div class="m-meta" style="padding-right:36px"><span><span class="comp ${m.comp}">${compName(m.comp)}</span> ${esc(roundPl(m.round))}</span><span>${fmtDate(m.date)}${m.time ? " · " + esc(m.time) : ""}</span></div>
       <div class="vs"><div class="tm" data-club="${esc(m.home)}">${badge(m.home, "lg")}${esc(short(m.home))}</div>
       <div class="sc">${done ? `${m.hg}–${m.ag}` : `<span style="color:var(--accent)">${p.top[0].hg}–${p.top[0].ag}</span>`}<div class="small muted">${done ? (m.pens ? `karne ${m.pens[0]}–${m.pens[1]}` : m.aet ? `po dogrywce ${m.aet[0]}–${m.aet[1]}` : "wynik") : "najbardziej prawdopodobny"}</div></div>
       <div class="tm" data-club="${esc(m.away)}">${badge(m.away, "lg")}${esc(short(m.away))}</div></div>`;
@@ -258,7 +354,7 @@
       html += `<div class="card"><b>Przed meczem model dawał:</b> 1 ${pct(bt.probs[0])} · X ${pct(bt.probs[1])} · 2 ${pct(bt.probs[2])}, typ ${bt.top.hg}–${bt.top.ag}. ${bt.hit ? `<span class="tag ok">trafiony</span>` : `<span class="tag bad">nietrafiony</span>`}</div>`;
     }
     html += done ? `<h2>Gdyby zagrali teraz</h2>` : "";
-    html += predictionHtml(m.home, m.away, { neutral: m.neutral });
+    html += predictionHtml(m.home, m.away, { neutral: m.neutral, adj: adjFor(m), date: m.date, squad: !done });
     html += `<h2>${done ? "Popraw wynik" : "Wpisz wynik"}</h2>
       <form class="card" id="resForm"><div class="two"><div><label>${esc(short(m.home))}</label><input type="number" min="0" max="20" name="hg" value="${done ? m.hg : ""}" required></div>
       <div><label>${esc(short(m.away))}</label><input type="number" min="0" max="20" name="ag" value="${done ? m.ag : ""}" required></div></div>
@@ -358,6 +454,26 @@
       <div class="bar-l"><span>${fmtDate(hist[0].date, false)} · ${Math.round(hist[0].r)}</span><span>min ${Math.round(Math.min(...ys))} · max ${Math.round(Math.max(...ys))}</span><span>teraz ${Math.round(ys[ys.length - 1])}</span></div>`;
   }
 
+  /* Kontuzje, xG drużyny i forma zawodników (FPL). */
+  function playersHtml(t, row) {
+    const ps = S.players.filter(p => p.team === t && p.st !== "u");
+    if (!ps.length) return `<h2>Kadra</h2><div class="card muted small">Dane o zawodnikach (kontuzje, forma, xG) są dostępne tylko dla klubów Premier League.</div>`;
+    const xg = ps.reduce((a, p) => a + (p.xg || 0), 0), g = ps.reduce((a, p) => a + p.g, 0);
+    const xga = ps.filter(p => p.pos === 1).reduce((a, p) => a + (p.xgc || 0), 0);
+    const ga = row ? row.ga : null;
+    const luck = (real, exp, inv) => { const d = real - exp; if (Math.abs(d) < 2) return "zgodnie z oczekiwaniami"; return (d > 0) !== !!inv ? "lepiej niż wskazują sytuacje – może się wyrównać w dół" : "gorzej niż wskazują sytuacje – może się poprawić"; };
+    const form = ps.filter(p => p.min >= 90).sort((a, b) => (b.form || 0) - (a.form || 0) || (b.xg + b.xa) - (a.xg + a.xa)).slice(0, 10);
+    return `<h2>Gole a xG (sezon ligowy)</h2><div class="card">
+        <div class="stats" style="margin-top:0"><div class="stat"><b>${g} / ${xg.toFixed(1)}</b><span>gole / xG – atak ${luck(g, xg)}</span></div>
+        ${ga !== null ? `<div class="stat"><b>${ga} / ${xga.toFixed(1)}</b><span>stracone / xGA – obrona ${luck(ga, xga, true)}</span></div>` : ""}</div>
+        <p class="small muted" style="margin-bottom:0">xG (gole oczekiwane) mierzy jakość stworzonych sytuacji. Na dłuższą metę lepiej przewiduje przyszłe wyniki niż same gole.</p></div>
+      <h2>Kontuzje i zawieszenia</h2><div class="card">${absenceHtml(t, 12)}</div>
+      <h2>Forma zawodników</h2><div class="card"><div class="tbl-wrap"><table>
+        <thead><tr><th class="t">Zawodnik</th><th>Poz.</th><th>Min</th><th>G</th><th>A</th><th>xG</th><th>xA</th><th title="średnia punktów FPL z ostatnich 30 dni">Forma</th></tr></thead><tbody>
+        ${form.map(p => `<tr><td class="t">${esc(p.n)}${p.st !== "a" ? ` <span class="tag ${p.st === "d" ? "wait" : "bad"}">${p.st === "d" ? "?" : "✚"}</span>` : ""}</td><td>${POS[p.pos]}</td><td>${p.min}</td><td>${p.g}</td><td>${p.as}</td><td>${(p.xg || 0).toFixed(1)}</td><td>${(p.xa || 0).toFixed(1)}</td><td><b>${(p.form || 0).toFixed(1)}</b></td></tr>`).join("")}
+        </tbody></table></div><p class="small muted" style="margin-bottom:0">Forma = średnia punktów Fantasy Premier League z ostatnich 30 dni (gole, asysty, czyste konta, minuty). Źródło: FPL${S.fpl?.updated ? `, stan z ${new Date(S.fpl.updated).toLocaleString("pl-PL")}` : ""}.</p></div>`;
+  }
+
   function openClub(t) {
     ensureBacktest();
     const mdl = S.model, er = S.elo.ratings;
@@ -384,6 +500,7 @@
         ${clPlayed.length ? `<div class="stat"><b>${clW}/${clPlayed.length}</b><span>wygrane w LM (2 sezony)</span></div>` : ""}
       </div>
       <h2>Forma</h2><div class="card">${formHtml(formOf(t, 10))}</div>
+      ${playersHtml(t, row)}
       <h2>Ranking Elo w czasie</h2><div class="card">${spark(S.elo.history[t])}</div>
       <h2>Najbliższe mecze · szanse 1 / X / 2</h2><div class="card">${next.length ? next.map(m => resultRow(m, t)).join("") : `<div class="muted">Brak meczów w terminarzu.</div>`}</div>
       <h2>Ostatnie wyniki</h2><div class="card">${last.map(m => resultRow(m, t)).join("") || `<div class="muted">Brak.</div>`}</div>`;
@@ -406,8 +523,8 @@
     return `<h2>Typuj dowolny mecz</h2><div class="card">
       <div class="two"><div><label for="th">Gospodarz</label><select id="th">${opt(st.home)}</select></div><div><label for="ta">Gość</label><select id="ta">${opt(st.away)}</select></div></div>
       <div class="row"><label class="check" style="margin:0"><input type="checkbox" id="tn"${st.neutral ? " checked" : ""}> Teren neutralny (np. finał)</label><button class="btn sec" id="tswap">⇄ Zamień</button></div></div>
-      <div class="vs">${`<div class="tm">${badge(st.home, "lg")}${esc(short(st.home))}</div><div class="sc" style="color:var(--accent)">${(() => { const p = M.predict(S.model, st.home, st.away, { neutral: st.neutral }); return `${p.top[0].hg}–${p.top[0].ag}`; })()}<div class="small muted">najbardziej prawdopodobny</div></div><div class="tm">${badge(st.away, "lg")}${esc(short(st.away))}</div>`}</div>
-      ${st.home === st.away ? `<div class="empty">Wybierz dwie różne drużyny.</div>` : predictionHtml(st.home, st.away, { neutral: st.neutral })}`;
+      <div class="vs">${`<div class="tm">${badge(st.home, "lg")}${esc(short(st.home))}</div><div class="sc" style="color:var(--accent)">${(() => { const p = M.predict(S.model, st.home, st.away, { neutral: st.neutral, adj: adjFor({ home: st.home, away: st.away, date: today() }, true) }); return `${p.top[0].hg}–${p.top[0].ag}`; })()}<div class="small muted">najbardziej prawdopodobny</div></div><div class="tm">${badge(st.away, "lg")}${esc(short(st.away))}</div>`}</div>
+      ${st.home === st.away ? `<div class="empty">Wybierz dwie różne drużyny.</div>` : predictionHtml(st.home, st.away, { neutral: st.neutral, adj: adjFor({ home: st.home, away: st.away, date: today() }, true) })}`;
   }
 
   function viewDane() {
@@ -419,7 +536,7 @@
     const sopt = all.map(t => `<option value="${esc(t)}">${esc(short(t))}</option>`).join("");
     let h = `<h2>Źródła danych</h2><div class="card">`;
     for (const s of S.status.slice().sort((a, b) => (a.src + a.comp + b.season).localeCompare(b.src + b.comp + a.season))) {
-      h += `<div class="list-row" style="cursor:default"><span class="res ${s.ok ? "W" : "P"}">${s.ok ? "✓" : "!"}</span><span class="x"><b>${esc(s.src)}</b> · ${compName(s.comp)} ${esc((s.season || "").replace("-", "/"))}<br><span class="small muted">${s.ok ? `${s.played} wyników z ${s.n} meczów${s.last ? `, ostatni ${fmtDate(s.last, false)}` : ""}` : (/404/.test(s.err || "") ? "jeszcze niedostępne" : esc(s.err))}</span></span></div>`;
+      h += `<div class="list-row" style="cursor:default"><span class="res ${s.ok ? "W" : "P"}">${s.ok ? "✓" : "!"}</span><span class="x"><b>${esc(s.src)}</b> · ${compName(s.comp)} ${esc((s.season || "").replace("-", "/"))}<br><span class="small muted">${s.ok ? `${s.played} wyników z ${s.n} meczów${s.last ? `, ostatni ${fmtDate(s.last, false)}` : ""}${s.players ? ` · ${s.players} zawodników (kontuzje, forma, xG), stan z ${new Date(s.updated).toLocaleString("pl-PL")}` : ""}` : (/404/.test(s.err || "") ? "jeszcze niedostępne" : esc(s.err))}</span></span></div>`;
     }
     const manualCount = S.manual.length;
     h += `<div class="row"><button class="btn" id="dRefresh">Odśwież teraz</button><span class="small muted">Pobrano: ${S.fetchedAt ? new Date(S.fetchedAt).toLocaleString("pl-PL") : "–"}${manualCount ? ` · wpisanych ręcznie: ${manualCount}` : ""}</span></div></div>`;
@@ -438,6 +555,8 @@
       h += `<div class="card">${S.manual.slice().reverse().map((m, i) => `<div class="list-row" style="cursor:default"><span class="d">${fmtDate(m.date, false)}</span><span class="comp ${m.comp}">${m.comp === "PL" ? "PL" : "LM"}</span><span class="x">${esc(short(m.home))} – ${esc(short(m.away))}</span><span class="s">${Number.isInteger(m.hg) ? `${m.hg}–${m.ag}` : "—"}</span><button class="icon-btn" data-delman="${S.manual.length - 1 - i}" aria-label="Usuń">✕</button></div>`).join("")}</div>`;
     }
 
+    h += `<h2>Kontuzje w prognozach</h2><div class="card"><label class="check" style="margin:0"><input type="checkbox" id="injT"${injOn() ? " checked" : ""}> Uwzględniaj nieobecnych zawodników w meczach na najbliższe 10 dni</label>
+      <p class="small muted" style="margin-bottom:0">Źródło: oficjalne Fantasy Premier League (tylko kluby PL), odświeżane co 3 godziny.</p></div>`;
     h += `<h2>Skuteczność modelu</h2><div class="card">
       <p class="small muted" style="margin-top:0">Test „w ciemno”: każdy mecz od ${fmtDate(`${D.seasonStart() - 1}-09-15`, false)} przewidziany wyłącznie z danych sprzed niego (PL i LM).</p>
       <div class="stats"><div class="stat"><b>${bt.n}</b><span>meczów</span></div><div class="stat"><b>${pct(bt.accuracy, 1)}</b><span>trafiony typ 1X2</span></div>
@@ -448,8 +567,9 @@
       <p style="margin-top:0"><b>Siła ataku i obrony.</b> Każda drużyna dostaje ocenę ataku i obrony dopasowaną do wszystkich meczów Premier League i Ligi Mistrzów z dwóch sezonów (regresja Poissona). Nowsze mecze ważą więcej – mecz sprzed 8 miesięcy liczy się w połowie. Drużyny z małą liczbą meczów są ściągane do średniej, a beniaminkowie startują z niższą oceną.</p>
       <p><b>Wynik meczu.</b> Z ocen wychodzą oczekiwane gole obu drużyn (z przewagą własnego boiska, ok. ${Math.round((Math.exp(S.model.home) - 1) * 100)}% więcej goli gospodarza). Rozkład Poissona z poprawką Dixona-Colesa daje szansę każdego wyniku, a z nich – 1/X/2, powyżej 2,5 gola i „obie strzelą”.</p>
       <p><b>Tabela końcowa.</b> Pozostałe mecze sezonu losowane 5000 razy.</p>
+      <p><b>Nieobecni.</b> Dla meczów w najbliższych 10 dniach model obniża atak drużyny o udział brakujących zawodników w jej xG i asystach oczekiwanych (zmiennicy odrabiają ok. 40%, najwyżej −25%) i podnosi liczbę traconych goli, gdy brakuje bramkarza lub obrońców (najwyżej +20%).</p>
       <p><b>Elo</b> to osobny ranking formy, aktualizowany po każdym meczu.</p>
-      <p class="muted" style="margin-bottom:0">Model nie zna kontuzji, składów ani transferów – traktuj prognozy jako punkt wyjścia, nie pewniak.</p></div>`;
+      <p class="muted" style="margin-bottom:0">Model nie zna potwierdzonych składów, zmian trenera ani motywacji – traktuj prognozy jako punkt wyjścia, nie pewniak.</p></div>`;
     return h;
   }
 
@@ -471,6 +591,7 @@
     }
     if (S.tab === "dane") {
       $("#dRefresh").onclick = () => load(true);
+      $("#injT").onchange = e => { store.set(LS.inj, e.target.checked); render(); };
       $("#fdSave").onclick = () => { store.set(LS.key, $("#fdk").value.trim()); load(true).then(render); };
       const del = $("#fdDel"); if (del) del.onclick = () => { localStorage.removeItem(LS.key); S.fd = { matches: [] }; S.status = S.status.filter(s => s.src !== "football-data"); compute(); render(); };
       $("#manForm").onsubmit = e => {

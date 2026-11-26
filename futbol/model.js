@@ -81,12 +81,15 @@
     return { att: model.att[t] ?? -0.15, def: model.def[t] ?? -0.15 };
   }
 
-  function expectedGoals(model, home, away, neutral) {
+  /* adj – poprawki za nieobecnych zawodników: { home: { att, def }, away: { att, def } }.
+     att mnoży strzelane gole drużyny, def mnoży gole tracone. */
+  function expectedGoals(model, home, away, neutral, adj) {
     const h = rating(model, home), a = rating(model, away);
     const ha = neutral ? 0 : model.home;
+    const ah = adj?.home || {}, aa = adj?.away || {};
     return {
-      home: Math.exp(model.mu + ha + h.att - a.def),
-      away: Math.exp(model.mu + a.att - h.def),
+      home: Math.exp(model.mu + ha + h.att - a.def) * (ah.att ?? 1) * (aa.def ?? 1),
+      away: Math.exp(model.mu + a.att - h.def) * (aa.att ?? 1) * (ah.def ?? 1),
     };
   }
 
@@ -107,7 +110,7 @@
 
   /* Pełna przepowiednia meczu. */
   function predict(model, home, away, opts = {}) {
-    const xg = expectedGoals(model, home, away, opts.neutral);
+    const xg = expectedGoals(model, home, away, opts.neutral, opts.adj);
     const ph = poisson(xg.home, MAX_GOALS), pa = poisson(xg.away, MAX_GOALS);
     const grid = [];
     let total = 0;

@@ -20,6 +20,7 @@
     "tottenham hotspur": "Tottenham Hotspur FC", "spurs": "Tottenham Hotspur FC", "tottenham": "Tottenham Hotspur FC",
     "manchester united": "Manchester United FC", "man united": "Manchester United FC", "man utd": "Manchester United FC",
     "manchester city": "Manchester City FC", "man city": "Manchester City FC",
+    "nott m forest": "Nottingham Forest FC",
     "newcastle united": "Newcastle United FC", "newcastle": "Newcastle United FC",
     "nottingham forest": "Nottingham Forest FC", "nottm forest": "Nottingham Forest FC",
     "west ham united": "West Ham United FC", "west ham": "West Ham United FC",
@@ -171,9 +172,32 @@
     return { matches: all, status };
   }
 
+  /* Fantasy Premier League – plik dane/fpl.json odświeżany co 3 godziny przez GitHub Action
+     (FPL nie pozwala pobierać danych bezpośrednio z przeglądarki).
+     Daje aktualne wyniki i terminarz PL oraz zawodników: kontuzje, zawieszenia, formę, xG. */
+  async function loadFpl(url = "dane/fpl.json") {
+    const r = await fetch(url, { cache: "no-cache" });
+    if (!r.ok) throw new Error(`${r.status} ${url}`);
+    const js = await r.json();
+    const team = Object.fromEntries(js.teams.map(t => [t.id, canon(t.name)]));
+    const season = seasonLabel(seasonStart());
+    const matches = js.fixtures.filter(f => f.ko && team[f.h] && team[f.a]).map(f => {
+      const d = new Date(f.ko);
+      const ld = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      return {
+        date: ld, time: d.toTimeString().slice(0, 5), home: team[f.h], away: team[f.a],
+        hg: f.hs ?? null, ag: f.as ?? null, comp: "PL", round: f.ev ? `Matchday ${f.ev}` : "", season, src: "fpl", live: !!f.live,
+      };
+    });
+    const players = js.players.map(p => ({ ...p, team: team[p.t] })).filter(p => p.team);
+    const status = [{ comp: "PL", season, url, ok: true, n: matches.length, played: matches.filter(m => m.hg !== null).length,
+      last: matches.filter(m => m.hg !== null).map(m => m.date).sort().pop(), players: players.length, updated: js.updated }];
+    return { matches, players, updated: js.updated, nextDeadline: js.nextDeadline, status };
+  }
+
   /* Łączenie źródeł: ten sam mecz (rozgrywki + drużyny + data ±3 dni) występuje raz.
      Pierwszeństwo: wynik ręczny > football-data > openfootball. */
-  const RANK = { manual: 3, "football-data": 2, openfootball: 1 };
+  const RANK = { manual: 4, "football-data": 3, fpl: 2, openfootball: 1 };
   function merge(lists) {
     const map = new Map();
     const dayNum = d => Math.round(new Date(d).getTime() / 86400000);
@@ -197,7 +221,7 @@
     return out.sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || "")));
   }
 
-  const api = { parseTxt, loadOpenfootball, loadFootballData, merge, canon, key, seasonStart, seasonLabel };
+  const api = { parseTxt, loadOpenfootball, loadFootballData, loadFpl, merge, canon, key, seasonStart, seasonLabel };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.FData = api;
 })(typeof self !== "undefined" ? self : this);
