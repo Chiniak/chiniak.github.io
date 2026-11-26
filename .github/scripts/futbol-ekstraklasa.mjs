@@ -3,7 +3,7 @@
 // new_league_fixtures.csv – najbliższe mecze z kursami (plik uzupełniany ok. 2 razy w tygodniu).
 // TheSportsDB (darmowy klucz 123) – terminarz 3 najbliższych kolejek, żeby mecze były widoczne wcześniej (bez kursów;
 // darmowy klucz nie oddaje całego sezonu, ale oddaje pełne kolejki). Daty dalszych kolejek bywają orientacyjne.
-// Zapis: futbol/dane/ekstraklasa.json = { updated, rows: [ { k: start UTC, h, a, f?: [gole gosp., gole gościa], o?: [1, X, 2, bukmacher], r?: kolejka } ] }
+// Zapis: futbol/dane/ekstraklasa.json = { updated, league: logo ligi, badges: { klub: herb }, rows: [ { k: start UTC, h, a, f?: [gole gosp., gole gościa], o?: [1, X, 2, bukmacher], r?: kolejka } ] }
 // Nazwy klubów jak w football-data; ładne nazwy nadaje futbol/data.js. Godziny w plikach są czasu brytyjskiego.
 // Uruchomienie: node .github/scripts/futbol-ekstraklasa.mjs
 import { writeFile, readFile } from "node:fs/promises";
@@ -78,6 +78,7 @@ function toFd(n) {
   return c[0] || n;
 }
 let ns = 0;
+const badges = {}; let leagueBadge = null; // herby klubów i logo ligi z TheSportsDB (z meczów w terminarzu)
 try {
   const DB = "https://www.thesportsdb.com/api/v1/json/123", season = `${y0}-${y0 + 1}`;
   const nx = JSON.parse(await get(`${DB}/eventsnextleague.php?id=4422`)).events?.[0];
@@ -85,6 +86,9 @@ try {
   if (r0) for (let r = r0; r < r0 + 3; r++) {
     const ev = JSON.parse(await get(`${DB}/eventsround.php?id=4422&r=${r}&s=${season}`)).events || [];
     for (const e of ev) {
+      if (e.strHomeTeamBadge) badges[toFd(e.strHomeTeam)] = e.strHomeTeamBadge;
+      if (e.strAwayTeamBadge) badges[toFd(e.strAwayTeam)] = e.strAwayTeamBadge;
+      if (e.strLeagueBadge) leagueBadge = e.strLeagueBadge;
       if (e.intHomeScore !== null && e.intHomeScore !== "" && e.intHomeScore !== undefined) continue; // rozegrane – wynik jest z football-data
       if (!e.dateEvent) continue;
       const k = `${e.dateEvent}T${(e.strTime || "12:00").slice(0, 5)}Z`, h = toFd(e.strHomeTeam), a = toFd(e.strAwayTeam);
@@ -101,6 +105,9 @@ if (played < 200) throw new Error("za mało meczów – nie zapisuję");
 
 let prev = null;
 try { prev = JSON.parse(await readFile(OUT, "utf8")); } catch { /* brak pliku */ }
-if (prev && JSON.stringify(prev.rows) === JSON.stringify(rows)) { console.log("bez zmian"); process.exit(0); }
-await writeFile(OUT, JSON.stringify({ updated: new Date().toISOString(), rows }));
+// herby z poprzednich pobrań zostają (klub może nie grać w najbliższych kolejkach)
+const allBadges = { ...(prev?.badges || {}), ...badges }, league = leagueBadge || prev?.league || null;
+if (prev && JSON.stringify([prev.rows, prev.badges, prev.league]) === JSON.stringify([rows, allBadges, league])) { console.log("bez zmian"); process.exit(0); }
+await writeFile(OUT, JSON.stringify({ updated: new Date().toISOString(), league, badges: allBadges, rows }));
+console.log(`herby: ${Object.keys(allBadges).length} klubów`);
 console.log("zapisano");

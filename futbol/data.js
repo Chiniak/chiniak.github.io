@@ -48,7 +48,7 @@
     })).filter(r => r.xi.length);
     return { odds, lineups, at: Date.now() };
   }
-  const leagueLogo = code => COMP[code]?.logo ? `https://a.espncdn.com/combiner/i?img=/i/leaguelogos/soccer/500/${COMP[code].logo}.png&w=64&h=64` : null;
+  const leagueLogo = code => COMP[code]?.logoUrl || (COMP[code]?.logo ? `https://a.espncdn.com/combiner/i?img=/i/leaguelogos/soccer/500/${COMP[code].logo}.png&w=64&h=64` : null);
 
   // sezon zaczyna się w lipcu: listopad 2026 → 2026, marzec 2027 → 2026
   function seasonStart(d = new Date()) { return d.getMonth() >= 6 ? d.getFullYear() : d.getFullYear() - 1; }
@@ -154,9 +154,11 @@
   const loadEk = async (url = "dane/ekstraklasa.json") => parseEk(await getJson(url));
   function parseEk(js) {
     const teams = {}, matches = [];
+    if (js.league) COMP.EK.logoUrl = js.league + "/tiny";
     const nameOf = n => {
       const x = EK_TEAMS[n], name = canon(x ? x[0] : n);
-      if (!teams[name]) teams[name] = { short: x ? x[1] : n, abbr: x ? x[2] : n.slice(0, 3).toUpperCase(), color: x ? x[3] : null, logo: null };
+      // herb z TheSportsDB w mniejszym rozmiarze (/small); gdy się nie wczyta – kółko w barwach klubu
+      if (!teams[name]) teams[name] = { short: x ? x[1] : n, abbr: x ? x[2] : n.slice(0, 3).toUpperCase(), color: x ? x[3] : null, logo: js.badges?.[n] ? js.badges[n] + "/small" : null };
       return name;
     };
     for (const r of js.rows) {
