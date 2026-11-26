@@ -453,7 +453,8 @@
   }
 
   /* ---------- kursy i zakłady ---------- */
-  const STAKE = 10; // przykładowa stawka w zł do liczenia bilansu
+  const STAKE = 10; // przykładowa stawka w funtach (£) do liczenia bilansu
+  const money = x => `£${fx(Math.abs(x))}`;
   const fx = x => x.toFixed(2).replace(".", ",");
   function mlabel(k, m) {
     const H = short(m.home), A = short(m.away);
@@ -528,13 +529,13 @@
     const akoP = ako.reduce((s, x) => s * x.p, 1), akoO = ako.reduce((s, x) => s * (x.book?.v || 1 / x.p), 1);
     const val = valueBets(days).slice(0, 8);
     S._betList = [...top, ...val];
-    let h = `<div class="card warn small"><b>18+ · Zakłady to ryzyko.</b> Nawet zakład z szansą 80% przegrywa średnio co piąty raz, a bukmacher ma w kursach marżę (ok. 5–8%). W Polsce legalnie można grać tylko u bukmacherów z licencją Ministerstwa Finansów. Propozycje to przykłady z modelu, nie pewniaki.</div>
+    let h = `<div class="card warn small"><b>18+ · Zakłady to ryzyko.</b> Nawet zakład z szansą 80% przegrywa średnio co piąty raz, a bukmacher ma w kursach marżę (ok. 5–8%). W Wielkiej Brytanii graj tylko u bukmacherów z licencją UK Gambling Commission. Propozycje to przykłady z modelu, nie pewniaki. Pomoc: <a href="https://www.begambleaware.org" target="_blank" rel="noopener">BeGambleAware</a>, samowykluczenie: <a href="https://www.gamstop.co.uk" target="_blank" rel="noopener">GAMSTOP</a>.</div>
       <div class="chips">${[[1, "Dziś i jutro"], [3, "3 dni"], [7, "7 dni"]].map(([d, l]) => `<button class="chip${days === d ? " on" : ""}" data-betdays="${d}">${l}</button>`).join("")}</div>
       <h2>Najpewniejsze zakłady (${cands.length} meczów)</h2>`;
     h += top.length ? top.map((x, i) => betRow(x, i)).join("") : `<div class="card empty">Brak meczów w tym okresie.</div>`;
     if (ako.length === 3) {
       h += `<h2>Przykładowy kupon – 3 najpewniejsze</h2><div class="card">${ako.map(x => `<div class="list-row" data-match="${esc(x.m.id)}"><span class="x"><b>${esc(mlabel(x.k, x.m))}</b><br><span class="small muted">${esc(short(x.m.home))} – ${esc(short(x.m.away))} · ${fmtDate(x.m.date, false)}</span></span><span class="s">${pct(x.p)}</span></div>`).join("")}
-        <div class="stats"><div class="stat"><b>${pct(akoP)}</b><span>szansa, że wejdą wszystkie 3</span></div><div class="stat"><b>${fx(akoO)}</b><span>kurs łączny${ako.some(x => !x.book) ? " (część uczciwa)" : ""}</span></div><div class="stat"><b>${fx(akoO * STAKE)} zł</b><span>wypłata ze stawki ${STAKE} zł</span></div></div>
+        <div class="stats"><div class="stat"><b>${pct(akoP)}</b><span>szansa, że wejdą wszystkie 3</span></div><div class="stat"><b>${fx(akoO)}</b><span>kurs łączny${ako.some(x => !x.book) ? " (część uczciwa)" : ""}</span></div><div class="stat"><b>${money(akoO * STAKE)}</b><span>wypłata ze stawki ${money(STAKE)}</span></div></div>
         <p class="small muted" style="margin-bottom:0">W teście na rozegranych meczach takie kupony wchodziły w ok. 47% przypadków (model zapowiadał 52%) – każde dodatkowe zdarzenie mnoży ryzyko.</p></div>`;
     }
     h += `<h2>Okazje według modelu</h2><div class="small muted" style="margin:-2px 2px 8px">Zakłady, w których model daje wyraźnie więcej szans niż wynika z kursu (przewaga 8–35%, tylko kluby z co najmniej 8 meczami w danych). Kursy bukmacherów zwykle są trafniejsze niż model, bo uwzględniają składy i wiadomości – to ciekawostka, nie przepis na zysk.</div>`;
@@ -605,12 +606,12 @@
       <div class="stat"><b>${pts}</b><span>punkty (3 za wynik, 1 za 1X2)</span></div>
       <div class="stat"><b>${sdone.length ? pct(oc / sdone.length) : "–"}</b><span>trafione 1X2${withModel.length ? ` · model ${pct(mo / withModel.length)}` : ""}</span></div>
       <div class="stat"><b>${ex}</b><span>dokładnych wyników</span></div>
-      ${bets.length ? `<div class="stat"><b>${betsDone.filter(x => x.r.win).length}/${betsDone.length}</b><span>wygrane zakłady (${bets.length - betsDone.length} czeka)</span></div><div class="stat"><b style="color:${bal >= 0 ? "var(--win)" : "var(--loss)"}">${bal >= 0 ? "+" : ""}${fx(bal)} zł</b><span>bilans przy stawce ${STAKE} zł</span></div>` : ""}</div>
+      ${bets.length ? `<div class="stat"><b>${betsDone.filter(x => x.r.win).length}/${betsDone.length}</b><span>wygrane zakłady (${bets.length - betsDone.length} czeka)</span></div><div class="stat"><b style="color:${bal >= 0 ? "var(--win)" : "var(--loss)"}">${bal >= 0 ? "+" : "−"}${money(bal)}</b><span>bilans przy stawce ${money(STAKE)}</span></div>` : ""}</div>
       <div class="chips">${[["all", "Wszystkie"], ["pend", `Oczekujące (${pend.length})`], ["done", `Rozliczone (${done.length})`]].map(([k, l]) => `<button class="chip${f === k ? " on" : ""}" data-tipf="${k}">${l}</button>`).join("")}</div>`;
     const card = ({ t, r }) => {
       const m = r.m;
       if (t.kind === "bet") {
-        const st = r.done ? (r.win ? `<span class="tag ok">wygrany · +${fx(r.profit)} zł</span>` : `<span class="tag bad">przegrany · −${STAKE} zł</span>`) : `<span class="tag wait">${m?.live ? `na żywo ${m.live[0]}–${m.live[1]}` : "oczekuje"}</span>`;
+        const st = r.done ? (r.win ? `<span class="tag ok">wygrany · +${money(r.profit)}</span>` : `<span class="tag bad">przegrany · −${money(STAKE)}</span>`) : `<span class="tag wait">${m?.live ? `na żywo ${m.live[0]}–${m.live[1]}` : "oczekuje"}</span>`;
         return `<div class="card tip">
           <div class="m-meta"><span>${compTag(t.comp)} <span class="tag ex">zakład</span></span><span>${fmtDate(t.date)}${t.time ? " · " + esc(t.time) : ""}</span></div>
           <div class="list-row" ${m ? `data-match="${esc(m.id)}"` : ""} style="border:0;padding:4px 0">${badge(t.home)}<span class="x"><b>${esc(short(t.home))} – ${esc(short(t.away))}</b></span>${badge(t.away)}</div>
