@@ -762,10 +762,10 @@
   function mlabel(k, m) {
     const H = short(m.home), A = short(m.away);
     return (LANG === "en"
-      ? { "1": `${H} win`, X: "Draw", "2": `${A} win`, "1X": `${H} or draw`, X2: `${A} or draw`, "12": "No draw (either team wins)",
+      ? { "1": `${H} win`, X: "Draw", "2": `${A} win`, "1X": `${H} win or draw`, X2: `${A} win or draw`, "12": `${H} or ${A} wins (no draw)`,
         "O1.5": "Over 1.5 goals", "U1.5": "Under 1.5 goals", "O2.5": "Over 2.5 goals", "U2.5": "Under 2.5 goals",
         "O3.5": "Over 3.5 goals", "U3.5": "Under 3.5 goals", BTTS: "Both teams to score", NBTTS: "Not both to score" }
-      : { "1": `Wygrana ${H}`, X: "Remis", "2": `Wygrana ${A}`, "1X": `${H} lub remis`, X2: `${A} lub remis`, "12": "Bez remisu (ktoś wygra)",
+      : { "1": `Wygrana ${H}`, X: "Remis", "2": `Wygrana ${A}`, "1X": `${H} wygra lub remis`, X2: `${A} wygra lub remis`, "12": `Wygra ${H} albo ${A} (bez remisu)`,
         "O1.5": "Powyżej 1,5 gola", "U1.5": "Poniżej 1,5 gola", "O2.5": "Powyżej 2,5 gola", "U2.5": "Poniżej 2,5 gola",
         "O3.5": "Powyżej 3,5 gola", "U3.5": "Poniżej 3,5 gola", BTTS: "Obie drużyny strzelą", NBTTS: "Nie obie strzelą" })[k] || k;
   }
@@ -840,8 +840,8 @@
     const m = x.m, saved = betsFor(m).some(b => b.market === x.k), mp = marketProb(m, x.k);
     return `<div class="card bet">
       <div class="m-meta"><span>${compTag(m.comp)}</span><span>${fmtDate(m.date)}${m.time ? " · " + esc(m.time) : ""}</span></div>
-      <div class="list-row" data-match="${esc(m.id)}" style="border:0;padding:4px 0">${badge(m.home)}<span class="x"><b>${esc(short(m.home))} – ${esc(short(m.away))}</b></span>${badge(m.away)}</div>
-      <div class="betline"><div><div class="bmk">${esc(mlabel(x.k, m))}</div><div class="small muted">${x.src ? `${L("szansa z kursów", "chance from odds")}${x.pm !== undefined ? ` · ${L("wg modelu", "model")} ${pct(x.pm)}` : ""}` : `${L("szansa wg modelu", "model's chance")}${mp !== null ? ` · ${L("wg bukmachera", "bookmaker")} <b>${pct(mp)}</b>` : ""}`} · ${L("kurs uczciwy", "fair odds")} ${fx(1 / x.p)}</div></div><div class="bp">${pct(x.p)}</div></div>
+      <div class="list-row bteams" data-match="${esc(m.id)}" style="border:0;padding:4px 0">${badge(m.home)}<b>${esc(short(m.home))}</b><span class="muted">–</span><b>${esc(short(m.away))}</b>${badge(m.away)}</div>
+      <div class="betline"><div><div class="bmk">${esc(mlabel(x.k, m))}</div><div class="small muted">${x.src ? `${L("szansa z kursów", "chance from odds")}${x.pm !== undefined ? ` · ${L("wg modelu", "model")} ${pct(x.pm)}` : ""}` : `${L("szansa wg modelu", "model's chance")}${mp !== null ? ` · ${L("wg bukmachera", "bookmaker")} <b>${pct(mp)}</b>` : ""}`} · ${L("kurs uczciwy", "fair odds")} ${fx(1 / x.p)}</div></div><div class="bp">${pct(x.p)}<small>${L("szansa, że zakład wejdzie", "chance the bet wins")}</small></div></div>
       <div class="tipfoot">${oddsTag(x)}<button class="btn sec small-btn" data-savebet="${i}"${saved ? " disabled" : ""}>${saved ? L("Zapisany", "Saved") : L("Zapisz", "Save")}</button></div></div>`;
   }
   function viewBets() {
