@@ -188,3 +188,21 @@ td.t .badge.has-logo { border-width: 0; }
 .club .badge.lg { width: 60px; height: 60px; }
 tr.z-top td:first-child { box-shadow: inset 3px 0 var(--cl); }
 tr.z-mid td:first-child { box-shadow: inset 3px 0 #f28c28; }
+
+/* moje typy */
+.tipline { margin-top: 8px; font-size: 13px; color: var(--accent); font-weight: 600; }
+.tipfoot { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.tag.ex { background: var(--chip); color: var(--muted); }
+.card.tip.ex { border-style: dashed; }
+.small-btn { padding: 6px 12px; font-size: 13px; }
+.toast { position: fixed; left: 50%; bottom: calc(80px + env(safe-area-inset-bottom)); transform: translate(-50%, 20px); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-weight: 600; font-size: 14px; opacity: 0; pointer-events: none; transition: .2s; z-index: 30; }
+.toast.on { opacity: 1; transform: translate(-50%, 0); }
+.tabs button { font-size: 11px; }
+.oddsline { margin-top: 8px; font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.oddsline b { color: var(--ink); }
+.betline { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 6px; }
+.bmk { font-weight: 750; font-size: 16px; }
+.bp { font-size: 26px; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; }
+.card.warn { background: #fff4d6; border-color: #f0d68a; color: #5b4300; }
+@media (prefers-color-scheme: dark) { .card.warn { background: #3a2f10; border-color: #5a4818; color: #f5dc93; } }
+.btn:disabled { opacity: .55; cursor: default; }

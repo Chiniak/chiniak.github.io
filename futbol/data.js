@@ -64,7 +64,9 @@
 
   /* ESPN: { updated, teams: { id: { n, s, a, c, l } }, comps: { kod: [ { k, h, a, f?, r?, x?, p?, live?, st? } ] } } */
   const loadEspn = async (url = "dane/espn.json") => parseEspn(await getJson(url));
-  function parseEspn(js) {
+  // kursy: [1, X, 2, linia gola, powyżej, poniżej, bukmacher] → obiekt
+  const oddsObj = o => o && { h: o[0], d: o[1], a: o[2], line: o[3], over: o[4], under: o[5], book: o[6] || "" };
+  function parseEspn(js, kursy) {
     const teams = {}, byId = {};
     for (const [id, t] of Object.entries(js.teams)) {
       const name = canon(t.n);
@@ -86,6 +88,7 @@
           hg: played ? reg[0] : null, ag: played ? reg[1] : null,
           aet: r.x ? r.f : null, pens: r.p && r.p[0] !== null ? r.p : null, live: r.live || null,
           comp, round: ROUND[r.st] || "", season: seasonOf(date), neutral: r.st === "final", src: "espn",
+          odds: oddsObj(r.o || kursy?.[`${comp}|${r.k}|${r.h}|${r.a}`]) || null,
         });
       }
       const pl = rows.filter(r => r.f);
@@ -142,7 +145,7 @@
       const same = cands.find(c => Math.abs(dayNum(c.date) - dayNum(m.date)) <= 3 || (!COMP[m.comp]?.cup && c.season === m.season));
       if (!same) { cands.push(m); byPair.set(pk, cands); out.push(m); continue; }
       const better = (RANK[m.src] || 0) >= (RANK[same.src] || 0);
-      if (better && (has(m) || !has(same))) Object.assign(same, { ...m, round: m.round || same.round, neutral: m.neutral ?? same.neutral, aet: m.aet ?? same.aet, pens: m.pens ?? same.pens });
+      if (better && (has(m) || !has(same))) Object.assign(same, { ...m, round: m.round || same.round, neutral: m.neutral ?? same.neutral, aet: m.aet ?? same.aet, pens: m.pens ?? same.pens, odds: m.odds || same.odds });
       else if (!has(same) && has(m)) Object.assign(same, { hg: m.hg, ag: m.ag, src: m.src });
     }
     for (const m of out) m.id = `${m.comp}-${m.season}-${key(m.home)}-${key(m.away)}-${m.date}`.replace(/\s/g, "_");

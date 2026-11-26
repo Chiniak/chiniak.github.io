@@ -5,6 +5,8 @@ import { writeFile, mkdir, readFile } from "node:fs/promises";
 
 const API = "https://site.api.espn.com/apis/site/v2/sports/soccer";
 const OUT = new URL("../../futbol/dane/espn.json", import.meta.url);
+// archiwum kursów: ESPN pokazuje kursy tylko przed meczem, więc zapisujemy ostatnie przedmeczowe na stałe
+const ODDS = new URL("../../futbol/dane/kursy.json", import.meta.url);
 // [kod ESPN, nasz kod] – nazwy i kolejność wyświetlania są w futbol/app.js
 const COMPS = [
   ["eng.1", "PL"], ["esp.1", "ES1"], ["ger.1", "DE1"], ["ita.1", "IT1"], ["fra.1", "FR1"],
@@ -30,6 +32,23 @@ const y0 = now.getUTCMonth() >= 6 ? now.getUTCFullYear() : now.getUTCFullYear() 
 const from = `${y0 - 1}-07-01`;
 const years = [y0 - 1, y0, y0 + 1];
 
+// kursy amerykańskie → dziesiętne (+150 → 2.50, −200 → 1.50)
+function dec(a) {
+  const x = parseFloat(a);
+  if (!isFinite(x) || x === 0) return null;
+  return Math.round((x > 0 ? 1 + x / 100 : 1 + 100 / -x) * 100) / 100;
+}
+// [1, X, 2, linia gola, powyżej, poniżej, bukmacher] – kursy zamknięcia, a gdy ich brak – otwarcia
+function odds(c) {
+  const o = (c.odds || []).find(x => x && x.moneyline);
+  if (!o) return null;
+  const pick = v => dec(v?.close?.odds ?? v?.open?.odds);
+  const ml = o.moneyline, t = o.total || {};
+  const line = parseFloat(String(t.over?.close?.line ?? t.over?.open?.line ?? "").replace(/^[ou]/, "")) || o.overUnder || null;
+  const r = [pick(ml.home), pick(ml.draw), pick(ml.away), line, pick(t.over), pick(t.under), o.provider?.name || ""];
+  return r[0] && r[1] && r[2] ? r : null;
+}
+
 // gole do 90. minuty (z doliczonym czasem) – do modelu; dogrywka i karne osobno
 const minute = s => parseInt(String(s || "").replace(/[^\d].*$/, ""), 10);
 function regulation(c, homeId) {
@@ -41,6 +60,9 @@ function regulation(c, homeId) {
   return [h, a];
 }
 
+let archive = {};
+try { archive = JSON.parse(await readFile(ODDS, "utf8")); } catch { /* pierwsze uruchomienie */ }
+const archiveBefore = JSON.stringify(archive);
 const teams = {};
 const out = { updated: null, from, teams, comps: {} };
 for (const [slug, code] of COMPS) {
@@ -60,6 +82,8 @@ for (const [slug, code] of COMPS) {
       const name = st.name || "";
       if (/POSTPONED|CANCELED|CANCELLED|ABANDONED|DELAYED/.test(name)) continue;
       const row = { k: e.date, h: H.team.id, a: A.team.id };
+      const od = !st.completed && st.state !== "in" ? odds(c) : null;
+      if (od) { row.o = od; archive[`${code}|${e.date}|${H.team.id}|${A.team.id}`] = od; }
       if (st.completed) {
         row.f = [+H.score, +A.score];
         if (/AET|PEN/.test(name)) { row.r = regulation(c, H.team.id); row.x = 1; }
@@ -74,6 +98,10 @@ for (const [slug, code] of COMPS) {
   console.log(`${code}: ${rows.length} meczów, ${rows.filter(r => r.f).length} rozegranych`);
 }
 if (Object.values(out.comps).reduce((s, r) => s + r.length, 0) < 2000) throw new Error("za mało meczów – nie zapisuję");
+
+// archiwum: tylko mecze z ostatnich 2 sezonów
+for (const k of Object.keys(archive)) if (k.split("|")[1] < from) delete archive[k];
+if (JSON.stringify(archive) !== archiveBefore) { await mkdir(new URL(".", ODDS), { recursive: true }); await writeFile(ODDS, JSON.stringify(archive)); console.log(`kursy: ${Object.keys(archive).length} meczów w archiwum`); }
 
 // zapis tylko przy zmianie danych
 let prev = null;
