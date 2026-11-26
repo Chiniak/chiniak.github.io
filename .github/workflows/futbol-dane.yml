@@ -1,0 +1,34 @@
+name: Futbol – dane FPL (kontuzje, forma, wyniki, xG)
+
+on:
+  schedule:
+    - cron: "17 */3 * * *"   # co 3 godziny
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: futbol-dane
+  cancel-in-progress: false
+
+jobs:
+  pobierz:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node .github/scripts/futbol-fpl.mjs
+      - run: node .github/scripts/futbol-xg.mjs
+      - name: Zapisz zmiany
+        run: |
+          if [ -z "$(git status --porcelain -- futbol/dane)" ]; then echo "brak zmian"; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add futbol/dane
+          git commit -m "Futbol: aktualizacja danych FPL"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push
