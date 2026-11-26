@@ -9,7 +9,7 @@ Użytkownik mieszka w Anglii – zakłady w £, ostrzeżenie UK Gambling Commiss
   wynikiem; wyszukiwarka wszystkich klubów; niżej siatka klubów wybranych rozgrywek. Typuj – wybór klubów z wyszukiwarką.
 - `model.js` – model: Poisson + Dixon-Coles, ważenie świeżości, Elo, symulacja sezonu, test wsteczny, rynki zakładów
 - `data.js` – wczytywanie i łączenie danych z `dane/`
-- `sw.js` – offline; **przy każdej zmianie plików podbij `CACHE`** (teraz `futbol-v16`)
+- `sw.js` – offline; **przy każdej zmianie plików podbij `CACHE`** (teraz `futbol-v17`)
 - `dane/` – pliki odświeżane przez GitHub Action (nie edytować ręcznie)
 
 ## Dane (`.github/workflows/futbol-dane.yml`, co 3 godziny, commit tylko przy zmianie)
@@ -89,6 +89,11 @@ Użytkownik mieszka w Anglii – zakłady w £, ostrzeżenie UK Gambling Commiss
 - archiwum `kursy.json` (DraftKings z ESPN) przyda się głównie dla LM i LE – ligi mają już kursy bet365 z football-data
 - football-data ma też `fixtures.csv` z kursami bet365 na nadchodzące mecze (użytkownik na razie nie chce bet365 przez API-Football)
 - Remote Control: użytkownik chce później połączyć komputer (Claude Desktop → Ustawienia → Claude Code → Remote Control)
+
+## Test
+`node .github/scripts/futbol-test.mjs` (ok. 1 s, bez sieci): składnia plików, liczba meczów w każdych rozgrywkach, łączenie
+polskich klubów, kursy i xG, test wsteczny PL/LaLiga/Ekstraklasa z progami, prognoza z kursów. Workflow `futbol-test.yml`
+uruchamia go przy każdej zmianie w `futbol/` i w PR. Ustawienia modelu w teście (FIT) muszą być takie jak w `app.js`.
 
 ## Sposób pracy
 Gałąź `claude/football-prediction-app-ps2t97` (po scaleniu odtwarzana od `main`). Każdą zmianę testuję w przeglądarce

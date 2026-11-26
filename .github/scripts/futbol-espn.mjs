@@ -60,6 +60,7 @@ function regulation(c, homeId) {
   return [h, a];
 }
 
+const STAGES = new Set(["league-phase", "knockout-round-playoffs", "round-of-16", "quarterfinals", "semifinals", "final"]);
 const stat = (c, name) => { const v = (c.statistics || []).find(x => x.name === name)?.displayValue; return v === undefined || v === "" ? NaN : +v; };
 
 let archive = {};
@@ -95,7 +96,8 @@ for (const [slug, code] of COMPS) {
         if (/AET|PEN/.test(name)) { row.r = regulation(c, H.team.id); row.x = 1; }
         if (/PEN/.test(name)) row.p = [H.shootoutScore ?? null, A.shootoutScore ?? null];
       } else if (st.state === "in") row.live = [+H.score || 0, +A.score || 0];
-      if (e.season?.slug && !/regular-season/.test(e.season.slug)) row.st = e.season.slug;
+      // etap tylko w pucharach (faza ligowa, baraże, 1/8…) – w ligach ESPN podaje tu nazwę sezonu, niepotrzebną aplikacji
+      if (STAGES.has(e.season?.slug)) row.st = e.season.slug;
       rows.push(row);
     }
   }
