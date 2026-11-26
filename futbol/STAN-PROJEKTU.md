@@ -9,7 +9,7 @@ Użytkownik mieszka w Anglii – zakłady w £, ostrzeżenie UK Gambling Commiss
   wynikiem; wyszukiwarka wszystkich klubów; niżej siatka klubów wybranych rozgrywek. Typuj – wybór klubów z wyszukiwarką.
 - `model.js` – model: Poisson + Dixon-Coles, ważenie świeżości, Elo, symulacja sezonu, test wsteczny, rynki zakładów
 - `data.js` – wczytywanie i łączenie danych z `dane/`
-- `sw.js` – offline; **przy każdej zmianie plików podbij `CACHE`** (teraz `futbol-v24`)
+- `sw.js` – offline; **przy każdej zmianie plików podbij `CACHE`** (teraz `futbol-v25`)
 - `dane/` – pliki odświeżane przez GitHub Action (nie edytować ręcznie)
 
 ## Dane (`.github/workflows/futbol-dane.yml`, co godzinę, commit tylko przy zmianie)
@@ -115,6 +115,15 @@ szczegóły meczu – do 5 na drużynę. Nazw klubów nie odmieniamy („Na korz
 `node .github/scripts/futbol-test.mjs` (ok. 1 s, bez sieci): składnia plików, liczba meczów w każdych rozgrywkach, łączenie
 polskich klubów, kursy i xG, test wsteczny PL/LaLiga/Ekstraklasa z progami, prognoza z kursów. Workflow `futbol-test.yml`
 uruchamia go przy każdej zmianie w `futbol/` i w PR. Ustawienia modelu w teście (FIT) muszą być takie jak w `app.js`.
+
+## Na żywo i historia kolejek (od 27.11.2026)
+- Na żywo: aplikacja co minutę (tylko gdy widoczna i są mecze od 15 min przed do 2,5 godz. po początku) pobiera
+  tablicę wyników ESPN (`D.loadScoreboard`, dzień meczu i dzień wcześniej – ESPN liczy dni wg czasu USA); stan, minuta,
+  wynik, gole (karne, samobójcze), czerwone kartki. Sekcja „Na żywo” na górze zakładki Mecze ze wszystkich rozgrywek;
+  dopasowanie po rozgrywkach + id drużyn ESPN (`S.teams[n].id`). Ekstraklasy brak (ESPN jej nie ma).
+- Historia: zakładka Mecze → „Wyniki” kolejka po kolejce (‹ ›, wybór sezonu), z ✓/✗ prognozy sprzed meczu (`preMatch`).
+  Numery kolejek liczone w `assignRounds` (kolejka = max(rozegrane przez obie drużyny) + 1), w pucharach faza ligowa
+  tak samo, dalej etapy (`m.round`).
 
 ## Język (od 27.11.2026)
 Polski (domyślnie) i angielski – przełącznik na górze zakładki Dane, zapis w localStorage `futbol.lang` (celowo bez

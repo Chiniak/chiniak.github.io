@@ -229,3 +229,26 @@ tr.z-mid td:first-child { box-shadow: inset 3px 0 #f28c28; }
 .why-card ul { margin: 4px 0 10px; padding-left: 18px; }
 .why-card li { margin: 3px 0; }
 .why-h { margin: 8px 0 0; font-weight: 700; }
+
+/* na żywo */
+.live-h { color: var(--loss); }
+.tag.live-tag { background: color-mix(in srgb, var(--loss) 18%, transparent); color: var(--loss); animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .tag.live-tag { animation: none; } }
+.live-ev { margin-top: 8px; line-height: 1.45; text-align: left; color: var(--ink); }
+.live-txt { color: var(--loss); }
+
+/* historia: kolejka po kolejce */
+.rnav { display: flex; align-items: center; gap: 8px; }
+.rnav .btn { min-width: 40px; font-size: 18px; line-height: 1; }
+.rnav .btn[disabled] { opacity: .35; }
+.rtitle { flex: 1; text-align: center; display: flex; flex-direction: column; }
+.rrow { gap: 6px; }
+.rrow .d { width: 30px; font-size: 11px; }
+.rteams { display: grid !important; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 6px; white-space: nowrap; }
+.rt { display: flex; align-items: center; gap: 5px; min-width: 0; }
+.rt.r { justify-content: flex-end; }
+.rt .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.rs { min-width: 34px; text-align: center; }
+.rp { width: 46px; text-align: right; flex: none; font-size: 11.5px; }
+.badge.sm { width: 18px; height: 18px; font-size: 7px; border-width: 1px; flex: none; }

@@ -64,6 +64,7 @@
     elo: null, models: {}, bts: {}, btMap: new Map(), sims: {}, rest: new Map(), absCache: new Map(),
     tab: store.get(LS.tab, "mecze"), comp: store.get(LS.comp, "PL"), tableSeason: null, typ: null,
     tips: store.get(LS.tips, null), tipFilter: "all", typySub: "zaklady", betDays: 3,
+    live: {}, liveAt: 0, histSeason: null, histIdx: null,
   };
   if (!D.COMP[S.comp]) S.comp = "PL";
   const curSeason = () => D.seasonLabel(D.seasonStart());
@@ -84,6 +85,7 @@
     S.xgCount = xg ? D.attachXg(S.matches, xg) : 0;
     // gole z kursów dla rozegranych meczów, których nie policzył serwer (np. puchary z archiwum kursów ESPN – kilkaset)
     for (const m of S.matches) if (m.mxh === undefined && M.played(m) && m.odds?.h) { const f = M.fromOdds(m.odds, { total: 2.7 }); if (f) { m.mxh = f.xg.home; m.mxa = f.xg.away; } }
+    assignRounds(S.matches);
     S.players = fpl ? fpl.players.map(p => ({ ...p, team: D.canon(p.team) })) : [];
     S.elo = M.elo(S.matches);
     S.rest = new Map([...M.restDays(S.matches)].map(([m, x]) => [m.id, x]));
@@ -161,7 +163,7 @@
   /* ---------- ładowanie danych ---------- */
   async function load(force) {
     const cache = store.get(LS.cache, null);
-    if (cache?.espn && !S.raw) { S.raw = cache; S.fetchedAt = cache.at; compute(); render(); }
+    if (cache?.espn && !S.raw) { S.raw = cache; S.fetchedAt = cache.at; compute(); render(); pollLive(); }
     const fresh = !cache || force || Date.now() - (cache.at || 0) > 20 * 60 * 1000;
     if (!fresh) return;
     $("#refresh").classList.add("spin");
@@ -170,7 +172,7 @@
       S.raw = { espn, fpl, xg, kursy, fd, ek, at: Date.now() };
       S.fetchedAt = S.raw.at;
       if (!store.set(LS.cache, S.raw)) store.set(LS.cache, { espn, at: S.raw.at }); // za mało miejsca – przynajmniej wyniki
-      compute(); render();
+      compute(); render(); pollLive();
     } catch (e) {
       if (!S.raw) $("#view").innerHTML = `<div class="empty">${L("Nie udało się pobrać danych. Sprawdź internet i spróbuj ponownie.", "Could not load the data. Check your connection and try again.")}<div class="row" style="justify-content:center"><button class="btn" onclick="location.reload()">${L("Spróbuj ponownie", "Try again")}</button></div></div>`;
       else toastNotice(L("Brak połączenia – pokazuję zapisane dane z ", "No connection – showing saved data from ") + dt(S.fetchedAt));
@@ -277,23 +279,83 @@
     return `<div class="cbar" role="tablist">${list.map(c => `<button class="cchip${c.code === sel ? " on" : ""}" data-comp="${c.code}" role="tab" aria-selected="${c.code === sel}">${compLogo(c.code)}<span>${esc(compShort(c.code))}</span></button>`).join("")}</div>`;
   }
 
+  /* ---------- kolejki: ESPN nie podaje numerów kolejek w ligach, więc liczymy je z kolejności meczów każdej drużyny
+     (kolejka = o jeden więcej niż dotąd rozegrała którakolwiek z drużyn). Mecz przełożony dostaje późniejszy numer. ---------- */
+  function assignRounds(ms) {
+    const groups = new Map();
+    for (const m of ms) {
+      const cup = isCup(m.comp);
+      if (cup && m.round !== "Faza ligowa") continue;
+      const k = m.comp + "|" + m.season;
+      if (!groups.has(k)) groups.set(k, []);
+      groups.get(k).push(m);
+    }
+    for (const list of groups.values()) {
+      list.sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || "")));
+      const cnt = {};
+      for (const m of list) { const r = Math.max(cnt[m.home] || 0, cnt[m.away] || 0) + 1; m.rd = r; cnt[m.home] = cnt[m.away] = r; }
+    }
+  }
+
+  /* ---------- na żywo: tablica wyników ESPN co minutę, gdy aplikacja jest otwarta i trwają (albo zaraz zaczną się) mecze ---------- */
+  const kickoff = m => new Date(`${m.date}T${m.time || "12:00"}`);
+  const liveKey = (comp, h, a) => `${comp}|${h}|${a}`;
+  function liveOf(m) {
+    const h = S.teams[m.home]?.id, a = S.teams[m.away]?.id, x = h && a ? S.live[liveKey(m.comp, h, a)] : null;
+    return x && Math.abs(new Date(x.k) - kickoff(m)) < 36 * 3600e3 ? x : null;
+  }
+  // mecze, dla których warto pytać ESPN: od 15 min przed początkiem do 2,5 godz. po (lub trwające wg danych)
+  function liveCandidates() {
+    const now = Date.now();
+    return S.matches.filter(m => D.ESPN_SLUG[m.comp] && !M.played(m) && m.time && (m.live || (now - kickoff(m) > -15 * 60e3 && now - kickoff(m) < 150 * 60e3)));
+  }
+  async function pollLive() {
+    if (document.visibilityState !== "visible" || !S.raw) return;
+    const cands = liveCandidates();
+    if (!cands.length) return;
+    const ymd = d => d.toISOString().slice(0, 10).replace(/-/g, "");
+    const jobs = new Map();
+    for (const m of cands) { const k = kickoff(m), d1 = ymd(new Date(k - 5 * 3600e3)), d2 = ymd(k); for (const d of new Set([d1, d2])) jobs.set(m.comp + d, [m.comp, d]); }
+    const res = await Promise.allSettled([...jobs.values()].map(([c, d]) => D.loadScoreboard(c, d)));
+    let changed = false;
+    for (const r of res) if (r.status === "fulfilled") for (const x of r.value) {
+      const k = liveKey(x.comp, x.h, x.a), old = S.live[k];
+      if (!old || old.hs !== x.hs || old.as !== x.as || old.detail !== x.detail || old.state !== x.state) changed = true;
+      S.live[k] = x;
+    }
+    S.liveAt = Date.now();
+    if (changed && S.tab === "mecze" && $("#sheet").hidden) { const y = scrollY; render(); scrollTo(0, y); }
+  }
+  const evIcon = { goal: "⚽", pen: "⚽", og: "⚽", red: "🟥" };
+  function liveEvents(m, x) {
+    if (!x.ev.length) return "";
+    const hid = S.teams[m.home]?.id;
+    const side = t => x.ev.filter(e => (e.team === hid) === t).map(e => `${evIcon[e.kind]} ${esc(e.min)} ${esc(e.who)}${e.kind === "pen" ? L(" (k.)", " (pen)") : e.kind === "og" ? L(" (sam.)", " (og)") : ""}`).join(", ");
+    const hs = side(true), as = side(false);
+    return `<div class="live-ev small">${hs ? `<div><b>${esc(short(m.home))}:</b> ${hs}</div>` : ""}${as ? `<div><b>${esc(short(m.away))}:</b> ${as}</div>` : ""}</div>`;
+  }
+
   function matchCard(m) {
     const done = M.played(m);
+    const lv = !done ? liveOf(m) : null, isLive = lv && lv.state === "in", justEnded = lv && lv.state === "post";
     const p = pred(m);
     const bt = done ? S.btMap.get(m.id) : null;
     let mid;
     if (done) mid = `<div class="score">${m.hg}–${m.ag}${m.pens ? `<small>${L("k.", "pens")} ${m.pens[0]}–${m.pens[1]}</small>` : m.aet ? `<small>${L("po dogr.", "a.e.t.")} ${m.aet[0]}–${m.aet[1]}</small>` : ""}</div>`;
+    else if (isLive) mid = `<div class="score live">${lv.hs}–${lv.as}<small>${esc(lv.detail || L("na żywo", "live"))}</small></div>`;
+    else if (justEnded) mid = `<div class="score">${lv.hs}–${lv.as}<small>${L("koniec", "full time")}</small></div>`;
     else if (m.live) mid = `<div class="score live">${m.live[0]}–${m.live[1]}<small>${L("na żywo", "live")}</small></div>`;
     else mid = `<div class="score pred">${p.top[0].hg}–${p.top[0].ag}<small>${L("typ", "pick")}</small></div>`;
     let tag = "";
     if (bt) tag = bt.hit ? `<span class="tag ok">${L("model trafił", "model right")}</span>` : `<span class="tag bad">${L("model nie trafił", "model wrong")}</span>`;
-    else if (!done && !m.live && m.date < today()) tag = `<span class="tag wait">${L("czeka na wynik", "awaiting result")}</span>`;
+    else if (isLive) tag = `<span class="tag live-tag">● ${L("na żywo", "live")}</span>`;
+    else if (!done && !m.live && !justEnded && m.date < today()) tag = `<span class="tag wait">${L("czeka na wynik", "awaiting result")}</span>`;
     const miss = !done && injAdj(m) ? (() => { const n = t => (absences(t)?.list || []).filter(x => x.weight > 0.04).map(x => x.p.n); const k = [...n(m.home), ...n(m.away)]; return k.length ? `<div class="small muted" style="margin-top:6px">${L("Brakuje", "Missing")}: ${esc(k.slice(0, 4).join(", "))}${k.length > 4 ? L(` i ${k.length - 4} innych`, ` and ${k.length - 4} more`) : ""}</div>` : ""; })() : "";
     return `<button class="card match" data-match="${esc(m.id)}">
       <div class="m-meta"><span>${compTag(m.comp)}${m.round ? ` · ${esc(roundName(m.round))}` : ""}</span><span>${tag} ${fmtDate(m.date)}${m.time ? " · " + esc(m.time) : ""}</span></div>
       <div class="m-row">${teamEl(m.home)}${mid}${teamEl(m.away, true)}</div>
       ${done && !bt ? "" : probBar(bt ? { win: bt.probs[0], draw: bt.probs[1], loss: bt.probs[2] } : p)}
-      ${!done && !m.live ? explainLine(m) : ""}
+      ${lv && (isLive || justEnded) ? liveEvents(m, lv) : !done && !m.live ? explainLine(m) : ""}
       ${miss}
       ${!done && m.odds ? `<div class="oddsline">${L("Kursy", "Odds")}${m.odds.book ? ` ${esc(m.odds.book)}` : ""}: 1 <b>${fx(m.odds.h)}</b> · X <b>${fx(m.odds.d)}</b> · 2 <b>${fx(m.odds.a)}</b>${p.src ? L(" · prognoza z kursów", " · forecast from odds") : ""}</div>` : ""}
       ${tipLine(m)}
@@ -945,10 +1007,13 @@
     const mine = S.matches.filter(m => m.comp === c);
     const up = mine.filter(m => !M.played(m) && (m.date >= t || m.live));
     const horizon = up.length ? addDays(up[0].date, 9) : t;
-    const next = up.filter(m => m.date <= horizon);
+    const next = up.filter(m => m.date <= horizon && liveOf(m)?.state !== "in");
     const overdue = mine.filter(m => !M.played(m) && !m.live && m.date < t && m.season === curSeason());
     const recent = mine.filter(M.played).slice(-12).reverse();
-    let h = weekendHtml() + compBar(c);
+    // na żywo – ze wszystkich rozgrywek
+    const liveNow = S.matches.filter(m => !M.played(m) && liveOf(m)?.state === "in");
+    let h = liveNow.length ? `<h2 class="live-h">● ${L("Na żywo", "Live now")} (${liveNow.length})</h2>${liveNow.map(matchCard).join("")}<p class="small muted" style="margin:-4px 2px 10px">${L("Wyniki z ESPN, odświeżane co minutę", "Scores from ESPN, refreshed every minute")}${S.liveAt ? ` · ${new Date(S.liveAt).toLocaleTimeString(LOC(), { hour: "2-digit", minute: "2-digit" })}` : ""}</p>` : "";
+    h += weekendHtml() + compBar(c);
     h += `<h2>${L("Najbliższe mecze", "Upcoming matches")} · ${esc(compName(c))}</h2>`;
     h += next.length ? next.map(matchCard).join("") : `<div class="card empty">${D.COMP[c]?.src === "football-data"
       ? L(`Terminarz ${esc(compName(c))} chwilowo niedostępny. ESPN nie ma tej ligi – najbliższe kolejki pobieramy z TheSportsDB, a kursy z football-data.co.uk (ok. 1–2 dni przed kolejką). Mecze pojawią się tu same – dane odświeżane co 3 godziny.`, `${esc(compName(c))} fixtures are temporarily unavailable. ESPN does not cover this league – upcoming rounds come from TheSportsDB and odds from football-data.co.uk (about 1–2 days before each round). Matches will appear here automatically – data refreshes every 3 hours.`)
@@ -958,8 +1023,57 @@
       h += overdue.slice(-(S.showOverdue ? overdue.length : 6)).reverse().map(matchCard).join("");
       if (overdue.length > 6 && !S.showOverdue) h += `<button class="btn sec" data-more="overdue" style="width:100%">${L("Pokaż wszystkie", "Show all")}</button>`;
     }
-    h += `<h2>${L("Ostatnie wyniki", "Latest results")}</h2>` + (recent.length ? recent.map(matchCard).join("") : `<div class="card empty">${L("Brak wyników.", "No results.")}</div>`);
+    h += roundsHtml(c);
     return h;
+  }
+
+  /* ---------- historia meczów: kolejka po kolejce (w pucharach – etapy), z prognozą sprzed meczu ---------- */
+  const STAGES = ["Baraże", "1/8 finału", "Ćwierćfinał", "Półfinał", "Finał"];
+  function roundGroups(c, sea) {
+    const ms = S.matches.filter(m => m.comp === c && m.season === sea);
+    const gs = new Map();
+    for (const m of ms) {
+      let key, label, order;
+      if (m.rd) { key = "r" + m.rd; order = m.rd; label = isCup(c) ? `${L("Faza ligowa", "League phase")} · ${L(`kolejka ${m.rd}`, `matchday ${m.rd}`)}` : L(`Kolejka ${m.rd}`, `Matchday ${m.rd}`); }
+      else if (m.round) { const i = STAGES.indexOf(m.round); key = "s" + m.round; order = 100 + (i < 0 ? 50 : i); label = roundName(m.round); }
+      else continue;
+      if (!gs.has(key)) gs.set(key, { key, label, order, ms: [] });
+      gs.get(key).ms.push(m);
+    }
+    return [...gs.values()].sort((a, b) => a.order - b.order).map(g => ({ ...g, ms: g.ms.sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || ""))) }));
+  }
+  function roundsHtml(c) {
+    const seasons = [curSeason(), prevSeason()].filter(x => S.matches.some(m => m.comp === c && m.season === x && M.played(m)));
+    if (!seasons.length) return `<h2>${L("Wyniki", "Results")}</h2><div class="card empty">${L("Brak wyników.", "No results.")}</div>`;
+    const sea = seasons.includes(S.histSeason) ? S.histSeason : seasons[0];
+    const gs = roundGroups(c, sea);
+    if (!gs.length) return "";
+    // domyślnie: ostatnia kolejka z rozegranym meczem
+    let idx = S.histIdx !== null && S.histIdx < gs.length && S.histFor === c + sea ? S.histIdx : (() => { let k = 0; gs.forEach((g, i) => { if (g.ms.some(M.played)) k = i; }); return k; })();
+    S.histIdx = idx; S.histFor = c + sea;
+    const g = gs[idx];
+    const played = g.ms.filter(M.played), rows = played.map(m => ({ m, x: preMatch(m, true) })), ok = rows.filter(r => r.x), hits = ok.filter(r => r.x.hit).length;
+    const dates = g.ms.map(m => m.date).sort(), span = dates.length ? (dates[0] === dates[dates.length - 1] ? fmtDate(dates[0], false) : `${fmtDate(dates[0], false)} – ${fmtDate(dates[dates.length - 1], false)}`) : "";
+    const pickLab = (m, x) => { const i = x.main.probs.indexOf(Math.max(...x.main.probs)); return `${["1", "X", "2"][i]} ${pct(x.main.probs[i])}`; };
+    const row = m => {
+      const done = M.played(m), x = done ? preMatch(m, true) : null, lv = !done ? liveOf(m) : null;
+      const score = done ? `${m.hg}–${m.ag}` : lv && lv.state !== "pre" ? `<span class="live-txt">${lv.hs}–${lv.as}</span>` : m.time ? esc(m.time) : "–";
+      const mark = done ? (x ? `<span class="res ${x.hit ? "W" : "P"}">${x.hit ? "✓" : "✗"}</span>` : `<span class="res N">–</span>`) : `<span class="res N">·</span>`;
+      const wd = new Date(m.date + "T12:00:00").toLocaleDateString(LOC(), { weekday: "short" });
+      return `<div class="list-row rrow" data-match="${esc(m.id)}" title="${fmtDate(m.date)}">${mark}<span class="d">${wd}</span>
+        <span class="x rteams"><span class="rt">${badge(m.home, "sm")}<span class="nm">${esc(short(m.home))}</span></span><b class="rs">${score}</b><span class="rt r"><span class="nm">${esc(short(m.away))}</span>${badge(m.away, "sm")}</span></span>
+        <span class="small muted rp">${x ? pickLab(m, x) : !done ? (() => { const p = pred(m); const i = [p.win, p.draw, p.loss].indexOf(Math.max(p.win, p.draw, p.loss)); return `${["1", "X", "2"][i]} ${pct([p.win, p.draw, p.loss][i])}`; })() : ""}</span></div>`;
+    };
+    return `<h2>${L("Wyniki", "Results")} · ${esc(compName(c))}</h2>
+      ${seasons.length > 1 ? `<div class="chips">${seasons.map(x => `<button class="chip${x === sea ? " on" : ""}" data-hseason="${x}">${L("Sezon", "Season")} ${x.replace("-", "/")}</button>`).join("")}</div>` : ""}
+      <div class="card">
+        <div class="rnav"><button class="btn sec small-btn" data-hround="${idx - 1}"${idx === 0 ? " disabled" : ""} aria-label="${L("Poprzednia", "Previous")}">‹</button>
+          <div class="rtitle"><b>${esc(g.label)}</b><span class="small muted">${span}</span></div>
+          <button class="btn sec small-btn" data-hround="${idx + 1}"${idx === gs.length - 1 ? " disabled" : ""} aria-label="${L("Następna", "Next")}">›</button></div>
+        ${ok.length ? `<p class="small" style="margin:8px 0 4px">${L(`Prognoza trafiła <b>${hits} z ${ok.length}</b> meczów (${pct(hits / ok.length)})`, `Forecast right in <b>${hits} of ${ok.length}</b> matches (${pct(hits / ok.length)})`)}${played.length < g.ms.length ? L(` · ${g.ms.length - played.length} do rozegrania`, ` · ${g.ms.length - played.length} still to play`) : ""}</p>` : ""}
+        ${g.ms.map(row).join("")}
+        <p class="small muted" style="margin:8px 0 0">${L("Prawa kolumna: najbardziej prawdopodobny wynik 1/X/2 przed meczem (z kursów albo modelu) i jego szansa. ✓/✗ – czy się sprawdził.", "Right column: the most likely 1/X/2 result before the match (from odds or the model) and its chance. ✓/✗ – whether it came true.")}${!isCup(c) ? L(" Numery kolejek wyliczone z terminarza – przy przełożonych meczach mogą się różnić od oficjalnych.", " Matchday numbers are derived from the fixture order – postponed matches may differ from the official round.") : ""}</p>
+      </div>`;
   }
 
   function zoneOf(c, i, n) {
@@ -1417,11 +1531,13 @@
     }
   }
   document.addEventListener("click", e => {
-    const el = e.target.closest("[data-savebet],[data-betdays],[data-typysub],[data-deltip],[data-tipf],[data-tab],[data-comp],[data-season],[data-more],[data-match],[data-club],[data-close],[data-go],[data-picker],[data-pick],[data-fav],[data-lang]");
+    const el = e.target.closest("[data-savebet],[data-betdays],[data-typysub],[data-deltip],[data-tipf],[data-tab],[data-comp],[data-season],[data-more],[data-match],[data-club],[data-close],[data-go],[data-picker],[data-pick],[data-fav],[data-lang],[data-hround],[data-hseason]");
     if (!el) return;
     const d = el.dataset;
     if (d.close !== undefined) return closeSheet();
     if (d.lang) { setLang(d.lang); return; }
+    if (d.hround !== undefined) { S.histIdx = +d.hround; const y = scrollY; render(); scrollTo(0, y); return; }
+    if (d.hseason) { S.histSeason = d.hseason; S.histIdx = null; const y = scrollY; render(); scrollTo(0, y); return; }
     if (d.fav) {
       e.stopPropagation(); toggleFav(d.fav);
       document.querySelectorAll(`[data-fav="${CSS.escape(d.fav)}"]`).forEach(b => { const on = isFav(d.fav); b.classList.toggle("on", on); b.textContent = on ? "★" : "☆"; });
@@ -1436,7 +1552,7 @@
     if (d.betdays) { S.betDays = +d.betdays; render(); return; }
     if (d.savebet !== undefined) { e.stopPropagation(); const x = S._betList?.[+d.savebet]; if (x) saveBet(x); return; }
     if (d.tab || d.go) { S.tab = d.tab || d.go; store.set(LS.tab, S.tab); closeSheet(); render(); scrollTo(0, 0); return; }
-    if (d.comp) { S.comp = d.comp; S.tableSeason = null; S.showOverdue = false; store.set(LS.comp, S.comp); render(); return; }
+    if (d.comp) { S.comp = d.comp; S.tableSeason = null; S.showOverdue = false; S.histIdx = null; S.histSeason = null; store.set(LS.comp, S.comp); render(); return; }
     if (d.season) { S.tableSeason = d.season; render(); return; }
     if (d.more) { S.showOverdue = true; render(); return; }
     if (d.match) return openMatch(d.match);
@@ -1447,6 +1563,9 @@
   function closeSheet() { S.sheetId = null;  $("#sheet").hidden = true; document.body.style.overflow = ""; }
   $("#refresh").onclick = () => load(true);
 
+  // wyniki na żywo: co minutę (tylko gdy aplikacja jest widoczna i trwają mecze) oraz po powrocie do aplikacji
+  setInterval(pollLive, 60 * 1000);
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") pollLive(); });
   staticTexts();
   const ld = document.querySelector("#view .loading"); if (ld) ld.textContent = L("Wczytuję dane…", "Loading data…");
   if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
