@@ -216,3 +216,10 @@ tr.z-mid td:first-child { box-shadow: inset 3px 0 #f28c28; }
 .card.warn { background: #fff4d6; border-color: #f0d68a; color: #5b4300; }
 @media (prefers-color-scheme: dark) { .card.warn { background: #3a2f10; border-color: #5a4818; color: #f5dc93; } }
 .btn:disabled { opacity: .55; cursor: default; }
+
+/* podsumowanie ostatnich 7 dni */
+.weekend summary { cursor: pointer; list-style: none; display: flex; gap: 6px; align-items: baseline; flex-wrap: wrap; }
+.weekend summary::-webkit-details-marker { display: none; }
+.weekend summary::after { content: "▾"; margin-left: auto; color: var(--muted); }
+.weekend[open] summary::after { content: "▴"; }
+.weekend h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }

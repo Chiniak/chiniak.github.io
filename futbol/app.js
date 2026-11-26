@@ -74,7 +74,7 @@
     S.elo = M.elo(S.matches);
     S.rest = new Map([...M.restDays(S.matches)].map(([m, x]) => [m.id, x]));
     S.calib = null;
-    S.models = {}; S.bts = {}; S.btMap = new Map(); S.sims = {}; S.absCache = new Map(); S._teamsOf = {}; S._league = null; S.predCache = new Map();
+    S.models = {}; S.bts = {}; S.btMap = new Map(); S.sims = {}; S.absCache = new Map(); S._teamsOf = {}; S._league = null; S.predCache = new Map(); S.pmCache = new Map();
   }
   function teamsOf(comp, season) {
     const k = comp + season;
@@ -769,7 +769,7 @@
     const next = up.filter(m => m.date <= horizon);
     const overdue = mine.filter(m => !M.played(m) && !m.live && m.date < t && m.season === curSeason());
     const recent = mine.filter(M.played).slice(-12).reverse();
-    let h = compBar(c);
+    let h = weekendHtml() + compBar(c);
     h += `<h2>Najbliższe mecze · ${esc(compName(c))}</h2>`;
     h += next.length ? next.map(matchCard).join("") : `<div class="card empty">${D.COMP[c]?.src === "football-data"
       ? `Terminarz ${esc(compName(c))} chwilowo niedostępny. ESPN nie ma tej ligi – najbliższe kolejki pobieramy z TheSportsDB, a kursy z football-data.co.uk (ok. 1–2 dni przed kolejką). Mecze pojawią się tu same – dane odświeżane co 3 godziny.`
@@ -933,8 +933,11 @@
 
   /* Prognoza sprzed rozegranego meczu: z kursów zamknięcia (tak działa strona, gdy kursy są), a model z testu wstecznego
      (dopasowany tylko do meczów sprzed tego dnia). */
-  function preMatch(m) {
-    const bt = btFor(m.comp) && S.btMap.get(m.id);
+  // lazy: bez liczenia testu wstecznego (gdy go jeszcze nie ma, mecz bez kursów zostaje bez prognozy – doliczy się w tle)
+  function preMatch(m, lazy) {
+    const ck = m.id + (lazy && !S.bts[m.comp] ? "~" : "");
+    if (S.pmCache.has(ck)) return S.pmCache.get(ck);
+    const bt = (lazy ? S.bts[m.comp] : btFor(m.comp)) && S.btMap.get(m.id);
     const model = bt ? { probs: bt.probs, top: bt.top } : null;
     let main = null;
     if (m.odds?.h) {
@@ -942,10 +945,50 @@
       if (f) main = { probs: [f.win, f.draw, f.loss], top: f.top[0], src: m.odds.book || "kursy" };
     }
     if (!main && model) main = { ...model, src: "model" };
-    if (!main) return null;
+    if (!main) { S.pmCache.set(ck, null); return null; }
     const res = m.hg > m.ag ? 0 : m.hg === m.ag ? 1 : 2, pick = r => r.probs.indexOf(Math.max(...r.probs));
-    return { main, model, res, hit: pick(main) === res, exact: main.top.hg === m.hg && main.top.ag === m.ag, mHit: model ? pick(model) === res : null };
+    const out = { main, model, res, hit: pick(main) === res, exact: main.top.hg === m.hg && main.top.ag === m.ag, mHit: model ? pick(model) === res : null };
+    S.pmCache.set(ck, out);
+    return out;
   }
+
+  /* ---------- podsumowanie ostatnich 7 dni (góra zakładki Mecze) ---------- */
+  function recentPlayed() {
+    const from = addDays(today(), -7);
+    return S.matches.filter(m => M.played(m) && m.date >= from && m.date <= today());
+  }
+  function weekendHtml() {
+    const ms = recentPlayed();
+    if (!ms.length) return "";
+    const rows = ms.map(m => ({ m, x: preMatch(m, true) }));
+    const ok = rows.filter(r => r.x), hits = ok.filter(r => r.x.hit).length, missing = rows.length - ok.length;
+    const byComp = D.COMPS.map(c => { const rs = ok.filter(r => r.m.comp === c.code); return { c, n: rs.length, h: rs.filter(r => r.x.hit).length }; }).filter(x => x.n);
+    const outcomeLab = m => m.hg > m.ag ? `wygrana ${short(m.home)}` : m.hg < m.ag ? `wygrana ${short(m.away)}` : "remis";
+    const surprises = ok.map(r => ({ ...r, p: r.x.main.probs[r.x.res] })).filter(r => r.p <= 0.25).sort((a, b) => a.p - b.p).slice(0, 3);
+    const fav = favs();
+    const favRows = rows.filter(r => fav.includes(r.m.home) || fav.includes(r.m.away)).reverse();
+    const line = (r, extra) => `<div class="list-row" data-match="${esc(r.m.id)}">${r.x ? `<span class="res ${r.x.hit ? "W" : "P"}">${r.x.hit ? "✓" : "✗"}</span>` : `<span class="res R">–</span>`}<span class="x" style="white-space:normal"><b>${esc(short(r.m.home))} ${r.m.hg}–${r.m.ag} ${esc(short(r.m.away))}</b> <span class="small muted">${fmtDate(r.m.date, false)} · ${esc(D.COMP[r.m.comp]?.short || r.m.comp)}</span>${extra ? `<br><span class="small">${extra}</span>` : ""}</span></div>`;
+    return `<details class="card weekend" id="weekend"${S.weekOpen ? " open" : ""}>
+      <summary><b>Ostatnie 7 dni:</b> prognoza trafiła <b>${hits} z ${ok.length}</b> meczów${ok.length ? ` (${pct(hits / ok.length)})` : ""}</summary>
+      <div class="tbl-wrap" style="margin-top:8px"><table><thead><tr><th class="t">Rozgrywki</th><th>Mecze</th><th>Trafione</th></tr></thead><tbody>
+        ${byComp.map(x => `<tr><td class="t">${compLogo(x.c.code, "sm")} ${esc(x.c.short)}</td><td>${x.n}</td><td><b>${x.h}</b> (${pct(x.h / x.n)})</td></tr>`).join("")}
+      </tbody></table></div>
+      ${surprises.length ? `<h3 style="margin:14px 0 4px">Największe niespodzianki</h3>${surprises.map(r => line(r, `${esc(outcomeLab(r.m))} – szansa przed meczem tylko ${pct(r.p)}`)).join("")}` : ""}
+      ${favRows.length ? `<h3 style="margin:14px 0 4px">Moje kluby</h3>${favRows.map(r => line(r, r.x ? `prognoza: ${esc(["wygrana " + short(r.m.home), "remis", "wygrana " + short(r.m.away)][r.x.main.probs.indexOf(Math.max(...r.x.main.probs))])} ${pct(Math.max(...r.x.main.probs))}` : "")).join("")}` : ""}
+      <p class="small muted" style="margin-bottom:0">Trafiona = wynik 1/X/2 zgodny z najbardziej prawdopodobnym przed meczem (z kursów, a bez nich – z modelu). Dobra prognoza trafia ok. 50% meczów.${missing ? ` Liczę jeszcze prognozy dla ${missing} meczów bez kursów…` : ""}</p>
+    </details>`;
+  }
+  // doliczanie w tle testu wstecznego dla rozgrywek, w których mecze z ostatnich dni nie mają kursów
+  function fillWeekend() {
+    const need = [...new Set(recentPlayed().filter(m => !preMatch(m, true)).map(m => m.comp))].filter(c => !S.bts[c]);
+    if (!need.length) return;
+    setTimeout(() => {
+      btFor(need[0]);
+      const el = $("#weekend");
+      if (el && S.tab === "mecze") { el.outerHTML = weekendHtml(); bindWeekend(); fillWeekend(); }
+    }, 60);
+  }
+  function bindWeekend() { const el = $("#weekend"); if (el) el.ontoggle = () => { S.weekOpen = el.open; }; }
   function historyHtml(t, n = 5) {
     const ms = S.matches.filter(m => M.played(m) && (m.home === t || m.away === t)).slice(-n).reverse();
     const rows = ms.map(m => ({ m, x: preMatch(m) })).filter(r => r.x);
@@ -1120,6 +1163,7 @@
   }
   function bindView() {
     const v = $("#view");
+    if (S.tab === "mecze") { bindWeekend(); fillWeekend(); }
     if (S.tab === "kluby" && $("#cq")) {
       $("#cq").oninput = e => { S.clubQ = e.target.value; $("#cres").innerHTML = clubSearchHtml(S.clubQ); };
     }
