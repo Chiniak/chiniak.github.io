@@ -136,6 +136,7 @@
           comp, round: ROUND[r.st] || "", season: seasonOf(date), neutral: r.st === "final", src: "espn",
           odds: fdOdds || oddsObj(r.o || kursy?.[k]) || null,
           ...(x && x[0] !== null && x[1] !== null ? { xhg: x[0], xag: x[1] } : {}),
+          ...(played && x && x[7] !== undefined ? { mxh: x[7], mxa: x[8] } : played && kursy?.[k]?.[7] !== undefined ? { mxh: kursy[k][7], mxa: kursy[k][8] } : {}), // gole z kursów (nauka modelu)
           eid: r.i || null, // id meczu w ESPN (tylko nierozegrane)
           shots: r.s || null, // [gosp. strzały, gosp. celne, gość strzały, gość celne]
         });
@@ -179,6 +180,7 @@
         date, time: d.toTimeString().slice(0, 5), home: nameOf(r.h), away: nameOf(r.a), hg: played ? r.f[0] : null, ag: played ? r.f[1] : null,
         comp: "EK", round: r.r ? `${r.r}. kolejka` : "", season: seasonOf(date), src: "espn",
         odds: r.o ? { h: r.o[0], d: r.o[1], a: r.o[2], line: null, over: null, under: null, book: r.o[3] } : null,
+        ...(played && r.x ? { mxh: r.x[0], mxa: r.x[1] } : {}),
       });
     }
     const pl = matches.filter(m => m.hg !== null);

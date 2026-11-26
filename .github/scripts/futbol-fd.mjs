@@ -1,11 +1,20 @@
 // xG i kursy bet365 z football-data.co.uk (darmowe pliki CSV, bez klucza) dla 8 lig, bieżący i poprzedni sezon.
 // Mecze dopasowane do danych ESPN (musi być już pobrany futbol/dane/espn.json).
-// Zapis: futbol/dane/fd.json = { updated, m: { "kod|start|idGosp|idGość": [xG gosp., xG gość, 1, X, 2, >2.5, <2.5] },
+// Zapis: futbol/dane/fd.json = { updated, m: { "kod|start|idGosp|idGość": [xG gosp., xG gość, 1, X, 2, >2.5, <2.5, gole z kursów gosp., gość] },
 //                               n: { ten sam klucz: [1, X, 2, >2.5, <2.5] } }
 // m – rozegrane: kursy bet365 zamknięcia (tuż przed meczem), a gdy ich brak – wcześniejsze. Brak wartości = null.
 // n – nadchodzące: aktualne kursy bet365 z fixtures.csv (plik uzupełniany ok. 2 razy w tygodniu).
 // Uruchomienie: node .github/scripts/futbol-fd.mjs
 import { writeFile, readFile } from "node:fs/promises";
+import { createRequire } from "node:module";
+const M = createRequire(import.meta.url)("../../futbol/model.js");
+// oczekiwane gole z kursów (do nauki modelu): liczone tutaj, bo w telefonie trwałoby to kilka sekund
+const r2 = x => Math.round(x * 100) / 100;
+function mktGoals(v) {
+  if (!v[2] || !v[3] || !v[4]) return [];
+  const f = M.fromOdds({ h: v[2], d: v[3], a: v[4], line: v[5] && v[6] ? 2.5 : null, over: v[5], under: v[6] }, { total: 2.7 });
+  return f ? [r2(f.xg.home), r2(f.xg.away)] : [];
+}
 
 const ESPN = new URL("../../futbol/dane/espn.json", import.meta.url);
 const OUT = new URL("../../futbol/dane/fd.json", import.meta.url);
@@ -73,7 +82,7 @@ for (const [fd, comp] of LEAGUES) {
     matched++;
     const pick = (c, o) => num(r[c]) ?? num(r[o]);
     const v = [xgNum(r.HxG), xgNum(r.AxG), pick("B365CH", "B365H"), pick("B365CD", "B365D"), pick("B365CA", "B365A"), pick("B365C>2.5", "B365>2.5"), pick("B365C<2.5", "B365<2.5")];
-    if (v.some(x => x !== null)) out.m[`${comp}|${e.k}|${e.h}|${e.a}`] = v;
+    if (v.some(x => x !== null)) out.m[`${comp}|${e.k}|${e.h}|${e.a}`] = [...v, ...mktGoals(v)];
   }
   console.log(`${comp}: ${rows.length} meczów w CSV, kluby ${Object.keys(idOf).length}`);
 }

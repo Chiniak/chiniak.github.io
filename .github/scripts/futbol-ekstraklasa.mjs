@@ -3,10 +3,12 @@
 // new_league_fixtures.csv – najbliższe mecze z kursami (plik uzupełniany ok. 2 razy w tygodniu).
 // TheSportsDB (darmowy klucz 123) – terminarz 3 najbliższych kolejek, żeby mecze były widoczne wcześniej (bez kursów;
 // darmowy klucz nie oddaje całego sezonu, ale oddaje pełne kolejki). Daty dalszych kolejek bywają orientacyjne.
-// Zapis: futbol/dane/ekstraklasa.json = { updated, league: logo ligi, badges: { klub: herb }, rows: [ { k: start UTC, h, a, f?: [gole gosp., gole gościa], o?: [1, X, 2, bukmacher], r?: kolejka } ] }
+// Zapis: futbol/dane/ekstraklasa.json = { updated, league: logo ligi, badges: { klub: herb }, rows: [ { k: start UTC, h, a, f?: [gole gosp., gole gościa], o?: [1, X, 2, bukmacher], x?: [gole z kursów], r?: kolejka } ] }
 // Nazwy klubów jak w football-data; ładne nazwy nadaje futbol/data.js. Godziny w plikach są czasu brytyjskiego.
 // Uruchomienie: node .github/scripts/futbol-ekstraklasa.mjs
 import { writeFile, readFile } from "node:fs/promises";
+import { createRequire } from "node:module";
+const M = createRequire(import.meta.url)("../../futbol/model.js");
 
 const OUT = new URL("../../futbol/dane/ekstraklasa.json", import.meta.url);
 const now = new Date();
@@ -56,6 +58,8 @@ for (const r of res) {
   if (r.HG !== "" && r.AG !== "" && r.HG !== undefined) row.f = [+r.HG, +r.AG];
   const o = odds(r, true);
   if (o) row.o = o;
+  // oczekiwane gole z kursów rozegranego meczu (do nauki modelu)
+  if (o && row.f) { const f = M.fromOdds({ h: o[0], d: o[1], a: o[2] }, { total: 2.7 }); if (f) row.x = [Math.round(f.xg.home * 100) / 100, Math.round(f.xg.away * 100) / 100]; }
   rows.push(row);
 }
 let nf = 0;

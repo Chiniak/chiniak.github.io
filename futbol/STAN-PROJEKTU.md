@@ -9,7 +9,7 @@ Użytkownik mieszka w Anglii – zakłady w £, ostrzeżenie UK Gambling Commiss
   wynikiem; wyszukiwarka wszystkich klubów; niżej siatka klubów wybranych rozgrywek. Typuj – wybór klubów z wyszukiwarką.
 - `model.js` – model: Poisson + Dixon-Coles, ważenie świeżości, Elo, symulacja sezonu, test wsteczny, rynki zakładów
 - `data.js` – wczytywanie i łączenie danych z `dane/`
-- `sw.js` – offline; **przy każdej zmianie plików podbij `CACHE`** (teraz `futbol-v22`)
+- `sw.js` – offline; **przy każdej zmianie plików podbij `CACHE`** (teraz `futbol-v23`)
 - `dane/` – pliki odświeżane przez GitHub Action (nie edytować ręcznie)
 
 ## Dane (`.github/workflows/futbol-dane.yml`, co godzinę, commit tylko przy zmianie)
@@ -45,6 +45,10 @@ uruchomienie – inaczej bez commita (żeby nie było ~24 commitów dziennie).
 - W chmurowym środowisku Node potrzebuje `NODE_USE_ENV_PROXY=1`, żeby skrypty sięgnęły do sieci.
 
 ## Model – decyzje i wyniki testu wstecznego (mecze od 15.09.2025, tylko dane sprzed meczu)
+- 27.11.2026: nauka z kursów (`fit` opcja `mkt` = 0,5): w rozegranych meczach obok goli i xG także oczekiwane gole z kursów
+  zamknięcia (`fromOdds`, total 2,7). Wszystkie rozgrywki 50,9% → 52,0% (Brier 0,6017 → 0,5978), Ekstraklasa 42,5% → 46,2%,
+  Championship 45,2% → 46,7%; udział 0,3 / 0,5 / 0,7 – 51,8 / 52,0 / 51,9%. Liczone na serwerze (`futbol-fd.mjs` pozycje 7–8,
+  `futbol-ekstraklasa.mjs` pole `x`, archiwum `kursy.json` pozycje 7–8 po meczu), bo w telefonie ~1 ms na mecz.
 - 26.11.2026: xG w 8 ligach (70%) + „xG ze strzałów” tam, gdzie xG brak (40%; 0,194 × celne + 0,072 × pozostałe,
   dopasowane do xG Opta, R² 0,57), ściąganie 6 → 3, okres półtrwania 240 → 320 dni: trafność 51,0% → 52,1%, Brier 0,601 → 0,596.
   Prawdziwe xG i xG ze strzałów dają praktycznie to samo (0,5964 vs 0,5963).

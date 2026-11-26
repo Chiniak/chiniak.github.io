@@ -16,7 +16,8 @@
   const XG = 0.7;              // udział xG w ocenie siły (reszta – gole); dobrane testem wstecznym
   const EURO = new Set(["CL", "EL", "ECL"]);
   const SXG = 0.4;             // udział zastępczego xG ze strzałów (gdy prawdziwego brak); test wsteczny
-  const FIT = { shrink: 3, halfLife: 320, xg: XG, sxg: SXG };
+  const MKT = 0.5;             // udział goli z kursów zamknięcia w nauce modelu (test wsteczny: 50,9% → 52,0%, Ekstraklasa 42,5% → 46,2%)
+  const FIT = { shrink: 3, halfLife: 320, xg: XG, sxg: SXG, mkt: MKT };
 
   /* ---------- kluby: nazwy, skróty, loga ---------- */
   const short = t => S.teams[t]?.short || t;
@@ -70,6 +71,8 @@
     S.status = ek ? [es.status[0], ek.status, ...es.status.slice(1)] : es.status; S.updated = es.updated; S.fplInfo = fpl ? { updated: fpl.updated, players: fpl.players.length, played: fpl.played } : null;
     S.matches = D.merge([es.matches, ek ? ek.matches : [], fpl ? fpl.matches : [], S.manual.map(m => ({ ...m, src: "manual" }))]);
     S.xgCount = xg ? D.attachXg(S.matches, xg) : 0;
+    // gole z kursów dla rozegranych meczów, których nie policzył serwer (np. puchary z archiwum kursów ESPN – kilkaset)
+    for (const m of S.matches) if (m.mxh === undefined && M.played(m) && m.odds?.h) { const f = M.fromOdds(m.odds, { total: 2.7 }); if (f) { m.mxh = f.xg.home; m.mxa = f.xg.away; } }
     S.players = fpl ? fpl.players.map(p => ({ ...p, team: D.canon(p.team) })) : [];
     S.elo = M.elo(S.matches);
     S.rest = new Map([...M.restDays(S.matches)].map(([m, x]) => [m.id, x]));
@@ -1292,6 +1295,7 @@
     h += `<h2>Jak działa prognoza</h2><div class="card small">
       <p style="margin-top:0"><b>Siła ataku i obrony.</b> Każda drużyna dostaje ocenę ataku i obrony dopasowaną do meczów z dwóch sezonów (regresja Poissona). Dla meczów ligowych model uczy się z danej ligi i pucharów europejskich, dla pucharów – ze wszystkich lig naraz, które łączą się przez mecze europejskie. Nowsze mecze ważą więcej – mecz sprzed 8 miesięcy liczy się w połowie. Drużyny z małą liczbą meczów są ściągane do średniej, a beniaminkowie startują z niższą oceną.</p>
       <p><b>Gole oczekiwane (xG).</b> W meczach 8 lig z tego sezonu siła drużyn liczona jest w 70% z xG (jakość stworzonych sytuacji; football-data.co.uk, w PL także Opta przez FPL), a w 30% z goli. Gdzie xG brak (poprzedni sezon, puchary), model bierze w 40% „xG ze strzałów” z ESPN: 0,19 gola za strzał celny i 0,07 za niecelny – tak wychodzi z porównania z prawdziwym xG. W teście wstecznym to podniosło trafność z 51,0% do 52,1%.</p>
+      <p><b>Nauka z kursów.</b> Model uczy się też z tego, czego bukmacherzy spodziewali się w rozegranych już meczach: z kursów zamknięcia każdego meczu wyliczamy oczekiwane gole i liczymy je w połowie obok goli i xG. Kursy zawierają wiedzę o składach i formie, więc siła drużyn jest trafniejsza – w teście wstecznym trafność modelu wzrosła z 50,9% do 52,0%, a w Ekstraklasie z 42,5% do 46,2%. Do prognozy meczu używane są tylko kursy z wcześniejszych meczów.</p>
       <p><b>Wynik meczu.</b> Z ocen wychodzą oczekiwane gole obu drużyn (z przewagą własnego boiska, w PL ok. ${Math.round((Math.exp(pm.home) - 1) * 100)}% więcej goli gospodarza). Rozkład Poissona z poprawką Dixona-Colesa daje szansę każdego wyniku, a z nich – 1/X/2, powyżej 2,5 gola i „obie strzelą”.</p>
       <p><b>Prognoza z kursów.</b> Gdy mecz ma kursy bukmachera (bet365 z football-data.co.uk, a gdy ich brak – DraftKings z ESPN), prognoza na stronie pochodzi z nich: z kursów 1X2 i na 2,5 gola, po zdjęciu marży, wyliczamy oczekiwane gole obu drużyn, a z nich wszystkie rynki. W teście na 3527 meczach ligowych było to trafniejsze od modelu na każdym rynku (1X2: 52,7% wobec 51,2%), a dokładanie modelu tylko pogarszało wynik. Model zostaje jako drugie zdanie, dla meczów bez kursów i do symulacji tabeli. Można to wyłączyć wyżej.</p>
       <p><b>Tabela końcowa.</b> Pozostałe mecze sezonu losowane 3000 razy.</p>
