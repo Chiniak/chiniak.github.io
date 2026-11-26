@@ -64,7 +64,7 @@
       .replace(/^last 16/i, "1/8 finału").replace(/^quarter finals/i, "Ćwierćfinał").replace(/^semi finals/i, "Półfinał")
       .replace(/^final$/i, "Finał").replace(/^playoffs/i, "Baraże");
   }
-  const compName = c => c === "PL" ? "Premier League" : "Liga Mistrzów";
+  const compName = c => c === "PL" ? "Premier League" : c === "CL" ? "Liga Mistrzów" : c === "LG" ? "ligi krajowe rywali z LM" : (D.LEAGUE_NAME[c] || c);
   const isNeutral = m => /final$/i.test(m.round || "") && !/semi|quarter/i.test(m.round || "");
 
   /* ---------- stan ---------- */
@@ -82,7 +82,7 @@
     if (S.fd) lists.push(S.fd.matches.map(m => ({ ...m })));
     if (S.fpl) lists.push(S.fpl.matches.map(m => ({ ...m })));
     lists.push(S.manual.map(m => ({ ...m, src: "manual" })));
-    S.matches = D.merge(lists);
+    S.matches = D.merge(lists.map(l => l.map(m => ({ ...m }))));
     S.matches.forEach(m => { m.neutral = isNeutral(m); });
     // beniaminkowie: drużyny z PL w tym sezonie, których nie było w poprzednim – start z niższą oceną
     const plNow = teamsOf("PL", curSeason()), plPrev = new Set(teamsOf("PL", prevSeason()));
@@ -90,10 +90,18 @@
     if (plPrev.size) for (const t of plNow) if (!plPrev.has(t)) { priors[t] = { att: -0.25, def: -0.25 }; eloStart[t] = 1420; }
     S.priors = priors;
     S.model = M.fit(S.matches, { asOf: today(), priors, shrink: 6, halfLife: 240 });
+    // model dla Ligi Mistrzów: dodatkowo ligi krajowe rywali (bez Championship – test wsteczny pokazał, że ta zawyża beniaminków)
+    const extra = (S.lg?.matches || []).filter(m => m.comp !== "EN2");
+    if (extra.length) {
+      S.allMatches = D.merge([...lists.map(l => l.map(m => ({ ...m }))), extra.map(m => ({ ...m }))]);
+      S.allMatches.forEach(m => { m.neutral = isNeutral(m); });
+      S.modelCL = M.fit(S.allMatches, { asOf: today(), priors, shrink: 6, halfLife: 240 });
+      S.restAll = new Map([...M.restDays(S.allMatches)].map(([m, r]) => [m.id, r]));
+    } else { S.allMatches = S.matches; S.modelCL = S.model; S.restAll = new Map([...M.restDays(S.matches)].map(([m, r]) => [m.id, r])); }
     S.elo = M.elo(S.matches, { start: eloStart });
     S.players = (S.fpl?.players || []).map(p => ({ ...p, team: D.canon(p.team) }));
     S.absCache = new Map();
-    S.rest = M.restDays(S.matches);
+    S.rest = new Map([...M.restDays(S.matches)].map(([m, r]) => [m.id, r]));
     S.sim = null; S.bt = null; S.btMap = new Map();
   }
   function teamsOf(comp, season) {
@@ -110,7 +118,12 @@
   function ensureBacktest() {
     if (S.bt) return S.bt;
     const from = `${D.seasonStart() - 1}-09-15`;
-    S.bt = M.backtest(S.matches, { from, fit: { priors: S.priors, shrink: 6, halfLife: 240 }, adjFn: fatOn() ? m => M.fatigueAdj(S.rest.get(m)) : null });
+    const fitO = { priors: S.priors, shrink: 6, halfLife: 240 };
+    const pl = M.backtest(S.matches, { from, filter: m => m.comp === "PL", fit: fitO, adjFn: fatOn() ? m => M.fatigueAdj(S.rest.get(m.id)) : null });
+    const cl = M.backtest(S.allMatches, { from, filter: m => m.comp === "CL", fit: fitO, adjFn: fatOn() ? m => M.fatigueAdj(S.restAll.get(m.id)) : null });
+    const n = pl.n + cl.n, w = (a, b) => n ? (a * pl.n + b * cl.n) / n : 0;
+    S.bt = { n, accuracy: w(pl.accuracy, cl.accuracy), exact: w(pl.exact, cl.exact), brier: w(pl.brier, cl.brier), logLoss: w(pl.logLoss, cl.logLoss),
+      records: [...pl.records, ...cl.records], pl, cl };
     for (const r of S.bt.records) S.btMap.set(r.m.id, r);
     return S.bt;
   }
@@ -125,16 +138,16 @@
   async function load(force) {
     const cache = store.get(LS.cache, null);
     if (cache && !S.of) {
-      S.of = cache.of; S.fd = cache.fd; S.fpl = cache.fpl || null; S.countries = cache.countries || {}; S.status = cache.status || []; S.fetchedAt = cache.at;
+      S.of = cache.of; S.fd = cache.fd; S.fpl = cache.fpl || null; S.lg = cache.lg || null; S.countries = cache.countries || {}; S.status = cache.status || []; S.fetchedAt = cache.at;
       // nazwy z pamięci podręcznej trzeba „nauczyć” moduł danych, żeby ujednolicanie działało tak samo
-      for (const m of [...(S.of?.matches || []), ...(S.fd?.matches || []), ...(S.fpl?.matches || [])]) { D.canon(m.home); D.canon(m.away); }
+      for (const m of [...(S.of?.matches || []), ...(S.fd?.matches || []), ...(S.fpl?.matches || []), ...(S.lg?.matches || [])]) { D.canon(m.home); D.canon(m.away); }
       compute(); render();
     }
     const fresh = !cache || force || Date.now() - (cache.at || 0) > 30 * 60 * 1000;
     if (!fresh) return;
     $("#refresh").classList.add("spin");
     try {
-      const of = await D.loadOpenfootball();
+      const [of, lg] = await Promise.all([D.loadOpenfootball(), D.loadLeagues().catch(() => null)]);
       const key = store.get(LS.key, "");
       const fd = key ? await D.loadFootballData(key) : { matches: [], status: [] };
       let fpl = null, fplStatus = [];
@@ -143,10 +156,18 @@
       if (!of.matches.length && !fd.matches.length && !fpl && S.of) throw new Error("offline");
       S.of = { matches: of.matches }; S.fd = { matches: fd.matches };
       if (fpl) S.fpl = { matches: fpl.matches, players: fpl.players, updated: fpl.updated };
+      if (lg && lg.matches.length) {
+        // do pamięci tylko to, czego potrzebuje model
+        S.lg = { matches: lg.matches.filter(m => m.comp !== "EN2").map(({ date, time, home, away, hg, ag, comp, season, round }) => ({ date, time, home, away, hg, ag, comp, season, round, src: "openfootball" })) };
+      }
+      const lgM = lg ? lg.matches.filter(m => m.comp !== "EN2") : [];
+      const lgStatus = lg ? [{ src: "openfootball", comp: "LG", season: "", ok: lgM.length > 0, n: lgM.length,
+        played: lgM.filter(m => m.hg !== null).length, leagues: new Set(lgM.map(m => m.comp)).size,
+        last: lgM.filter(m => m.hg !== null).map(m => m.date).sort().pop(), err: "nie udało się pobrać" }] : [];
       S.countries = { ...S.countries, ...of.countries };
-      S.status = [...of.status.map(s => ({ ...s, src: "openfootball" })), ...fd.status.map(s => ({ ...s, src: "football-data" })), ...fplStatus.map(s => ({ ...s, src: "Fantasy Premier League" }))];
+      S.status = [...of.status.map(s => ({ ...s, src: "openfootball" })), ...fd.status.map(s => ({ ...s, src: "football-data" })), ...fplStatus.map(s => ({ ...s, src: "Fantasy Premier League" })), ...lgStatus];
       S.fetchedAt = Date.now();
-      store.set(LS.cache, { of: S.of, fd: S.fd, fpl: S.fpl, countries: S.countries, status: S.status, at: S.fetchedAt });
+      store.set(LS.cache, { of: S.of, fd: S.fd, fpl: S.fpl, lg: S.lg, countries: S.countries, status: S.status, at: S.fetchedAt });
       compute(); render();
     } catch (e) {
       if (!S.of) $("#view").innerHTML = `<div class="empty">Nie udało się pobrać danych. Sprawdź internet i spróbuj ponownie.<div class="row" style="justify-content:center"><button class="btn" onclick="location.reload()">Spróbuj ponownie</button></div></div>`;
@@ -175,7 +196,11 @@
     return `<div class="bar"><i class="w" style="width:${p.win * 100}%"></i><i class="d" style="width:${p.draw * 100}%"></i><i class="l" style="width:${p.loss * 100}%"></i></div>
       <div class="bar-l"><span>1 <b>${pct(p.win)}</b></span><span>X <b>${pct(p.draw)}</b></span><span>2 <b>${pct(p.loss)}</b></span></div>`;
   }
-  const pred = m => M.predict(S.model, m.home, m.away, { neutral: m.neutral, adj: adjFor(m) });
+  // PL – model z meczów PL i LM; LM i mecze z klubem spoza PL – model z ligami krajowymi
+  const plSet = () => S._plSet?.at === S.matches ? S._plSet.set : (S._plSet = { at: S.matches, set: new Set(teamsOf("PL", curSeason())) }).set;
+  const modelFor = (comp, home, away) => comp === "CL" || (home && !(plSet().has(home) && plSet().has(away))) ? S.modelCL : S.model;
+  const restOf = m => (m.comp === "CL" ? S.restAll : S.rest)?.get(m.id);
+  const pred = m => M.predict(modelFor(m.comp), m.home, m.away, { neutral: m.neutral, adj: adjFor(m) });
 
   /* ---------- zawodnicy: kontuzje, zawieszenia, forma (Fantasy Premier League) ---------- */
   const POS = { 1: "BR", 2: "OBR", 3: "POM", 4: "NAP" };
@@ -234,7 +259,7 @@
   const fatOn = () => store.get(LS.fat, true);
   function fatAdj(m) {
     if (!fatOn() || M.played(m) || !S.rest) return null;
-    return M.fatigueAdj(S.rest.get(m));
+    return M.fatigueAdj(restOf(m));
   }
   const adjFor = (m, force) => M.combineAdj(injAdj(m, force), fatAdj(m));
   const PL_WORDS = [
@@ -264,13 +289,13 @@
     return rows + more + `<div class="small muted" style="padding-top:8px">Wpływ na prognozę: atak ${a.att < 0.995 ? "−" + pct(1 - a.att) : "bez zmian"}, obrona ${a.def > 1.005 ? "+" + pct(a.def - 1) + " straconych goli" : "bez zmian"}.</div>`;
   }
   function restHtml(m) {
-    const r = S.rest?.get(m);
+    const r = S.rest ? restOf(m) : null;
     if (!r || r.h === null || r.a === null) return "";
     const f = M.fatigueAdj(r), F = M.FATIGUE;
     const tired = f ? (f.home.att ? m.home : m.away) : null;
     return `<h2>Odpoczynek przed meczem</h2><div class="card small">${esc(short(m.home))}: <b>${r.h} dni</b> od poprzedniego meczu · ${esc(short(m.away))}: <b>${r.a} dni</b>
       ${tired ? `<br><b>${esc(short(tired))}</b> gra po krótkiej przerwie, a rywal odpoczywał dłużej${M.played(m) ? "." : fatOn() ? ` – w prognozie: atak −${pct(F.att)}, +${pct(F.def)} straconych goli.` : " (zmęczenie wyłączone w Danych)."}` : ""}
-      <div class="muted" style="margin-top:4px">Liczone z meczów PL i LM – bez pucharów krajowych, więc przerwa bywa krótsza niż tu widać.</div></div>`;
+      <div class="muted" style="margin-top:4px">Liczone z meczów ligowych i LM – bez pucharów krajowych, więc przerwa bywa krótsza niż tu widać.</div></div>`;
   }
 
 
@@ -304,7 +329,8 @@
 
   /* ---------- szczegóły meczu / prognoza ---------- */
   function predictionHtml(home, away, opts = {}) {
-    const p = M.predict(S.model, home, away, { neutral: opts.neutral, adj: opts.adj });
+    const mdl = opts.model || modelFor(null, home, away);
+    const p = M.predict(mdl, home, away, { neutral: opts.neutral, adj: opts.adj });
     const er = S.elo.ratings;
     const N = 6;
     let grid = `<div class="sgrid"><div class="h">${esc(abbr(home))}↓</div>${[...Array(N).keys()].map(j => `<div class="h">${j}</div>`).join("")}`;
@@ -320,7 +346,7 @@
     grid += `</div><p class="small muted">Wiersze: gole ${esc(short(home))}, kolumny: gole ${esc(short(away))}. Wartości w %.</p>`;
     const fh = formOf(home, 5, opts.before), fa = formOf(away, 5, opts.before);
     const h2h = S.matches.filter(m => M.played(m) && ((m.home === home && m.away === away) || (m.home === away && m.away === home)) && (!opts.before || m.date < opts.before)).slice(-6).reverse();
-    const lowData = [home, away].filter(t => !(t in S.model.att) || (S.model.games[t] || 0) < 4);
+    const lowData = [home, away].filter(t => !(t in mdl.att) || (mdl.games[t] || 0) < 4);
     return `
       <div class="big3"><div><b>${pct(p.win)}</b><span>wygrana ${esc(short(home))}</span></div><div><b>${pct(p.draw)}</b><span>remis</span></div><div><b>${pct(p.loss)}</b><span>wygrana ${esc(short(away))}</span></div></div>
       ${probBar(p)}
@@ -368,7 +394,7 @@
       html += `<div class="card"><b>Przed meczem model dawał:</b> 1 ${pct(bt.probs[0])} · X ${pct(bt.probs[1])} · 2 ${pct(bt.probs[2])}, typ ${bt.top.hg}–${bt.top.ag}. ${bt.hit ? `<span class="tag ok">trafiony</span>` : `<span class="tag bad">nietrafiony</span>`}</div>`;
     }
     html += done ? `<h2>Gdyby zagrali teraz</h2>` : "";
-    html += predictionHtml(m.home, m.away, { neutral: m.neutral, adj: adjFor(m), injApplied: !!injAdj(m), match: m, squad: !done });
+    html += predictionHtml(m.home, m.away, { model: modelFor(m.comp), neutral: m.neutral, adj: adjFor(m), injApplied: !!injAdj(m), match: m, squad: !done });
     html += `<h2>${done ? "Popraw wynik" : "Wpisz wynik"}</h2>
       <form class="card" id="resForm"><div class="two"><div><label>${esc(short(m.home))}</label><input type="number" min="0" max="20" name="hg" value="${done ? m.hg : ""}" required></div>
       <div><label>${esc(short(m.away))}</label><input type="number" min="0" max="20" name="ag" value="${done ? m.ag : ""}" required></div></div>
@@ -537,7 +563,7 @@
     return `<h2>Typuj dowolny mecz</h2><div class="card">
       <div class="two"><div><label for="th">Gospodarz</label><select id="th">${opt(st.home)}</select></div><div><label for="ta">Gość</label><select id="ta">${opt(st.away)}</select></div></div>
       <div class="row"><label class="check" style="margin:0"><input type="checkbox" id="tn"${st.neutral ? " checked" : ""}> Teren neutralny (np. finał)</label><button class="btn sec" id="tswap">⇄ Zamień</button></div></div>
-      <div class="vs">${`<div class="tm">${badge(st.home, "lg")}${esc(short(st.home))}</div><div class="sc" style="color:var(--accent)">${(() => { const p = M.predict(S.model, st.home, st.away, { neutral: st.neutral, adj: adjFor({ home: st.home, away: st.away, date: today() }, true) }); return `${p.top[0].hg}–${p.top[0].ag}`; })()}<div class="small muted">najbardziej prawdopodobny</div></div><div class="tm">${badge(st.away, "lg")}${esc(short(st.away))}</div>`}</div>
+      <div class="vs">${`<div class="tm">${badge(st.home, "lg")}${esc(short(st.home))}</div><div class="sc" style="color:var(--accent)">${(() => { const p = M.predict(modelFor(null, st.home, st.away), st.home, st.away, { neutral: st.neutral, adj: adjFor({ home: st.home, away: st.away, date: today() }, true) }); return `${p.top[0].hg}–${p.top[0].ag}`; })()}<div class="small muted">najbardziej prawdopodobny</div></div><div class="tm">${badge(st.away, "lg")}${esc(short(st.away))}</div>`}</div>
       ${st.home === st.away ? `<div class="empty">Wybierz dwie różne drużyny.</div>` : predictionHtml(st.home, st.away, { neutral: st.neutral, adj: adjFor({ home: st.home, away: st.away, date: today() }, true) })}`;
   }
 
@@ -550,7 +576,7 @@
     const sopt = all.map(t => `<option value="${esc(t)}">${esc(short(t))}</option>`).join("");
     let h = `<h2>Źródła danych</h2><div class="card">`;
     for (const s of S.status.slice().sort((a, b) => (a.src + a.comp + b.season).localeCompare(b.src + b.comp + a.season))) {
-      h += `<div class="list-row" style="cursor:default"><span class="res ${s.ok ? "W" : "P"}">${s.ok ? "✓" : "!"}</span><span class="x"><b>${esc(s.src)}</b> · ${compName(s.comp)} ${esc((s.season || "").replace("-", "/"))}<br><span class="small muted">${s.ok ? `${s.played} wyników z ${s.n} meczów${s.last ? `, ostatni ${fmtDate(s.last, false)}` : ""}${s.players ? ` · ${s.players} zawodników (kontuzje, forma, xG), stan z ${new Date(s.updated).toLocaleString("pl-PL")}` : ""}` : (/404/.test(s.err || "") ? "jeszcze niedostępne" : esc(s.err))}</span></span></div>`;
+      h += `<div class="list-row" style="cursor:default"><span class="res ${s.ok ? "W" : "P"}">${s.ok ? "✓" : "!"}</span><span class="x"><b>${esc(s.src)}</b> · ${compName(s.comp)} ${esc((s.season || "").replace("-", "/"))}<br><span class="small muted">${s.ok ? `${s.played} wyników z ${s.n} meczów${s.last ? `, ostatni ${fmtDate(s.last, false)}` : ""}${s.leagues ? ` · ${s.leagues} lig (Bundesliga, LaLiga, Serie A, Ligue 1 i inne) – do oceny siły rywali w LM` : ""}${s.players ? ` · ${s.players} zawodników (kontuzje, forma, xG), stan z ${new Date(s.updated).toLocaleString("pl-PL")}` : ""}` : (/404/.test(s.err || "") ? "jeszcze niedostępne" : esc(s.err))}</span></span></div>`;
     }
     const manualCount = S.manual.length;
     h += `<div class="row"><button class="btn" id="dRefresh">Odśwież teraz</button><span class="small muted">Pobrano: ${S.fetchedAt ? new Date(S.fetchedAt).toLocaleString("pl-PL") : "–"}${manualCount ? ` · wpisanych ręcznie: ${manualCount}` : ""}</span></div></div>`;
@@ -580,6 +606,7 @@
 
     h += `<h2>Jak działa prognoza</h2><div class="card small">
       <p style="margin-top:0"><b>Siła ataku i obrony.</b> Każda drużyna dostaje ocenę ataku i obrony dopasowaną do wszystkich meczów Premier League i Ligi Mistrzów z dwóch sezonów (regresja Poissona). Nowsze mecze ważą więcej – mecz sprzed 8 miesięcy liczy się w połowie. Drużyny z małą liczbą meczów są ściągane do średniej, a beniaminkowie startują z niższą oceną.</p>
+      <p><b>Liga Mistrzów.</b> Dla meczów LM model dodatkowo uczy się z wyników lig krajowych rywali (Bundesliga, LaLiga, Serie A, Ligue 1, Portugalia, Holandia i inne), więc zna ich siłę nie tylko z meczów europejskich. W teście poprawiło to trafność typów w LM z ok. 54% do 56%. Dla meczów PL ligi zagraniczne nie pomagały, więc tam działa model z samych meczów PL i LM.</p>
       <p><b>Wynik meczu.</b> Z ocen wychodzą oczekiwane gole obu drużyn (z przewagą własnego boiska, ok. ${Math.round((Math.exp(S.model.home) - 1) * 100)}% więcej goli gospodarza). Rozkład Poissona z poprawką Dixona-Colesa daje szansę każdego wyniku, a z nich – 1/X/2, powyżej 2,5 gola i „obie strzelą”.</p>
       <p><b>Tabela końcowa.</b> Pozostałe mecze sezonu losowane 5000 razy.</p>
       <p><b>Nieobecni.</b> Dla meczów w najbliższych 10 dniach model obniża atak drużyny o udział brakujących zawodników w jej xG i asystach oczekiwanych (zmiennicy odrabiają ok. 40%, najwyżej −25%) i podnosi liczbę traconych goli, gdy brakuje bramkarza lub obrońców (najwyżej +20%).</p>

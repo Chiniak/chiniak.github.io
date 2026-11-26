@@ -24,17 +24,20 @@
     const ms = matches.filter(m => played(m) && new Date(m.date).getTime() <= asOf);
     const teams = [...new Set(ms.flatMap(m => [m.home, m.away]))];
     const att = {}, def = {}, games = {};
-    for (const t of teams) { att[t] = priors[t]?.att || 0; def[t] = priors[t]?.def || 0; games[t] = 0; }
+    // ciepły start: zaczynamy od wcześniejszego dopasowania (szybciej zbiega)
+    const init = opts.init;
+    for (const t of teams) { att[t] = init?.att[t] ?? priors[t]?.att ?? 0; def[t] = init?.def[t] ?? priors[t]?.def ?? 0; games[t] = 0; }
     const rows = ms.map(m => {
       const age = Math.max(0, (asOf - new Date(m.date).getTime()) / DAY);
       const w = Math.pow(0.5, age / halfLife);
       games[m.home] += w; games[m.away] += w;
       return { h: m.home, a: m.away, hg: m.hg, ag: m.ag, w, ha: m.neutral ? 0 : 1 };
     });
-    let mu = Math.log(1.35), home = 0.2;
+    let mu = init?.mu ?? Math.log(1.35), home = init?.home ?? 0.2;
     if (!rows.length) return { mu, home, att, def, games, teams, n: 0, asOf };
 
-    for (let it = 0; it < 80; it++) {
+    const iters = opts.iters || (init ? 20 : 80);
+    for (let it = 0; it < iters; it++) {
       // mu i przewaga gospodarzy
       let G = 0, E = 0, GH = 0, EH = 0;
       for (const r of rows) {
@@ -228,7 +231,7 @@
   /* Test wsteczny: przepowiadamy mecze używając tylko danych sprzed nich.
      Zwraca trafność typu 1X2, wynik Briera i trafienia dokładnego wyniku. */
   function backtest(matches, opts = {}) {
-    const target = matches.filter(m => played(m) && (!opts.comp || m.comp === opts.comp) && (!opts.from || m.date >= opts.from))
+    const target = matches.filter(m => played(m) && (!opts.comp || m.comp === opts.comp) && (!opts.filter || opts.filter(m)) && (!opts.from || m.date >= opts.from))
       .sort((a, b) => a.date.localeCompare(b.date));
     const step = opts.stepDays || 7;
     let model = null, fittedAt = null, hits = 0, exact = 0, brier = 0, logl = 0, n = 0;
@@ -238,7 +241,7 @@
       if (!model || (t - fittedAt) / DAY >= step) {
         fittedAt = t;
         const prev = new Date(t - DAY).toISOString().slice(0, 10);
-        model = fit(matches, { ...opts.fit, asOf: prev });
+        model = fit(matches, { ...opts.fit, asOf: prev, init: model });
       }
       if (!(m.home in model.att) || !(m.away in model.att)) continue;
       const p = predict(model, m.home, m.away, { neutral: m.neutral, adj: opts.adjFn ? opts.adjFn(m) : null });

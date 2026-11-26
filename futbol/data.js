@@ -195,6 +195,36 @@
     return { matches, players, updated: js.updated, nextDeadline: js.nextDeadline, status };
   }
 
+  /* Ligi krajowe (openfootball football.json): Championship – skąd przychodzą beniaminkowie –
+     i ligi rywali z Ligi Mistrzów. Służą tylko do lepszej oceny siły drużyn, nie są pokazywane w terminarzu. */
+  const LEAGUES = [
+    ["en.2", "EN2", "Championship"], ["de.1", "DE1", "Bundesliga"], ["es.1", "ES1", "LaLiga"], ["it.1", "IT1", "Serie A"],
+    ["fr.1", "FR1", "Ligue 1"], ["pt.1", "PT1", "Liga Portugal"], ["nl.1", "NL1", "Eredivisie"], ["be.1", "BE1", "Pro League"],
+    ["tr.1", "TR1", "Süper Lig"], ["sco.1", "SCO1", "Premiership"],
+  ];
+  const LEAGUE_NAME = Object.fromEntries(LEAGUES.map(l => [l[1], l[2]]));
+  async function loadLeagues() {
+    const y = seasonStart();
+    const jobs = [];
+    for (const yy of [y, y - 1]) for (const [file, comp] of LEAGUES) jobs.push({ url: `${OF}/football.json/master/${seasonLabel(yy)}/${file}.json`, comp, season: seasonLabel(yy) });
+    const matches = [], status = [];
+    await Promise.all(jobs.map(async j => {
+      try {
+        const r = await fetch(j.url, { cache: "no-cache" });
+        if (!r.ok) throw new Error(`${r.status} ${j.url}`);
+        const js = await r.json();
+        const ms = (js.matches || (js.rounds || []).flatMap(x => x.matches || [])).map(m => {
+          const ft = Array.isArray(m.score) ? m.score : m.score?.ft;
+          return { date: m.date, time: m.time || "", home: canon(m.team1), away: canon(m.team2), hg: ft ? ft[0] : null, ag: ft ? ft[1] : null,
+            comp: j.comp, round: m.round || "", season: j.season, src: "openfootball" };
+        }).filter(m => m.date);
+        matches.push(...ms);
+        status.push({ ...j, ok: true, n: ms.length, played: ms.filter(m => m.hg !== null).length, last: ms.filter(m => m.hg !== null).map(m => m.date).sort().pop() });
+      } catch (e) { status.push({ ...j, ok: false, err: String(e.message || e) }); }
+    }));
+    return { matches, status };
+  }
+
   /* Łączenie źródeł: ten sam mecz (rozgrywki + drużyny + data ±3 dni) występuje raz.
      Pierwszeństwo: wynik ręczny > football-data > openfootball. */
   const RANK = { manual: 4, "football-data": 3, fpl: 2, openfootball: 1 };
@@ -221,7 +251,7 @@
     return out.sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || "")));
   }
 
-  const api = { parseTxt, loadOpenfootball, loadFootballData, loadFpl, merge, canon, key, seasonStart, seasonLabel };
+  const api = { LEAGUE_NAME, loadLeagues, parseTxt, loadOpenfootball, loadFootballData, loadFpl, merge, canon, key, seasonStart, seasonLabel };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.FData = api;
 })(typeof self !== "undefined" ? self : this);
