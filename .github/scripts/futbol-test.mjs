@@ -32,6 +32,10 @@ for (const t of ["Legia Warszawa", "Raków Częstochowa", "Lech Poznań", "Jagie
   check(comps.has("EK") && [...comps].some(c => D.COMP[c]?.cup), `${t}: mecze w Ekstraklasie i w pucharach pod jedną nazwą`);
 }
 check(![...names].some(n => /Legia Warsaw$|Lech Poznan$/.test(n)), "brak angielskich duplikatów polskich klubów");
+// każda drużyna ma herb (ESPN albo – w Ekstraklasie – TheSportsDB)
+const teams = { ...ek.teams, ...es.teams };
+const noLogo = [...names].filter(n => !teams[n]?.logo);
+check(!noLogo.length, `herby: ${names.size - noLogo.length}/${names.size} drużyn${noLogo.length ? ` – brak: ${noLogo.join(", ")}` : ""}`);
 const withOdds = matches.filter(m => M.played(m) && m.odds?.book === "bet365").length;
 check(withOdds >= 3000, `kursy bet365 dla ${withOdds} rozegranych meczów`);
 const withXg = matches.filter(m => m.xhg !== undefined).length;
@@ -43,9 +47,14 @@ const cur = D.seasonLabel(D.seasonStart()), prev = D.seasonLabel(D.seasonStart()
 const teamsOf = (c, s) => new Set(matches.filter(m => m.comp === c && m.season === s).flatMap(m => [m.home, m.away]));
 const priors = c => { const p = teamsOf(c, prev), pr = {}; for (const t of teamsOf(c, cur)) if (!p.has(t)) pr[t] = { att: -0.25, def: -0.25 }; return pr; };
 const rest = new Map([...M.restDays(matches)].map(([m, x]) => [m.id, x]));
-const FIT = { shrink: 3, halfLife: 320, xg: 0.7, sxg: 0.4 };
-// progi: wynik z 26.11.2026 minus zapas na zmiany danych z tygodnia na tydzień
-const MIN = { PL: [0.45, 0.630], ES1: [0.50, 0.595], EK: [0.39, 0.665] };
+// gole z kursów dla meczów, których nie policzył serwer – tak samo jak app.js → compute
+let onTheFly = 0;
+for (const m of matches) if (m.mxh === undefined && M.played(m) && m.odds?.h) { const f = M.fromOdds(m.odds, { total: 2.7 }); if (f) { m.mxh = f.xg.home; m.mxa = f.xg.away; onTheFly++; } }
+const withMkt = matches.filter(m => m.mxh !== undefined).length;
+check(withMkt >= 3500 && onTheFly < 600, `gole z kursów: ${withMkt} meczów, w tym ${onTheFly} liczonych w aplikacji (reszta z serwera)`);
+const FIT = { shrink: 3, halfLife: 320, xg: 0.7, sxg: 0.4, mkt: 0.5 };
+// progi: wynik z 27.11.2026 (z golami z kursów) minus zapas na zmiany danych z tygodnia na tydzień
+const MIN = { PL: [0.45, 0.630], ES1: [0.51, 0.585], EK: [0.43, 0.650] };
 for (const [c, [acc, brier]] of Object.entries(MIN)) {
   const data = matches.filter(m => m.comp === c || EURO.has(m.comp));
   const b = M.backtest(data, { from: `${D.seasonStart() - 1}-09-15`, filter: m => m.comp === c, fit: { ...FIT, priors: priors(c) }, adjFn: m => M.fatigueAdj(rest.get(m.id)) });

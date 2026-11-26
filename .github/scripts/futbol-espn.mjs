@@ -2,6 +2,8 @@
 // Zapis: futbol/dane/espn.json (zwarty format, żeby telefon nie pobierał kilku MB).
 // Uruchomienie: node .github/scripts/futbol-espn.mjs
 import { writeFile, mkdir, readFile } from "node:fs/promises";
+import { createRequire } from "node:module";
+const M = createRequire(import.meta.url)("../../futbol/model.js");
 
 const API = "https://site.api.espn.com/apis/site/v2/sports/soccer";
 const OUT = new URL("../../futbol/dane/espn.json", import.meta.url);
@@ -38,7 +40,7 @@ function dec(a) {
   if (!isFinite(x) || x === 0) return null;
   return Math.round((x > 0 ? 1 + x / 100 : 1 + 100 / -x) * 100) / 100;
 }
-// [1, X, 2, linia gola, powyżej, poniżej, bukmacher] – kursy zamknięcia, a gdy ich brak – otwarcia
+// [1, X, 2, linia gola, powyżej, poniżej, bukmacher(, gole z kursów gosp., gość – po meczu)] – kursy zamknięcia, a gdy ich brak – otwarcia
 function odds(c) {
   const o = (c.odds || []).find(x => x && x.moneyline);
   if (!o) return null;
@@ -109,6 +111,13 @@ if (Object.values(out.comps).reduce((s, r) => s + r.length, 0) < 2000) throw new
 
 // archiwum: tylko mecze z ostatnich 2 sezonów
 for (const k of Object.keys(archive)) if (k.split("|")[1] < from) delete archive[k];
+// rozegrane mecze z archiwum: dopisujemy oczekiwane gole z kursów (pozycje 7–8; nauka modelu w aplikacji)
+const playedKeys = new Set(Object.entries(out.comps).flatMap(([code, rows]) => rows.filter(r => r.f).map(r => `${code}|${r.k}|${r.h}|${r.a}`)));
+for (const [k, o] of Object.entries(archive)) {
+  if (!playedKeys.has(k) || o.length > 7) continue;
+  const f = M.fromOdds({ h: o[0], d: o[1], a: o[2], line: o[3], over: o[4], under: o[5] }, { total: 2.7 });
+  if (f) archive[k] = [...o.slice(0, 7), Math.round(f.xg.home * 100) / 100, Math.round(f.xg.away * 100) / 100];
+}
 if (JSON.stringify(archive) !== archiveBefore) { await mkdir(new URL(".", ODDS), { recursive: true }); await writeFile(ODDS, JSON.stringify(archive)); console.log(`kursy: ${Object.keys(archive).length} meczów w archiwum`); }
 
 // zapis tylko przy zmianie danych

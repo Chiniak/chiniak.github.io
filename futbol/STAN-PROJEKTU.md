@@ -9,10 +9,13 @@ Użytkownik mieszka w Anglii – zakłady w £, ostrzeżenie UK Gambling Commiss
   wynikiem; wyszukiwarka wszystkich klubów; niżej siatka klubów wybranych rozgrywek. Typuj – wybór klubów z wyszukiwarką.
 - `model.js` – model: Poisson + Dixon-Coles, ważenie świeżości, Elo, symulacja sezonu, test wsteczny, rynki zakładów
 - `data.js` – wczytywanie i łączenie danych z `dane/`
-- `sw.js` – offline; **przy każdej zmianie plików podbij `CACHE`** (teraz `futbol-v18`)
+- `sw.js` – offline; **przy każdej zmianie plików podbij `CACHE`** (teraz `futbol-v24`)
 - `dane/` – pliki odświeżane przez GitHub Action (nie edytować ręcznie)
 
-## Dane (`.github/workflows/futbol-dane.yml`, co 3 godziny, commit tylko przy zmianie)
+## Dane (`.github/workflows/futbol-dane.yml`, co godzinę, commit tylko przy zmianie)
+Od 27.11.2026 co godzinę: ESPN zawsze; FPL, xG, football-data, Ekstraklasa tylko w pełnym uruchomieniu (godziny UTC
+podzielne przez 3 albo ręcznie). Zapis decyduje `futbol-czy-zapisac.mjs`: nowe wyniki, mecz w ciągu 6 godzin albo pełne
+uruchomienie – inaczej bez commita (żeby nie było ~24 commitów dziennie).
 - `futbol-espn.mjs` → `dane/espn.json`: wyniki, terminarze, kluby z logami – PL, LaLiga, Bundesliga, Serie A, Ligue 1,
   Eredivisie, Liga Portugal, Championship, Liga Mistrzów, Liga Europy, Liga Konferencji (`uefa.europa.conf`, kod `ECL`, od 27.11.2026)
   (publiczne, nieudokumentowane API ESPN;
@@ -42,6 +45,10 @@ Użytkownik mieszka w Anglii – zakłady w £, ostrzeżenie UK Gambling Commiss
 - W chmurowym środowisku Node potrzebuje `NODE_USE_ENV_PROXY=1`, żeby skrypty sięgnęły do sieci.
 
 ## Model – decyzje i wyniki testu wstecznego (mecze od 15.09.2025, tylko dane sprzed meczu)
+- 27.11.2026: nauka z kursów (`fit` opcja `mkt` = 0,5): w rozegranych meczach obok goli i xG także oczekiwane gole z kursów
+  zamknięcia (`fromOdds`, total 2,7). Wszystkie rozgrywki 50,9% → 52,0% (Brier 0,6017 → 0,5978), Ekstraklasa 42,5% → 46,2%,
+  Championship 45,2% → 46,7%; udział 0,3 / 0,5 / 0,7 – 51,8 / 52,0 / 51,9%. Liczone na serwerze (`futbol-fd.mjs` pozycje 7–8,
+  `futbol-ekstraklasa.mjs` pole `x`, archiwum `kursy.json` pozycje 7–8 po meczu), bo w telefonie ~1 ms na mecz.
 - 26.11.2026: xG w 8 ligach (70%) + „xG ze strzałów” tam, gdzie xG brak (40%; 0,194 × celne + 0,072 × pozostałe,
   dopasowane do xG Opta, R² 0,57), ściąganie 6 → 3, okres półtrwania 240 → 320 dni: trafność 51,0% → 52,1%, Brier 0,601 → 0,596.
   Prawdziwe xG i xG ze strzałów dają praktycznie to samo (0,5964 vs 0,5963).
@@ -66,16 +73,28 @@ Użytkownik mieszka w Anglii – zakłady w £, ostrzeżenie UK Gambling Commiss
   przełącznik w Danych. Najpewniejszy zakład z kursów: weszło 80,9% (zapowiedź 80,4%), zwrot −2,3%; kupon z 3 – 61%
 - karta meczu pobiera na żywo z ESPN (`summary?event=`) potwierdzone składy i najnowsze kursy DraftKings (z kursem otwarcia);
   w PL pokazuje kluczowych zawodników (FPL: ≥ 8% xG+xA drużyny albo ≥ 75% minut lidera) poza pierwszym składem.
+  W pozostałych ligach z ESPN (od 27.11.2026): kadra klubu `teams/{id}/roster` (występy, wejścia z ławki → mecze w 1. składzie,
+  gole, asysty w lidze klubu) – ważni (≥ 60% meczów lidera kadry w 1. składzie albo ≥ 15% G+A drużyny) bez miejsca
+  w jedenastce, z podziałem „na ławce” / „poza kadrą meczową”; porównanie po id zawodnika ESPN. Kontuzji ESPN nie podaje
+  (pole `injuries` puste, `teams/{id}/injuries` pusty); Ekstraklasa bez składów (brak w ESPN).
   ESPN odpowiada 403 przeglądarce testowej (Playwright, także przez proxy) – w zwykłych przeglądarkach 200 z CORS `*`
   (użytkownik potwierdził 26.11.2026: na telefonie najnowsze kursy się pokazują);
   ważne: zwykłe `fetch` bez nagłówków (z `cache: "no-cache"` przeglądarka wysyła OPTIONS, którego ESPN nie obsługuje)
 - puchary: bez poprawki Dixona-Colesa (`rho: 0`; Brier LM 0,552 → 0,549, LE 0,587 → 0,583)
+
+## Opis prognozy („Dlaczego taka prognoza?”)
+`explain(m)` w `app.js`: reguły na danych aplikacji, bez LLM – tabela, bilans u siebie/na wyjeździe, atak/obrona wg modelu
+(miejsce w lidze), forma z 5 meczów, gole a xG, nieobecni (PL), zmęczenie, Elo, oczekiwane gole, bezpośrednie mecze,
+różnica model–rynek. Każdy argument ma wagę i stronę; karta meczu pokazuje nagłówek i 2 najmocniejsze argumenty,
+szczegóły meczu – do 5 na drużynę. Nazw klubów nie odmieniamy („Na korzyść: Raków”).
 
 ## Karta klubu – ostatnie 5 meczów z prognozami
 `historyHtml`/`preMatch` w `app.js`: prognoza sprzed meczu z kursów zamknięcia (gdy są), inaczej model z testu wstecznego
 (tylko dane sprzed meczu); podsumowanie trafień 1X2, dokładnego wyniku i samego modelu.
 
 ## Odrzucone (sprawdzone, nie działało)
+- źródło kursów do prognozy (27.11.2026): bet365, Pinnacle, średnia i maksimum rynku, Betfair – różnice w Brierze 0,0004–0,0007
+  i 0,1–0,2 pkt proc. trafności na 1464–3883 meczach (szum); zostaje bet365 (komplet meczów, bukmacher użytkownika w UK)
 - powiadomienia przed meczem (ntfy / Web Push) – użytkownik uznał za zbędne (27.11.2026)
 - osobna przewaga własnego boiska dla każdego klubu (ściąganie 10–40 pseudo-meczów) – bez poprawy
 - dostrajanie poprawki na remisy w ligach (rho od −0,16 do 0) – różnice ±0,0005 Briera
@@ -96,6 +115,14 @@ Użytkownik mieszka w Anglii – zakłady w £, ostrzeżenie UK Gambling Commiss
 `node .github/scripts/futbol-test.mjs` (ok. 1 s, bez sieci): składnia plików, liczba meczów w każdych rozgrywkach, łączenie
 polskich klubów, kursy i xG, test wsteczny PL/LaLiga/Ekstraklasa z progami, prognoza z kursów. Workflow `futbol-test.yml`
 uruchamia go przy każdej zmianie w `futbol/` i w PR. Ustawienia modelu w teście (FIT) muszą być takie jak w `app.js`.
+
+## Język (od 27.11.2026)
+Polski (domyślnie) i angielski – przełącznik na górze zakładki Dane, zapis w localStorage `futbol.lang` (celowo bez
+automatycznego wyboru wg języka telefonu – użytkownik mieszka w UK). W `app.js`: `L(pl, en)` przy każdym napisie,
+`LOC()` dla dat, `dec()`/`pct()`/`fx()` – przecinek dziesiętny tylko po polsku, `plural(n, 1, 2–4, 5+, en1, enN)`,
+`ord()` – angielskie liczebniki porządkowe, `resL()` – litery W/R/P ↔ W/D/L (klasy CSS zostają W/R/P),
+`ROUND_EN`, `ZONE_EN`, `nameEn`/`shortEn` w `COMPS` (data.js); `staticTexts()` – zakładki i nagłówek z index.html.
+Nowe napisy zawsze przez `L()`; test: przełączyć na English i szukać polskich liter w widokach.
 
 ## Sposób pracy
 Gałąź `claude/football-prediction-app-ps2t97` (po scaleniu odtwarzana od `main`). Każdą zmianę testuję w przeglądarce

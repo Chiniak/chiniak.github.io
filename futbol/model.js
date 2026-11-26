@@ -37,7 +37,10 @@
       const sx = !hasXg && (opts.sxg || 0) > 0 && m.shots ? shotXg(m.shots) : null;
       const xw = hasXg ? opts.xg : sx ? opts.sxg : 0;
       const xh = hasXg ? m.xhg : sx?.[0], xa = hasXg ? m.xag : sx?.[1];
-      const hg = xw ? (1 - xw) * m.hg + xw * xh : m.hg, ag = xw ? (1 - xw) * m.ag + xw * xa : m.ag;
+      // oczekiwane gole z kursów zamknięcia tego meczu (wiedza rynku sprzed meczu; opts.mkt = udział)
+      const mw = (opts.mkt || 0) > 0 && m.mxh !== undefined ? Math.min(opts.mkt, 1 - xw) : 0;
+      const gw = 1 - xw - mw;
+      const hg = gw * m.hg + (xw ? xw * xh : 0) + (mw ? mw * m.mxh : 0), ag = gw * m.ag + (xw ? xw * xa : 0) + (mw ? mw * m.mxa : 0);
       return { h: m.home, a: m.away, hg, ag, w, ha: m.neutral ? 0 : 1 };
     });
     let mu = init?.mu ?? Math.log(1.35), home = init?.home ?? 0.2;

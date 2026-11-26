@@ -223,3 +223,9 @@ tr.z-mid td:first-child { box-shadow: inset 3px 0 #f28c28; }
 .weekend summary::after { content: "▾"; margin-left: auto; color: var(--muted); }
 .weekend[open] summary::after { content: "▴"; }
 .weekend h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+
+/* opis prognozy */
+.why { margin-top: 8px; color: var(--muted); line-height: 1.35; text-align: left; }
+.why-card ul { margin: 4px 0 10px; padding-left: 18px; }
+.why-card li { margin: 3px 0; }
+.why-h { margin: 8px 0 0; font-weight: 700; }

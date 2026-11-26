@@ -16,11 +16,11 @@
     { code: "IT1", name: "Serie A", short: "Serie A", logo: 12, cc: "ITA", zones: { top: [4, "Liga Mistrzów"], mid: [5, 6, "Liga Europy"], bottom: [3, "spadek"] } },
     { code: "FR1", name: "Ligue 1", short: "Ligue 1", logo: 9, cc: "FRA", zones: { top: [3, "Liga Mistrzów"], mid: [4, 5, "el. LM / Liga Europy"], bottom: [2, "spadek (16. – baraż)"] } },
     { code: "NL1", name: "Eredivisie", short: "Eredivisie", logo: 11, cc: "NED", zones: { top: [2, "Liga Mistrzów"], mid: [3, 3, "el. LM"], bottom: [2, "spadek (16. – baraż)"] } },
-    { code: "PT1", name: "Liga Portugal", short: "Portugalia", logo: 14, cc: "POR", zones: { top: [2, "Liga Mistrzów"], mid: [3, 3, "el. LM"], bottom: [2, "spadek (16. – baraż)"] } },
+    { code: "PT1", nameEn: "Liga Portugal", shortEn: "Portugal", name: "Liga Portugal", short: "Portugalia", logo: 14, cc: "POR", zones: { top: [2, "Liga Mistrzów"], mid: [3, 3, "el. LM"], bottom: [2, "spadek (16. – baraż)"] } },
     { code: "EN2", name: "Championship", short: "Championship", logo: 24, cc: "ENG", zones: { top: [2, "awans"], mid: [3, 6, "baraże o awans"], bottom: [3, "spadek"] } },
-    { code: "CL", name: "Liga Mistrzów", short: "Liga Mistrzów", logo: 2, cup: true, zones: { top: [8, "1/8 finału"], mid: [9, 24, "baraże"], bottom: [12, "odpada"] } },
-    { code: "EL", name: "Liga Europy", short: "Liga Europy", logo: 2310, cup: true, zones: { top: [8, "1/8 finału"], mid: [9, 24, "baraże"], bottom: [12, "odpada"] } },
-    { code: "ECL", name: "Liga Konferencji", short: "Liga Konferencji", logo: 20296, cup: true, zones: { top: [8, "1/8 finału"], mid: [9, 24, "baraże"], bottom: [12, "odpada"] } },
+    { code: "CL", nameEn: "Champions League", shortEn: "Champions League", name: "Liga Mistrzów", short: "Liga Mistrzów", logo: 2, cup: true, zones: { top: [8, "1/8 finału"], mid: [9, 24, "baraże"], bottom: [12, "odpada"] } },
+    { code: "EL", nameEn: "Europa League", shortEn: "Europa League", name: "Liga Europy", short: "Liga Europy", logo: 2310, cup: true, zones: { top: [8, "1/8 finału"], mid: [9, 24, "baraże"], bottom: [12, "odpada"] } },
+    { code: "ECL", nameEn: "Conference League", shortEn: "Conference League", name: "Liga Konferencji", short: "Liga Konferencji", logo: 20296, cup: true, zones: { top: [8, "1/8 finału"], mid: [9, 24, "baraże"], bottom: [12, "odpada"] } },
   ];
   const COMP = Object.fromEntries(COMPS.map(c => [c.code, c]));
   const ESPN_SLUG = { PL: "eng.1", ES1: "esp.1", DE1: "ger.1", IT1: "ita.1", FR1: "fra.1", NL1: "ned.1", PT1: "por.1", EN2: "eng.2", CL: "uefa.champions", EL: "uefa.europa", ECL: "uefa.europa.conf" };
@@ -43,10 +43,21 @@
     }
     const lineups = (js.rosters || []).map(r => ({
       side: r.homeAway, team: canon(r.team?.displayName || ""), formation: r.formation || "",
-      xi: (r.roster || []).filter(p => p.starter).map(p => ({ n: p.athlete?.displayName || "", pos: p.position?.abbreviation || "", nr: p.jersey || "" })),
-      bench: (r.roster || []).filter(p => !p.starter).map(p => p.athlete?.displayName || ""),
+      xi: (r.roster || []).filter(p => p.starter).map(p => ({ id: p.athlete?.id, n: p.athlete?.displayName || "", pos: p.position?.abbreviation || "", nr: p.jersey || "" })),
+      bench: (r.roster || []).filter(p => !p.starter).map(p => ({ id: p.athlete?.id, n: p.athlete?.displayName || "" })),
     })).filter(r => r.xi.length);
     return { odds, lineups, at: Date.now() };
+  }
+  /* Kadra klubu z ESPN ze statystykami sezonu (rozgrywki comp): występy, w tym w 1. składzie, gole, asysty. */
+  async function loadRoster(comp, teamId) {
+    const r = await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${ESPN_SLUG[comp]}/teams/${teamId}/roster`);
+    if (!r.ok) throw new Error(`${r.status} ESPN`);
+    const js = await r.json();
+    const st = (x, n) => { for (const c of x.statistics?.splits?.categories || []) for (const q of c.stats || []) if (q.name === n) return q.value || 0; return 0; };
+    return (js.athletes || []).map(x => {
+      const apps = st(x, "appearances"), subs = st(x, "subIns");
+      return { id: x.id, n: x.displayName || "", pos: x.position?.abbreviation || "", apps, starts: Math.max(0, apps - subs), g: st(x, "totalGoals"), a: st(x, "goalAssists") };
+    });
   }
   const leagueLogo = code => COMP[code]?.logoUrl || (COMP[code]?.logo ? `https://a.espncdn.com/combiner/i?img=/i/leaguelogos/soccer/500/${COMP[code].logo}.png&w=64&h=64` : null);
 
@@ -102,6 +113,7 @@
       const name = canon(t.n);
       byId[id] = name;
       teams[name] = {
+        id,
         short: t.s || t.n, abbr: t.a || t.n.slice(0, 3).toUpperCase(), color: t.c ? "#" + t.c : null,
         logo: t.l ? t.l.replace("https://a.espncdn.com/i/", "https://a.espncdn.com/combiner/i?img=/i/") + "&w=80&h=80" : null,
       };
@@ -124,6 +136,7 @@
           comp, round: ROUND[r.st] || "", season: seasonOf(date), neutral: r.st === "final", src: "espn",
           odds: fdOdds || oddsObj(r.o || kursy?.[k]) || null,
           ...(x && x[0] !== null && x[1] !== null ? { xhg: x[0], xag: x[1] } : {}),
+          ...(played && x && x[7] !== undefined ? { mxh: x[7], mxa: x[8] } : played && kursy?.[k]?.[7] !== undefined ? { mxh: kursy[k][7], mxa: kursy[k][8] } : {}), // gole z kursów (nauka modelu)
           eid: r.i || null, // id meczu w ESPN (tylko nierozegrane)
           shots: r.s || null, // [gosp. strzały, gosp. celne, gość strzały, gość celne]
         });
@@ -167,6 +180,7 @@
         date, time: d.toTimeString().slice(0, 5), home: nameOf(r.h), away: nameOf(r.a), hg: played ? r.f[0] : null, ag: played ? r.f[1] : null,
         comp: "EK", round: r.r ? `${r.r}. kolejka` : "", season: seasonOf(date), src: "espn",
         odds: r.o ? { h: r.o[0], d: r.o[1], a: r.o[2], line: null, over: null, under: null, book: r.o[3] } : null,
+        ...(played && r.x ? { mxh: r.x[0], mxa: r.x[1] } : {}),
       });
     }
     const pl = matches.filter(m => m.hg !== null);
@@ -229,7 +243,7 @@
     return out.sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || "")));
   }
 
-  const api = { parseEk, loadEk, loadLive, amDec, getJson, parseEspn, parseFpl, parseXg, COMPS, COMP, leagueLogo, loadEspn, loadFpl, loadXg, attachXg, merge, canon, key, seasonStart, seasonLabel, seasonOf };
+  const api = { loadRoster, ESPN_SLUG, parseEk, loadEk, loadLive, amDec, getJson, parseEspn, parseFpl, parseXg, COMPS, COMP, leagueLogo, loadEspn, loadFpl, loadXg, attachXg, merge, canon, key, seasonStart, seasonLabel, seasonOf };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.FData = api;
 })(typeof self !== "undefined" ? self : this);

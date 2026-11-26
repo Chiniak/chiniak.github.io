@@ -3,10 +3,12 @@
 // new_league_fixtures.csv – najbliższe mecze z kursami (plik uzupełniany ok. 2 razy w tygodniu).
 // TheSportsDB (darmowy klucz 123) – terminarz 3 najbliższych kolejek, żeby mecze były widoczne wcześniej (bez kursów;
 // darmowy klucz nie oddaje całego sezonu, ale oddaje pełne kolejki). Daty dalszych kolejek bywają orientacyjne.
-// Zapis: futbol/dane/ekstraklasa.json = { updated, league: logo ligi, badges: { klub: herb }, rows: [ { k: start UTC, h, a, f?: [gole gosp., gole gościa], o?: [1, X, 2, bukmacher], r?: kolejka } ] }
+// Zapis: futbol/dane/ekstraklasa.json = { updated, league: logo ligi, badges: { klub: herb }, rows: [ { k: start UTC, h, a, f?: [gole gosp., gole gościa], o?: [1, X, 2, bukmacher], x?: [gole z kursów], r?: kolejka } ] }
 // Nazwy klubów jak w football-data; ładne nazwy nadaje futbol/data.js. Godziny w plikach są czasu brytyjskiego.
 // Uruchomienie: node .github/scripts/futbol-ekstraklasa.mjs
 import { writeFile, readFile } from "node:fs/promises";
+import { createRequire } from "node:module";
+const M = createRequire(import.meta.url)("../../futbol/model.js");
 
 const OUT = new URL("../../futbol/dane/ekstraklasa.json", import.meta.url);
 const now = new Date();
@@ -56,6 +58,8 @@ for (const r of res) {
   if (r.HG !== "" && r.AG !== "" && r.HG !== undefined) row.f = [+r.HG, +r.AG];
   const o = odds(r, true);
   if (o) row.o = o;
+  // oczekiwane gole z kursów rozegranego meczu (do nauki modelu)
+  if (o && row.f) { const f = M.fromOdds({ h: o[0], d: o[1], a: o[2] }, { total: 2.7 }); if (f) row.x = [Math.round(f.xg.home * 100) / 100, Math.round(f.xg.away * 100) / 100]; }
   rows.push(row);
 }
 let nf = 0;
@@ -107,6 +111,17 @@ let prev = null;
 try { prev = JSON.parse(await readFile(OUT, "utf8")); } catch { /* brak pliku */ }
 // herby z poprzednich pobrań zostają (klub może nie grać w najbliższych kolejkach)
 const allBadges = { ...(prev?.badges || {}), ...badges }, league = leagueBadge || prev?.league || null;
+// kluby bez herbu (np. spadkowicze z poprzedniego sezonu) – wyszukiwanie po nazwie, a potem po najdłuższym słowie nazwy
+for (const n of [...new Set(rows.flatMap(r => [r.h, r.a]))].filter(n => !allBadges[n])) {
+  const words = n.replace(/[^\p{L} ]/gu, " ").split(/\s+/).filter(w => w.length >= 5).sort((a, b) => b.length - a.length);
+  for (const q of [n, ...words]) {
+    try {
+      const t = (JSON.parse(await get(`https://www.thesportsdb.com/api/v1/json/123/searchteams.php?t=${encodeURIComponent(q)}`)).teams || [])
+        .find(x => x.strSport === "Soccer" && x.strCountry === "Poland" && x.strBadge);
+      if (t) { allBadges[n] = t.strBadge; console.log(`herb: ${n} ← ${t.strTeam}`); break; }
+    } catch (e) { console.log(`herb ${n}: ${e.message}`); break; }
+  }
+}
 if (prev && JSON.stringify([prev.rows, prev.badges, prev.league]) === JSON.stringify([rows, allBadges, league])) { console.log("bez zmian"); process.exit(0); }
 await writeFile(OUT, JSON.stringify({ updated: new Date().toISOString(), league, badges: allBadges, rows }));
 console.log(`herby: ${Object.keys(allBadges).length} klubów`);
