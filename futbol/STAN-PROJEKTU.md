@@ -51,7 +51,8 @@ Użytkownik mieszka w Anglii – zakłady w £, ostrzeżenie UK Gambling Commiss
   przełącznik w Danych. Najpewniejszy zakład z kursów: weszło 80,9% (zapowiedź 80,4%), zwrot −2,3%; kupon z 3 – 61%
 - karta meczu pobiera na żywo z ESPN (`summary?event=`) potwierdzone składy i najnowsze kursy DraftKings (z kursem otwarcia);
   w PL pokazuje kluczowych zawodników (FPL: ≥ 8% xG+xA drużyny albo ≥ 75% minut lidera) poza pierwszym składem.
-  ESPN odpowiada 403 przeglądarce testowej (Playwright, także przez proxy) – w zwykłych przeglądarkach 200 z CORS `*`;
+  ESPN odpowiada 403 przeglądarce testowej (Playwright, także przez proxy) – w zwykłych przeglądarkach 200 z CORS `*`
+  (użytkownik potwierdził 26.11.2026: na telefonie najnowsze kursy się pokazują);
   ważne: zwykłe `fetch` bez nagłówków (z `cache: "no-cache"` przeglądarka wysyła OPTIONS, którego ESPN nie obsługuje)
 - puchary: bez poprawki Dixona-Colesa (`rho: 0`; Brier LM 0,552 → 0,549, LE 0,587 → 0,583)
 
