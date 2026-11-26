@@ -76,6 +76,7 @@ Użytkownik mieszka w Anglii – zakłady w £, ostrzeżenie UK Gambling Commiss
 (tylko dane sprzed meczu); podsumowanie trafień 1X2, dokładnego wyniku i samego modelu.
 
 ## Odrzucone (sprawdzone, nie działało)
+- powiadomienia przed meczem (ntfy / Web Push) – użytkownik uznał za zbędne (27.11.2026)
 - osobna przewaga własnego boiska dla każdego klubu (ściąganie 10–40 pseudo-meczów) – bez poprawy
 - dostrajanie poprawki na remisy w ligach (rho od −0,16 do 0) – różnice ±0,0005 Briera
 - ruch kursów jako osobny sygnał – prognoza i tak bierze najnowsze kursy
