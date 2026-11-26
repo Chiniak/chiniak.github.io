@@ -32,6 +32,10 @@ for (const t of ["Legia Warszawa", "Raków Częstochowa", "Lech Poznań", "Jagie
   check(comps.has("EK") && [...comps].some(c => D.COMP[c]?.cup), `${t}: mecze w Ekstraklasie i w pucharach pod jedną nazwą`);
 }
 check(![...names].some(n => /Legia Warsaw$|Lech Poznan$/.test(n)), "brak angielskich duplikatów polskich klubów");
+// każda drużyna ma herb (ESPN albo – w Ekstraklasie – TheSportsDB)
+const teams = { ...ek.teams, ...es.teams };
+const noLogo = [...names].filter(n => !teams[n]?.logo);
+check(!noLogo.length, `herby: ${names.size - noLogo.length}/${names.size} drużyn${noLogo.length ? ` – brak: ${noLogo.join(", ")}` : ""}`);
 const withOdds = matches.filter(m => M.played(m) && m.odds?.book === "bet365").length;
 check(withOdds >= 3000, `kursy bet365 dla ${withOdds} rozegranych meczów`);
 const withXg = matches.filter(m => m.xhg !== undefined).length;

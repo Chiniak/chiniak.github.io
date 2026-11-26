@@ -107,6 +107,17 @@ let prev = null;
 try { prev = JSON.parse(await readFile(OUT, "utf8")); } catch { /* brak pliku */ }
 // herby z poprzednich pobrań zostają (klub może nie grać w najbliższych kolejkach)
 const allBadges = { ...(prev?.badges || {}), ...badges }, league = leagueBadge || prev?.league || null;
+// kluby bez herbu (np. spadkowicze z poprzedniego sezonu) – wyszukiwanie po nazwie, a potem po najdłuższym słowie nazwy
+for (const n of [...new Set(rows.flatMap(r => [r.h, r.a]))].filter(n => !allBadges[n])) {
+  const words = n.replace(/[^\p{L} ]/gu, " ").split(/\s+/).filter(w => w.length >= 5).sort((a, b) => b.length - a.length);
+  for (const q of [n, ...words]) {
+    try {
+      const t = (JSON.parse(await get(`https://www.thesportsdb.com/api/v1/json/123/searchteams.php?t=${encodeURIComponent(q)}`)).teams || [])
+        .find(x => x.strSport === "Soccer" && x.strCountry === "Poland" && x.strBadge);
+      if (t) { allBadges[n] = t.strBadge; console.log(`herb: ${n} ← ${t.strTeam}`); break; }
+    } catch (e) { console.log(`herb ${n}: ${e.message}`); break; }
+  }
+}
 if (prev && JSON.stringify([prev.rows, prev.badges, prev.league]) === JSON.stringify([rows, allBadges, league])) { console.log("bez zmian"); process.exit(0); }
 await writeFile(OUT, JSON.stringify({ updated: new Date().toISOString(), league, badges: allBadges, rows }));
 console.log(`herby: ${Object.keys(allBadges).length} klubów`);
