@@ -1,6 +1,6 @@
 /* Futbol – działanie offline. Pliki aplikacji: najpierw sieć, kopia gdy brak internetu.
    Przy każdej zmianie plików podbij numer CACHE. Dane meczów są w localStorage. */
-const CACHE = "futbol-v12";
+const CACHE = "futbol-v13";
 const APP = ["./", "./index.html", "./style.css", "./model.js", "./data.js", "./app.js", "./manifest.webmanifest", "./icon.svg", "./icon-192.png", "./icon-512.png"];
 self.addEventListener("install", e => e.waitUntil(caches.open(CACHE).then(c => c.addAll(APP)).then(() => self.skipWaiting())));
 self.addEventListener("activate", e => e.waitUntil((async () => {

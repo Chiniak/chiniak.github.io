@@ -37,7 +37,7 @@
     return `<i class="badge ${cls}${logo ? " has-logo" : ""}" style="background:${color(t)}" aria-hidden="true"><b>${esc(abbr(t))}</b>${logo ? `<img src="${esc(logo)}" alt="" loading="lazy" decoding="async" onerror="this.parentNode.classList.remove('has-logo');this.remove()">` : ""}</i>`;
   }
   const teamEl = (t, right) => `<div class="team${right ? " r" : ""}">${badge(t)}<span>${esc(short(t))}</span></div>`;
-  const compLogo = (c, cls = "") => `<img class="clogo ${cls}" src="${D.leagueLogo(c)}" alt="" loading="lazy" onerror="this.remove()">`;
+  const compLogo = (c, cls = "") => D.leagueLogo(c) ? `<img class="clogo ${cls}" src="${D.leagueLogo(c)}" alt="" loading="lazy" onerror="this.remove()">` : "";
   const compTag = c => `<span class="ctag">${compLogo(c)}${esc(D.COMP[c]?.short || c)}</span>`;
   const compName = c => D.COMP[c]?.name || c;
 
@@ -61,11 +61,14 @@
   function compute() {
     const r = S.raw;
     const es = D.parseEspn(r.espn, r.kursy, r.fd);          // najpierw ESPN – jego nazwy klubów są wzorcowe
+    const ek = r.ek ? D.parseEk(r.ek) : null;              // Ekstraklasa z football-data
     const fpl = r.fpl ? D.parseFpl(r.fpl) : null;
     const xg = r.xg ? D.parseXg(r.xg) : null;
-    S.teams = es.teams;
-    S.status = es.status; S.updated = es.updated; S.fplInfo = fpl ? { updated: fpl.updated, players: fpl.players.length, played: fpl.played } : null;
-    S.matches = D.merge([es.matches, fpl ? fpl.matches : [], S.manual.map(m => ({ ...m, src: "manual" }))]);
+    S.teams = { ...(ek ? ek.teams : {}), ...es.teams };
+    // kluby Ekstraklasy znane też z pucharów (ESPN): logo z ESPN, polski skrót
+    if (ek) for (const [n, t] of Object.entries(ek.teams)) if (es.teams[n]) S.teams[n] = { ...es.teams[n], short: t.short };
+    S.status = ek ? [es.status[0], ek.status, ...es.status.slice(1)] : es.status; S.updated = es.updated; S.fplInfo = fpl ? { updated: fpl.updated, players: fpl.players.length, played: fpl.played } : null;
+    S.matches = D.merge([es.matches, ek ? ek.matches : [], fpl ? fpl.matches : [], S.manual.map(m => ({ ...m, src: "manual" }))]);
     S.xgCount = xg ? D.attachXg(S.matches, xg) : 0;
     S.players = fpl ? fpl.players.map(p => ({ ...p, team: D.canon(p.team) })) : [];
     S.elo = M.elo(S.matches);
@@ -131,7 +134,13 @@
   }
   function simFor(comp) {
     if (S.sims[comp] !== undefined) return S.sims[comp];
-    const lm = S.matches.filter(m => m.comp === comp && m.season === curSeason());
+    let lm = S.matches.filter(m => m.comp === comp && m.season === curSeason());
+    if (D.COMP[comp]?.rr) {
+      // terminarz nieznany (Ekstraklasa): każda para gra raz u siebie i raz na wyjeździe – dopisujemy brakujące mecze bez daty
+      const ts = [...new Set(lm.flatMap(m => [m.home, m.away]))], have = new Set(lm.map(m => m.home + "|" + m.away)), extra = [];
+      for (const h of ts) for (const a of ts) if (h !== a && !have.has(h + "|" + a)) extra.push({ home: h, away: a, hg: null, ag: null, comp });
+      lm = lm.concat(extra);
+    }
     return (S.sims[comp] = !isCup(comp) && lm.some(m => !M.played(m)) ? M.simulateSeason(modelFor(comp), lm, { runs: 3000 }) : null);
   }
 
@@ -143,8 +152,8 @@
     if (!fresh) return;
     $("#refresh").classList.add("spin");
     try {
-      const [espn, fpl, xg, kursy, fd] = await Promise.all([D.getJson("dane/espn.json"), D.getJson("dane/fpl.json").catch(() => null), D.getJson("dane/xg.json").catch(() => null), D.getJson("dane/kursy.json").catch(() => null), D.getJson("dane/fd.json").catch(() => null)]);
-      S.raw = { espn, fpl, xg, kursy, fd, at: Date.now() };
+      const [espn, fpl, xg, kursy, fd, ek] = await Promise.all([D.getJson("dane/espn.json"), D.getJson("dane/fpl.json").catch(() => null), D.getJson("dane/xg.json").catch(() => null), D.getJson("dane/kursy.json").catch(() => null), D.getJson("dane/fd.json").catch(() => null), D.getJson("dane/ekstraklasa.json").catch(() => null)]);
+      S.raw = { espn, fpl, xg, kursy, fd, ek, at: Date.now() };
       S.fetchedAt = S.raw.at;
       if (!store.set(LS.cache, S.raw)) store.set(LS.cache, { espn, at: S.raw.at }); // za mało miejsca – przynajmniej wyniki
       compute(); render();
@@ -870,6 +879,39 @@
         </tbody></table></div><p class="small muted" style="margin-bottom:0">Forma = średnia punktów Fantasy Premier League z ostatnich 30 dni (gole, asysty, czyste konta, minuty). Źródło: FPL${S.fplInfo?.updated ? `, stan z ${new Date(S.fplInfo.updated).toLocaleString("pl-PL")}` : ""}.</p></div>`;
   }
 
+  /* Prognoza sprzed rozegranego meczu: z kursów zamknięcia (tak działa strona, gdy kursy są), a model z testu wstecznego
+     (dopasowany tylko do meczów sprzed tego dnia). */
+  function preMatch(m) {
+    const bt = btFor(m.comp) && S.btMap.get(m.id);
+    const model = bt ? { probs: bt.probs, top: bt.top } : null;
+    let main = null;
+    if (m.odds?.h) {
+      const f = M.fromOdds(m.odds, { total: bt ? bt.xg.home + bt.xg.away : 2.7 });
+      if (f) main = { probs: [f.win, f.draw, f.loss], top: f.top[0], src: m.odds.book || "kursy" };
+    }
+    if (!main && model) main = { ...model, src: "model" };
+    if (!main) return null;
+    const res = m.hg > m.ag ? 0 : m.hg === m.ag ? 1 : 2, pick = r => r.probs.indexOf(Math.max(...r.probs));
+    return { main, model, res, hit: pick(main) === res, exact: main.top.hg === m.hg && main.top.ag === m.ag, mHit: model ? pick(model) === res : null };
+  }
+  function historyHtml(t, n = 5) {
+    const ms = S.matches.filter(m => M.played(m) && (m.home === t || m.away === t)).slice(-n).reverse();
+    const rows = ms.map(m => ({ m, x: preMatch(m) })).filter(r => r.x);
+    if (!rows.length) return "";
+    const lab = (m, i) => i === 1 ? "remis" : `wygrana ${short(i === 0 ? m.home : m.away)}`;
+    const hits = rows.filter(r => r.x.hit).length, ex = rows.filter(r => r.x.exact).length, mr = rows.filter(r => r.x.mHit !== null), mh = mr.filter(r => r.x.mHit).length;
+    return `<h2>Ostatnie ${rows.length} meczów – czy prognoza się sprawdziła</h2><div class="card">
+      ${rows.map(({ m, x }) => {
+        const pi = x.main.probs.indexOf(Math.max(...x.main.probs));
+        return `<div class="list-row" data-match="${esc(m.id)}" style="align-items:flex-start">
+          <span class="res ${x.hit ? "W" : "P"}" title="${x.hit ? "trafiona" : "nietrafiona"}">${x.hit ? "✓" : "✗"}</span>
+          <span class="x" style="white-space:normal"><b>${esc(short(m.home))} ${m.hg}–${m.ag} ${esc(short(m.away))}</b> <span class="small muted">${fmtDate(m.date, false)} · ${esc(D.COMP[m.comp]?.short || m.comp)}</span><br>
+          <span class="small">Prognoza: <b>${esc(lab(m, pi))}</b> ${pct(x.main.probs[pi])} · najbardziej prawdopodobny dokładny wynik ${x.main.top.hg}–${x.main.top.ag}${x.exact ? ` <span class="tag ok">trafiony</span>` : ""}</span><br>
+          <span class="small muted">1 ${pct(x.main.probs[0])} · X ${pct(x.main.probs[1])} · 2 ${pct(x.main.probs[2])} – ${x.main.src === "model" ? "z modelu (brak kursów)" : `z kursów ${esc(x.main.src)}`}${x.model && x.main.src !== "model" ? ` · model: ${esc(lab(m, x.model.probs.indexOf(Math.max(...x.model.probs))))} ${x.mHit ? "✓" : "✗"}` : ""}</span></span></div>`;
+      }).join("")}
+      <p class="small" style="margin-bottom:0">Trafiony wynik (1/X/2): <b>${hits} z ${rows.length}</b>, dokładny wynik: ${ex} z ${rows.length}${mr.length && rows.some(r => r.x.main.src !== "model") ? ` · sam model: ${mh} z ${mr.length}` : ""}.</p>
+      <p class="small muted" style="margin-bottom:0">Prognozy liczone tylko z danych sprzed każdego meczu: z kursów zamknięcia bukmachera, gdy są, inaczej z modelu. Typ 1/X/2 to najbardziej prawdopodobny wynik – nawet dobra prognoza trafia go średnio w ok. 5 meczach na 10.</p></div>`;
+  }
   function openClub(t) {
     const lg = leagueOf(t);
     const er = S.elo.ratings;
@@ -895,6 +937,7 @@
         ${euro.length ? `<div class="stat"><b>${euroW}/${euro.length}</b><span>wygrane w pucharach europejskich (2 sezony)</span></div>` : ""}
       </div>
       <h2>Forma (ostatnie 10)</h2><div class="card">${formHtml(formOf(t, 10))}</div>
+      ${historyHtml(t)}
       ${playersHtml(t, row)}
       <h2>Ranking Elo w czasie</h2><div class="card">${spark(S.elo.history[t])}</div>
       <h2>Najbliższe mecze · szanse 1 / X / 2</h2><div class="card">${next.length ? next.map(m => resultRow(m, t)).join("") : `<div class="muted">Brak meczów w terminarzu.</div>`}</div>
@@ -935,6 +978,7 @@
       <div class="list-row" style="cursor:default"><span class="res W">✓</span><span class="x" style="white-space:normal"><b>ESPN</b> – wyniki, terminarze, kluby i loga<br><span class="small muted">stan z ${S.updated ? new Date(S.updated).toLocaleString("pl-PL") : "–"}</span></span></div>`;
     for (const s of S.status) h += `<div class="list-row" style="cursor:default">${compLogo(s.comp, "sm")}<span class="x">${esc(compName(s.comp))}</span><span class="small muted">${s.played}/${s.n} meczów${s.last ? ` · ostatni ${fmtDate(s.last, false)}` : ""}</span></div>`;
     h += `<div class="list-row" style="cursor:default"><span class="res ${S.fplInfo ? "W" : "P"}">${S.fplInfo ? "✓" : "!"}</span><span class="x" style="white-space:normal"><b>Fantasy Premier League</b> – kontuzje, forma zawodników, xG (Opta)<br><span class="small muted">${S.fplInfo ? `${S.fplInfo.players} zawodników · xG dla ${S.xgCount} meczów · stan z ${new Date(S.fplInfo.updated).toLocaleString("pl-PL")}` : "niedostępne"}</span></span></div>`;
+    if (S.raw.ek) h += `<div class="list-row" style="cursor:default"><span class="res W">✓</span><span class="x" style="white-space:normal"><b>Ekstraklasa</b> – wyniki, kursy i najbliższe mecze z football-data.co.uk (ESPN jej nie ma)<br><span class="small muted">stan z ${new Date(S.raw.ek.updated).toLocaleString("pl-PL")} · najbliższe mecze pojawiają się ok. 2 dni wcześniej</span></span></div>`;
     const fdN = S.matches.filter(m => m.odds?.book === "bet365").length;
     h += `<div class="list-row" style="cursor:default"><span class="res ${S.raw.fd ? "W" : "P"}">${S.raw.fd ? "✓" : "!"}</span><span class="x" style="white-space:normal"><b>football-data.co.uk</b> – xG 8 lig i kursy bet365 rozegranych meczów (do sprawdzania zakładów)<br><span class="small muted">${S.raw.fd ? `kursy dla ${fdN} meczów · stan z ${new Date(S.raw.fd.updated).toLocaleString("pl-PL")}` : "niedostępne"}</span></span></div>`;
     h += `<div class="row"><button class="btn" id="dRefresh">Odśwież teraz</button><span class="small muted">Dane na stronie odświeżane automatycznie co 3 godziny.${S.manual.length ? ` Wpisanych ręcznie: ${S.manual.length}.` : ""}</span></div></div>`;
@@ -977,7 +1021,7 @@
       <p><b>Nieobecni</b> (tylko Premier League). Dla meczów w najbliższych 10 dniach model obniża atak drużyny o udział brakujących zawodników w jej xG i asystach oczekiwanych (zmiennicy odrabiają ok. 40%, najwyżej −25%) i podnosi liczbę traconych goli, gdy brakuje bramkarza lub obrońców (najwyżej +20%).</p>
       <p><b>Zmęczenie.</b> Drużyna grająca po najwyżej ${M.FATIGUE.maxDays} dniach przerwy przeciw rywalowi, który odpoczywał dłużej, ma atak niższy o ${pct(M.FATIGUE.att)} i traci o ${pct(M.FATIGUE.def)} więcej goli.</p>
       <p><b>Elo</b> to osobny ranking formy, aktualizowany po każdym meczu.</p>
-      <p class="muted" style="margin-bottom:0">Model nie zna potwierdzonych składów, zmian trenera ani motywacji – traktuj prognozy jako punkt wyjścia, nie pewniak. Ekstraklasy nie ma w darmowych źródłach danych.</p></div>`;
+      <p class="muted" style="margin-bottom:0">Model nie zna potwierdzonych składów, zmian trenera ani motywacji – traktuj prognozy jako punkt wyjścia, nie pewniak. Ekstraklasa pochodzi z football-data.co.uk (wyniki i kursy; bez xG, strzałów i składów), więc jej prognozy są mniej dokładne.</p></div>`;
     return h;
   }
 

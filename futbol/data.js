@@ -10,6 +10,7 @@
   /* Rozgrywki: kod, nazwa, skrót, id logo ESPN, strefy tabeli (top – awans/LM, mid – baraże/puchary, bottom – spadek). */
   const COMPS = [
     { code: "PL", name: "Premier League", short: "Premier League", logo: 23, cc: "ENG", zones: { top: [4, "Liga Mistrzów"], mid: [5, 5, "miejsce 5 (często też LM)"], bottom: [3, "spadek"] } },
+    { code: "EK", name: "Ekstraklasa", short: "Ekstraklasa", logo: null, cc: "POL", rr: true, src: "football-data", zones: { top: [1, "el. Ligi Mistrzów"], mid: [2, 4, "el. pucharów europejskich"], bottom: [3, "spadek"] } },
     { code: "ES1", name: "LaLiga", short: "LaLiga", logo: 15, cc: "ESP", zones: { top: [4, "Liga Mistrzów"], mid: [5, 6, "Liga Europy"], bottom: [3, "spadek"] } },
     { code: "DE1", name: "Bundesliga", short: "Bundesliga", logo: 10, cc: "GER", zones: { top: [4, "Liga Mistrzów"], mid: [5, 6, "Liga Europy"], bottom: [2, "spadek (16. – baraż)"] } },
     { code: "IT1", name: "Serie A", short: "Serie A", logo: 12, cc: "ITA", zones: { top: [4, "Liga Mistrzów"], mid: [5, 6, "Liga Europy"], bottom: [3, "spadek"] } },
@@ -46,7 +47,7 @@
     })).filter(r => r.xi.length);
     return { odds, lineups, at: Date.now() };
   }
-  const leagueLogo = code => `https://a.espncdn.com/combiner/i?img=/i/leaguelogos/soccer/500/${COMP[code]?.logo}.png&w=64&h=64`;
+  const leagueLogo = code => COMP[code]?.logo ? `https://a.espncdn.com/combiner/i?img=/i/leaguelogos/soccer/500/${COMP[code].logo}.png&w=64&h=64` : null;
 
   // sezon zaczyna się w lipcu: listopad 2026 → 2026, marzec 2027 → 2026
   function seasonStart(d = new Date()) { return d.getMonth() >= 6 ? d.getFullYear() : d.getFullYear() - 1; }
@@ -131,6 +132,41 @@
     return { matches, teams, status, updated: js.updated };
   }
 
+  /* Ekstraklasa (football-data.co.uk): nazwy z plików → pełna nazwa, skrót, barwy. Lech i Jagiellonia mają już nazwy z ESPN (puchary). */
+  const EK_TEAMS = {
+    "Arka Gdynia": ["Arka Gdynia", "Arka", "ARK", "#ffd600"], "Cracovia": ["Cracovia", "Cracovia", "CRA", "#c8102e"],
+    "GKS Katowice": ["GKS Katowice", "GKS Katowice", "GKS", "#f4c300"], "Gornik Zabrze": ["Górnik Zabrze", "Górnik", "GÓR", "#0055a5"],
+    "Jagiellonia": ["Jagiellonia Bialystok", "Jagiellonia", "JAG", "#ffed00"], "Korona Kielce": ["Korona Kielce", "Korona", "KOR", "#e30613"],
+    "Lech Poznan": ["Lech Poznan", "Lech", "LECH", "#004b92"], "Lechia Gdansk": ["Lechia Gdańsk", "Lechia", "LGD", "#008d3f"],
+    "Legia": ["Legia Warszawa", "Legia", "LEG", "#00843d"], "Motor Lublin": ["Motor Lublin", "Motor", "MOT", "#ffd200"],
+    "Piast Gliwice": ["Piast Gliwice", "Piast", "PIA", "#0033a0"], "Pogon Szczecin": ["Pogoń Szczecin", "Pogoń", "POG", "#00285e"],
+    "Radomiak Radom": ["Radomiak Radom", "Radomiak", "RAD", "#007a3d"], "Rakow": ["Raków Częstochowa", "Raków", "RAK", "#c8102e"],
+    "Slask Wroclaw": ["Śląsk Wrocław", "Śląsk", "ŚLĄ", "#00843d"], "Termalica B-B.": ["Bruk-Bet Termalica", "Termalica", "TER", "#f58220"],
+    "Widzew Lodz": ["Widzew Łódź", "Widzew", "WID", "#c8102e"], "Wieczysta Krakow": ["Wieczysta Kraków", "Wieczysta", "WIE", "#ffd700"],
+    "Wisla": ["Wisła Kraków", "Wisła K.", "WIS", "#d40000"], "Wisla Plock": ["Wisła Płock", "Wisła P.", "WPŁ", "#0055a5"],
+    "Zaglebie": ["Zagłębie Lubin", "Zagłębie", "ZAG", "#f37021"], "Stal Mielec": ["Stal Mielec", "Stal", "STA", "#0055a5"],
+    "Puszcza": ["Puszcza Niepołomice", "Puszcza", "PUS", "#00843d"],
+  };
+  const loadEk = async (url = "dane/ekstraklasa.json") => parseEk(await getJson(url));
+  function parseEk(js) {
+    const teams = {}, matches = [];
+    const nameOf = n => {
+      const x = EK_TEAMS[n], name = canon(x ? x[0] : n);
+      if (!teams[name]) teams[name] = { short: x ? x[1] : n, abbr: x ? x[2] : n.slice(0, 3).toUpperCase(), color: x ? x[3] : null, logo: null };
+      return name;
+    };
+    for (const r of js.rows) {
+      const d = new Date(r.k), date = localDate(d), played = Array.isArray(r.f);
+      matches.push({
+        date, time: d.toTimeString().slice(0, 5), home: nameOf(r.h), away: nameOf(r.a), hg: played ? r.f[0] : null, ag: played ? r.f[1] : null,
+        comp: "EK", round: "", season: seasonOf(date), src: "espn",
+        odds: r.o ? { h: r.o[0], d: r.o[1], a: r.o[2], line: null, over: null, under: null, book: r.o[3] } : null,
+      });
+    }
+    const pl = matches.filter(m => m.hg !== null);
+    return { matches, teams, status: { comp: "EK", n: matches.length, played: pl.length, last: pl.length ? pl[pl.length - 1].date : null }, updated: js.updated };
+  }
+
   /* Fantasy Premier League: kontuzje, forma, wyniki PL. */
   const loadFpl = async (url = "dane/fpl.json") => parseFpl(await getJson(url));
   function parseFpl(js) {
@@ -187,7 +223,7 @@
     return out.sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || "")));
   }
 
-  const api = { loadLive, amDec, getJson, parseEspn, parseFpl, parseXg, COMPS, COMP, leagueLogo, loadEspn, loadFpl, loadXg, attachXg, merge, canon, key, seasonStart, seasonLabel, seasonOf };
+  const api = { parseEk, loadEk, loadLive, amDec, getJson, parseEspn, parseFpl, parseXg, COMPS, COMP, leagueLogo, loadEspn, loadFpl, loadXg, attachXg, merge, canon, key, seasonStart, seasonLabel, seasonOf };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.FData = api;
 })(typeof self !== "undefined" ? self : this);

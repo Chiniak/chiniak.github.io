@@ -1,0 +1,79 @@
+// Ekstraklasa z football-data.co.uk (darmowe CSV, bez klucza) – ESPN jej nie ma.
+// new/POL.csv – wyniki i kursy zamknięcia (bet365, a gdy ich brak – średnia rynku) z kolejnych sezonów;
+// new_league_fixtures.csv – najbliższe mecze z kursami (plik uzupełniany ok. 2 razy w tygodniu).
+// Zapis: futbol/dane/ekstraklasa.json = { updated, rows: [ { k: start UTC, h, a, f?: [gole gosp., gole gościa], o?: [1, X, 2, bukmacher] } ] }
+// Nazwy klubów jak w football-data; ładne nazwy nadaje futbol/data.js. Godziny w plikach są czasu brytyjskiego.
+// Uruchomienie: node .github/scripts/futbol-ekstraklasa.mjs
+import { writeFile, readFile } from "node:fs/promises";
+
+const OUT = new URL("../../futbol/dane/ekstraklasa.json", import.meta.url);
+const now = new Date();
+const y0 = now.getUTCMonth() >= 6 ? now.getUTCFullYear() : now.getUTCFullYear() - 1;
+const seasons = new Set([`${y0 - 1}/${y0}`, `${y0}/${y0 + 1}`]);
+
+async function get(url) {
+  for (let i = 0; i < 4; i++) {
+    try {
+      const r = await fetch(url, { headers: { "User-Agent": "futbol-app" } });
+      if (r.ok) return r.text();
+      throw new Error(`${r.status} ${url}`);
+    } catch (e) {
+      if (i === 3) throw e;
+      await new Promise(res => setTimeout(res, 2000 * 2 ** i));
+    }
+  }
+}
+function csv(text) {
+  const lines = text.replace(/^﻿/, "").split(/\r?\n/).filter(l => l.trim());
+  const split = l => { const out = []; let cur = "", q = false; for (const ch of l) { if (ch === '"') q = !q; else if (ch === "," && !q) { out.push(cur); cur = ""; } else cur += ch; } out.push(cur); return out; };
+  const head = split(lines[0] || "");
+  return lines.slice(1).map(l => { const v = split(l), o = {}; head.forEach((h, i) => { if (h) o[h] = v[i]; }); return o; });
+}
+const num = v => { const x = parseFloat(v); return isFinite(x) && x > 1 ? x : null; };
+// czas brytyjski → UTC (ISO, jak w danych ESPN: RRRR-MM-DDTGG:MMZ)
+function ukToUtc(date, time) {
+  const [dd, mm, yy] = date.split("/"), [H, M] = (time || "15:00").split(":").map(Number);
+  const guess = Date.UTC(+(yy.length === 2 ? "20" + yy : yy), +mm - 1, +dd, H, M);
+  const london = new Date(new Date(guess).toLocaleString("en-US", { timeZone: "Europe/London" })).getTime();
+  const utc = new Date(guess).getTime() - (london - new Date(new Date(guess).toLocaleString("en-US", { timeZone: "UTC" })).getTime());
+  return new Date(utc).toISOString().slice(0, 16) + "Z";
+}
+// kursy: bet365, a gdy ich brak – średnia rynku
+function odds(r, closing) {
+  const c = closing ? "C" : "";
+  const b = [num(r[`B365${c}H`]), num(r[`B365${c}D`]), num(r[`B365${c}A`])];
+  if (b.every(Boolean)) return [...b, "bet365"];
+  const a = [num(r[`Avg${c}H`]), num(r[`Avg${c}D`]), num(r[`Avg${c}A`])];
+  return a.every(Boolean) ? [...a, "średnia rynku"] : null;
+}
+
+const rows = [];
+const res = csv(await get("https://football-data.co.uk/new/POL.csv")).filter(r => seasons.has(r.Season) && r.Home && r.Date);
+for (const r of res) {
+  const row = { k: ukToUtc(r.Date, r.Time), h: r.Home, a: r.Away };
+  if (r.HG !== "" && r.AG !== "" && r.HG !== undefined) row.f = [+r.HG, +r.AG];
+  const o = odds(r, true);
+  if (o) row.o = o;
+  rows.push(row);
+}
+let nf = 0;
+try {
+  for (const r of csv(await get("https://football-data.co.uk/new_league_fixtures.csv"))) {
+    if (r.Country !== "Poland" || !r.Home || !r.Date) continue;
+    const k = ukToUtc(r.Date, r.Time);
+    if (rows.some(x => x.h === r.Home && x.a === r.Away && Math.abs(new Date(x.k) - new Date(k)) < 3 * 86400000)) continue;
+    const row = { k, h: r.Home, a: r.Away }, o = odds(r, false);
+    if (o) row.o = o;
+    rows.push(row); nf++;
+  }
+} catch (e) { console.log("terminarz niedostępny:", e.message); }
+rows.sort((a, b) => a.k.localeCompare(b.k));
+const played = rows.filter(r => r.f).length;
+console.log(`Ekstraklasa: ${played} rozegranych, ${nf} nadchodzących, kursy dla ${rows.filter(r => r.o).length}`);
+if (played < 200) throw new Error("za mało meczów – nie zapisuję");
+
+let prev = null;
+try { prev = JSON.parse(await readFile(OUT, "utf8")); } catch { /* brak pliku */ }
+if (prev && JSON.stringify(prev.rows) === JSON.stringify(rows)) { console.log("bez zmian"); process.exit(0); }
+await writeFile(OUT, JSON.stringify({ updated: new Date().toISOString(), rows }));
+console.log("zapisano");
