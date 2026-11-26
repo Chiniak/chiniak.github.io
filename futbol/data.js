@@ -16,11 +16,11 @@
     { code: "IT1", name: "Serie A", short: "Serie A", logo: 12, cc: "ITA", zones: { top: [4, "Liga Mistrzów"], mid: [5, 6, "Liga Europy"], bottom: [3, "spadek"] } },
     { code: "FR1", name: "Ligue 1", short: "Ligue 1", logo: 9, cc: "FRA", zones: { top: [3, "Liga Mistrzów"], mid: [4, 5, "el. LM / Liga Europy"], bottom: [2, "spadek (16. – baraż)"] } },
     { code: "NL1", name: "Eredivisie", short: "Eredivisie", logo: 11, cc: "NED", zones: { top: [2, "Liga Mistrzów"], mid: [3, 3, "el. LM"], bottom: [2, "spadek (16. – baraż)"] } },
-    { code: "PT1", name: "Liga Portugal", short: "Portugalia", logo: 14, cc: "POR", zones: { top: [2, "Liga Mistrzów"], mid: [3, 3, "el. LM"], bottom: [2, "spadek (16. – baraż)"] } },
+    { code: "PT1", nameEn: "Liga Portugal", shortEn: "Portugal", name: "Liga Portugal", short: "Portugalia", logo: 14, cc: "POR", zones: { top: [2, "Liga Mistrzów"], mid: [3, 3, "el. LM"], bottom: [2, "spadek (16. – baraż)"] } },
     { code: "EN2", name: "Championship", short: "Championship", logo: 24, cc: "ENG", zones: { top: [2, "awans"], mid: [3, 6, "baraże o awans"], bottom: [3, "spadek"] } },
-    { code: "CL", name: "Liga Mistrzów", short: "Liga Mistrzów", logo: 2, cup: true, zones: { top: [8, "1/8 finału"], mid: [9, 24, "baraże"], bottom: [12, "odpada"] } },
-    { code: "EL", name: "Liga Europy", short: "Liga Europy", logo: 2310, cup: true, zones: { top: [8, "1/8 finału"], mid: [9, 24, "baraże"], bottom: [12, "odpada"] } },
-    { code: "ECL", name: "Liga Konferencji", short: "Liga Konferencji", logo: 20296, cup: true, zones: { top: [8, "1/8 finału"], mid: [9, 24, "baraże"], bottom: [12, "odpada"] } },
+    { code: "CL", nameEn: "Champions League", shortEn: "Champions League", name: "Liga Mistrzów", short: "Liga Mistrzów", logo: 2, cup: true, zones: { top: [8, "1/8 finału"], mid: [9, 24, "baraże"], bottom: [12, "odpada"] } },
+    { code: "EL", nameEn: "Europa League", shortEn: "Europa League", name: "Liga Europy", short: "Liga Europy", logo: 2310, cup: true, zones: { top: [8, "1/8 finału"], mid: [9, 24, "baraże"], bottom: [12, "odpada"] } },
+    { code: "ECL", nameEn: "Conference League", shortEn: "Conference League", name: "Liga Konferencji", short: "Liga Konferencji", logo: 20296, cup: true, zones: { top: [8, "1/8 finału"], mid: [9, 24, "baraże"], bottom: [12, "odpada"] } },
   ];
   const COMP = Object.fromEntries(COMPS.map(c => [c.code, c]));
   const ESPN_SLUG = { PL: "eng.1", ES1: "esp.1", DE1: "ger.1", IT1: "ita.1", FR1: "fra.1", NL1: "ned.1", PT1: "por.1", EN2: "eng.2", CL: "uefa.champions", EL: "uefa.europa", ECL: "uefa.europa.conf" };

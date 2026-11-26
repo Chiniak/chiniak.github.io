@@ -9,7 +9,7 @@ Użytkownik mieszka w Anglii – zakłady w £, ostrzeżenie UK Gambling Commiss
   wynikiem; wyszukiwarka wszystkich klubów; niżej siatka klubów wybranych rozgrywek. Typuj – wybór klubów z wyszukiwarką.
 - `model.js` – model: Poisson + Dixon-Coles, ważenie świeżości, Elo, symulacja sezonu, test wsteczny, rynki zakładów
 - `data.js` – wczytywanie i łączenie danych z `dane/`
-- `sw.js` – offline; **przy każdej zmianie plików podbij `CACHE`** (teraz `futbol-v23`)
+- `sw.js` – offline; **przy każdej zmianie plików podbij `CACHE`** (teraz `futbol-v24`)
 - `dane/` – pliki odświeżane przez GitHub Action (nie edytować ręcznie)
 
 ## Dane (`.github/workflows/futbol-dane.yml`, co godzinę, commit tylko przy zmianie)
@@ -115,6 +115,14 @@ szczegóły meczu – do 5 na drużynę. Nazw klubów nie odmieniamy („Na korz
 `node .github/scripts/futbol-test.mjs` (ok. 1 s, bez sieci): składnia plików, liczba meczów w każdych rozgrywkach, łączenie
 polskich klubów, kursy i xG, test wsteczny PL/LaLiga/Ekstraklasa z progami, prognoza z kursów. Workflow `futbol-test.yml`
 uruchamia go przy każdej zmianie w `futbol/` i w PR. Ustawienia modelu w teście (FIT) muszą być takie jak w `app.js`.
+
+## Język (od 27.11.2026)
+Polski (domyślnie) i angielski – przełącznik na górze zakładki Dane, zapis w localStorage `futbol.lang` (celowo bez
+automatycznego wyboru wg języka telefonu – użytkownik mieszka w UK). W `app.js`: `L(pl, en)` przy każdym napisie,
+`LOC()` dla dat, `dec()`/`pct()`/`fx()` – przecinek dziesiętny tylko po polsku, `plural(n, 1, 2–4, 5+, en1, enN)`,
+`ord()` – angielskie liczebniki porządkowe, `resL()` – litery W/R/P ↔ W/D/L (klasy CSS zostają W/R/P),
+`ROUND_EN`, `ZONE_EN`, `nameEn`/`shortEn` w `COMPS` (data.js); `staticTexts()` – zakładki i nagłówek z index.html.
+Nowe napisy zawsze przez `L()`; test: przełączyć na English i szukać polskich liter w widokach.
 
 ## Sposób pracy
 Gałąź `claude/football-prediction-app-ps2t97` (po scaleniu odtwarzana od `main`). Każdą zmianę testuję w przeglądarce
