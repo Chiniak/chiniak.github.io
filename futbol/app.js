@@ -2,7 +2,7 @@
 (function () {
   "use strict";
   const M = window.FModel, D = window.FData;
-  const LS = { inj: "futbol.injuries", cache: "futbol.cache.v1", manual: "futbol.manual.v1", key: "futbol.fdkey", tab: "futbol.tab", filter: "futbol.filter" };
+  const LS = { fat: "futbol.fatigue", inj: "futbol.injuries", cache: "futbol.cache.v1", manual: "futbol.manual.v1", key: "futbol.fdkey", tab: "futbol.tab", filter: "futbol.filter" };
   const $ = s => document.querySelector(s);
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const pct = (x, d = 0) => (x * 100).toFixed(d) + "%";
@@ -93,6 +93,7 @@
     S.elo = M.elo(S.matches, { start: eloStart });
     S.players = (S.fpl?.players || []).map(p => ({ ...p, team: D.canon(p.team) }));
     S.absCache = new Map();
+    S.rest = M.restDays(S.matches);
     S.sim = null; S.bt = null; S.btMap = new Map();
   }
   function teamsOf(comp, season) {
@@ -109,7 +110,7 @@
   function ensureBacktest() {
     if (S.bt) return S.bt;
     const from = `${D.seasonStart() - 1}-09-15`;
-    S.bt = M.backtest(S.matches, { from, fit: { priors: S.priors, shrink: 6, halfLife: 240 } });
+    S.bt = M.backtest(S.matches, { from, fit: { priors: S.priors, shrink: 6, halfLife: 240 }, adjFn: fatOn() ? m => M.fatigueAdj(S.rest.get(m)) : null });
     for (const r of S.bt.records) S.btMap.set(r.m.id, r);
     return S.bt;
   }
@@ -219,7 +220,7 @@
     return res;
   }
   // poprawka tylko dla meczów w najbliższych 10 dniach – dalej stan kadry jest nieznany
-  function adjFor(m, force) {
+  function injAdj(m, force) {
     if (!injOn() || M.played(m)) return null;
     if (!force) {
       const d = (new Date(m.date) - new Date(today())) / 86400000;
@@ -229,6 +230,13 @@
     if (!h && !a) return null;
     return { home: h ? { att: h.att, def: h.def } : {}, away: a ? { att: a.att, def: a.def } : {} };
   }
+  // zmęczenie: znane z terminarza, więc działa dla wszystkich przyszłych meczów
+  const fatOn = () => store.get(LS.fat, true);
+  function fatAdj(m) {
+    if (!fatOn() || M.played(m) || !S.rest) return null;
+    return M.fatigueAdj(S.rest.get(m));
+  }
+  const adjFor = (m, force) => M.combineAdj(injAdj(m, force), fatAdj(m));
   const PL_WORDS = [
     [/Expected back (\d+ \w+)/i, "powrót ok. $1"], [/Unknown return date/i, "nieznany termin powrotu"],
     [/(\d+)% chance of playing/i, "$1% szans na grę"], [/Suspended until (.+)/i, "zawieszony do $1"],
@@ -255,10 +263,16 @@
     const more = a.list.length > limit ? `<div class="small muted" style="padding-top:6px">i ${a.list.length - limit} innych (mało grających)</div>` : "";
     return rows + more + `<div class="small muted" style="padding-top:8px">Wpływ na prognozę: atak ${a.att < 0.995 ? "−" + pct(1 - a.att) : "bez zmian"}, obrona ${a.def > 1.005 ? "+" + pct(a.def - 1) + " straconych goli" : "bez zmian"}.</div>`;
   }
-  function restDays(team, date) {
-    const prev = S.matches.filter(m => M.played(m) && m.date < date && (m.home === team || m.away === team)).pop();
-    return prev ? Math.round((new Date(date) - new Date(prev.date)) / 86400000) : null;
+  function restHtml(m) {
+    const r = S.rest?.get(m);
+    if (!r || r.h === null || r.a === null) return "";
+    const f = M.fatigueAdj(r), F = M.FATIGUE;
+    const tired = f ? (f.home.att ? m.home : m.away) : null;
+    return `<h2>Odpoczynek przed meczem</h2><div class="card small">${esc(short(m.home))}: <b>${r.h} dni</b> od poprzedniego meczu · ${esc(short(m.away))}: <b>${r.a} dni</b>
+      ${tired ? `<br><b>${esc(short(tired))}</b> gra po krótkiej przerwie, a rywal odpoczywał dłużej${M.played(m) ? "." : fatOn() ? ` – w prognozie: atak −${pct(F.att)}, +${pct(F.def)} straconych goli.` : " (zmęczenie wyłączone w Danych)."}` : ""}
+      <div class="muted" style="margin-top:4px">Liczone z meczów PL i LM – bez pucharów krajowych, więc przerwa bywa krótsza niż tu widać.</div></div>`;
   }
+
 
   function matchCard(m) {
     const done = M.played(m);
@@ -320,10 +334,10 @@
       <h2>Najbardziej prawdopodobne wyniki</h2>
       <div class="card">${p.top.map(s => `<div class="list-row" style="cursor:default"><span class="x">${esc(short(home))} <b>${s.hg}–${s.ag}</b> ${esc(short(away))}</span><span class="s">${pct(s.p, 1)}</span></div>`).join("")}</div>
       <h2>Rozkład wyników</h2><div class="card">${grid}</div>
-      ${opts.squad !== false ? `<h2>Kadra przed meczem${opts.adj ? "" : injOn() ? " (poza oknem 10 dni – nieuwzględniona)" : " (wyłączone w Danych)"}</h2>
+      ${opts.squad !== false ? `<h2>Kadra przed meczem${opts.injApplied ? "" : injOn() ? " (poza oknem 10 dni – nieuwzględniona)" : " (wyłączone w Danych)"}</h2>
       <div class="card"><div class="list-row" style="cursor:default">${badge(home)}<b class="x">${esc(short(home))}</b></div>${absenceHtml(home, 6)}</div>
       <div class="card"><div class="list-row" style="cursor:default">${badge(away)}<b class="x">${esc(short(away))}</b></div>${absenceHtml(away, 6)}</div>` : ""}
-      ${opts.date ? (() => { const rh = restDays(home, opts.date), ra = restDays(away, opts.date); return rh !== null && ra !== null ? `<h2>Odpoczynek przed meczem</h2><div class="card small">${esc(short(home))}: <b>${rh} dni</b> od poprzedniego meczu · ${esc(short(away))}: <b>${ra} dni</b>${Math.abs(rh - ra) >= 3 && Math.min(rh, ra) <= 3 ? ` – <b>${esc(short(rh < ra ? home : away))}</b> grał niedawno (np. w LM), możliwe zmęczenie i rotacja.` : ""}</div>` : ""; })() : ""}
+      ${opts.match ? restHtml(opts.match) : ""}
       <h2>Forma (ostatnie 5)</h2>
       <div class="card">
         <div class="list-row" style="cursor:default">${badge(home)}<span class="x">${esc(short(home))}</span>${formHtml(fh)}</div>
@@ -354,7 +368,7 @@
       html += `<div class="card"><b>Przed meczem model dawał:</b> 1 ${pct(bt.probs[0])} · X ${pct(bt.probs[1])} · 2 ${pct(bt.probs[2])}, typ ${bt.top.hg}–${bt.top.ag}. ${bt.hit ? `<span class="tag ok">trafiony</span>` : `<span class="tag bad">nietrafiony</span>`}</div>`;
     }
     html += done ? `<h2>Gdyby zagrali teraz</h2>` : "";
-    html += predictionHtml(m.home, m.away, { neutral: m.neutral, adj: adjFor(m), date: m.date, squad: !done });
+    html += predictionHtml(m.home, m.away, { neutral: m.neutral, adj: adjFor(m), injApplied: !!injAdj(m), match: m, squad: !done });
     html += `<h2>${done ? "Popraw wynik" : "Wpisz wynik"}</h2>
       <form class="card" id="resForm"><div class="two"><div><label>${esc(short(m.home))}</label><input type="number" min="0" max="20" name="hg" value="${done ? m.hg : ""}" required></div>
       <div><label>${esc(short(m.away))}</label><input type="number" min="0" max="20" name="ag" value="${done ? m.ag : ""}" required></div></div>
@@ -556,7 +570,8 @@
     }
 
     h += `<h2>Kontuzje w prognozach</h2><div class="card"><label class="check" style="margin:0"><input type="checkbox" id="injT"${injOn() ? " checked" : ""}> Uwzględniaj nieobecnych zawodników w meczach na najbliższe 10 dni</label>
-      <p class="small muted" style="margin-bottom:0">Źródło: oficjalne Fantasy Premier League (tylko kluby PL), odświeżane co 3 godziny.</p></div>`;
+      <p class="small muted" style="margin-bottom:0">Źródło: oficjalne Fantasy Premier League (tylko kluby PL), odświeżane co 3 godziny.</p>
+      <label class="check" style="margin:12px 0 0"><input type="checkbox" id="fatT"${fatOn() ? " checked" : ""}> Uwzględniaj zmęczenie (mecz po ≤ ${M.FATIGUE.maxDays} dniach przerwy, gdy rywal odpoczywał dłużej)</label></div>`;
     h += `<h2>Skuteczność modelu</h2><div class="card">
       <p class="small muted" style="margin-top:0">Test „w ciemno”: każdy mecz od ${fmtDate(`${D.seasonStart() - 1}-09-15`, false)} przewidziany wyłącznie z danych sprzed niego (PL i LM).</p>
       <div class="stats"><div class="stat"><b>${bt.n}</b><span>meczów</span></div><div class="stat"><b>${pct(bt.accuracy, 1)}</b><span>trafiony typ 1X2</span></div>
@@ -568,6 +583,7 @@
       <p><b>Wynik meczu.</b> Z ocen wychodzą oczekiwane gole obu drużyn (z przewagą własnego boiska, ok. ${Math.round((Math.exp(S.model.home) - 1) * 100)}% więcej goli gospodarza). Rozkład Poissona z poprawką Dixona-Colesa daje szansę każdego wyniku, a z nich – 1/X/2, powyżej 2,5 gola i „obie strzelą”.</p>
       <p><b>Tabela końcowa.</b> Pozostałe mecze sezonu losowane 5000 razy.</p>
       <p><b>Nieobecni.</b> Dla meczów w najbliższych 10 dniach model obniża atak drużyny o udział brakujących zawodników w jej xG i asystach oczekiwanych (zmiennicy odrabiają ok. 40%, najwyżej −25%) i podnosi liczbę traconych goli, gdy brakuje bramkarza lub obrońców (najwyżej +20%).</p>
+      <p><b>Zmęczenie.</b> Drużyna grająca po najwyżej ${M.FATIGUE.maxDays} dniach przerwy przeciw rywalowi, który odpoczywał dłużej, ma atak niższy o ${pct(M.FATIGUE.att)} i traci o ${pct(M.FATIGUE.def)} więcej goli. Siłę poprawki dobrano testem na ponad 600 meczach – poprawia trafność nieznacznie (ok. 0,7 pkt proc.).</p>
       <p><b>Elo</b> to osobny ranking formy, aktualizowany po każdym meczu.</p>
       <p class="muted" style="margin-bottom:0">Model nie zna potwierdzonych składów, zmian trenera ani motywacji – traktuj prognozy jako punkt wyjścia, nie pewniak.</p></div>`;
     return h;
@@ -592,6 +608,7 @@
     if (S.tab === "dane") {
       $("#dRefresh").onclick = () => load(true);
       $("#injT").onchange = e => { store.set(LS.inj, e.target.checked); render(); };
+      $("#fatT").onchange = e => { store.set(LS.fat, e.target.checked); S.bt = null; S.btMap = new Map(); render(); };
       $("#fdSave").onclick = () => { store.set(LS.key, $("#fdk").value.trim()); load(true).then(render); };
       const del = $("#fdDel"); if (del) del.onclick = () => { localStorage.removeItem(LS.key); S.fd = { matches: [] }; S.status = S.status.filter(s => s.src !== "football-data"); compute(); render(); };
       $("#manForm").onsubmit = e => {

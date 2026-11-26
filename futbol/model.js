@@ -241,7 +241,7 @@
         model = fit(matches, { ...opts.fit, asOf: prev });
       }
       if (!(m.home in model.att) || !(m.away in model.att)) continue;
-      const p = predict(model, m.home, m.away, { neutral: m.neutral });
+      const p = predict(model, m.home, m.away, { neutral: m.neutral, adj: opts.adjFn ? opts.adjFn(m) : null });
       const res = m.hg > m.ag ? 0 : m.hg === m.ag ? 1 : 2;
       const probs = [p.win, p.draw, p.loss];
       const pick = probs.indexOf(Math.max(...probs));
@@ -255,7 +255,42 @@
     return { n, accuracy: n ? hits / n : 0, exact: n ? exact / n : 0, brier: n ? brier / n : 0, logLoss: n ? logl / n : 0, records };
   }
 
-  const api = { fit, predict, expectedGoals, elo, table, simulateSeason, backtest, played };
+  /* Zmęczenie: dni od poprzedniego meczu drużyny (rozegranego lub zaplanowanego, w dowolnych rozgrywkach z danych).
+     Zwraca Map: mecz → { h, a } (null, gdy brak poprzedniego meczu w ciągu 30 dni). */
+  function restDays(matches) {
+    const last = {}, out = new Map();
+    const ms = matches.filter(m => m.date).slice().sort((x, y) => (x.date + (x.time || "")).localeCompare(y.date + (y.time || "")));
+    const gap = (t, d) => { const p = last[t]; if (!p) return null; const r = Math.round((new Date(d) - new Date(p)) / DAY); return r <= 30 ? r : null; };
+    for (const m of ms) {
+      out.set(m, { h: gap(m.home, m.date), a: gap(m.away, m.date) });
+      last[m.home] = m.date; last[m.away] = m.date;
+    }
+    return out;
+  }
+  /* Poprawka za zmęczenie: drużyna grająca po ≤ maxDays dniach przerwy strzela mniej (att) i traci więcej (def),
+     ale tylko gdy rywal odpoczywał dłużej. Parametry dobrane testem wstecznym. */
+  const FATIGUE = { maxDays: 3, att: 0.03, def: 0.06 };
+  function fatigueAdj(rest, prm = FATIGUE) {
+    if (!rest) return null;
+    const tired = (me, op) => me !== null && op !== null && me <= prm.maxDays && op > me;
+    const th = tired(rest.h, rest.a), ta = tired(rest.a, rest.h);
+    if (!th && !ta) return null;
+    return {
+      home: th ? { att: 1 - prm.att, def: 1 + prm.def } : {},
+      away: ta ? { att: 1 - prm.att, def: 1 + prm.def } : {},
+    };
+  }
+  // łączenie poprawek (np. kontuzje × zmęczenie)
+  function combineAdj(...xs) {
+    const out = { home: {}, away: {} };
+    let any = false;
+    for (const x of xs) if (x) for (const side of ["home", "away"]) for (const k of ["att", "def"]) {
+      if (x[side]?.[k] !== undefined) { out[side][k] = (out[side][k] ?? 1) * x[side][k]; any = true; }
+    }
+    return any ? out : null;
+  }
+
+  const api = { restDays, fatigueAdj, combineAdj, FATIGUE, fit, predict, expectedGoals, elo, table, simulateSeason, backtest, played };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.FModel = api;
 })(typeof self !== "undefined" ? self : this);
