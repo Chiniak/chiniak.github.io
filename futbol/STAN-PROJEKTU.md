@@ -9,7 +9,7 @@ Użytkownik mieszka w Anglii – zakłady w £, ostrzeżenie UK Gambling Commiss
   wynikiem; wyszukiwarka wszystkich klubów; niżej siatka klubów wybranych rozgrywek. Typuj – wybór klubów z wyszukiwarką.
 - `model.js` – model: Poisson + Dixon-Coles, ważenie świeżości, Elo, symulacja sezonu, test wsteczny, rynki zakładów
 - `data.js` – wczytywanie i łączenie danych z `dane/`
-- `sw.js` – offline; **przy każdej zmianie plików podbij `CACHE`** (teraz `futbol-v15`)
+- `sw.js` – offline; **przy każdej zmianie plików podbij `CACHE`** (teraz `futbol-v16`)
 - `dane/` – pliki odświeżane przez GitHub Action (nie edytować ręcznie)
 
 ## Dane (`.github/workflows/futbol-dane.yml`, co 3 godziny, commit tylko przy zmianie)
@@ -29,7 +29,11 @@ Użytkownik mieszka w Anglii – zakłady w £, ostrzeżenie UK Gambling Commiss
   Środowisko chmurowe ma dozwolone hosty `football-data.co.uk` i `www.football-data.co.uk` (przekierowuje bez www).
 - `futbol-ekstraklasa.mjs` → `dane/ekstraklasa.json`: Ekstraklasa z football-data.co.uk (`new/POL.csv` – wyniki i kursy
   zamknięcia bet365, a gdy brak – średnia rynku; `new_league_fixtures.csv` – najbliższe mecze, ok. 2 dni wcześniej).
-  Godziny w plikach są czasu brytyjskiego. ESPN nie ma Ekstraklasy (`pol.1` → 400). Brak xG, strzałów, składów, logo
+  Godziny w plikach są czasu brytyjskiego. ESPN nie ma Ekstraklasy (`pol.1` → 400).
+  Terminarz 3 najbliższych kolejek z TheSportsDB (darmowy klucz `123`, liga 4422: `eventsnextleague` → numer kolejki,
+  `eventsround` → pełna kolejka; `eventsseason` na darmowym kluczu oddaje tylko 15 meczów). Godziny w UTC, nazwy
+  dopasowane do football-data (słowa nazwy z football-data zawarte w nazwie TheSportsDB). Host `www.thesportsdb.com`
+  dodany do środowiska chmurowego 27.11.2026. Brak xG, strzałów, składów, logo
   (barwy i polskie nazwy w `data.js`, `EK_TEAMS`; polskie nazwy są wzorcowe także dla danych ESPN – Legia, Lech, Raków
   i Jagiellonia łączą się z meczami w pucharach i mają z nich logo; `key()` zamienia „ł” na „l”).
   Pełnego terminarza brak – symulacja tabeli dopisuje brakujące pary (każdy z każdym u siebie i na wyjeździe, `rr: true`).

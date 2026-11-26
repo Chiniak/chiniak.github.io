@@ -163,7 +163,7 @@
       const d = new Date(r.k), date = localDate(d), played = Array.isArray(r.f);
       matches.push({
         date, time: d.toTimeString().slice(0, 5), home: nameOf(r.h), away: nameOf(r.a), hg: played ? r.f[0] : null, ag: played ? r.f[1] : null,
-        comp: "EK", round: "", season: seasonOf(date), src: "espn",
+        comp: "EK", round: r.r ? `${r.r}. kolejka` : "", season: seasonOf(date), src: "espn",
         odds: r.o ? { h: r.o[0], d: r.o[1], a: r.o[2], line: null, over: null, under: null, book: r.o[3] } : null,
       });
     }

@@ -1,7 +1,9 @@
 // Ekstraklasa z football-data.co.uk (darmowe CSV, bez klucza) – ESPN jej nie ma.
 // new/POL.csv – wyniki i kursy zamknięcia (bet365, a gdy ich brak – średnia rynku) z kolejnych sezonów;
 // new_league_fixtures.csv – najbliższe mecze z kursami (plik uzupełniany ok. 2 razy w tygodniu).
-// Zapis: futbol/dane/ekstraklasa.json = { updated, rows: [ { k: start UTC, h, a, f?: [gole gosp., gole gościa], o?: [1, X, 2, bukmacher] } ] }
+// TheSportsDB (darmowy klucz 123) – terminarz 3 najbliższych kolejek, żeby mecze były widoczne wcześniej (bez kursów;
+// darmowy klucz nie oddaje całego sezonu, ale oddaje pełne kolejki). Daty dalszych kolejek bywają orientacyjne.
+// Zapis: futbol/dane/ekstraklasa.json = { updated, rows: [ { k: start UTC, h, a, f?: [gole gosp., gole gościa], o?: [1, X, 2, bukmacher], r?: kolejka } ] }
 // Nazwy klubów jak w football-data; ładne nazwy nadaje futbol/data.js. Godziny w plikach są czasu brytyjskiego.
 // Uruchomienie: node .github/scripts/futbol-ekstraklasa.mjs
 import { writeFile, readFile } from "node:fs/promises";
@@ -67,6 +69,31 @@ try {
     rows.push(row); nf++;
   }
 } catch (e) { console.log("terminarz niedostępny:", e.message); }
+// terminarz z TheSportsDB: nazwy klubów → nazwy z football-data (wszystkie słowa nazwy z football-data są w nazwie TheSportsDB)
+const plain = t => String(t).normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[łŁ]/g, "l").toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter(Boolean);
+const fdNames = [...new Set(rows.flatMap(r => [r.h, r.a]))];
+function toFd(n) {
+  const w = plain(n);
+  const c = fdNames.filter(f => plain(f).every(x => w.includes(x))).sort((a, b) => plain(b).length - plain(a).length);
+  return c[0] || n;
+}
+let ns = 0;
+try {
+  const DB = "https://www.thesportsdb.com/api/v1/json/123", season = `${y0}-${y0 + 1}`;
+  const nx = JSON.parse(await get(`${DB}/eventsnextleague.php?id=4422`)).events?.[0];
+  const r0 = +nx?.intRound;
+  if (r0) for (let r = r0; r < r0 + 3; r++) {
+    const ev = JSON.parse(await get(`${DB}/eventsround.php?id=4422&r=${r}&s=${season}`)).events || [];
+    for (const e of ev) {
+      if (e.intHomeScore !== null && e.intHomeScore !== "" && e.intHomeScore !== undefined) continue; // rozegrane – wynik jest z football-data
+      if (!e.dateEvent) continue;
+      const k = `${e.dateEvent}T${(e.strTime || "12:00").slice(0, 5)}Z`, h = toFd(e.strHomeTeam), a = toFd(e.strAwayTeam);
+      if (rows.some(x => x.h === h && x.a === a && Math.abs(new Date(x.k) - new Date(k)) < 10 * 86400000)) continue;
+      rows.push({ k, h, a, r }); ns++;
+    }
+  }
+} catch (e) { console.log("TheSportsDB niedostępne:", e.message); }
+console.log(`terminarz z TheSportsDB: ${ns} meczów`);
 rows.sort((a, b) => a.k.localeCompare(b.k));
 const played = rows.filter(r => r.f).length;
 console.log(`Ekstraklasa: ${played} rozegranych, ${nf} nadchodzących, kursy dla ${rows.filter(r => r.o).length}`);
