@@ -15,7 +15,8 @@
 
   const XG = 0.7;              // udział xG w ocenie siły (reszta – gole); dobrane testem wstecznym
   const EURO = new Set(["CL", "EL"]);
-  const FIT = { shrink: 6, halfLife: 240, xg: XG };
+  const SXG = 0.4;             // udział zastępczego xG ze strzałów (gdy prawdziwego brak); test wsteczny
+  const FIT = { shrink: 3, halfLife: 320, xg: XG, sxg: SXG };
 
   /* ---------- kluby: nazwy, skróty, loga ---------- */
   const short = t => S.teams[t]?.short || t;
@@ -59,7 +60,7 @@
 
   function compute() {
     const r = S.raw;
-    const es = D.parseEspn(r.espn, r.kursy);          // najpierw ESPN – jego nazwy klubów są wzorcowe
+    const es = D.parseEspn(r.espn, r.kursy, r.fd);          // najpierw ESPN – jego nazwy klubów są wzorcowe
     const fpl = r.fpl ? D.parseFpl(r.fpl) : null;
     const xg = r.xg ? D.parseXg(r.xg) : null;
     S.teams = es.teams;
@@ -126,8 +127,8 @@
     if (!fresh) return;
     $("#refresh").classList.add("spin");
     try {
-      const [espn, fpl, xg, kursy] = await Promise.all([D.getJson("dane/espn.json"), D.getJson("dane/fpl.json").catch(() => null), D.getJson("dane/xg.json").catch(() => null), D.getJson("dane/kursy.json").catch(() => null)]);
-      S.raw = { espn, fpl, xg, kursy, at: Date.now() };
+      const [espn, fpl, xg, kursy, fd] = await Promise.all([D.getJson("dane/espn.json"), D.getJson("dane/fpl.json").catch(() => null), D.getJson("dane/xg.json").catch(() => null), D.getJson("dane/kursy.json").catch(() => null), D.getJson("dane/fd.json").catch(() => null)]);
+      S.raw = { espn, fpl, xg, kursy, fd, at: Date.now() };
       S.fetchedAt = S.raw.at;
       if (!store.set(LS.cache, S.raw)) store.set(LS.cache, { espn, at: S.raw.at }); // za mało miejsca – przynajmniej wyniki
       compute(); render();
@@ -466,7 +467,10 @@
   function bookOdds(m, k) {
     const o = m.odds;
     if (!o) return null;
-    const dc = (a, b) => ({ v: Math.round(100 / (1 / a + 1 / b)) / 100, approx: true });
+    // podwójna szansa: szansa po zdjęciu marży z 1X2 plus marża rynku podwójnej szansy – podobna łączna marża,
+    // ale rozłożona na zdarzenia o sumie szans 2, więc na każde przypada jej połowa (zwykłe sumowanie kursów zawyża ją)
+    const s = 1 / o.h + 1 / o.d + 1 / o.a;
+    const dc = (a, b) => ({ v: Math.max(1.01, Math.round(100 / ((1 / a + 1 / b) / s * (1 + (s - 1) / 2))) / 100), approx: true });
     switch (k) {
       case "1": return { v: o.h }; case "X": return { v: o.d }; case "2": return { v: o.a };
       case "1X": return dc(o.h, o.d); case "X2": return dc(o.a, o.d); case "12": return dc(o.h, o.a);
@@ -479,6 +483,17 @@
   function implied(o) {
     const s = 1 / o.h + 1 / o.d + 1 / o.a;
     return { h: 1 / o.h / s, d: 1 / o.d / s, a: 1 / o.a / s, margin: s - 1 };
+  }
+  // szansa według bukmachera (po zdjęciu marży) dla rynku, gdy da się ją policzyć z kursów
+  function marketProb(m, k) {
+    const o = m.odds;
+    if (!o?.h || !o.d || !o.a) return null;
+    const i = implied(o);
+    const v = { "1": i.h, X: i.d, "2": i.a, "1X": i.h + i.d, X2: i.a + i.d, "12": i.h + i.a }[k];
+    if (v !== undefined) return v;
+    const g = k.match(/^([OU])(\d\.5)$/);
+    if (g && o.line === +g[2] && o.over && o.under) { const s = 1 / o.over + 1 / o.under; return (g[1] === "O" ? 1 / o.over : 1 / o.under) / s; }
+    return null;
   }
   // kandydaci: najpewniejszy rozsądny zakład z każdego meczu (65–87% – wyżej kursy są za niskie, żeby miało to sens)
   function betCandidates(days) {
@@ -512,14 +527,14 @@
   function oddsTag(x) {
     if (!x.book) return `<span class="small muted">brak kursu bukmachera</span>`;
     const e = x.edge;
-    return `<span class="small">kurs ${x.book.approx ? "≈" : ""}<b>${fx(x.book.v)}</b></span> ${e > 0.35 ? `<span class="tag wait">duża rozbieżność z rynkiem</span>` : e >= 0.05 ? `<span class="tag ok">model widzi okazję +${pct(e)}</span>` : e <= -0.05 ? `<span class="tag bad">kurs poniżej szans</span>` : `<span class="tag ex">kurs uczciwy</span>`}`;
+    return `<span class="small">kurs ${x.book.approx ? "≈" : ""}<b>${fx(x.book.v)}</b></span> ${e > 0.35 ? `<span class="tag wait">duża rozbieżność z rynkiem</span>` : e >= 0.05 ? `<span class="tag ex">model +${pct(e)} ponad kurs</span>` : e <= -0.05 ? `<span class="tag bad">kurs poniżej szans</span>` : `<span class="tag ex">kurs uczciwy</span>`}`;
   }
   function betRow(x, i) {
-    const m = x.m, saved = betsFor(m).some(b => b.market === x.k);
+    const m = x.m, saved = betsFor(m).some(b => b.market === x.k), mp = marketProb(m, x.k);
     return `<div class="card bet">
       <div class="m-meta"><span>${compTag(m.comp)}</span><span>${fmtDate(m.date)}${m.time ? " · " + esc(m.time) : ""}</span></div>
       <div class="list-row" data-match="${esc(m.id)}" style="border:0;padding:4px 0">${badge(m.home)}<span class="x"><b>${esc(short(m.home))} – ${esc(short(m.away))}</b></span>${badge(m.away)}</div>
-      <div class="betline"><div><div class="bmk">${esc(mlabel(x.k, m))}</div><div class="small muted">szansa wg modelu · kurs uczciwy ${fx(1 / x.p)}</div></div><div class="bp">${pct(x.p)}</div></div>
+      <div class="betline"><div><div class="bmk">${esc(mlabel(x.k, m))}</div><div class="small muted">szansa wg modelu${mp !== null ? ` · wg bukmachera <b>${pct(mp)}</b>` : ""} · kurs uczciwy ${fx(1 / x.p)}</div></div><div class="bp">${pct(x.p)}</div></div>
       <div class="tipfoot">${oddsTag(x)}<button class="btn sec small-btn" data-savebet="${i}"${saved ? " disabled" : ""}>${saved ? "Zapisany" : "Zapisz"}</button></div></div>`;
   }
   function viewBets() {
@@ -529,36 +544,70 @@
     const akoP = ako.reduce((s, x) => s * x.p, 1), akoO = ako.reduce((s, x) => s * (x.book?.v || 1 / x.p), 1);
     const val = valueBets(days).slice(0, 8);
     S._betList = [...top, ...val];
-    let h = `<div class="card warn small"><b>18+ · Zakłady to ryzyko.</b> Nawet zakład z szansą 80% przegrywa średnio co piąty raz, a bukmacher ma w kursach marżę (ok. 5–8%). W Wielkiej Brytanii graj tylko u bukmacherów z licencją UK Gambling Commission. Propozycje to przykłady z modelu, nie pewniaki. Pomoc: <a href="https://www.begambleaware.org" target="_blank" rel="noopener">BeGambleAware</a>, samowykluczenie: <a href="https://www.gamstop.co.uk" target="_blank" rel="noopener">GAMSTOP</a>.</div>
+    let h = `<div class="card warn small"><b>18+ · Zakłady to ryzyko.</b> Nawet zakład z szansą 80% przegrywa średnio co piąty raz, a bukmacher ma w kursach marżę (ok. 5–8%). W Wielkiej Brytanii graj tylko u bukmacherów z licencją UK Gambling Commission. Propozycje to przykłady z modelu, nie pewniaki – w teście na rozegranych meczach żadna z tych metod nie dawała zysku na kursach bet365 (wyniki niżej, w „Czy model mówi prawdę?”). Pomoc: <a href="https://www.begambleaware.org" target="_blank" rel="noopener">BeGambleAware</a>, samowykluczenie: <a href="https://www.gamstop.co.uk" target="_blank" rel="noopener">GAMSTOP</a>.</div>
       <div class="chips">${[[1, "Dziś i jutro"], [3, "3 dni"], [7, "7 dni"]].map(([d, l]) => `<button class="chip${days === d ? " on" : ""}" data-betdays="${d}">${l}</button>`).join("")}</div>
       <h2>Najpewniejsze zakłady (${cands.length} meczów)</h2>`;
     h += top.length ? top.map((x, i) => betRow(x, i)).join("") : `<div class="card empty">Brak meczów w tym okresie.</div>`;
     if (ako.length === 3) {
       h += `<h2>Przykładowy kupon – 3 najpewniejsze</h2><div class="card">${ako.map(x => `<div class="list-row" data-match="${esc(x.m.id)}"><span class="x"><b>${esc(mlabel(x.k, x.m))}</b><br><span class="small muted">${esc(short(x.m.home))} – ${esc(short(x.m.away))} · ${fmtDate(x.m.date, false)}</span></span><span class="s">${pct(x.p)}</span></div>`).join("")}
         <div class="stats"><div class="stat"><b>${pct(akoP)}</b><span>szansa, że wejdą wszystkie 3</span></div><div class="stat"><b>${fx(akoO)}</b><span>kurs łączny${ako.some(x => !x.book) ? " (część uczciwa)" : ""}</span></div><div class="stat"><b>${money(akoO * STAKE)}</b><span>wypłata ze stawki ${money(STAKE)}</span></div></div>
-        <p class="small muted" style="margin-bottom:0">W teście na rozegranych meczach takie kupony wchodziły w ok. 47% przypadków (model zapowiadał 52%) – każde dodatkowe zdarzenie mnoży ryzyko.</p></div>`;
+        <p class="small muted" style="margin-bottom:0">W teście na rozegranych meczach takie kupony (3 najpewniejsze zakłady z jednego dnia) wchodziły w ok. 53% przypadków, choć model zapowiadał 59% – każde dodatkowe zdarzenie mnoży ryzyko.</p></div>`;
     }
-    h += `<h2>Okazje według modelu</h2><div class="small muted" style="margin:-2px 2px 8px">Zakłady, w których model daje wyraźnie więcej szans niż wynika z kursu (przewaga 8–35%, tylko kluby z co najmniej 8 meczami w danych). Kursy bukmacherów zwykle są trafniejsze niż model, bo uwzględniają składy i wiadomości – to ciekawostka, nie przepis na zysk.</div>`;
+    h += `<h2>Okazje według modelu</h2><div class="small muted" style="margin:-2px 2px 8px">Zakłady, w których model daje wyraźnie więcej szans niż wynika z kursu (przewaga 8–35%, tylko kluby z co najmniej 8 meczami w danych). Na ${S.calib?.roi ? S.calib.roi.n : "ok. 3500"} rozegranych meczach z kursami bet365 takie zakłady przynosiły <b>stratę ${S.calib?.roi?.B.n ? pct(-(S.calib.roi.B.ret / S.calib.roi.B.n - 1), 1) : "ok. 11%"}</b> – bukmacher zna składy i wiadomości, a jego kursy są trafniejsze niż model. To ciekawostka, nie przepis na zysk.</div>`;
     h += val.length ? val.map((x, i) => betRow(x, top.length + i)).join("") : `<div class="card empty">Brak wyraźnych okazji w tym okresie.</div>`;
-    h += `<h2>Czy model mówi prawdę?</h2><div class="card small" id="calib">${S.calib ? calibHtml(S.calib) : `<p style="margin-top:0">Sprawdź na rozegranych meczach, jak często zakłady wchodziły w porównaniu z szansą podaną przez model.</p><button class="btn" id="calibBtn">Sprawdź (kilka sekund)</button>`}</div>`;
+    h += `<h2>Czy model mówi prawdę?</h2><div class="card small" id="calib">${S.calib ? calibHtml(S.calib) : `<p style="margin-top:0">Sprawdź na rozegranych meczach, jak często zakłady wchodziły w porównaniu z szansą podaną przez model.</p><button class="btn" id="calibBtn">Sprawdź, także na prawdziwych kursach (kilka sekund)</button>`}</div>`;
     return h;
   }
   function computeCalib() {
     const bins = Array.from({ length: 10 }, () => ({ n: 0, w: 0, p: 0 }));
     let bn = 0, bw = 0, bp = 0;
+    // zwrot na prawdziwych kursach (bet365 z football-data, w pucharach – zapisane kursy ESPN): stała stawka, wynik po 90 min
+    const st = () => ({ n: 0, w: 0, ret: 0 });
+    const roi = { n: 0, A: st(), B: st(), F: st(), mBr: 0, bBr: 0, mHit: 0, bHit: 0, books: new Set(), from: null };
+    const bet = (s, ok, o) => { s.n++; if (ok) { s.w++; s.ret += o; } };
     for (const c of D.COMPS) for (const r of btFor(c.code).records) {
       const mk = M.markets(M.fromXg(r.xg.home, r.xg.away));
       for (const [k, p] of Object.entries(mk)) { const b = bins[Math.min(9, Math.floor(p * 10))]; b.n++; b.p += p; if (M.settle(k, r.m.hg, r.m.ag)) b.w++; }
       const best = Object.entries(mk).filter(([, p]) => p >= 0.65 && p <= 0.87).sort((a, b) => b[1] - a[1])[0];
       if (best) { bn++; bp += best[1]; if (M.settle(best[0], r.m.hg, r.m.ag)) bw++; }
+      const o = r.m.odds;
+      if (!o?.h || !o.d || !o.a) continue;
+      const im = implied(o), ip = [im.h, im.d, im.a];
+      roi.n++; roi.books.add(o.book || "?"); if (!roi.from || r.m.date < roi.from) roi.from = r.m.date;
+      roi.mBr += r.probs.reduce((x, q, i) => x + (q - (i === r.res ? 1 : 0)) ** 2, 0);
+      roi.bBr += ip.reduce((x, q, i) => x + (q - (i === r.res ? 1 : 0)) ** 2, 0);
+      if (r.pick === r.res) roi.mHit++;
+      const fav = ip.indexOf(Math.max(...ip)); if (fav === r.res) roi.bHit++;
+      bet(roi.F, fav === r.res, [o.h, o.d, o.a][fav]);
+      if (best) { const bo = bookOdds(r.m, best[0]); if (bo?.v) bet(roi.A, M.settle(best[0], r.m.hg, r.m.ag), bo.v); }
+      for (const k of ["1", "X", "2", "O2.5", "U2.5"]) {
+        const bo = bookOdds(r.m, k); if (!bo?.v) continue;
+        const e = mk[k] * bo.v - 1;
+        if (e >= 0.08 && e <= 0.35 && mk[k] >= 0.3) bet(roi.B, M.settle(k, r.m.hg, r.m.ag), bo.v);
+      }
     }
-    return { bins, bn, bw, bp };
+    return { bins, bn, bw, bp, roi };
+  }
+  function roiHtml(r) {
+    if (!r.n) return `<p>Brak jeszcze rozegranych meczów z zapisanymi kursami.</p>`;
+    const row = (name, s) => {
+      if (!s.n) return "";
+      const prof = s.ret - s.n, cls = prof >= 0 ? "ok" : "bad", sg = prof >= 0 ? "+" : "−";
+      return `<tr><td class="t">${name}</td><td>${s.n}</td><td>${pct(s.w / s.n)}</td><td><span class="tag ${cls}">${sg}${pct(Math.abs(prof) / s.n, 1)}</span></td><td>${sg}£${Math.round(Math.abs(prof) * STAKE)}</td></tr>`;
+    };
+    return `<h3 style="margin:16px 0 6px">Zakłady na prawdziwych kursach</h3>
+      <p style="margin-top:0">${r.n} rozegranych meczów z kursami (${esc([...r.books].join(", "))}), od ${fmtDate(r.from, false)}. Każdy zakład za ${money(STAKE)}, typ wybrany tylko z danych sprzed meczu.</p>
+      <div class="tbl-wrap"><table><thead><tr><th class="t">Zakład</th><th>Ile</th><th>Weszło</th><th>Zwrot</th><th>Bilans</th></tr></thead><tbody>
+      ${row("Najpewniejszy¹", r.A)}${row("Okazje²", r.B)}${row("Faworyt³", r.F)}
+      </tbody></table></div>
+      <p class="muted">¹ najpewniejszy zakład z meczu (kurs podwójnej szansy wyliczony z 1X2) · ² okazje według modelu, przewaga 8–35% · ³ zawsze faworyt bukmachera, dla porównania</p>
+      <p style="margin-bottom:0">Kto lepiej przewiduje wynik 1X2: <b>model</b> – trafność ${pct(r.mHit / r.n, 1)}, Brier ${(r.mBr / r.n).toFixed(3)}; <b>bukmacher</b> – trafność ${pct(r.bHit / r.n, 1)}, Brier ${(r.bBr / r.n).toFixed(3)} (mniej = lepiej). Ujemny zwrot to głównie marża bukmachera – żeby zarabiać, trzeba przewidywać lepiej niż rynek, a ten model tego nie robi.</p>`;
   }
   function calibHtml(c) {
     return `<p style="margin-top:0">„Najpewniejszy zakład” w każdym z <b>${c.bn}</b> rozegranych meczów: model dawał średnio <b>${pct(c.bp / c.bn, 1)}</b>, a zakład wszedł w <b>${pct(c.bw / c.bn, 1)}</b> przypadków.</p>
       <div class="tbl-wrap"><table><thead><tr><th class="t">Model mówił</th><th>Zakładów</th><th>Średnio model</th><th>Naprawdę weszło</th></tr></thead><tbody>
       ${c.bins.filter(b => b.n).map((b, i, arr) => `<tr><td class="t">${c.bins.indexOf(b) * 10}–${c.bins.indexOf(b) * 10 + 10}%</td><td>${b.n}</td><td>${pct(b.p / b.n, 1)}</td><td><b>${pct(b.w / b.n, 1)}</b></td></tr>`).join("")}
-      </tbody></table></div><p class="muted" style="margin-bottom:0">Wszystkie rynki (1X2, podwójna szansa, gole, obie strzelą), mecze od 15.09.2025 przewidziane tylko z danych sprzed meczu. Gdy liczby w dwóch ostatnich kolumnach są podobne, procenty modelu można traktować dosłownie.</p>`;
+      </tbody></table></div><p class="muted" style="margin-bottom:0">Wszystkie rynki (1X2, podwójna szansa, gole, obie strzelą), mecze od 15.09.2025 przewidziane tylko z danych sprzed meczu. Gdy liczby w dwóch ostatnich kolumnach są podobne, procenty modelu można traktować dosłownie.</p>${c.roi ? roiHtml(c.roi) : ""}`;
   }
   function saveBet(x) {
     const m = x.m;
@@ -823,6 +872,8 @@
       <div class="list-row" style="cursor:default"><span class="res W">✓</span><span class="x" style="white-space:normal"><b>ESPN</b> – wyniki, terminarze, kluby i loga<br><span class="small muted">stan z ${S.updated ? new Date(S.updated).toLocaleString("pl-PL") : "–"}</span></span></div>`;
     for (const s of S.status) h += `<div class="list-row" style="cursor:default">${compLogo(s.comp, "sm")}<span class="x">${esc(compName(s.comp))}</span><span class="small muted">${s.played}/${s.n} meczów${s.last ? ` · ostatni ${fmtDate(s.last, false)}` : ""}</span></div>`;
     h += `<div class="list-row" style="cursor:default"><span class="res ${S.fplInfo ? "W" : "P"}">${S.fplInfo ? "✓" : "!"}</span><span class="x" style="white-space:normal"><b>Fantasy Premier League</b> – kontuzje, forma zawodników, xG (Opta)<br><span class="small muted">${S.fplInfo ? `${S.fplInfo.players} zawodników · xG dla ${S.xgCount} meczów · stan z ${new Date(S.fplInfo.updated).toLocaleString("pl-PL")}` : "niedostępne"}</span></span></div>`;
+    const fdN = S.matches.filter(m => m.odds?.book === "bet365").length;
+    h += `<div class="list-row" style="cursor:default"><span class="res ${S.raw.fd ? "W" : "P"}">${S.raw.fd ? "✓" : "!"}</span><span class="x" style="white-space:normal"><b>football-data.co.uk</b> – xG 8 lig i kursy bet365 rozegranych meczów (do sprawdzania zakładów)<br><span class="small muted">${S.raw.fd ? `kursy dla ${fdN} meczów · stan z ${new Date(S.raw.fd.updated).toLocaleString("pl-PL")}` : "niedostępne"}</span></span></div>`;
     h += `<div class="row"><button class="btn" id="dRefresh">Odśwież teraz</button><span class="small muted">Dane na stronie odświeżane automatycznie co 3 godziny.${S.manual.length ? ` Wpisanych ręcznie: ${S.manual.length}.` : ""}</span></div></div>`;
 
     h += `<h2>Prognozy</h2><div class="card"><label class="check" style="margin:0"><input type="checkbox" id="injT"${injOn() ? " checked" : ""}> Uwzględniaj nieobecnych zawodników (Premier League, mecze w najbliższych 10 dniach)</label>
@@ -856,7 +907,7 @@
     const pm = modelFor("PL");
     h += `<h2>Jak działa prognoza</h2><div class="card small">
       <p style="margin-top:0"><b>Siła ataku i obrony.</b> Każda drużyna dostaje ocenę ataku i obrony dopasowaną do meczów z dwóch sezonów (regresja Poissona). Dla meczów ligowych model uczy się z danej ligi i pucharów europejskich, dla pucharów – ze wszystkich lig naraz, które łączą się przez mecze europejskie. Nowsze mecze ważą więcej – mecz sprzed 8 miesięcy liczy się w połowie. Drużyny z małą liczbą meczów są ściągane do średniej, a beniaminkowie startują z niższą oceną.</p>
-      <p><b>Gole oczekiwane (xG).</b> W meczach Premier League tego sezonu siła drużyn liczona jest w 70% z xG (jakość stworzonych sytuacji, dane Opta przez FPL), a w 30% z goli. Dla innych lig darmowych danych xG nie ma.</p>
+      <p><b>Gole oczekiwane (xG).</b> W meczach 8 lig z tego sezonu siła drużyn liczona jest w 70% z xG (jakość stworzonych sytuacji; football-data.co.uk, w PL także Opta przez FPL), a w 30% z goli. Gdzie xG brak (poprzedni sezon, puchary), model bierze w 40% „xG ze strzałów” z ESPN: 0,19 gola za strzał celny i 0,07 za niecelny – tak wychodzi z porównania z prawdziwym xG. W teście wstecznym to podniosło trafność z 51,0% do 52,1%.</p>
       <p><b>Wynik meczu.</b> Z ocen wychodzą oczekiwane gole obu drużyn (z przewagą własnego boiska, w PL ok. ${Math.round((Math.exp(pm.home) - 1) * 100)}% więcej goli gospodarza). Rozkład Poissona z poprawką Dixona-Colesa daje szansę każdego wyniku, a z nich – 1/X/2, powyżej 2,5 gola i „obie strzelą”.</p>
       <p><b>Tabela końcowa.</b> Pozostałe mecze sezonu losowane 3000 razy.</p>
       <p><b>Nieobecni</b> (tylko Premier League). Dla meczów w najbliższych 10 dniach model obniża atak drużyny o udział brakujących zawodników w jej xG i asystach oczekiwanych (zmiennicy odrabiają ok. 40%, najwyżej −25%) i podnosi liczbę traconych goli, gdy brakuje bramkarza lub obrońców (najwyżej +20%).</p>

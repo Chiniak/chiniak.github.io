@@ -60,6 +60,8 @@ function regulation(c, homeId) {
   return [h, a];
 }
 
+const stat = (c, name) => { const v = (c.statistics || []).find(x => x.name === name)?.displayValue; return v === undefined || v === "" ? NaN : +v; };
+
 let archive = {};
 try { archive = JSON.parse(await readFile(ODDS, "utf8")); } catch { /* pierwsze uruchomienie */ }
 const archiveBefore = JSON.stringify(archive);
@@ -86,6 +88,9 @@ for (const [slug, code] of COMPS) {
       if (od) { row.o = od; archive[`${code}|${e.date}|${H.team.id}|${A.team.id}`] = od; }
       if (st.completed) {
         row.f = [+H.score, +A.score];
+        // strzały [gosp. wszystkie, gosp. celne, gość wszystkie, gość celne] – z nich zastępcze xG (app: data.js)
+        const sh = [stat(H, "totalShots"), stat(H, "shotsOnTarget"), stat(A, "totalShots"), stat(A, "shotsOnTarget")];
+        if (sh.every(Number.isFinite) && sh[0] + sh[2] > 0) row.s = sh;
         if (/AET|PEN/.test(name)) { row.r = regulation(c, H.team.id); row.x = 1; }
         if (/PEN/.test(name)) row.p = [H.shootoutScore ?? null, A.shootoutScore ?? null];
       } else if (st.state === "in") row.live = [+H.score || 0, +A.score || 0];

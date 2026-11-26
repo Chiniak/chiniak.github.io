@@ -32,8 +32,12 @@
       const w = Math.pow(0.5, age / halfLife);
       games[m.home] += w; games[m.away] += w;
       // xG: gdy znamy gole oczekiwane, siłę liczymy z mieszanki goli i xG (xg = udział xG, 0–1)
-      const xw = opts.xg || 0, hasXg = xw > 0 && m.xhg !== undefined && m.xhg !== null;
-      const hg = hasXg ? (1 - xw) * m.hg + xw * m.xhg : m.hg, ag = hasXg ? (1 - xw) * m.ag + xw * m.xag : m.ag;
+      // gdy prawdziwego xG brak – zastępcze xG ze strzałów (opts.sxg = jego udział)
+      const hasXg = (opts.xg || 0) > 0 && m.xhg !== undefined && m.xhg !== null;
+      const sx = !hasXg && (opts.sxg || 0) > 0 && m.shots ? shotXg(m.shots) : null;
+      const xw = hasXg ? opts.xg : sx ? opts.sxg : 0;
+      const xh = hasXg ? m.xhg : sx?.[0], xa = hasXg ? m.xag : sx?.[1];
+      const hg = xw ? (1 - xw) * m.hg + xw * xh : m.hg, ag = xw ? (1 - xw) * m.ag + xw * xa : m.ag;
       return { h: m.home, a: m.away, hg, ag, w, ha: m.neutral ? 0 : 1 };
     });
     let mu = init?.mu ?? Math.log(1.35), home = init?.home ?? 0.2;
@@ -78,6 +82,12 @@
       for (const t of teams) { att[t] -= ma; def[t] -= md; }
     }
     return { mu, home, att, def, games, teams, n: rows.length, asOf };
+  }
+  /* Zastępcze xG ze strzałów (ESPN): 0,19 za strzał celny, 0,07 za niecelny/zablokowany.
+     Współczynniki dopasowane do prawdziwego xG (Opta) z meczów Premier League. */
+  const SHOT_XG = { on: 0.194, off: 0.072 };
+  function shotXg(s) {
+    return [SHOT_XG.on * s[1] + SHOT_XG.off * (s[0] - s[1]), SHOT_XG.on * s[3] + SHOT_XG.off * (s[2] - s[3])];
   }
   // średni „oczekiwany” wkład jednego meczu – skala pseudo-meczów
   function unit(x, g) { return g > 0 ? x / g : 1; }
@@ -323,7 +333,7 @@
     return predict(m, "h", "a", { neutral: true });
   };
 
-  const api = { MARKETS, markets, settle, fromXg, restDays, fatigueAdj, combineAdj, FATIGUE, fit, predict, expectedGoals, elo, table, simulateSeason, backtest, played };
+  const api = { SHOT_XG, shotXg, MARKETS, markets, settle, fromXg, restDays, fatigueAdj, combineAdj, FATIGUE, fit, predict, expectedGoals, elo, table, simulateSeason, backtest, played };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.FModel = api;
 })(typeof self !== "undefined" ? self : this);

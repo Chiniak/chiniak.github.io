@@ -1,4 +1,4 @@
-name: Futbol – dane (ESPN, FPL, xG)
+name: Futbol – dane (ESPN, FPL, xG, football-data)
 
 on:
   schedule:
@@ -24,6 +24,8 @@ jobs:
       - run: node .github/scripts/futbol-espn.mjs
       - run: node .github/scripts/futbol-fpl.mjs
       - run: node .github/scripts/futbol-xg.mjs
+      - run: node .github/scripts/futbol-fd.mjs
+        continue-on-error: true   # niedostępne football-data nie blokuje reszty danych
       - name: Zapisz zmiany
         run: |
           if [ -z "$(git status --porcelain -- futbol/dane)" ]; then echo "brak zmian"; exit 0; fi
