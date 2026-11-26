@@ -20,9 +20,10 @@
     { code: "EN2", name: "Championship", short: "Championship", logo: 24, cc: "ENG", zones: { top: [2, "awans"], mid: [3, 6, "baraże o awans"], bottom: [3, "spadek"] } },
     { code: "CL", name: "Liga Mistrzów", short: "Liga Mistrzów", logo: 2, cup: true, zones: { top: [8, "1/8 finału"], mid: [9, 24, "baraże"], bottom: [12, "odpada"] } },
     { code: "EL", name: "Liga Europy", short: "Liga Europy", logo: 2310, cup: true, zones: { top: [8, "1/8 finału"], mid: [9, 24, "baraże"], bottom: [12, "odpada"] } },
+    { code: "ECL", name: "Liga Konferencji", short: "Liga Konferencji", logo: 20296, cup: true, zones: { top: [8, "1/8 finału"], mid: [9, 24, "baraże"], bottom: [12, "odpada"] } },
   ];
   const COMP = Object.fromEntries(COMPS.map(c => [c.code, c]));
-  const ESPN_SLUG = { PL: "eng.1", ES1: "esp.1", DE1: "ger.1", IT1: "ita.1", FR1: "fra.1", NL1: "ned.1", PT1: "por.1", EN2: "eng.2", CL: "uefa.champions", EL: "uefa.europa" };
+  const ESPN_SLUG = { PL: "eng.1", ES1: "esp.1", DE1: "ger.1", IT1: "ita.1", FR1: "fra.1", NL1: "ned.1", PT1: "por.1", EN2: "eng.2", CL: "uefa.champions", EL: "uefa.europa", ECL: "uefa.europa.conf" };
   // kursy amerykańskie → dziesiętne (+150 → 2,50; −200 → 1,50)
   const amDec = v => { const x = parseFloat(v); return isFinite(x) && x ? Math.round((x > 0 ? 1 + x / 100 : 1 + 100 / -x) * 100) / 100 : null; };
   /* Szczegóły meczu z ESPN na żywo (przeglądarka, CORS dozwolony): potwierdzone składy i najnowsze kursy. */
@@ -61,9 +62,10 @@
     "nott m forest": "nottingham forest", "nottm forest": "nottingham forest", "newcastle": "newcastle united",
     "west ham": "west ham united", "leeds": "leeds united", "ipswich": "ipswich town", "hull": "hull city", "coventry": "coventry city",
     "leicester": "leicester city", "sheffield utd": "sheffield united",
+    "legia warszawa": "legia warsaw", "legia": "legia warsaw", // Ekstraklasa (football-data) ↔ puchary (ESPN)
   };
   function key(name) {
-    const k = String(name).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
+    const k = String(name).normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[łŁ]/g, "l").toLowerCase()
       .replace(/&/g, " ").replace(/\b(fc|afc|cf|sc|ac|sk|fk|cp|sad)\b/g, " ").replace(/[^a-z0-9 ]/g, " ")
       .replace(/\s+/g, " ").trim();
     return ALIAS[k] || k;
@@ -136,8 +138,8 @@
   const EK_TEAMS = {
     "Arka Gdynia": ["Arka Gdynia", "Arka", "ARK", "#ffd600"], "Cracovia": ["Cracovia", "Cracovia", "CRA", "#c8102e"],
     "GKS Katowice": ["GKS Katowice", "GKS Katowice", "GKS", "#f4c300"], "Gornik Zabrze": ["Górnik Zabrze", "Górnik", "GÓR", "#0055a5"],
-    "Jagiellonia": ["Jagiellonia Bialystok", "Jagiellonia", "JAG", "#ffed00"], "Korona Kielce": ["Korona Kielce", "Korona", "KOR", "#e30613"],
-    "Lech Poznan": ["Lech Poznan", "Lech", "LECH", "#004b92"], "Lechia Gdansk": ["Lechia Gdańsk", "Lechia", "LGD", "#008d3f"],
+    "Jagiellonia": ["Jagiellonia Białystok", "Jagiellonia", "JAG", "#ffed00"], "Korona Kielce": ["Korona Kielce", "Korona", "KOR", "#e30613"],
+    "Lech Poznan": ["Lech Poznań", "Lech", "LECH", "#004b92"], "Lechia Gdansk": ["Lechia Gdańsk", "Lechia", "LGD", "#008d3f"],
     "Legia": ["Legia Warszawa", "Legia", "LEG", "#00843d"], "Motor Lublin": ["Motor Lublin", "Motor", "MOT", "#ffd200"],
     "Piast Gliwice": ["Piast Gliwice", "Piast", "PIA", "#0033a0"], "Pogon Szczecin": ["Pogoń Szczecin", "Pogoń", "POG", "#00285e"],
     "Radomiak Radom": ["Radomiak Radom", "Radomiak", "RAD", "#007a3d"], "Rakow": ["Raków Częstochowa", "Raków", "RAK", "#c8102e"],
@@ -147,6 +149,8 @@
     "Zaglebie": ["Zagłębie Lubin", "Zagłębie", "ZAG", "#f37021"], "Stal Mielec": ["Stal Mielec", "Stal", "STA", "#0055a5"],
     "Puszcza": ["Puszcza Niepołomice", "Puszcza", "PUS", "#00843d"],
   };
+  // polskie nazwy klubów Ekstraklasy mają pierwszeństwo także w danych ESPN (puchary: „Legia Warsaw” → „Legia Warszawa”)
+  for (const x of Object.values(EK_TEAMS)) canon(x[0]);
   const loadEk = async (url = "dane/ekstraklasa.json") => parseEk(await getJson(url));
   function parseEk(js) {
     const teams = {}, matches = [];

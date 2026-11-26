@@ -5,14 +5,17 @@ Użytkownik mieszka w Anglii – zakłady w £, ostrzeżenie UK Gambling Commiss
 
 ## Pliki
 - `index.html`, `style.css`, `app.js` – interfejs (zakładki: Mecze, Tabela, Kluby, Typuj, Typy, Dane)
+  Kluby = „Moje kluby”: ulubione (gwiazdka, localStorage `futbol.fav`) z najbliższym meczem i prognozą, formą, ostatnim
+  wynikiem; wyszukiwarka wszystkich klubów; niżej siatka klubów wybranych rozgrywek. Typuj – wybór klubów z wyszukiwarką.
 - `model.js` – model: Poisson + Dixon-Coles, ważenie świeżości, Elo, symulacja sezonu, test wsteczny, rynki zakładów
 - `data.js` – wczytywanie i łączenie danych z `dane/`
-- `sw.js` – offline; **przy każdej zmianie plików podbij `CACHE`** (teraz `futbol-v14`)
+- `sw.js` – offline; **przy każdej zmianie plików podbij `CACHE`** (teraz `futbol-v15`)
 - `dane/` – pliki odświeżane przez GitHub Action (nie edytować ręcznie)
 
 ## Dane (`.github/workflows/futbol-dane.yml`, co 3 godziny, commit tylko przy zmianie)
 - `futbol-espn.mjs` → `dane/espn.json`: wyniki, terminarze, kluby z logami – PL, LaLiga, Bundesliga, Serie A, Ligue 1,
-  Eredivisie, Liga Portugal, Championship, Liga Mistrzów, Liga Europy (publiczne, nieudokumentowane API ESPN;
+  Eredivisie, Liga Portugal, Championship, Liga Mistrzów, Liga Europy, Liga Konferencji (`uefa.europa.conf`, kod `ECL`, od 27.11.2026)
+  (publiczne, nieudokumentowane API ESPN;
   `dates=RRRR&limit=1000` działa, zakresy dat zwracają 400). Kursy DraftKings przy nadchodzących meczach.
   Od 26.11.2026 także strzały i strzały celne każdego rozegranego meczu (`s`) – z nich „xG ze strzałów”,
   oraz id meczu ESPN (`i`, tylko nierozegrane) – do pobierania składów i kursów na żywo.
@@ -27,7 +30,8 @@ Użytkownik mieszka w Anglii – zakłady w £, ostrzeżenie UK Gambling Commiss
 - `futbol-ekstraklasa.mjs` → `dane/ekstraklasa.json`: Ekstraklasa z football-data.co.uk (`new/POL.csv` – wyniki i kursy
   zamknięcia bet365, a gdy brak – średnia rynku; `new_league_fixtures.csv` – najbliższe mecze, ok. 2 dni wcześniej).
   Godziny w plikach są czasu brytyjskiego. ESPN nie ma Ekstraklasy (`pol.1` → 400). Brak xG, strzałów, składów, logo
-  (barwy i polskie nazwy w `data.js`, `EK_TEAMS`; Lech i Jagiellonia mają logo z ESPN dzięki pucharom).
+  (barwy i polskie nazwy w `data.js`, `EK_TEAMS`; polskie nazwy są wzorcowe także dla danych ESPN – Legia, Lech, Raków
+  i Jagiellonia łączą się z meczami w pucharach i mają z nich logo; `key()` zamienia „ł” na „l”).
   Pełnego terminarza brak – symulacja tabeli dopisuje brakujące pary (każdy z każdym u siebie i na wyjeździe, `rr: true`).
   Test: model 42,2% trafności (Brier 0,653), kursy 45,9% (0,632) – liga bardzo nieprzewidywalna.
 - W chmurowym środowisku Node potrzebuje `NODE_USE_ENV_PROXY=1`, żeby skrypty sięgnęły do sieci.

@@ -102,6 +102,12 @@ tr.z-rel td:first-child { box-shadow: inset 3px 0 var(--loss); }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
 .club { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 16px 8px; cursor: pointer; text-align: center; font-weight: 650; }
 .club .muted { font-weight: 500; font-size: 12px; }
+.club { position: relative; }
+.club .fav { position: absolute; top: 4px; right: 4px; }
+/* gwiazdka „moje kluby” */
+.fav { font-size: 20px; line-height: 1; color: var(--muted); padding: 6px; min-width: 36px; min-height: 36px; }
+.fav.on { color: #f5b301; }
+h3 .fav { display: inline-grid; vertical-align: middle; font-size: 22px; }
 .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 8px; margin-top: 8px; }
 .stat { background: var(--chip); border-radius: 12px; padding: 8px 10px; }
 .stat b { display: block; font-size: 19px; font-variant-numeric: tabular-nums; }
