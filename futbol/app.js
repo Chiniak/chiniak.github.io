@@ -3,7 +3,7 @@
 (function () {
   "use strict";
   const M = window.FModel, D = window.FData;
-  const LS = { fat: "futbol.fatigue", inj: "futbol.injuries", cache: "futbol.cache.v2", manual: "futbol.manual.v1", tab: "futbol.tab", comp: "futbol.comp" };
+  const LS = { tips: "futbol.tips.v1", fat: "futbol.fatigue", inj: "futbol.injuries", cache: "futbol.cache.v2", manual: "futbol.manual.v1", tab: "futbol.tab", comp: "futbol.comp" };
   const $ = s => document.querySelector(s);
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const pct = (x, d = 0) => (x * 100).toFixed(d) + "%";
@@ -50,6 +50,7 @@
     raw: null, teams: {}, players: [], manual: store.get(LS.manual, []), matches: [], status: [],
     elo: null, models: {}, bts: {}, btMap: new Map(), sims: {}, rest: new Map(), absCache: new Map(),
     tab: store.get(LS.tab, "mecze"), comp: store.get(LS.comp, "PL"), tableSeason: null, typ: null,
+    tips: store.get(LS.tips, null), tipFilter: "all",
   };
   if (!D.COMP[S.comp]) S.comp = "PL";
   const curSeason = () => D.seasonLabel(D.seasonStart());
@@ -252,6 +253,7 @@
       <div class="m-row">${teamEl(m.home)}${mid}${teamEl(m.away, true)}</div>
       ${done && !bt ? "" : probBar(bt ? { win: bt.probs[0], draw: bt.probs[1], loss: bt.probs[2] } : p)}
       ${miss}
+      ${tipLine(m)}
     </button>`;
   }
 
@@ -330,11 +332,13 @@
     if (done && bt) html += `<div class="card"><b>Przed meczem model dawał:</b> 1 ${pct(bt.probs[0])} · X ${pct(bt.probs[1])} · 2 ${pct(bt.probs[2])}, typ ${bt.top.hg}–${bt.top.ag}. ${bt.hit ? `<span class="tag ok">trafiony</span>` : `<span class="tag bad">nietrafiony</span>`}</div>`;
     html += done ? `<h2>Gdyby zagrali teraz</h2>` : "";
     html += predictionHtml(m.home, m.away, { model: modelFor(m.comp), neutral: m.neutral, adj: adjFor(m), injApplied: !!injAdj(m), match: m, squad: !done });
+    html += tipSectionHtml(m, p);
     html += `<h2>${done ? "Popraw wynik" : "Wpisz wynik"}</h2>
       <form class="card" id="resForm"><div class="two"><div><label>${esc(short(m.home))}</label><input type="number" min="0" max="20" name="hg" value="${done ? m.hg : ""}" required></div>
       <div><label>${esc(short(m.away))}</label><input type="number" min="0" max="20" name="ag" value="${done ? m.ag : ""}" required></div></div>
       <div class="row"><button class="btn">Zapisz wynik</button><span class="small muted">Wynik po 90 minutach. Zostaje w tej przeglądarce.</span></div></form>`;
     openSheet(html);
+    bindTipForm(m, p);
     $("#resForm").onsubmit = e => {
       e.preventDefault();
       const f = new FormData(e.target);
@@ -347,6 +351,135 @@
     S.manual.push(e);
     store.set(LS.manual, S.manual);
     compute(); render();
+  }
+
+  /* ---------- moje typy ---------- */
+  const saveTips = () => store.set(LS.tips, S.tips);
+  const near = (a, b) => Math.abs(new Date(a) - new Date(b)) <= 3 * 86400000;
+  const tipMatch = t => S.matches.find(m => m.comp === t.comp && m.home === t.home && m.away === t.away && near(m.date, t.date));
+  const tipFor = m => (S.tips || []).find(t => t.comp === m.comp && t.home === m.home && t.away === m.away && near(m.date, t.date));
+  const sign = (a, b) => Math.sign(a - b);
+  // rozliczenie: 3 pkt za dokładny wynik, 1 pkt za trafiony 1X2
+  function tipResult(t) {
+    const m = tipMatch(t);
+    if (!m || !M.played(m)) return { m, done: false };
+    const exact = t.hg === m.hg && t.ag === m.ag, outcome = sign(t.hg, t.ag) === sign(m.hg, m.ag);
+    const modelOutcome = t.model ? sign(t.model.hg, t.model.ag) === sign(m.hg, m.ag) : null;
+    return { m, done: true, exact, outcome, pts: exact ? 3 : outcome ? 1 : 0, modelOutcome };
+  }
+  function newTip(m, hg, ag, note, p, example) {
+    p = p || M.predict(modelFor(m.comp), m.home, m.away, { neutral: m.neutral });
+    return {
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), comp: m.comp, date: m.date, time: m.time || "",
+      home: m.home, away: m.away, hg, ag, note: note || "", saved: new Date().toISOString(), example: !!example,
+      model: { hg: p.top[0].hg, ag: p.top[0].ag, win: +p.win.toFixed(3), draw: +p.draw.toFixed(3), loss: +p.loss.toFixed(3) },
+    };
+  }
+  /* Przykładowe typy przy pierwszym uruchomieniu: 3 najbliższe mecze i 2 rozegrane (z typem modelu sprzed meczu). */
+  function ensureExamples() {
+    if (S.tips !== null || !S.matches.length) return;
+    const t = today(), out = [];
+    const up = S.matches.filter(m => m.comp === "PL" && !M.played(m) && !m.live && m.date >= t).slice(0, 3);
+    const notes = ["Przykład: typuję wyżej niż model", "Przykładowy typ – możesz go zmienić lub usunąć", "Przykład: typ jak model"];
+    up.forEach((m, i) => { const p = pred(m), x = p.top[0]; out.push(newTip(m, i === 0 ? x.hg + 1 : x.hg, x.ag, notes[i], p, true)); });
+    const bt = btFor("PL");
+    const rec = bt.records.slice(-40);
+    const ok = r => sign(r.top.hg, r.top.ag) === sign(r.m.hg, r.m.ag);
+    const pick = [rec.filter(ok).pop(), rec.filter(r => !ok(r)).pop()].filter(Boolean);
+    for (const r of pick) {
+      const tip = newTip(r.m, r.top.hg, r.top.ag, "Przykład: typ już rozliczony", { top: [r.top], win: r.probs[0], draw: r.probs[1], loss: r.probs[2] }, true);
+      tip.saved = new Date(r.m.date + "T09:00:00").toISOString();
+      out.push(tip);
+    }
+    S.tips = out;
+    saveTips();
+  }
+  function tipLine(m) {
+    const t = tipFor(m);
+    if (!t) return "";
+    const r = tipResult(t);
+    const tag = r.done ? (r.exact ? `<span class="tag ok">dokładnie! +3</span>` : r.outcome ? `<span class="tag ok">+1</span>` : `<span class="tag bad">0 pkt</span>`) : "";
+    return `<div class="tipline">★ Mój typ: <b>${t.hg}–${t.ag}</b> ${tag}</div>`;
+  }
+  function tipSectionHtml(m, p) {
+    const t = tipFor(m), done = M.played(m);
+    if (done || m.live) {
+      if (!t) return "";
+      const r = tipResult(t);
+      return `<h2>Mój typ</h2><div class="card"><div class="list-row" style="cursor:default"><span class="x">Typowałeś <b>${t.hg}–${t.ag}</b>${t.note ? ` · ${esc(t.note)}` : ""}</span>
+        ${r.done ? (r.exact ? `<span class="tag ok">dokładny wynik · 3 pkt</span>` : r.outcome ? `<span class="tag ok">trafiony 1X2 · 1 pkt</span>` : `<span class="tag bad">0 pkt</span>`) : `<span class="tag wait">trwa</span>`}</div>
+        <div class="row"><button class="btn sec" data-deltip="${t.id}">Usuń typ</button></div></div>`;
+    }
+    const hg = t ? t.hg : p.top[0].hg, ag = t ? t.ag : p.top[0].ag;
+    return `<h2>Mój typ</h2><form class="card" id="tipForm">
+      <div class="two"><div><label>${esc(short(m.home))}</label><input type="number" min="0" max="20" name="hg" value="${hg}" required></div>
+      <div><label>${esc(short(m.away))}</label><input type="number" min="0" max="20" name="ag" value="${ag}" required></div></div>
+      <label>Notatka (opcjonalnie)</label><input type="text" name="note" maxlength="120" value="${esc(t?.note || "")}" placeholder="np. bez Saki, gra po LM">
+      <div class="row"><button class="btn">${t ? "Zmień typ" : "Zapisz mój typ"}</button>${t ? `<button type="button" class="btn sec" data-deltip="${t.id}">Usuń typ</button>` : ""}
+      <span class="small muted">Model typuje ${p.top[0].hg}–${p.top[0].ag}. Typy są w zakładce „Moje typy”.</span></div></form>`;
+  }
+  function bindTipForm(m, p) {
+    const f = $("#tipForm");
+    if (!f) return;
+    f.onsubmit = e => {
+      e.preventDefault();
+      const d = new FormData(f), hg = +d.get("hg"), ag = +d.get("ag"), note = String(d.get("note") || "").trim();
+      const old = tipFor(m);
+      const tip = newTip(m, hg, ag, note, p, false);
+      S.tips = (S.tips || []).filter(t => t !== old);
+      S.tips.push(tip);
+      saveTips();
+      toast(old ? "Typ zmieniony" : "Typ zapisany w „Moje typy”");
+      closeSheet(); render();
+    };
+  }
+  function deleteTip(id) {
+    const t = (S.tips || []).find(x => x.id === id);
+    if (!t) return;
+    if (!confirm(`Usunąć typ ${short(t.home)} – ${short(t.away)} (${t.hg}–${t.ag})?`)) return;
+    S.tips = S.tips.filter(x => x.id !== id);
+    saveTips(); closeSheet(); render();
+  }
+  function toast(msg) {
+    let el = $("#toast");
+    if (!el) { el = document.createElement("div"); el.id = "toast"; el.className = "toast"; el.setAttribute("role", "status"); document.body.appendChild(el); }
+    el.textContent = msg; el.classList.add("on");
+    clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove("on"), 2200);
+  }
+
+  function viewTypy() {
+    const tips = (S.tips || []).map(t => ({ t, r: tipResult(t) }));
+    const pend = tips.filter(x => !x.r.done).sort((a, b) => a.t.date.localeCompare(b.t.date));
+    const done = tips.filter(x => x.r.done).sort((a, b) => b.t.date.localeCompare(a.t.date));
+    const f = S.tipFilter;
+    const pts = done.reduce((s, x) => s + x.r.pts, 0);
+    const oc = done.filter(x => x.r.outcome).length, ex = done.filter(x => x.r.exact).length;
+    const withModel = done.filter(x => x.r.modelOutcome !== null), mo = withModel.filter(x => x.r.modelOutcome).length;
+    let h = `<h2>Moje typy</h2>
+      <div class="stats" style="margin-top:0"><div class="stat"><b>${tips.length}</b><span>zapisanych</span></div><div class="stat"><b>${pend.length}</b><span>oczekuje</span></div>
+      <div class="stat"><b>${pts}</b><span>punkty (3 za wynik, 1 za 1X2)</span></div>
+      <div class="stat"><b>${done.length ? pct(oc / done.length) : "–"}</b><span>trafione 1X2${withModel.length ? ` · model ${pct(mo / withModel.length)}` : ""}</span></div>
+      <div class="stat"><b>${ex}</b><span>dokładnych wyników</span></div></div>
+      <div class="chips">${[["all", "Wszystkie"], ["pend", `Oczekujące (${pend.length})`], ["done", `Rozliczone (${done.length})`]].map(([k, l]) => `<button class="chip${f === k ? " on" : ""}" data-tipf="${k}">${l}</button>`).join("")}</div>`;
+    const card = ({ t, r }) => {
+      const m = r.m;
+      const status = r.done ? (r.exact ? `<span class="tag ok">dokładny wynik · 3 pkt</span>` : r.outcome ? `<span class="tag ok">trafiony 1X2 · 1 pkt</span>` : `<span class="tag bad">0 pkt</span>`)
+        : m?.live ? `<span class="tag wait">na żywo ${m.live[0]}–${m.live[1]}</span>` : m && m.date < today() ? `<span class="tag wait">czeka na wynik</span>` : `<span class="tag wait">oczekuje</span>`;
+      return `<div class="card tip${t.example ? " ex" : ""}">
+        <div class="m-meta"><span>${compTag(t.comp)}${t.example ? ` <span class="tag ex">przykład</span>` : ""}</span><span>${fmtDate(t.date)}${t.time ? " · " + esc(t.time) : ""}</span></div>
+        <div class="m-row" ${m ? `data-match="${esc(m.id)}" style="cursor:pointer"` : ""}>${teamEl(t.home)}<div class="score pred">${t.hg}–${t.ag}<small>mój typ</small></div>${teamEl(t.away, true)}</div>
+        <div class="tipfoot"><span>${status}${r.done ? ` <span class="small muted">wynik ${m.hg}–${m.ag}</span>` : ""}</span><span class="small muted">model: ${t.model.hg}–${t.model.ag} (${pct(t.model.win)}/${pct(t.model.draw)}/${pct(t.model.loss)})</span></div>
+        ${t.note ? `<div class="small muted" style="margin-top:6px">„${esc(t.note)}”</div>` : ""}
+        <div class="row" style="margin-top:8px;justify-content:flex-end"><button class="btn sec small-btn" data-deltip="${t.id}">Usuń</button></div></div>`;
+    };
+    const show = f === "pend" ? pend : f === "done" ? done : [...pend, ...done];
+    if (!tips.length) h += `<div class="card empty">Nie masz jeszcze typów. Otwórz dowolny mecz w zakładce Mecze i wybierz „Zapisz mój typ”.</div>`;
+    else if (!show.length) h += `<div class="card empty">Brak typów w tym widoku.</div>`;
+    else h += show.map(card).join("");
+    const exN = tips.filter(x => x.t.example).length;
+    h += `<div class="row" style="justify-content:center;margin-top:16px">${exN ? `<button class="btn sec" id="delEx">Usuń przykłady (${exN})</button>` : ""}${tips.length ? `<button class="btn danger" id="delAllTips">Usuń wszystkie typy</button>` : ""}</div>
+      <p class="small muted" style="text-align:center">Typy są zapisane w tej przeglądarce na tym urządzeniu.</p>`;
+    return h;
   }
 
   /* ---------- widoki ---------- */
@@ -579,9 +712,10 @@
   }
 
   /* ---------- renderowanie i zdarzenia ---------- */
-  const VIEWS = { mecze: viewMecze, tabela: viewTabela, kluby: viewKluby, typuj: viewTypuj, dane: viewDane };
+  const VIEWS = { mecze: viewMecze, tabela: viewTabela, kluby: viewKluby, typuj: viewTypuj, typy: viewTypy, dane: viewDane };
   function render() {
     if (!S.raw) return;
+    ensureExamples();
     freshness();
     document.querySelectorAll(".tabs button").forEach(b => b.classList.toggle("on", b.dataset.tab === S.tab));
     $("#view").innerHTML = (VIEWS[S.tab] || viewMecze)();
@@ -595,6 +729,12 @@
       const upd = () => { S.typ = { home: $("#th").value, away: $("#ta").value, neutral: $("#tn").checked }; render(); };
       $("#th").onchange = upd; $("#ta").onchange = upd; $("#tn").onchange = upd;
       $("#tswap").onclick = () => { S.typ = { ...S.typ, home: S.typ.away, away: S.typ.home }; render(); };
+    }
+    if (S.tab === "typy") {
+      const de = $("#delEx");
+      if (de) de.onclick = () => { if (confirm("Usunąć wszystkie przykładowe typy?")) { S.tips = S.tips.filter(t => !t.example); saveTips(); render(); } };
+      const da = $("#delAllTips");
+      if (da) da.onclick = () => { if (confirm("Usunąć wszystkie typy? Tego nie da się cofnąć.")) { S.tips = []; saveTips(); render(); } };
     }
     if (S.tab === "dane") {
       $("#dRefresh").onclick = () => load(true);
@@ -617,10 +757,12 @@
     }
   }
   document.addEventListener("click", e => {
-    const el = e.target.closest("[data-tab],[data-comp],[data-season],[data-more],[data-match],[data-club],[data-close],[data-go]");
+    const el = e.target.closest("[data-deltip],[data-tipf],[data-tab],[data-comp],[data-season],[data-more],[data-match],[data-club],[data-close],[data-go]");
     if (!el) return;
     const d = el.dataset;
     if (d.close !== undefined) return closeSheet();
+    if (d.deltip) { e.stopPropagation(); return deleteTip(d.deltip); }
+    if (d.tipf) { S.tipFilter = d.tipf; render(); return; }
     if (d.tab || d.go) { S.tab = d.tab || d.go; store.set(LS.tab, S.tab); closeSheet(); render(); scrollTo(0, 0); return; }
     if (d.comp) { S.comp = d.comp; S.tableSeason = null; S.showOverdue = false; store.set(LS.comp, S.comp); render(); return; }
     if (d.season) { S.tableSeason = d.season; render(); return; }
