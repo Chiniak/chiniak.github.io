@@ -10,7 +10,7 @@ const ODDS = new URL("../../futbol/dane/kursy.json", import.meta.url);
 // [kod ESPN, nasz kod] – nazwy i kolejność wyświetlania są w futbol/app.js
 const COMPS = [
   ["eng.1", "PL"], ["esp.1", "ES1"], ["ger.1", "DE1"], ["ita.1", "IT1"], ["fra.1", "FR1"],
-  ["ned.1", "NL1"], ["por.1", "PT1"], ["eng.2", "EN2"], ["uefa.champions", "CL"], ["uefa.europa", "EL"],
+  ["ned.1", "NL1"], ["por.1", "PT1"], ["eng.2", "EN2"], ["uefa.champions", "CL"], ["uefa.europa", "EL"], ["uefa.europa.conf", "ECL"],
 ];
 
 async function get(url) {

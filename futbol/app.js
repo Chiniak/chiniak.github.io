@@ -3,7 +3,7 @@
 (function () {
   "use strict";
   const M = window.FModel, D = window.FData;
-  const LS = { tips: "futbol.tips.v1", fat: "futbol.fatigue", inj: "futbol.injuries", cache: "futbol.cache.v2", manual: "futbol.manual.v1", tab: "futbol.tab", comp: "futbol.comp", mkt: "futbol.market" };
+  const LS = { tips: "futbol.tips.v1", fat: "futbol.fatigue", inj: "futbol.injuries", cache: "futbol.cache.v2", manual: "futbol.manual.v1", tab: "futbol.tab", comp: "futbol.comp", mkt: "futbol.market", fav: "futbol.fav" };
   const $ = s => document.querySelector(s);
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const pct = (x, d = 0) => (x * 100).toFixed(d) + "%";
@@ -14,7 +14,7 @@
   try { localStorage.removeItem("futbol.cache.v1"); localStorage.removeItem("futbol.fdkey"); localStorage.removeItem("futbol.filter"); } catch { /* stare klucze */ }
 
   const XG = 0.7;              // udział xG w ocenie siły (reszta – gole); dobrane testem wstecznym
-  const EURO = new Set(["CL", "EL"]);
+  const EURO = new Set(["CL", "EL", "ECL"]);
   const SXG = 0.4;             // udział zastępczego xG ze strzałów (gdy prawdziwego brak); test wsteczny
   const FIT = { shrink: 3, halfLife: 320, xg: XG, sxg: SXG };
 
@@ -837,15 +837,64 @@
     return h;
   }
 
+  /* ---------- Moje kluby: ulubione z najbliższym meczem i prognozą, wyszukiwarka wszystkich klubów ---------- */
+  const favs = () => store.get(LS.fav, []);
+  const isFav = t => favs().includes(t);
+  function toggleFav(t) {
+    const f = favs(), i = f.indexOf(t);
+    if (i >= 0) f.splice(i, 1); else f.push(t);
+    store.set(LS.fav, f);
+    toast(i >= 0 ? `Usunięto ${short(t)} z moich klubów` : `Dodano ${short(t)} do moich klubów`);
+  }
+  const favBtn = t => `<button class="icon-btn fav${isFav(t) ? " on" : ""}" data-fav="${esc(t)}" aria-label="${isFav(t) ? "Usuń z moich klubów" : "Dodaj do moich klubów"}">${isFav(t) ? "★" : "☆"}</button>`;
+  function favCard(t) {
+    const t0 = today();
+    const mine = S.matches.filter(m => m.home === t || m.away === t);
+    const next = mine.find(m => !M.played(m) && m.date >= t0);
+    const last = mine.filter(M.played).slice(-1)[0];
+    const lg = leagueOf(t);
+    const row = lg ? M.table(S.matches.filter(m => m.comp === lg && m.season === curSeason())).find(r => r.team === t) : null;
+    const pos = row ? M.table(S.matches.filter(m => m.comp === lg && m.season === curSeason())).indexOf(row) + 1 : null;
+    let nx = `<div class="small muted">Brak meczów w terminarzu.</div>`;
+    if (next) {
+      const p = pred(next), home = next.home === t, w = home ? p.win : p.loss, l = home ? p.loss : p.win;
+      nx = `<div class="list-row" data-match="${esc(next.id)}" style="border:0;padding:6px 0 0">
+        <span class="x" style="white-space:normal"><span class="small muted">${fmtDate(next.date)}${next.time ? " · " + esc(next.time) : ""} · ${esc(D.COMP[next.comp]?.short || next.comp)}</span><br>
+        <b>${esc(short(next.home))} – ${esc(short(next.away))}</b><br>
+        <span class="small">wygrana <b>${pct(w)}</b> · remis ${pct(p.draw)} · porażka ${pct(l)} · wynik ${p.top[0].hg}–${p.top[0].ag}${p.src ? ` <span class="muted">(z kursów)</span>` : ""}</span></span></div>`;
+    }
+    const lr = last ? (() => { const gf = last.home === t ? last.hg : last.ag, ga = last.home === t ? last.ag : last.hg, r = gf > ga ? "W" : gf < ga ? "P" : "R";
+      return `<span class="res ${r}">${r}</span> ${esc(short(last.home === t ? last.away : last.home))} ${gf}–${ga}`; })() : "";
+    return `<div class="card">
+      <div class="list-row" style="cursor:default;border:0;padding:0">${badge(t, "lg")}
+        <span class="x" data-club="${esc(t)}" style="cursor:pointer"><b>${esc(short(t))}</b><br><span class="small muted">${pos ? `${pos}. miejsce · ` : ""}${lg ? esc(compName(lg)) : ""}</span></span>${favBtn(t)}</div>
+      <div class="row" style="margin:8px 0 0;gap:6px;align-items:center">${formHtml(formOf(t, 5))}<span class="small muted" style="margin-left:auto">ostatnio: ${lr}</span></div>
+      ${nx}</div>`;
+  }
+  function clubSearchHtml(q) {
+    const nq = norm(q.trim());
+    if (!nq) return "";
+    const rows = [];
+    for (const [g, ts] of teamGroups()) for (const t of ts) if (norm(g).includes(nq) || norm(t).includes(nq) || norm(short(t)).includes(nq)) rows.push([g, t]);
+    if (!rows.length) return `<div class="empty">Nie znaleziono klubu „${esc(q)}”.</div>`;
+    return `<div class="card" style="padding:2px 12px">${rows.slice(0, 40).map(([g, t]) => `<div class="list-row">${badge(t)}<span class="x" data-club="${esc(t)}" style="cursor:pointer">${esc(short(t))} <span class="small muted">${esc(g)}</span></span>${favBtn(t)}</div>`).join("")}</div>${rows.length > 40 ? `<p class="small muted">…i ${rows.length - 40} innych – wpisz więcej liter.</p>` : ""}`;
+  }
   function viewKluby() {
+    const f = favs().filter(t => S.matches.some(m => m.home === t || m.away === t));
+    let h = `<h2>Moje kluby</h2>`;
+    h += f.length ? f.map(favCard).join("") : `<div class="card small muted">Dodaj ulubione kluby gwiazdką ☆ – w wyszukiwarce poniżej, w siatce klubów albo w karcie klubu. Tu zobaczysz ich najbliższy mecz z prognozą, formę i ostatni wynik.</div>`;
+    h += `<h2>Szukaj klubu</h2><input type="text" id="cq" placeholder="Wpisz nazwę klubu lub ligi…" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(S.clubQ || "")}"><div id="cres" style="margin-top:8px">${clubSearchHtml(S.clubQ || "")}</div>`;
+    return h + viewClubGrid();
+  }
+  function viewClubGrid() {
     const c = S.comp;
     const er = S.elo.ratings;
     let teams = teamsOf(c, curSeason());
     if (!teams.length) teams = teamsOf(c, prevSeason());
     let order = teams.slice().sort((a, b) => (er[b] || 0) - (er[a] || 0));
     if (!isCup(c)) { const tb = M.table(S.matches.filter(m => m.comp === c && m.season === curSeason()), teams); if (tb.some(r => r.p)) order = tb.map(r => r.team); }
-    let h = compBar(c) + `<h2>${esc(compName(c))} · ${isCup(c) ? "uczestnicy" : "kolejność jak w tabeli"}</h2><div class="grid">`;
-    for (const t of order) h += `<button class="card club" data-club="${esc(t)}">${badge(t, "lg")}<span>${esc(short(t))}</span><span class="muted">Elo ${Math.round(er[t] || 1500)}</span></button>`;
+    let h = `<h2>Przeglądaj rozgrywki</h2>` + compBar(c) + `<h2>${esc(compName(c))} · ${isCup(c) ? "uczestnicy" : "kolejność jak w tabeli"}</h2><div class="grid">`;
+    for (const t of order) h += `<div class="card club" data-club="${esc(t)}" role="button" tabindex="0">${favBtn(t)}${badge(t, "lg")}<span>${esc(short(t))}</span><span class="muted">${isFav(t) ? "w moich klubach" : `Elo ${Math.round(er[t] || 1500)}`}</span></div>`;
     return h + `</div>`;
   }
 
@@ -931,7 +980,7 @@
     const last = mine.filter(M.played).slice(-10).reverse();
     const xgFor = t in mdl.att ? Math.exp(mdl.mu + mdl.att[t] + mdl.home / 2) : null;
     const xgAg = t in mdl.def ? Math.exp(mdl.mu - mdl.def[t] + mdl.home / 2) : null;
-    let h = `<div class="vs" style="grid-template-columns:auto 1fr;text-align:left;padding-right:36px">${badge(t, "xl")}<div><h3>${esc(t)}</h3><div class="muted small">${pos ? `${pos}. miejsce · ${esc(compName(lg))}` : lg ? esc(compName(lg)) : ""} · Elo ${Math.round(er[t] || 1500)}</div></div></div>
+    let h = `<div class="vs" style="grid-template-columns:auto 1fr;text-align:left;padding-right:36px">${badge(t, "xl")}<div><h3>${esc(t)} ${favBtn(t)}</h3><div class="muted small">${pos ? `${pos}. miejsce · ${esc(compName(lg))}` : lg ? esc(compName(lg)) : ""} · Elo ${Math.round(er[t] || 1500)}</div></div></div>
       <div class="stats">
         ${row ? `<div class="stat"><b>${row.pts}</b><span>punkty (${row.p} m.)</span></div><div class="stat"><b>${row.w}-${row.d}-${row.l}</b><span>W-R-P w lidze</span></div><div class="stat"><b>${row.gf}:${row.ga}</b><span>bramki w lidze</span></div>` : ""}
         ${xgFor ? `<div class="stat"><b>${xgFor.toFixed(2)}</b><span>siła ataku (gole/mecz)${attR ? ` · ${attR}. w lidze` : ""}</span></div><div class="stat"><b>${xgAg.toFixed(2)}</b><span>siła obrony (stracone/mecz)${defR ? ` · ${defR}. w lidze` : ""}</span></div>` : ""}
@@ -1069,6 +1118,9 @@
   }
   function bindView() {
     const v = $("#view");
+    if (S.tab === "kluby" && $("#cq")) {
+      $("#cq").oninput = e => { S.clubQ = e.target.value; $("#cres").innerHTML = clubSearchHtml(S.clubQ); };
+    }
     if (S.tab === "typuj") {
       $("#tn").onchange = () => { S.typ = { ...S.typ, neutral: $("#tn").checked }; render(); };
       $("#tswap").onclick = () => { S.typ = { ...S.typ, home: S.typ.away, away: S.typ.home }; render(); };
@@ -1103,10 +1155,16 @@
     }
   }
   document.addEventListener("click", e => {
-    const el = e.target.closest("[data-savebet],[data-betdays],[data-typysub],[data-deltip],[data-tipf],[data-tab],[data-comp],[data-season],[data-more],[data-match],[data-club],[data-close],[data-go],[data-picker],[data-pick]");
+    const el = e.target.closest("[data-savebet],[data-betdays],[data-typysub],[data-deltip],[data-tipf],[data-tab],[data-comp],[data-season],[data-more],[data-match],[data-club],[data-close],[data-go],[data-picker],[data-pick],[data-fav]");
     if (!el) return;
     const d = el.dataset;
     if (d.close !== undefined) return closeSheet();
+    if (d.fav) {
+      e.stopPropagation(); toggleFav(d.fav);
+      document.querySelectorAll(`[data-fav="${CSS.escape(d.fav)}"]`).forEach(b => { const on = isFav(d.fav); b.classList.toggle("on", on); b.textContent = on ? "★" : "☆"; });
+      if (S.tab === "kluby" && $("#sheet").hidden) render();
+      return;
+    }
     if (d.picker) return openPicker(d.picker);
     if (d.pick) return pickTeam(d.pick, d.team);
     if (d.deltip) { e.stopPropagation(); return deleteTip(d.deltip); }
