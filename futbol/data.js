@@ -48,6 +48,23 @@
     })).filter(r => r.xi.length);
     return { odds, lineups, at: Date.now() };
   }
+  /* Tablica wyników ESPN na żywo (przeglądarka): stan, minuta, wynik, gole i czerwone kartki meczów z danego dnia.
+     ymd – RRRRMMDD (ESPN liczy dni według czasu amerykańskiego, więc zwykle pytamy o dzień meczu i dzień wcześniej). */
+  async function loadScoreboard(comp, ymd) {
+    const r = await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${ESPN_SLUG[comp]}/scoreboard?dates=${ymd}&_=${Math.floor(Date.now() / 30000)}`);
+    if (!r.ok) throw new Error(`${r.status} ESPN`);
+    const js = await r.json();
+    return (js.events || []).map(e => {
+      const c = e.competitions?.[0] || {}, st = e.status?.type || {};
+      const H = (c.competitors || []).find(x => x.homeAway === "home"), A = (c.competitors || []).find(x => x.homeAway === "away");
+      if (!H || !A) return null;
+      const ev = (c.details || []).map(d => ({
+        min: d.clock?.displayValue || "", team: d.team?.id, who: d.athletesInvolved?.[0]?.shortName || d.athletesInvolved?.[0]?.displayName || "",
+        kind: d.scoringPlay ? (d.ownGoal ? "og" : d.penaltyKick ? "pen" : "goal") : d.redCard ? "red" : null,
+      })).filter(d => d.kind);
+      return { comp, k: e.date, state: st.state, done: !!st.completed, detail: st.shortDetail || "", h: H.team?.id, a: A.team?.id, hs: +H.score || 0, as: +A.score || 0, ev };
+    }).filter(Boolean);
+  }
   /* Kadra klubu z ESPN ze statystykami sezonu (rozgrywki comp): występy, w tym w 1. składzie, gole, asysty. */
   async function loadRoster(comp, teamId) {
     const r = await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${ESPN_SLUG[comp]}/teams/${teamId}/roster`);
@@ -243,7 +260,7 @@
     return out.sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || "")));
   }
 
-  const api = { loadRoster, ESPN_SLUG, parseEk, loadEk, loadLive, amDec, getJson, parseEspn, parseFpl, parseXg, COMPS, COMP, leagueLogo, loadEspn, loadFpl, loadXg, attachXg, merge, canon, key, seasonStart, seasonLabel, seasonOf };
+  const api = { loadScoreboard, loadRoster, ESPN_SLUG, parseEk, loadEk, loadLive, amDec, getJson, parseEspn, parseFpl, parseXg, COMPS, COMP, leagueLogo, loadEspn, loadFpl, loadXg, attachXg, merge, canon, key, seasonStart, seasonLabel, seasonOf };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.FData = api;
 })(typeof self !== "undefined" ? self : this);
