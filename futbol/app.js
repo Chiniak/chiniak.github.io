@@ -3,7 +3,7 @@
 (function () {
   "use strict";
   const M = window.FModel, D = window.FData;
-  const LS = { tips: "futbol.tips.v1", fat: "futbol.fatigue", inj: "futbol.injuries", cache: "futbol.cache.v2", manual: "futbol.manual.v1", tab: "futbol.tab", comp: "futbol.comp" };
+  const LS = { tips: "futbol.tips.v1", fat: "futbol.fatigue", inj: "futbol.injuries", cache: "futbol.cache.v2", manual: "futbol.manual.v1", tab: "futbol.tab", comp: "futbol.comp", mkt: "futbol.market" };
   const $ = s => document.querySelector(s);
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const pct = (x, d = 0) => (x * 100).toFixed(d) + "%";
@@ -71,7 +71,7 @@
     S.elo = M.elo(S.matches);
     S.rest = new Map([...M.restDays(S.matches)].map(([m, x]) => [m.id, x]));
     S.calib = null;
-    S.models = {}; S.bts = {}; S.btMap = new Map(); S.sims = {}; S.absCache = new Map(); S._teamsOf = {}; S._league = null;
+    S.models = {}; S.bts = {}; S.btMap = new Map(); S.sims = {}; S.absCache = new Map(); S._teamsOf = {}; S._league = null; S.predCache = new Map();
   }
   function teamsOf(comp, season) {
     const k = comp + season;
@@ -102,7 +102,21 @@
     const lh = leagueOf(h), la = leagueOf(a);
     return lh && lh === la ? modelFor(lh) : modelFor("CL");
   }
-  const pred = m => M.predict(modelFor(m.comp), m.home, m.away, { neutral: m.neutral, adj: adjFor(m) });
+  const modelPred = m => M.predict(modelFor(m.comp), m.home, m.away, { neutral: m.neutral, adj: adjFor(m) });
+  /* Prognoza meczu: z kursów bukmachera, gdy są (w teście na 3527 meczach trafniejsza od modelu na każdym rynku,
+     a każda domieszka modelu ją pogarszała), inaczej z modelu. p.model – zdanie modelu do porównania. */
+  const mktOn = () => store.get(LS.mkt, true);
+  function pred(m) {
+    if (S.predCache.has(m.id)) return S.predCache.get(m.id);
+    const mp = modelPred(m);
+    let p = mp;
+    if (!M.played(m) && m.odds && mktOn()) {
+      const f = M.fromOdds(m.odds, { total: mp.xg.home + mp.xg.away });
+      if (f) { f.home = m.home; f.away = m.away; f.src = "rynek"; f.book = m.odds.book || "bukmacher"; f.model = mp; p = f; }
+    }
+    S.predCache.set(m.id, p);
+    return p;
+  }
 
   function btFor(comp) {
     if (S.bts[comp]) return S.bts[comp];
@@ -255,7 +269,7 @@
       <div class="m-row">${teamEl(m.home)}${mid}${teamEl(m.away, true)}</div>
       ${done && !bt ? "" : probBar(bt ? { win: bt.probs[0], draw: bt.probs[1], loss: bt.probs[2] } : p)}
       ${miss}
-      ${!done && m.odds ? `<div class="oddsline">Kursy: 1 <b>${fx(m.odds.h)}</b> · X <b>${fx(m.odds.d)}</b> · 2 <b>${fx(m.odds.a)}</b></div>` : ""}
+      ${!done && m.odds ? `<div class="oddsline">Kursy${m.odds.book ? ` ${esc(m.odds.book)}` : ""}: 1 <b>${fx(m.odds.h)}</b> · X <b>${fx(m.odds.d)}</b> · 2 <b>${fx(m.odds.a)}</b>${p.src ? " · prognoza z kursów" : ""}</div>` : ""}
       ${tipLine(m)}
     </button>`;
   }
@@ -271,8 +285,10 @@
   /* ---------- prognoza meczu ---------- */
   function predictionHtml(home, away, opts = {}) {
     const mdl = opts.model || modelForPair(home, away);
-    const p = M.predict(mdl, home, away, { neutral: opts.neutral, adj: opts.adj });
+    const p = opts.p || M.predict(mdl, home, away, { neutral: opts.neutral, adj: opts.adj });
     const er = S.elo.ratings;
+    const pm = p.model, gap = pm ? Math.max(Math.abs(pm.win - p.win), Math.abs(pm.draw - p.draw), Math.abs(pm.loss - p.loss)) : 0;
+    const srcNote = pm ? `<p class="small muted">Prognoza z kursów ${esc(p.book)} po zdjęciu marży – w teście na 3527 meczach trafniejsza niż sam model. Model: 1 ${pct(pm.win)} · X ${pct(pm.draw)} · 2 ${pct(pm.loss)}, oczekiwane gole ${pm.xg.home.toFixed(2)} : ${pm.xg.away.toFixed(2)}.${gap >= 0.1 ? ` <span class="tag wait">model i rynek mocno się różnią</span> Zwykle rynek wie więcej – np. o składzie lub kontuzjach.` : ""}</p>` : "";
     const N = 6;
     let grid = `<div class="sgrid"><div class="h">${esc(abbr(home))}↓</div>${[...Array(N).keys()].map(j => `<div class="h">${j}</div>`).join("")}`;
     const mx = Math.max(...p.grid.slice(0, N).flatMap(r => r.slice(0, N)));
@@ -291,6 +307,7 @@
     return `
       <div class="big3"><div><b>${pct(p.win)}</b><span>wygrana ${esc(short(home))}</span></div><div><b>${pct(p.draw)}</b><span>remis</span></div><div><b>${pct(p.loss)}</b><span>wygrana ${esc(short(away))}</span></div></div>
       ${probBar(p)}
+      ${srcNote}
       <div class="kv">
         <div class="stat"><b>${p.xg.home.toFixed(2)} : ${p.xg.away.toFixed(2)}</b><span>oczekiwane gole</span></div>
         <div class="stat"><b>${pct(p.over25)}</b><span>powyżej 2,5 gola</span></div>
@@ -334,7 +351,7 @@
       <div class="tm" data-club="${esc(m.away)}">${badge(m.away, "lg")}${esc(short(m.away))}</div></div>`;
     if (done && bt) html += `<div class="card"><b>Przed meczem model dawał:</b> 1 ${pct(bt.probs[0])} · X ${pct(bt.probs[1])} · 2 ${pct(bt.probs[2])}, typ ${bt.top.hg}–${bt.top.ag}. ${bt.hit ? `<span class="tag ok">trafiony</span>` : `<span class="tag bad">nietrafiony</span>`}</div>`;
     html += done ? `<h2>Gdyby zagrali teraz</h2>` : "";
-    html += predictionHtml(m.home, m.away, { model: modelFor(m.comp), neutral: m.neutral, adj: adjFor(m), injApplied: !!injAdj(m), match: m, squad: !done });
+    html += predictionHtml(m.home, m.away, { model: modelFor(m.comp), neutral: m.neutral, adj: adjFor(m), injApplied: !!injAdj(m), match: m, squad: !done, p: done ? null : p });
     html += oddsHtml(m, p);
     html += tipSectionHtml(m, p);
     html += `<h2>${done ? "Popraw wynik" : "Wpisz wynik"}</h2>
@@ -501,9 +518,9 @@
     const out = [];
     for (const m of S.matches) {
       if (M.played(m) || m.live || m.date < t || m.date > end) continue;
-      const mk = M.markets(pred(m));
+      const pp = pred(m), mk = M.markets(pp), mm = pp.model ? M.markets(pp.model) : null;
       const best = Object.entries(mk).filter(([, p]) => p >= 0.65 && p <= 0.87).sort((a, b) => b[1] - a[1])[0];
-      if (best) { const bo = bookOdds(m, best[0]); out.push({ m, k: best[0], p: best[1], book: bo, edge: bo ? best[1] * bo.v - 1 : null }); }
+      if (best) { const bo = bookOdds(m, best[0]); out.push({ m, k: best[0], p: best[1], src: pp.src, pm: mm?.[best[0]], book: bo, edge: bo ? best[1] * bo.v - 1 : null }); }
     }
     return out.sort((a, b) => b.p - a.p);
   }
@@ -514,7 +531,7 @@
       if (M.played(m) || m.live || m.date < t || m.date > end || !m.odds) continue;
       const mdl = modelFor(m.comp);
       if ((mdl.games[m.home] || 0) < 8 || (mdl.games[m.away] || 0) < 8) continue; // za mało danych o klubie
-      const mk = M.markets(pred(m));
+      const mk = M.markets(modelPred(m));
       for (const k of ["1", "X", "2", "O2.5", "U2.5"]) {
         const bo = bookOdds(m, k);
         if (!bo?.v) continue;
@@ -527,6 +544,7 @@
   function oddsTag(x) {
     if (!x.book) return `<span class="small muted">brak kursu bukmachera</span>`;
     const e = x.edge;
+    if (x.src) return `<span class="small">kurs ${x.book.approx ? "≈" : ""}<b>${fx(x.book.v)}</b></span> <span class="tag ex">${e < -0.005 ? `marża w kursie ok. ${pct(-e)}` : "kurs uczciwy"}</span>`;
     return `<span class="small">kurs ${x.book.approx ? "≈" : ""}<b>${fx(x.book.v)}</b></span> ${e > 0.35 ? `<span class="tag wait">duża rozbieżność z rynkiem</span>` : e >= 0.05 ? `<span class="tag ex">model +${pct(e)} ponad kurs</span>` : e <= -0.05 ? `<span class="tag bad">kurs poniżej szans</span>` : `<span class="tag ex">kurs uczciwy</span>`}`;
   }
   function betRow(x, i) {
@@ -534,7 +552,7 @@
     return `<div class="card bet">
       <div class="m-meta"><span>${compTag(m.comp)}</span><span>${fmtDate(m.date)}${m.time ? " · " + esc(m.time) : ""}</span></div>
       <div class="list-row" data-match="${esc(m.id)}" style="border:0;padding:4px 0">${badge(m.home)}<span class="x"><b>${esc(short(m.home))} – ${esc(short(m.away))}</b></span>${badge(m.away)}</div>
-      <div class="betline"><div><div class="bmk">${esc(mlabel(x.k, m))}</div><div class="small muted">szansa wg modelu${mp !== null ? ` · wg bukmachera <b>${pct(mp)}</b>` : ""} · kurs uczciwy ${fx(1 / x.p)}</div></div><div class="bp">${pct(x.p)}</div></div>
+      <div class="betline"><div><div class="bmk">${esc(mlabel(x.k, m))}</div><div class="small muted">${x.src ? `szansa z kursów${x.pm !== undefined ? ` · wg modelu ${pct(x.pm)}` : ""}` : `szansa wg modelu${mp !== null ? ` · wg bukmachera <b>${pct(mp)}</b>` : ""}`} · kurs uczciwy ${fx(1 / x.p)}</div></div><div class="bp">${pct(x.p)}</div></div>
       <div class="tipfoot">${oddsTag(x)}<button class="btn sec small-btn" data-savebet="${i}"${saved ? " disabled" : ""}>${saved ? "Zapisany" : "Zapisz"}</button></div></div>`;
   }
   function viewBets() {
@@ -546,12 +564,12 @@
     S._betList = [...top, ...val];
     let h = `<div class="card warn small"><b>18+ · Zakłady to ryzyko.</b> Nawet zakład z szansą 80% przegrywa średnio co piąty raz, a bukmacher ma w kursach marżę (ok. 5–8%). W Wielkiej Brytanii graj tylko u bukmacherów z licencją UK Gambling Commission. Propozycje to przykłady z modelu, nie pewniaki – w teście na rozegranych meczach żadna z tych metod nie dawała zysku na kursach bet365 (wyniki niżej, w „Czy model mówi prawdę?”). Pomoc: <a href="https://www.begambleaware.org" target="_blank" rel="noopener">BeGambleAware</a>, samowykluczenie: <a href="https://www.gamstop.co.uk" target="_blank" rel="noopener">GAMSTOP</a>.</div>
       <div class="chips">${[[1, "Dziś i jutro"], [3, "3 dni"], [7, "7 dni"]].map(([d, l]) => `<button class="chip${days === d ? " on" : ""}" data-betdays="${d}">${l}</button>`).join("")}</div>
-      <h2>Najpewniejsze zakłady (${cands.length} meczów)</h2>`;
+      <h2>Najpewniejsze zakłady (${cands.length} meczów)</h2><div class="small muted" style="margin:-2px 2px 8px">Szanse z kursów bukmachera, gdy są (trafniejsze), w innym wypadku z modelu. W teście takie zakłady z kursów wchodziły w 80,9% przypadków przy zapowiadanych 80,4%.</div>`;
     h += top.length ? top.map((x, i) => betRow(x, i)).join("") : `<div class="card empty">Brak meczów w tym okresie.</div>`;
     if (ako.length === 3) {
       h += `<h2>Przykładowy kupon – 3 najpewniejsze</h2><div class="card">${ako.map(x => `<div class="list-row" data-match="${esc(x.m.id)}"><span class="x"><b>${esc(mlabel(x.k, x.m))}</b><br><span class="small muted">${esc(short(x.m.home))} – ${esc(short(x.m.away))} · ${fmtDate(x.m.date, false)}</span></span><span class="s">${pct(x.p)}</span></div>`).join("")}
         <div class="stats"><div class="stat"><b>${pct(akoP)}</b><span>szansa, że wejdą wszystkie 3</span></div><div class="stat"><b>${fx(akoO)}</b><span>kurs łączny${ako.some(x => !x.book) ? " (część uczciwa)" : ""}</span></div><div class="stat"><b>${money(akoO * STAKE)}</b><span>wypłata ze stawki ${money(STAKE)}</span></div></div>
-        <p class="small muted" style="margin-bottom:0">W teście na rozegranych meczach takie kupony (3 najpewniejsze zakłady z jednego dnia) wchodziły w ok. 53% przypadków, choć model zapowiadał 59% – każde dodatkowe zdarzenie mnoży ryzyko.</p></div>`;
+        <p class="small muted" style="margin-bottom:0">W teście na rozegranych meczach takie kupony (3 najpewniejsze zakłady z jednego dnia, szanse z kursów) wchodziły w ok. 61% przypadków przy zapowiadanych 59%; z samego modelu – 53% przy zapowiadanych 59% – każde dodatkowe zdarzenie mnoży ryzyko.</p></div>`;
     }
     h += `<h2>Okazje według modelu</h2><div class="small muted" style="margin:-2px 2px 8px">Zakłady, w których model daje wyraźnie więcej szans niż wynika z kursu (przewaga 8–35%, tylko kluby z co najmniej 8 meczami w danych). Na ${S.calib?.roi ? S.calib.roi.n : "ok. 3500"} rozegranych meczach z kursami bet365 takie zakłady przynosiły <b>stratę ${S.calib?.roi?.B.n ? pct(-(S.calib.roi.B.ret / S.calib.roi.B.n - 1), 1) : "ok. 11%"}</b> – bukmacher zna składy i wiadomości, a jego kursy są trafniejsze niż model. To ciekawostka, nie przepis na zysk.</div>`;
     h += val.length ? val.map((x, i) => betRow(x, top.length + i)).join("") : `<div class="card empty">Brak wyraźnych okazji w tym okresie.</div>`;
@@ -563,7 +581,7 @@
     let bn = 0, bw = 0, bp = 0;
     // zwrot na prawdziwych kursach (bet365 z football-data, w pucharach – zapisane kursy ESPN): stała stawka, wynik po 90 min
     const st = () => ({ n: 0, w: 0, ret: 0 });
-    const roi = { n: 0, A: st(), B: st(), F: st(), mBr: 0, bBr: 0, mHit: 0, bHit: 0, books: new Set(), from: null };
+    const roi = { n: 0, A: st(), B: st(), F: st(), K: st(), mBr: 0, bBr: 0, mHit: 0, bHit: 0, books: new Set(), from: null };
     const bet = (s, ok, o) => { s.n++; if (ok) { s.w++; s.ret += o; } };
     for (const c of D.COMPS) for (const r of btFor(c.code).records) {
       const mk = M.markets(M.fromXg(r.xg.home, r.xg.away));
@@ -580,6 +598,9 @@
       const fav = ip.indexOf(Math.max(...ip)); if (fav === r.res) roi.bHit++;
       bet(roi.F, fav === r.res, [o.h, o.d, o.a][fav]);
       if (best) { const bo = bookOdds(r.m, best[0]); if (bo?.v) bet(roi.A, M.settle(best[0], r.m.hg, r.m.ag), bo.v); }
+      const fo = M.fromOdds(o, { total: r.xg.home + r.xg.away });
+      const kb = Object.entries(M.markets(fo)).filter(([, p]) => p >= 0.65 && p <= 0.87).sort((a, b) => b[1] - a[1])[0];
+      if (kb) { const bo = bookOdds(r.m, kb[0]); if (bo?.v) bet(roi.K, M.settle(kb[0], r.m.hg, r.m.ag), bo.v); }
       for (const k of ["1", "X", "2", "O2.5", "U2.5"]) {
         const bo = bookOdds(r.m, k); if (!bo?.v) continue;
         const e = mk[k] * bo.v - 1;
@@ -598,9 +619,9 @@
     return `<h3 style="margin:16px 0 6px">Zakłady na prawdziwych kursach</h3>
       <p style="margin-top:0">${r.n} rozegranych meczów z kursami (${esc([...r.books].join(", "))}), od ${fmtDate(r.from, false)}. Każdy zakład za ${money(STAKE)}, typ wybrany tylko z danych sprzed meczu.</p>
       <div class="tbl-wrap"><table><thead><tr><th class="t">Zakład</th><th>Ile</th><th>Weszło</th><th>Zwrot</th><th>Bilans</th></tr></thead><tbody>
-      ${row("Najpewniejszy¹", r.A)}${row("Okazje²", r.B)}${row("Faworyt³", r.F)}
+      ${row("Najpewniejszy¹", r.K)}${row("Najpewn. model²", r.A)}${row("Okazje³", r.B)}${row("Faworyt⁴", r.F)}
       </tbody></table></div>
-      <p class="muted">¹ najpewniejszy zakład z meczu (kurs podwójnej szansy wyliczony z 1X2) · ² okazje według modelu, przewaga 8–35% · ³ zawsze faworyt bukmachera, dla porównania</p>
+      <p class="muted">¹ najpewniejszy zakład z meczu według kursów (tak wybiera lista wyżej) · ² to samo według samego modelu · ³ okazje według modelu, przewaga 8–35% · ⁴ zawsze faworyt bukmachera, dla porównania. Kurs podwójnej szansy wyliczony z 1X2 (≈); bez kursu na dany rynek zakład nie jest liczony.</p>
       <p style="margin-bottom:0">Kto lepiej przewiduje wynik 1X2: <b>model</b> – trafność ${pct(r.mHit / r.n, 1)}, Brier ${(r.mBr / r.n).toFixed(3)}; <b>bukmacher</b> – trafność ${pct(r.bHit / r.n, 1)}, Brier ${(r.bBr / r.n).toFixed(3)} (mniej = lepiej). Ujemny zwrot to głównie marża bukmachera – żeby zarabiać, trzeba przewidywać lepiej niż rynek, a ten model tego nie robi.</p>`;
   }
   function calibHtml(c) {
@@ -622,7 +643,7 @@
   // kursy w szczegółach meczu
   function oddsHtml(m, p) {
     if (!m.odds || M.played(m)) return "";
-    const o = m.odds, imp = implied(o), mk = M.markets(p);
+    const o = m.odds, imp = implied(o), mk = M.markets(p.model || p);
     const row = (k, odd, ip) => { const e = mk[k] * odd - 1; return `<tr><td class="t" style="white-space:normal">${esc(mlabel(k, m))}</td><td><b>${fx(odd)}</b></td><td>${ip !== null ? pct(ip) : "–"}</td><td>${pct(mk[k])}</td><td>${e > 0.35 ? `<span class="tag wait">+${pct(e)}?</span>` : e >= 0.05 ? `<span class="tag ok">+${pct(e)}</span>` : e <= -0.05 ? `<span class="tag bad">${pct(e)}</span>` : "≈"}</td></tr>`; };
     const ou = o.line && o.over && o.under ? (() => { const s = 1 / o.over + 1 / o.under; const kk = `O${o.line}`, ku = `U${o.line}`; return mk[kk] !== undefined ? row(kk, o.over, 1 / o.over / s) + row(ku, o.under, 1 / o.under / s) : ""; })() : "";
     return `<h2>Kursy bukmachera${o.book ? ` (${esc(o.book)})` : ""}</h2><div class="card"><div class="tbl-wrap"><table>
@@ -876,7 +897,7 @@
     h += `<div class="list-row" style="cursor:default"><span class="res ${S.raw.fd ? "W" : "P"}">${S.raw.fd ? "✓" : "!"}</span><span class="x" style="white-space:normal"><b>football-data.co.uk</b> – xG 8 lig i kursy bet365 rozegranych meczów (do sprawdzania zakładów)<br><span class="small muted">${S.raw.fd ? `kursy dla ${fdN} meczów · stan z ${new Date(S.raw.fd.updated).toLocaleString("pl-PL")}` : "niedostępne"}</span></span></div>`;
     h += `<div class="row"><button class="btn" id="dRefresh">Odśwież teraz</button><span class="small muted">Dane na stronie odświeżane automatycznie co 3 godziny.${S.manual.length ? ` Wpisanych ręcznie: ${S.manual.length}.` : ""}</span></div></div>`;
 
-    h += `<h2>Prognozy</h2><div class="card"><label class="check" style="margin:0"><input type="checkbox" id="injT"${injOn() ? " checked" : ""}> Uwzględniaj nieobecnych zawodników (Premier League, mecze w najbliższych 10 dniach)</label>
+    h += `<h2>Prognozy</h2><div class="card"><label class="check" style="margin:0 0 12px"><input type="checkbox" id="mktT"${mktOn() ? " checked" : ""}> Prognoza z kursów bukmachera, gdy są (trafniejsza niż sam model; wyłącz, żeby widzieć tylko model)</label><label class="check" style="margin:0"><input type="checkbox" id="injT"${injOn() ? " checked" : ""}> Uwzględniaj nieobecnych zawodników (Premier League, mecze w najbliższych 10 dniach)</label>
       <label class="check" style="margin:12px 0 0"><input type="checkbox" id="fatT"${fatOn() ? " checked" : ""}> Uwzględniaj zmęczenie (mecz po ≤ ${M.FATIGUE.maxDays} dniach przerwy, gdy rywal odpoczywał dłużej)</label></div>`;
 
     const done = D.COMPS.every(c => S.bts[c.code]);
@@ -909,6 +930,7 @@
       <p style="margin-top:0"><b>Siła ataku i obrony.</b> Każda drużyna dostaje ocenę ataku i obrony dopasowaną do meczów z dwóch sezonów (regresja Poissona). Dla meczów ligowych model uczy się z danej ligi i pucharów europejskich, dla pucharów – ze wszystkich lig naraz, które łączą się przez mecze europejskie. Nowsze mecze ważą więcej – mecz sprzed 8 miesięcy liczy się w połowie. Drużyny z małą liczbą meczów są ściągane do średniej, a beniaminkowie startują z niższą oceną.</p>
       <p><b>Gole oczekiwane (xG).</b> W meczach 8 lig z tego sezonu siła drużyn liczona jest w 70% z xG (jakość stworzonych sytuacji; football-data.co.uk, w PL także Opta przez FPL), a w 30% z goli. Gdzie xG brak (poprzedni sezon, puchary), model bierze w 40% „xG ze strzałów” z ESPN: 0,19 gola za strzał celny i 0,07 za niecelny – tak wychodzi z porównania z prawdziwym xG. W teście wstecznym to podniosło trafność z 51,0% do 52,1%.</p>
       <p><b>Wynik meczu.</b> Z ocen wychodzą oczekiwane gole obu drużyn (z przewagą własnego boiska, w PL ok. ${Math.round((Math.exp(pm.home) - 1) * 100)}% więcej goli gospodarza). Rozkład Poissona z poprawką Dixona-Colesa daje szansę każdego wyniku, a z nich – 1/X/2, powyżej 2,5 gola i „obie strzelą”.</p>
+      <p><b>Prognoza z kursów.</b> Gdy mecz ma kursy bukmachera (bet365 z football-data.co.uk, a gdy ich brak – DraftKings z ESPN), prognoza na stronie pochodzi z nich: z kursów 1X2 i na 2,5 gola, po zdjęciu marży, wyliczamy oczekiwane gole obu drużyn, a z nich wszystkie rynki. W teście na 3527 meczach ligowych było to trafniejsze od modelu na każdym rynku (1X2: 52,7% wobec 51,2%), a dokładanie modelu tylko pogarszało wynik. Model zostaje jako drugie zdanie, dla meczów bez kursów i do symulacji tabeli. Można to wyłączyć wyżej.</p>
       <p><b>Tabela końcowa.</b> Pozostałe mecze sezonu losowane 3000 razy.</p>
       <p><b>Nieobecni</b> (tylko Premier League). Dla meczów w najbliższych 10 dniach model obniża atak drużyny o udział brakujących zawodników w jej xG i asystach oczekiwanych (zmiennicy odrabiają ok. 40%, najwyżej −25%) i podnosi liczbę traconych goli, gdy brakuje bramkarza lub obrońców (najwyżej +20%).</p>
       <p><b>Zmęczenie.</b> Drużyna grająca po najwyżej ${M.FATIGUE.maxDays} dniach przerwy przeciw rywalowi, który odpoczywał dłużej, ma atak niższy o ${pct(M.FATIGUE.att)} i traci o ${pct(M.FATIGUE.def)} więcej goli.</p>
@@ -946,8 +968,9 @@
     }
     if (S.tab === "dane") {
       $("#dRefresh").onclick = () => load(true);
-      $("#injT").onchange = e => { store.set(LS.inj, e.target.checked); S.absCache = new Map(); render(); };
-      $("#fatT").onchange = e => { store.set(LS.fat, e.target.checked); S.bts = {}; S.btMap = new Map(); render(); };
+      $("#injT").onchange = e => { store.set(LS.inj, e.target.checked); S.absCache = new Map(); S.predCache = new Map(); render(); };
+      $("#fatT").onchange = e => { store.set(LS.fat, e.target.checked); S.bts = {}; S.btMap = new Map(); S.predCache = new Map(); render(); };
+      $("#mktT").onchange = e => { store.set(LS.mkt, e.target.checked); S.predCache = new Map(); render(); };
       const ba = $("#btAll");
       if (ba) ba.onclick = () => { ba.disabled = true; ba.textContent = "Liczę…"; setTimeout(() => { D.COMPS.forEach(c => btFor(c.code)); render(); }, 30); };
       $("#manForm").onsubmit = e => {

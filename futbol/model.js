@@ -333,7 +333,39 @@
     return predict(m, "h", "a", { neutral: true });
   };
 
-  const api = { SHOT_XG, shotXg, MARKETS, markets, settle, fromXg, restDays, fatigueAdj, combineAdj, FATIGUE, fit, predict, expectedGoals, elo, table, simulateSeason, backtest, played };
+  /* Prognoza z kursów bukmachera: szanse po zdjęciu marży → oczekiwane gole obu drużyn, które je najlepiej odtwarzają.
+     Kursy na powyżej/poniżej 2,5 gola ustalają liczbę goli; bez nich – słaba podpowiedź z modelu (prior.total).
+     Zwraca pełną przepowiednię (jak predict), więc wszystkie rynki liczą się tak samo. */
+  function fromOdds(o, prior = {}) {
+    if (!o?.h || !o.d || !o.a) return null;
+    const s = 1 / o.h + 1 / o.d + 1 / o.a, t = [1 / o.h / s, 1 / o.d / s, 1 / o.a / s];
+    const ou = o.line === 2.5 && o.over && o.under ? (1 / o.over) / (1 / o.over + 1 / o.under) : null;
+    const T0 = prior.total || 2.7;
+    const loss = (x, y) => {
+      const p = fromXg(Math.exp(x), Math.exp(y));
+      let L = (p.win - t[0]) ** 2 + (p.draw - t[1]) ** 2 + (p.loss - t[2]) ** 2;
+      if (ou !== null) L += (p.over25 - ou) ** 2;
+      else L += 0.002 * Math.log((Math.exp(x) + Math.exp(y)) / T0) ** 2;
+      return L;
+    };
+    // start: podział goli według szans 1 vs 2, potem prosty spadek po współrzędnych z malejącym krokiem
+    let x = Math.log(T0 / 2) + (t[0] - t[2]) * 0.8, y = Math.log(T0 / 2) - (t[0] - t[2]) * 0.8, L = loss(x, y);
+    for (let step = 0.2; step > 0.002; step /= 2) {
+      let moved = true;
+      while (moved) {
+        moved = false;
+        for (const [dx, dy] of [[step, 0], [-step, 0], [0, step], [0, -step], [step, step], [-step, -step], [step, -step], [-step, step]]) {
+          const l = loss(x + dx, y + dy);
+          if (l < L - 1e-12) { L = l; x += dx; y += dy; moved = true; }
+        }
+      }
+    }
+    const p = fromXg(Math.exp(x), Math.exp(y));
+    p.fitErr = Math.sqrt(L);
+    return p;
+  }
+
+  const api = { fromOdds, SHOT_XG, shotXg, MARKETS, markets, settle, fromXg, restDays, fatigueAdj, combineAdj, FATIGUE, fit, predict, expectedGoals, elo, table, simulateSeason, backtest, played };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.FModel = api;
 })(typeof self !== "undefined" ? self : this);
