@@ -43,10 +43,21 @@
     }
     const lineups = (js.rosters || []).map(r => ({
       side: r.homeAway, team: canon(r.team?.displayName || ""), formation: r.formation || "",
-      xi: (r.roster || []).filter(p => p.starter).map(p => ({ n: p.athlete?.displayName || "", pos: p.position?.abbreviation || "", nr: p.jersey || "" })),
-      bench: (r.roster || []).filter(p => !p.starter).map(p => p.athlete?.displayName || ""),
+      xi: (r.roster || []).filter(p => p.starter).map(p => ({ id: p.athlete?.id, n: p.athlete?.displayName || "", pos: p.position?.abbreviation || "", nr: p.jersey || "" })),
+      bench: (r.roster || []).filter(p => !p.starter).map(p => ({ id: p.athlete?.id, n: p.athlete?.displayName || "" })),
     })).filter(r => r.xi.length);
     return { odds, lineups, at: Date.now() };
+  }
+  /* Kadra klubu z ESPN ze statystykami sezonu (rozgrywki comp): występy, w tym w 1. składzie, gole, asysty. */
+  async function loadRoster(comp, teamId) {
+    const r = await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${ESPN_SLUG[comp]}/teams/${teamId}/roster`);
+    if (!r.ok) throw new Error(`${r.status} ESPN`);
+    const js = await r.json();
+    const st = (x, n) => { for (const c of x.statistics?.splits?.categories || []) for (const q of c.stats || []) if (q.name === n) return q.value || 0; return 0; };
+    return (js.athletes || []).map(x => {
+      const apps = st(x, "appearances"), subs = st(x, "subIns");
+      return { id: x.id, n: x.displayName || "", pos: x.position?.abbreviation || "", apps, starts: Math.max(0, apps - subs), g: st(x, "totalGoals"), a: st(x, "goalAssists") };
+    });
   }
   const leagueLogo = code => COMP[code]?.logoUrl || (COMP[code]?.logo ? `https://a.espncdn.com/combiner/i?img=/i/leaguelogos/soccer/500/${COMP[code].logo}.png&w=64&h=64` : null);
 
@@ -102,6 +113,7 @@
       const name = canon(t.n);
       byId[id] = name;
       teams[name] = {
+        id,
         short: t.s || t.n, abbr: t.a || t.n.slice(0, 3).toUpperCase(), color: t.c ? "#" + t.c : null,
         logo: t.l ? t.l.replace("https://a.espncdn.com/i/", "https://a.espncdn.com/combiner/i?img=/i/") + "&w=80&h=80" : null,
       };
@@ -229,7 +241,7 @@
     return out.sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || "")));
   }
 
-  const api = { parseEk, loadEk, loadLive, amDec, getJson, parseEspn, parseFpl, parseXg, COMPS, COMP, leagueLogo, loadEspn, loadFpl, loadXg, attachXg, merge, canon, key, seasonStart, seasonLabel, seasonOf };
+  const api = { loadRoster, ESPN_SLUG, parseEk, loadEk, loadLive, amDec, getJson, parseEspn, parseFpl, parseXg, COMPS, COMP, leagueLogo, loadEspn, loadFpl, loadXg, attachXg, merge, canon, key, seasonStart, seasonLabel, seasonOf };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.FData = api;
 })(typeof self !== "undefined" ? self : this);

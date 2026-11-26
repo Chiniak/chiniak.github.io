@@ -9,7 +9,7 @@ Użytkownik mieszka w Anglii – zakłady w £, ostrzeżenie UK Gambling Commiss
   wynikiem; wyszukiwarka wszystkich klubów; niżej siatka klubów wybranych rozgrywek. Typuj – wybór klubów z wyszukiwarką.
 - `model.js` – model: Poisson + Dixon-Coles, ważenie świeżości, Elo, symulacja sezonu, test wsteczny, rynki zakładów
 - `data.js` – wczytywanie i łączenie danych z `dane/`
-- `sw.js` – offline; **przy każdej zmianie plików podbij `CACHE`** (teraz `futbol-v20`)
+- `sw.js` – offline; **przy każdej zmianie plików podbij `CACHE`** (teraz `futbol-v21`)
 - `dane/` – pliki odświeżane przez GitHub Action (nie edytować ręcznie)
 
 ## Dane (`.github/workflows/futbol-dane.yml`, co 3 godziny, commit tylko przy zmianie)
@@ -66,6 +66,10 @@ Użytkownik mieszka w Anglii – zakłady w £, ostrzeżenie UK Gambling Commiss
   przełącznik w Danych. Najpewniejszy zakład z kursów: weszło 80,9% (zapowiedź 80,4%), zwrot −2,3%; kupon z 3 – 61%
 - karta meczu pobiera na żywo z ESPN (`summary?event=`) potwierdzone składy i najnowsze kursy DraftKings (z kursem otwarcia);
   w PL pokazuje kluczowych zawodników (FPL: ≥ 8% xG+xA drużyny albo ≥ 75% minut lidera) poza pierwszym składem.
+  W pozostałych ligach z ESPN (od 27.11.2026): kadra klubu `teams/{id}/roster` (występy, wejścia z ławki → mecze w 1. składzie,
+  gole, asysty w lidze klubu) – ważni (≥ 60% meczów lidera kadry w 1. składzie albo ≥ 15% G+A drużyny) bez miejsca
+  w jedenastce, z podziałem „na ławce” / „poza kadrą meczową”; porównanie po id zawodnika ESPN. Kontuzji ESPN nie podaje
+  (pole `injuries` puste, `teams/{id}/injuries` pusty); Ekstraklasa bez składów (brak w ESPN).
   ESPN odpowiada 403 przeglądarce testowej (Playwright, także przez proxy) – w zwykłych przeglądarkach 200 z CORS `*`
   (użytkownik potwierdził 26.11.2026: na telefonie najnowsze kursy się pokazują);
   ważne: zwykłe `fetch` bez nagłówków (z `cache: "no-cache"` przeglądarka wysyła OPTIONS, którego ESPN nie obsługuje)

@@ -375,7 +375,7 @@
     openSheet(html);
     S.sheetId = m.id;
     bindTipForm(m, p);
-    if (!done && m.eid) D.loadLive(m).then(x => { if (S.sheetId === m.id && $("#live")) $("#live").innerHTML = liveHtml(m, p, x); })
+    if (!done && m.eid) D.loadLive(m).then(x => { if (S.sheetId === m.id && $("#live")) { $("#live").innerHTML = liveHtml(m, p, x); fillMissing(m, x); } })
       .catch(() => { if (S.sheetId === m.id && $("#live")) $("#live").innerHTML = `<div class="card small muted">Nie udało się pobrać składów i najnowszych kursów z ESPN – prognoza wyżej korzysta z ostatnio odświeżonych danych.</div>`; });
     $("#resForm").onsubmit = e => {
       e.preventDefault();
@@ -500,6 +500,38 @@
     return ps.map(p => ({ p, share: ((p.xg || 0) + (p.xa || 0)) / xgi, reg: p.min / mins }))
       .filter(x => (x.share >= 0.08 || x.reg >= 0.75) && !inXi(x.p)).sort((a, b) => b.share - a.share || b.reg - a.reg);
   }
+  /* Kogo brakuje w składzie (wszystkie ligi z ESPN): ważni zawodnicy sezonu – podstawowi (≥ 60% meczów lidera kadry
+     w 1. składzie) albo z dużym udziałem w golach i asystach (≥ 15%) – których nie ma w pierwszej jedenastce. */
+  function rosterComp(m, team) {
+    const lg = leagueOf(team);
+    return lg && D.ESPN_SLUG[lg] ? lg : D.ESPN_SLUG[m.comp] ? m.comp : null;
+  }
+  function espnMissing(players, l) {
+    const xi = new Set(l.xi.map(p => p.id)), bench = new Set(l.bench.map(p => p.id));
+    const mx = Math.max(0, ...players.map(p => p.starts)), ga = players.reduce((s, p) => s + p.g + p.a, 0);
+    if (mx < 3) return null; // za wcześnie w sezonie, żeby ocenić, kto jest podstawowy
+    return players.filter(p => !xi.has(p.id) && (p.starts >= Math.max(3, 0.6 * mx) || p.g + p.a >= Math.max(3, 0.15 * ga)))
+      .sort((a, b) => (b.g + b.a) - (a.g + a.a) || b.starts - a.starts)
+      .map(p => ({ ...p, onBench: bench.has(p.id) }));
+  }
+  function fillMissing(m, x) {
+    for (const side of ["home", "away"]) {
+      const el = $(`#miss-${side}`), l = x.lineups.find(r => r.side === side);
+      if (!el || !l) continue;
+      const team = side === "home" ? m.home : m.away, comp = rosterComp(m, team);
+      if (!comp) { el.remove(); continue; }
+      D.loadRoster(comp, S.teams[team].id).then(ps => {
+        if (S.sheetId !== m.id || !document.body.contains(el)) return;
+        const miss = espnMissing(ps, l);
+        if (miss === null) { el.remove(); return; }
+        const desc = p => [p.starts ? `${p.starts} ${plural(p.starts, "mecz", "mecze", "meczów")} w 1. składzie` : "", p.g ? `${p.g} ${plural(p.g, "gol", "gole", "goli")}` : "", p.a ? `${p.a} ${plural(p.a, "asysta", "asysty", "asyst")}` : ""].filter(Boolean).join(", ");
+        el.innerHTML = miss.length
+          ? `<span class="tag wait">brakuje ważnych zawodników</span> ${miss.slice(0, 5).map(p => `<b>${esc(p.n)}</b> – ${p.onBench ? "na ławce" : "poza kadrą meczową"} (${desc(p)})`).join("; ")}
+             <div class="muted" style="margin-top:4px">„Poza kadrą meczową” zwykle oznacza kontuzję lub zawieszenie. Statystyki z ${esc(compName(comp))} w tym sezonie.</div>`
+          : `<span class="muted">W pierwszym składzie są wszyscy podstawowi zawodnicy i najlepsi strzelcy.</span>`;
+      }).catch(() => el.remove());
+    }
+  }
   function liveHtml(m, p, x) {
     let h = "";
     if (x.lineups.length) {
@@ -507,9 +539,10 @@
       for (const side of ["home", "away"]) {
         const l = x.lineups.find(r => r.side === side); if (!l) continue;
         const team = side === "home" ? m.home : m.away, miss = m.comp === "PL" ? keyMissing(team, l.xi) : [];
+        const espnMiss = m.comp !== "PL" && S.teams[team]?.id ? `<div class="small" id="miss-${side}" style="margin-top:6px"><span class="muted">Sprawdzam, kogo brakuje w składzie…</span></div>` : "";
         h += `<div class="card"><div class="list-row" style="cursor:default">${badge(team)}<b class="x">${esc(short(team))}</b><span class="small muted">${esc(l.formation)}</span></div>
           <p class="small" style="margin:6px 0 0">${l.xi.map(z => esc(z.n)).join(", ")}</p>
-          ${miss.length ? `<p class="small" style="margin:6px 0 0"><span class="tag wait">poza pierwszym składem</span> ${miss.slice(0, 5).map(z => `${esc(z.p.n)}${z.share >= 0.08 ? ` (${pct(z.share)} xG+xA drużyny)` : ""}`).join(", ")}</p>` : ""}</div>`;
+          ${miss.length ? `<p class="small" style="margin:6px 0 0"><span class="tag wait">poza pierwszym składem</span> ${miss.slice(0, 5).map(z => `${esc(z.p.n)}${z.share >= 0.08 ? ` (${pct(z.share)} xG+xA drużyny)` : ""}`).join(", ")}</p>` : ""}${espnMiss}</div>`;
       }
     } else h += `<div class="card small muted">Składy jeszcze nieogłoszone – zwykle pojawiają się ok. godzinę przed meczem.</div>`;
     const o = x.odds;
