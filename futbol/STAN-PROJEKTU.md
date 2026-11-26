@@ -9,7 +9,7 @@ Użytkownik mieszka w Anglii – zakłady w £, ostrzeżenie UK Gambling Commiss
   wynikiem; wyszukiwarka wszystkich klubów; niżej siatka klubów wybranych rozgrywek. Typuj – wybór klubów z wyszukiwarką.
 - `model.js` – model: Poisson + Dixon-Coles, ważenie świeżości, Elo, symulacja sezonu, test wsteczny, rynki zakładów
 - `data.js` – wczytywanie i łączenie danych z `dane/`
-- `sw.js` – offline; **przy każdej zmianie plików podbij `CACHE`** (teraz `futbol-v16`)
+- `sw.js` – offline; **przy każdej zmianie plików podbij `CACHE`** (teraz `futbol-v18`)
 - `dane/` – pliki odświeżane przez GitHub Action (nie edytować ręcznie)
 
 ## Dane (`.github/workflows/futbol-dane.yml`, co 3 godziny, commit tylko przy zmianie)
@@ -29,7 +29,8 @@ Użytkownik mieszka w Anglii – zakłady w £, ostrzeżenie UK Gambling Commiss
   Środowisko chmurowe ma dozwolone hosty `football-data.co.uk` i `www.football-data.co.uk` (przekierowuje bez www).
 - `futbol-ekstraklasa.mjs` → `dane/ekstraklasa.json`: Ekstraklasa z football-data.co.uk (`new/POL.csv` – wyniki i kursy
   zamknięcia bet365, a gdy brak – średnia rynku; `new_league_fixtures.csv` – najbliższe mecze, ok. 2 dni wcześniej).
-  Godziny w plikach są czasu brytyjskiego. ESPN nie ma Ekstraklasy (`pol.1` → 400).
+  Godziny w plikach są czasu brytyjskiego. ESPN nie ma Ekstraklasy (`pol.1` → 400). Herby klubów i logo ligi z meczów
+  TheSportsDB (`strHomeTeamBadge`, wariant `/small`; `lookup_all_teams` na darmowym kluczu zwraca złą ligę).
   Terminarz 3 najbliższych kolejek z TheSportsDB (darmowy klucz `123`, liga 4422: `eventsnextleague` → numer kolejki,
   `eventsround` → pełna kolejka; `eventsseason` na darmowym kluczu oddaje tylko 15 meczów). Godziny w UTC, nazwy
   dopasowane do football-data (słowa nazwy z football-data zawarte w nazwie TheSportsDB). Host `www.thesportsdb.com`
@@ -75,6 +76,7 @@ Użytkownik mieszka w Anglii – zakłady w £, ostrzeżenie UK Gambling Commiss
 (tylko dane sprzed meczu); podsumowanie trafień 1X2, dokładnego wyniku i samego modelu.
 
 ## Odrzucone (sprawdzone, nie działało)
+- powiadomienia przed meczem (ntfy / Web Push) – użytkownik uznał za zbędne (27.11.2026)
 - osobna przewaga własnego boiska dla każdego klubu (ściąganie 10–40 pseudo-meczów) – bez poprawy
 - dostrajanie poprawki na remisy w ligach (rho od −0,16 do 0) – różnice ±0,0005 Briera
 - ruch kursów jako osobny sygnał – prognoza i tak bierze najnowsze kursy
@@ -89,6 +91,11 @@ Użytkownik mieszka w Anglii – zakłady w £, ostrzeżenie UK Gambling Commiss
 - archiwum `kursy.json` (DraftKings z ESPN) przyda się głównie dla LM i LE – ligi mają już kursy bet365 z football-data
 - football-data ma też `fixtures.csv` z kursami bet365 na nadchodzące mecze (użytkownik na razie nie chce bet365 przez API-Football)
 - Remote Control: użytkownik chce później połączyć komputer (Claude Desktop → Ustawienia → Claude Code → Remote Control)
+
+## Test
+`node .github/scripts/futbol-test.mjs` (ok. 1 s, bez sieci): składnia plików, liczba meczów w każdych rozgrywkach, łączenie
+polskich klubów, kursy i xG, test wsteczny PL/LaLiga/Ekstraklasa z progami, prognoza z kursów. Workflow `futbol-test.yml`
+uruchamia go przy każdej zmianie w `futbol/` i w PR. Ustawienia modelu w teście (FIT) muszą być takie jak w `app.js`.
 
 ## Sposób pracy
 Gałąź `claude/football-prediction-app-ps2t97` (po scaleniu odtwarzana od `main`). Każdą zmianę testuję w przeglądarce

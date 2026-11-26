@@ -1,0 +1,24 @@
+name: Futbol – test
+
+# Szybki test aplikacji Futbol: składnia, wczytywanie i łączenie danych, trafność modelu, prognoza z kursów.
+# Uruchamiany przy każdej zmianie w futbol/ (także po automatycznej aktualizacji danych) i w pull requestach.
+on:
+  push:
+    paths: ["futbol/**", ".github/scripts/futbol-*", ".github/workflows/futbol-*"]
+  pull_request:
+    paths: ["futbol/**", ".github/scripts/futbol-*", ".github/workflows/futbol-*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node .github/scripts/futbol-test.mjs
