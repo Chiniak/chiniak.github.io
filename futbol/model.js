@@ -296,7 +296,34 @@
     return any ? out : null;
   }
 
-  const api = { restDays, fatigueAdj, combineAdj, FATIGUE, fit, predict, expectedGoals, elo, table, simulateSeason, backtest, played };
+  /* Rynki zakładów z rozkładu wyników: prawdopodobieństwo i rozliczenie dla wyniku po 90 minutach. */
+  const MARKETS = [
+    { k: "1", win: (h, a) => h > a }, { k: "X", win: (h, a) => h === a }, { k: "2", win: (h, a) => h < a },
+    { k: "1X", win: (h, a) => h >= a }, { k: "X2", win: (h, a) => h <= a }, { k: "12", win: (h, a) => h !== a },
+    { k: "O1.5", win: (h, a) => h + a > 1.5 }, { k: "U1.5", win: (h, a) => h + a < 1.5 },
+    { k: "O2.5", win: (h, a) => h + a > 2.5 }, { k: "U2.5", win: (h, a) => h + a < 2.5 },
+    { k: "O3.5", win: (h, a) => h + a > 3.5 }, { k: "U3.5", win: (h, a) => h + a < 3.5 },
+    { k: "BTTS", win: (h, a) => h > 0 && a > 0 }, { k: "NBTTS", win: (h, a) => !(h > 0 && a > 0) },
+  ];
+  const MARKET = Object.fromEntries(MARKETS.map(x => [x.k, x]));
+  function markets(p) {
+    const out = {};
+    for (const mk of MARKETS) {
+      let s = 0;
+      for (let i = 0; i < p.grid.length; i++) for (let j = 0; j < p.grid[i].length; j++) if (mk.win(i, j)) s += p.grid[i][j];
+      out[mk.k] = s;
+    }
+    return out;
+  }
+  const settle = (k, h, a) => MARKET[k].win(h, a);
+  // rozkład wyników z samych oczekiwanych goli (do testów wstecznych)
+  const fromXg = (lh, la) => {
+    const m = { mu: 0, home: 0, att: { h: Math.log(lh) }, def: { h: 0, a: 0 }, games: {} };
+    m.att.a = Math.log(la);
+    return predict(m, "h", "a", { neutral: true });
+  };
+
+  const api = { MARKETS, markets, settle, fromXg, restDays, fatigueAdj, combineAdj, FATIGUE, fit, predict, expectedGoals, elo, table, simulateSeason, backtest, played };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.FModel = api;
 })(typeof self !== "undefined" ? self : this);

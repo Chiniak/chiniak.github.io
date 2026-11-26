@@ -50,7 +50,7 @@
     raw: null, teams: {}, players: [], manual: store.get(LS.manual, []), matches: [], status: [],
     elo: null, models: {}, bts: {}, btMap: new Map(), sims: {}, rest: new Map(), absCache: new Map(),
     tab: store.get(LS.tab, "mecze"), comp: store.get(LS.comp, "PL"), tableSeason: null, typ: null,
-    tips: store.get(LS.tips, null), tipFilter: "all",
+    tips: store.get(LS.tips, null), tipFilter: "all", typySub: "zaklady", betDays: 3,
   };
   if (!D.COMP[S.comp]) S.comp = "PL";
   const curSeason = () => D.seasonLabel(D.seasonStart());
@@ -59,7 +59,7 @@
 
   function compute() {
     const r = S.raw;
-    const es = D.parseEspn(r.espn);          // najpierw ESPN – jego nazwy klubów są wzorcowe
+    const es = D.parseEspn(r.espn, r.kursy);          // najpierw ESPN – jego nazwy klubów są wzorcowe
     const fpl = r.fpl ? D.parseFpl(r.fpl) : null;
     const xg = r.xg ? D.parseXg(r.xg) : null;
     S.teams = es.teams;
@@ -69,6 +69,7 @@
     S.players = fpl ? fpl.players.map(p => ({ ...p, team: D.canon(p.team) })) : [];
     S.elo = M.elo(S.matches);
     S.rest = new Map([...M.restDays(S.matches)].map(([m, x]) => [m.id, x]));
+    S.calib = null;
     S.models = {}; S.bts = {}; S.btMap = new Map(); S.sims = {}; S.absCache = new Map(); S._teamsOf = {}; S._league = null;
   }
   function teamsOf(comp, season) {
@@ -125,8 +126,8 @@
     if (!fresh) return;
     $("#refresh").classList.add("spin");
     try {
-      const [espn, fpl, xg] = await Promise.all([D.getJson("dane/espn.json"), D.getJson("dane/fpl.json").catch(() => null), D.getJson("dane/xg.json").catch(() => null)]);
-      S.raw = { espn, fpl, xg, at: Date.now() };
+      const [espn, fpl, xg, kursy] = await Promise.all([D.getJson("dane/espn.json"), D.getJson("dane/fpl.json").catch(() => null), D.getJson("dane/xg.json").catch(() => null), D.getJson("dane/kursy.json").catch(() => null)]);
+      S.raw = { espn, fpl, xg, kursy, at: Date.now() };
       S.fetchedAt = S.raw.at;
       if (!store.set(LS.cache, S.raw)) store.set(LS.cache, { espn, at: S.raw.at }); // za mało miejsca – przynajmniej wyniki
       compute(); render();
@@ -253,6 +254,7 @@
       <div class="m-row">${teamEl(m.home)}${mid}${teamEl(m.away, true)}</div>
       ${done && !bt ? "" : probBar(bt ? { win: bt.probs[0], draw: bt.probs[1], loss: bt.probs[2] } : p)}
       ${miss}
+      ${!done && m.odds ? `<div class="oddsline">Kursy: 1 <b>${fx(m.odds.h)}</b> · X <b>${fx(m.odds.d)}</b> · 2 <b>${fx(m.odds.a)}</b></div>` : ""}
       ${tipLine(m)}
     </button>`;
   }
@@ -332,6 +334,7 @@
     if (done && bt) html += `<div class="card"><b>Przed meczem model dawał:</b> 1 ${pct(bt.probs[0])} · X ${pct(bt.probs[1])} · 2 ${pct(bt.probs[2])}, typ ${bt.top.hg}–${bt.top.ag}. ${bt.hit ? `<span class="tag ok">trafiony</span>` : `<span class="tag bad">nietrafiony</span>`}</div>`;
     html += done ? `<h2>Gdyby zagrali teraz</h2>` : "";
     html += predictionHtml(m.home, m.away, { model: modelFor(m.comp), neutral: m.neutral, adj: adjFor(m), injApplied: !!injAdj(m), match: m, squad: !done });
+    html += oddsHtml(m, p);
     html += tipSectionHtml(m, p);
     html += `<h2>${done ? "Popraw wynik" : "Wpisz wynik"}</h2>
       <form class="card" id="resForm"><div class="two"><div><label>${esc(short(m.home))}</label><input type="number" min="0" max="20" name="hg" value="${done ? m.hg : ""}" required></div>
@@ -357,12 +360,14 @@
   const saveTips = () => store.set(LS.tips, S.tips);
   const near = (a, b) => Math.abs(new Date(a) - new Date(b)) <= 3 * 86400000;
   const tipMatch = t => S.matches.find(m => m.comp === t.comp && m.home === t.home && m.away === t.away && near(m.date, t.date));
-  const tipFor = m => (S.tips || []).find(t => t.comp === m.comp && t.home === m.home && t.away === m.away && near(m.date, t.date));
+  const tipFor = m => (S.tips || []).find(t => t.kind !== "bet" && t.comp === m.comp && t.home === m.home && t.away === m.away && near(m.date, t.date));
+  const betsFor = m => (S.tips || []).filter(t => t.kind === "bet" && t.comp === m.comp && t.home === m.home && t.away === m.away && near(m.date, t.date));
   const sign = (a, b) => Math.sign(a - b);
   // rozliczenie: 3 pkt za dokładny wynik, 1 pkt za trafiony 1X2
   function tipResult(t) {
     const m = tipMatch(t);
     if (!m || !M.played(m)) return { m, done: false };
+    if (t.kind === "bet") { const win = M.settle(t.market, m.hg, m.ag); return { m, done: true, win, profit: win ? (t.odds - 1) * STAKE : -STAKE }; }
     const exact = t.hg === m.hg && t.ag === m.ag, outcome = sign(t.hg, t.ag) === sign(m.hg, m.ag);
     const modelOutcome = t.model ? sign(t.model.hg, t.model.ag) === sign(m.hg, m.ag) : null;
     return { m, done: true, exact, outcome, pts: exact ? 3 : outcome ? 1 : 0, modelOutcome };
@@ -416,7 +421,7 @@
       <div><label>${esc(short(m.away))}</label><input type="number" min="0" max="20" name="ag" value="${ag}" required></div></div>
       <label>Notatka (opcjonalnie)</label><input type="text" name="note" maxlength="120" value="${esc(t?.note || "")}" placeholder="np. bez Saki, gra po LM">
       <div class="row"><button class="btn">${t ? "Zmień typ" : "Zapisz mój typ"}</button>${t ? `<button type="button" class="btn sec" data-deltip="${t.id}">Usuń typ</button>` : ""}
-      <span class="small muted">Model typuje ${p.top[0].hg}–${p.top[0].ag}. Typy są w zakładce „Moje typy”.</span></div></form>`;
+      <span class="small muted">Model typuje ${p.top[0].hg}–${p.top[0].ag}. Zapisane typy: zakładka Typy → Moje typy.</span></div></form>`;
   }
   function bindTipForm(m, p) {
     const f = $("#tipForm");
@@ -429,14 +434,14 @@
       S.tips = (S.tips || []).filter(t => t !== old);
       S.tips.push(tip);
       saveTips();
-      toast(old ? "Typ zmieniony" : "Typ zapisany w „Moje typy”");
+      toast(old ? "Typ zmieniony" : "Typ zapisany w Typy → Moje typy");
       closeSheet(); render();
     };
   }
   function deleteTip(id) {
     const t = (S.tips || []).find(x => x.id === id);
     if (!t) return;
-    if (!confirm(`Usunąć typ ${short(t.home)} – ${short(t.away)} (${t.hg}–${t.ag})?`)) return;
+    if (!confirm(t.kind === "bet" ? `Usunąć zakład „${t.label}” (${short(t.home)} – ${short(t.away)})?` : `Usunąć typ ${short(t.home)} – ${short(t.away)} (${t.hg}–${t.ag})?`)) return;
     S.tips = S.tips.filter(x => x.id !== id);
     saveTips(); closeSheet(); render();
   }
@@ -447,22 +452,171 @@
     clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove("on"), 2200);
   }
 
+  /* ---------- kursy i zakłady ---------- */
+  const STAKE = 10; // przykładowa stawka w zł do liczenia bilansu
+  const fx = x => x.toFixed(2).replace(".", ",");
+  function mlabel(k, m) {
+    const H = short(m.home), A = short(m.away);
+    return ({ "1": `Wygrana ${H}`, X: "Remis", "2": `Wygrana ${A}`, "1X": `${H} lub remis`, X2: `${A} lub remis`, "12": "Bez remisu (ktoś wygra)",
+      "O1.5": "Powyżej 1,5 gola", "U1.5": "Poniżej 1,5 gola", "O2.5": "Powyżej 2,5 gola", "U2.5": "Poniżej 2,5 gola",
+      "O3.5": "Powyżej 3,5 gola", "U3.5": "Poniżej 3,5 gola", BTTS: "Obie drużyny strzelą", NBTTS: "Nie obie strzelą" })[k] || k;
+  }
+  // kurs bukmachera na rynek: 1X2 i gole wprost, podwójna szansa – wyliczona z 1X2 (≈)
+  function bookOdds(m, k) {
+    const o = m.odds;
+    if (!o) return null;
+    const dc = (a, b) => ({ v: Math.round(100 / (1 / a + 1 / b)) / 100, approx: true });
+    switch (k) {
+      case "1": return { v: o.h }; case "X": return { v: o.d }; case "2": return { v: o.a };
+      case "1X": return dc(o.h, o.d); case "X2": return dc(o.a, o.d); case "12": return dc(o.h, o.a);
+    }
+    const g = k.match(/^([OU])(\d\.5)$/);
+    if (g && o.line === +g[2]) return { v: g[1] === "O" ? o.over : o.under };
+    return null;
+  }
+  // marża bukmachera i prawdopodobieństwa z kursów (po zdjęciu marży)
+  function implied(o) {
+    const s = 1 / o.h + 1 / o.d + 1 / o.a;
+    return { h: 1 / o.h / s, d: 1 / o.d / s, a: 1 / o.a / s, margin: s - 1 };
+  }
+  // kandydaci: najpewniejszy rozsądny zakład z każdego meczu (65–87% – wyżej kursy są za niskie, żeby miało to sens)
+  function betCandidates(days) {
+    const t = today(), end = addDays(t, days);
+    const out = [];
+    for (const m of S.matches) {
+      if (M.played(m) || m.live || m.date < t || m.date > end) continue;
+      const mk = M.markets(pred(m));
+      const best = Object.entries(mk).filter(([, p]) => p >= 0.65 && p <= 0.87).sort((a, b) => b[1] - a[1])[0];
+      if (best) { const bo = bookOdds(m, best[0]); out.push({ m, k: best[0], p: best[1], book: bo, edge: bo ? best[1] * bo.v - 1 : null }); }
+    }
+    return out.sort((a, b) => b.p - a.p);
+  }
+  // okazje: rynki z kursem bukmachera, gdzie model daje wyraźnie więcej niż kurs
+  function valueBets(days) {
+    const t = today(), end = addDays(t, days), out = [];
+    for (const m of S.matches) {
+      if (M.played(m) || m.live || m.date < t || m.date > end || !m.odds) continue;
+      const mdl = modelFor(m.comp);
+      if ((mdl.games[m.home] || 0) < 8 || (mdl.games[m.away] || 0) < 8) continue; // za mało danych o klubie
+      const mk = M.markets(pred(m));
+      for (const k of ["1", "X", "2", "O2.5", "U2.5"]) {
+        const bo = bookOdds(m, k);
+        if (!bo?.v) continue;
+        const edge = mk[k] * bo.v - 1;
+        if (edge >= 0.08 && edge <= 0.35 && mk[k] >= 0.3) out.push({ m, k, p: mk[k], book: bo, edge });
+      }
+    }
+    return out.sort((a, b) => b.edge - a.edge);
+  }
+  function oddsTag(x) {
+    if (!x.book) return `<span class="small muted">brak kursu bukmachera</span>`;
+    const e = x.edge;
+    return `<span class="small">kurs ${x.book.approx ? "≈" : ""}<b>${fx(x.book.v)}</b></span> ${e > 0.35 ? `<span class="tag wait">duża rozbieżność z rynkiem</span>` : e >= 0.05 ? `<span class="tag ok">model widzi okazję +${pct(e)}</span>` : e <= -0.05 ? `<span class="tag bad">kurs poniżej szans</span>` : `<span class="tag ex">kurs uczciwy</span>`}`;
+  }
+  function betRow(x, i) {
+    const m = x.m, saved = betsFor(m).some(b => b.market === x.k);
+    return `<div class="card bet">
+      <div class="m-meta"><span>${compTag(m.comp)}</span><span>${fmtDate(m.date)}${m.time ? " · " + esc(m.time) : ""}</span></div>
+      <div class="list-row" data-match="${esc(m.id)}" style="border:0;padding:4px 0">${badge(m.home)}<span class="x"><b>${esc(short(m.home))} – ${esc(short(m.away))}</b></span>${badge(m.away)}</div>
+      <div class="betline"><div><div class="bmk">${esc(mlabel(x.k, m))}</div><div class="small muted">szansa wg modelu · kurs uczciwy ${fx(1 / x.p)}</div></div><div class="bp">${pct(x.p)}</div></div>
+      <div class="tipfoot">${oddsTag(x)}<button class="btn sec small-btn" data-savebet="${i}"${saved ? " disabled" : ""}>${saved ? "Zapisany" : "Zapisz"}</button></div></div>`;
+  }
+  function viewBets() {
+    const days = S.betDays;
+    const cands = betCandidates(days), top = cands.slice(0, 10);
+    const ako = []; for (const x of cands) { if (ako.length < 3 && !ako.some(y => y.m === x.m)) ako.push(x); }
+    const akoP = ako.reduce((s, x) => s * x.p, 1), akoO = ako.reduce((s, x) => s * (x.book?.v || 1 / x.p), 1);
+    const val = valueBets(days).slice(0, 8);
+    S._betList = [...top, ...val];
+    let h = `<div class="card warn small"><b>18+ · Zakłady to ryzyko.</b> Nawet zakład z szansą 80% przegrywa średnio co piąty raz, a bukmacher ma w kursach marżę (ok. 5–8%). W Polsce legalnie można grać tylko u bukmacherów z licencją Ministerstwa Finansów. Propozycje to przykłady z modelu, nie pewniaki.</div>
+      <div class="chips">${[[1, "Dziś i jutro"], [3, "3 dni"], [7, "7 dni"]].map(([d, l]) => `<button class="chip${days === d ? " on" : ""}" data-betdays="${d}">${l}</button>`).join("")}</div>
+      <h2>Najpewniejsze zakłady (${cands.length} meczów)</h2>`;
+    h += top.length ? top.map((x, i) => betRow(x, i)).join("") : `<div class="card empty">Brak meczów w tym okresie.</div>`;
+    if (ako.length === 3) {
+      h += `<h2>Przykładowy kupon – 3 najpewniejsze</h2><div class="card">${ako.map(x => `<div class="list-row" data-match="${esc(x.m.id)}"><span class="x"><b>${esc(mlabel(x.k, x.m))}</b><br><span class="small muted">${esc(short(x.m.home))} – ${esc(short(x.m.away))} · ${fmtDate(x.m.date, false)}</span></span><span class="s">${pct(x.p)}</span></div>`).join("")}
+        <div class="stats"><div class="stat"><b>${pct(akoP)}</b><span>szansa, że wejdą wszystkie 3</span></div><div class="stat"><b>${fx(akoO)}</b><span>kurs łączny${ako.some(x => !x.book) ? " (część uczciwa)" : ""}</span></div><div class="stat"><b>${fx(akoO * STAKE)} zł</b><span>wypłata ze stawki ${STAKE} zł</span></div></div>
+        <p class="small muted" style="margin-bottom:0">W teście na rozegranych meczach takie kupony wchodziły w ok. 47% przypadków (model zapowiadał 52%) – każde dodatkowe zdarzenie mnoży ryzyko.</p></div>`;
+    }
+    h += `<h2>Okazje według modelu</h2><div class="small muted" style="margin:-2px 2px 8px">Zakłady, w których model daje wyraźnie więcej szans niż wynika z kursu (przewaga 8–35%, tylko kluby z co najmniej 8 meczami w danych). Kursy bukmacherów zwykle są trafniejsze niż model, bo uwzględniają składy i wiadomości – to ciekawostka, nie przepis na zysk.</div>`;
+    h += val.length ? val.map((x, i) => betRow(x, top.length + i)).join("") : `<div class="card empty">Brak wyraźnych okazji w tym okresie.</div>`;
+    h += `<h2>Czy model mówi prawdę?</h2><div class="card small" id="calib">${S.calib ? calibHtml(S.calib) : `<p style="margin-top:0">Sprawdź na rozegranych meczach, jak często zakłady wchodziły w porównaniu z szansą podaną przez model.</p><button class="btn" id="calibBtn">Sprawdź (kilka sekund)</button>`}</div>`;
+    return h;
+  }
+  function computeCalib() {
+    const bins = Array.from({ length: 10 }, () => ({ n: 0, w: 0, p: 0 }));
+    let bn = 0, bw = 0, bp = 0;
+    for (const c of D.COMPS) for (const r of btFor(c.code).records) {
+      const mk = M.markets(M.fromXg(r.xg.home, r.xg.away));
+      for (const [k, p] of Object.entries(mk)) { const b = bins[Math.min(9, Math.floor(p * 10))]; b.n++; b.p += p; if (M.settle(k, r.m.hg, r.m.ag)) b.w++; }
+      const best = Object.entries(mk).filter(([, p]) => p >= 0.65 && p <= 0.87).sort((a, b) => b[1] - a[1])[0];
+      if (best) { bn++; bp += best[1]; if (M.settle(best[0], r.m.hg, r.m.ag)) bw++; }
+    }
+    return { bins, bn, bw, bp };
+  }
+  function calibHtml(c) {
+    return `<p style="margin-top:0">„Najpewniejszy zakład” w każdym z <b>${c.bn}</b> rozegranych meczów: model dawał średnio <b>${pct(c.bp / c.bn, 1)}</b>, a zakład wszedł w <b>${pct(c.bw / c.bn, 1)}</b> przypadków.</p>
+      <div class="tbl-wrap"><table><thead><tr><th class="t">Model mówił</th><th>Zakładów</th><th>Średnio model</th><th>Naprawdę weszło</th></tr></thead><tbody>
+      ${c.bins.filter(b => b.n).map((b, i, arr) => `<tr><td class="t">${c.bins.indexOf(b) * 10}–${c.bins.indexOf(b) * 10 + 10}%</td><td>${b.n}</td><td>${pct(b.p / b.n, 1)}</td><td><b>${pct(b.w / b.n, 1)}</b></td></tr>`).join("")}
+      </tbody></table></div><p class="muted" style="margin-bottom:0">Wszystkie rynki (1X2, podwójna szansa, gole, obie strzelą), mecze od 15.09.2025 przewidziane tylko z danych sprzed meczu. Gdy liczby w dwóch ostatnich kolumnach są podobne, procenty modelu można traktować dosłownie.</p>`;
+  }
+  function saveBet(x) {
+    const m = x.m;
+    S.tips = S.tips || [];
+    S.tips.push({
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), kind: "bet", comp: m.comp, date: m.date, time: m.time || "",
+      home: m.home, away: m.away, market: x.k, label: mlabel(x.k, m), prob: +x.p.toFixed(3), odds: x.book?.v || +(1 / x.p).toFixed(2),
+      bookOdds: !!x.book && !x.book.approx, saved: new Date().toISOString(), note: "",
+    });
+    saveTips(); toast("Zakład zapisany w Typy → Moje typy"); render();
+  }
+  // kursy w szczegółach meczu
+  function oddsHtml(m, p) {
+    if (!m.odds || M.played(m)) return "";
+    const o = m.odds, imp = implied(o), mk = M.markets(p);
+    const row = (k, odd, ip) => { const e = mk[k] * odd - 1; return `<tr><td class="t" style="white-space:normal">${esc(mlabel(k, m))}</td><td><b>${fx(odd)}</b></td><td>${ip !== null ? pct(ip) : "–"}</td><td>${pct(mk[k])}</td><td>${e > 0.35 ? `<span class="tag wait">+${pct(e)}?</span>` : e >= 0.05 ? `<span class="tag ok">+${pct(e)}</span>` : e <= -0.05 ? `<span class="tag bad">${pct(e)}</span>` : "≈"}</td></tr>`; };
+    const ou = o.line && o.over && o.under ? (() => { const s = 1 / o.over + 1 / o.under; const kk = `O${o.line}`, ku = `U${o.line}`; return mk[kk] !== undefined ? row(kk, o.over, 1 / o.over / s) + row(ku, o.under, 1 / o.under / s) : ""; })() : "";
+    return `<h2>Kursy bukmachera${o.book ? ` (${esc(o.book)})` : ""}</h2><div class="card"><div class="tbl-wrap"><table>
+      <thead><tr><th class="t">Zakład</th><th>Kurs</th><th title="szansa z kursu po zdjęciu marży">Rynek</th><th>Model</th><th title="przewaga modelu">±</th></tr></thead><tbody>
+      ${row("1", o.h, imp.h)}${row("X", o.d, imp.d)}${row("2", o.a, imp.a)}${ou}</tbody></table></div>
+      <p class="small muted" style="margin-bottom:0">„Rynek” – szansa wynikająca z kursu po zdjęciu marży (${pct(imp.margin, 1)}). „±” – przewaga modelu = szansa modelu × kurs − 1; dodatnia oznacza, że według modelu kurs jest zawyżony. Bardzo duża różnica (ze znakiem „?”) zwykle znaczy, że bukmacher wie coś, czego model nie zna – np. o składzie. Kursy z ESPN, odświeżane co 3 godziny.</p></div>`;
+  }
+
   function viewTypy() {
-    const tips = (S.tips || []).map(t => ({ t, r: tipResult(t) }));
+    const nb = (S.tips || []).length;
+    const sub = S.typySub;
+    const head = `<div class="chips">${[["zaklady", "Najpewniejsze zakłady"], ["moje", `Moje typy (${nb})`]].map(([k, l]) => `<button class="chip${sub === k ? " on" : ""}" data-typysub="${k}">${l}</button>`).join("")}</div>`;
+    return head + (sub === "zaklady" ? viewBets() : viewMyTips());
+  }
+
+  function viewMyTips() {
+    const all = (S.tips || []).map(t => ({ t, r: tipResult(t) }));
+    const tips = all;
+    const bets = all.filter(x => x.t.kind === "bet"), betsDone = bets.filter(x => x.r.done);
     const pend = tips.filter(x => !x.r.done).sort((a, b) => a.t.date.localeCompare(b.t.date));
     const done = tips.filter(x => x.r.done).sort((a, b) => b.t.date.localeCompare(a.t.date));
     const f = S.tipFilter;
-    const pts = done.reduce((s, x) => s + x.r.pts, 0);
-    const oc = done.filter(x => x.r.outcome).length, ex = done.filter(x => x.r.exact).length;
-    const withModel = done.filter(x => x.r.modelOutcome !== null), mo = withModel.filter(x => x.r.modelOutcome).length;
+    const sdone = done.filter(x => x.t.kind !== "bet");
+    const pts = sdone.reduce((s, x) => s + x.r.pts, 0);
+    const oc = sdone.filter(x => x.r.outcome).length, ex = sdone.filter(x => x.r.exact).length;
+    const withModel = sdone.filter(x => x.r.modelOutcome !== null && x.r.modelOutcome !== undefined), mo = withModel.filter(x => x.r.modelOutcome).length;
+    const bal = betsDone.reduce((s, x) => s + x.r.profit, 0);
     let h = `<h2>Moje typy</h2>
       <div class="stats" style="margin-top:0"><div class="stat"><b>${tips.length}</b><span>zapisanych</span></div><div class="stat"><b>${pend.length}</b><span>oczekuje</span></div>
       <div class="stat"><b>${pts}</b><span>punkty (3 za wynik, 1 za 1X2)</span></div>
-      <div class="stat"><b>${done.length ? pct(oc / done.length) : "–"}</b><span>trafione 1X2${withModel.length ? ` · model ${pct(mo / withModel.length)}` : ""}</span></div>
-      <div class="stat"><b>${ex}</b><span>dokładnych wyników</span></div></div>
+      <div class="stat"><b>${sdone.length ? pct(oc / sdone.length) : "–"}</b><span>trafione 1X2${withModel.length ? ` · model ${pct(mo / withModel.length)}` : ""}</span></div>
+      <div class="stat"><b>${ex}</b><span>dokładnych wyników</span></div>
+      ${bets.length ? `<div class="stat"><b>${betsDone.filter(x => x.r.win).length}/${betsDone.length}</b><span>wygrane zakłady (${bets.length - betsDone.length} czeka)</span></div><div class="stat"><b style="color:${bal >= 0 ? "var(--win)" : "var(--loss)"}">${bal >= 0 ? "+" : ""}${fx(bal)} zł</b><span>bilans przy stawce ${STAKE} zł</span></div>` : ""}</div>
       <div class="chips">${[["all", "Wszystkie"], ["pend", `Oczekujące (${pend.length})`], ["done", `Rozliczone (${done.length})`]].map(([k, l]) => `<button class="chip${f === k ? " on" : ""}" data-tipf="${k}">${l}</button>`).join("")}</div>`;
     const card = ({ t, r }) => {
       const m = r.m;
+      if (t.kind === "bet") {
+        const st = r.done ? (r.win ? `<span class="tag ok">wygrany · +${fx(r.profit)} zł</span>` : `<span class="tag bad">przegrany · −${STAKE} zł</span>`) : `<span class="tag wait">${m?.live ? `na żywo ${m.live[0]}–${m.live[1]}` : "oczekuje"}</span>`;
+        return `<div class="card tip">
+          <div class="m-meta"><span>${compTag(t.comp)} <span class="tag ex">zakład</span></span><span>${fmtDate(t.date)}${t.time ? " · " + esc(t.time) : ""}</span></div>
+          <div class="list-row" ${m ? `data-match="${esc(m.id)}"` : ""} style="border:0;padding:4px 0">${badge(t.home)}<span class="x"><b>${esc(short(t.home))} – ${esc(short(t.away))}</b></span>${badge(t.away)}</div>
+          <div class="betline"><div><div class="bmk">${esc(t.label)}</div><div class="small muted">kurs ${fx(t.odds)}${t.bookOdds ? "" : " (uczciwy wg modelu)"} · model ${pct(t.prob)}</div></div>${r.done ? `<div class="bp" style="font-size:18px">${m.hg}–${m.ag}</div>` : ""}</div>
+          <div class="tipfoot"><span>${st}</span><button class="btn sec small-btn" data-deltip="${t.id}">Usuń</button></div></div>`;
+      }
       const status = r.done ? (r.exact ? `<span class="tag ok">dokładny wynik · 3 pkt</span>` : r.outcome ? `<span class="tag ok">trafiony 1X2 · 1 pkt</span>` : `<span class="tag bad">0 pkt</span>`)
         : m?.live ? `<span class="tag wait">na żywo ${m.live[0]}–${m.live[1]}</span>` : m && m.date < today() ? `<span class="tag wait">czeka na wynik</span>` : `<span class="tag wait">oczekuje</span>`;
       return `<div class="card tip${t.example ? " ex" : ""}">
@@ -731,6 +885,8 @@
       $("#tswap").onclick = () => { S.typ = { ...S.typ, home: S.typ.away, away: S.typ.home }; render(); };
     }
     if (S.tab === "typy") {
+      const cb = $("#calibBtn");
+      if (cb) cb.onclick = () => { cb.disabled = true; cb.textContent = "Liczę…"; setTimeout(() => { S.calib = computeCalib(); render(); }, 30); };
       const de = $("#delEx");
       if (de) de.onclick = () => { if (confirm("Usunąć wszystkie przykładowe typy?")) { S.tips = S.tips.filter(t => !t.example); saveTips(); render(); } };
       const da = $("#delAllTips");
@@ -757,12 +913,15 @@
     }
   }
   document.addEventListener("click", e => {
-    const el = e.target.closest("[data-deltip],[data-tipf],[data-tab],[data-comp],[data-season],[data-more],[data-match],[data-club],[data-close],[data-go]");
+    const el = e.target.closest("[data-savebet],[data-betdays],[data-typysub],[data-deltip],[data-tipf],[data-tab],[data-comp],[data-season],[data-more],[data-match],[data-club],[data-close],[data-go]");
     if (!el) return;
     const d = el.dataset;
     if (d.close !== undefined) return closeSheet();
     if (d.deltip) { e.stopPropagation(); return deleteTip(d.deltip); }
     if (d.tipf) { S.tipFilter = d.tipf; render(); return; }
+    if (d.typysub) { S.typySub = d.typysub; render(); return; }
+    if (d.betdays) { S.betDays = +d.betdays; render(); return; }
+    if (d.savebet !== undefined) { e.stopPropagation(); const x = S._betList?.[+d.savebet]; if (x) saveBet(x); return; }
     if (d.tab || d.go) { S.tab = d.tab || d.go; store.set(LS.tab, S.tab); closeSheet(); render(); scrollTo(0, 0); return; }
     if (d.comp) { S.comp = d.comp; S.tableSeason = null; S.showOverdue = false; store.set(LS.comp, S.comp); render(); return; }
     if (d.season) { S.tableSeason = d.season; render(); return; }
