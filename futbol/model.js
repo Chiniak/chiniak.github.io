@@ -31,7 +31,10 @@
       const age = Math.max(0, (asOf - new Date(m.date).getTime()) / DAY);
       const w = Math.pow(0.5, age / halfLife);
       games[m.home] += w; games[m.away] += w;
-      return { h: m.home, a: m.away, hg: m.hg, ag: m.ag, w, ha: m.neutral ? 0 : 1 };
+      // xG: gdy znamy gole oczekiwane, siłę liczymy z mieszanki goli i xG (xg = udział xG, 0–1)
+      const xw = opts.xg || 0, hasXg = xw > 0 && m.xhg !== undefined && m.xhg !== null;
+      const hg = hasXg ? (1 - xw) * m.hg + xw * m.xhg : m.hg, ag = hasXg ? (1 - xw) * m.ag + xw * m.xag : m.ag;
+      return { h: m.home, a: m.away, hg, ag, w, ha: m.neutral ? 0 : 1 };
     });
     let mu = init?.mu ?? Math.log(1.35), home = init?.home ?? 0.2;
     if (!rows.length) return { mu, home, att, def, games, teams, n: 0, asOf };

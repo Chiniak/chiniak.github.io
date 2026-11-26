@@ -195,6 +195,25 @@
     return { matches, players, updated: js.updated, nextDeadline: js.nextDeadline, status };
   }
 
+  /* xG mecz po meczu (PL, bieżący sezon) – plik dane/xg.json z GitHub Action, statystyki Opta przez FPL. */
+  async function loadXg(url = "dane/xg.json") {
+    const r = await fetch(url, { cache: "no-cache" });
+    if (!r.ok) throw new Error(`${r.status} ${url}`);
+    return (await r.json()).map(x => ({ ...x, home: canon(x.h), away: canon(x.a) }));
+  }
+  // dopisuje xhg/xag do meczów PL z tego sezonu (ta sama para drużyn gra u siebie raz w sezonie)
+  function attachXg(matches, xg) {
+    const season = seasonLabel(seasonStart());
+    const by = new Map(xg.map(x => [`${x.home}|${x.away}`, x]));
+    let n = 0;
+    for (const m of matches) {
+      if (m.comp !== "PL" || m.season !== season) continue;
+      const x = by.get(`${m.home}|${m.away}`);
+      if (x && m.hg === x.hg && m.ag === x.ag) { m.xhg = x.hxg; m.xag = x.axg; n++; }
+    }
+    return n;
+  }
+
   /* Ligi krajowe (openfootball football.json): Championship – skąd przychodzą beniaminkowie –
      i ligi rywali z Ligi Mistrzów. Służą tylko do lepszej oceny siły drużyn, nie są pokazywane w terminarzu. */
   const LEAGUES = [
@@ -251,7 +270,7 @@
     return out.sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || "")));
   }
 
-  const api = { LEAGUE_NAME, loadLeagues, parseTxt, loadOpenfootball, loadFootballData, loadFpl, merge, canon, key, seasonStart, seasonLabel };
+  const api = { loadXg, attachXg, LEAGUE_NAME, loadLeagues, parseTxt, loadOpenfootball, loadFootballData, loadFpl, merge, canon, key, seasonStart, seasonLabel };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.FData = api;
 })(typeof self !== "undefined" ? self : this);

@@ -1,4 +1,4 @@
-name: Futbol – dane FPL (kontuzje, forma, wyniki)
+name: Futbol – dane FPL (kontuzje, forma, wyniki, xG)
 
 on:
   schedule:
@@ -22,6 +22,7 @@ jobs:
         with:
           node-version: 20
       - run: node .github/scripts/futbol-fpl.mjs
+      - run: node .github/scripts/futbol-xg.mjs
       - name: Zapisz zmiany
         run: |
           if [ -z "$(git status --porcelain -- futbol/dane)" ]; then echo "brak zmian"; exit 0; fi
