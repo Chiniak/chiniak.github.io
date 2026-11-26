@@ -9,10 +9,13 @@ Użytkownik mieszka w Anglii – zakłady w £, ostrzeżenie UK Gambling Commiss
   wynikiem; wyszukiwarka wszystkich klubów; niżej siatka klubów wybranych rozgrywek. Typuj – wybór klubów z wyszukiwarką.
 - `model.js` – model: Poisson + Dixon-Coles, ważenie świeżości, Elo, symulacja sezonu, test wsteczny, rynki zakładów
 - `data.js` – wczytywanie i łączenie danych z `dane/`
-- `sw.js` – offline; **przy każdej zmianie plików podbij `CACHE`** (teraz `futbol-v21`)
+- `sw.js` – offline; **przy każdej zmianie plików podbij `CACHE`** (teraz `futbol-v22`)
 - `dane/` – pliki odświeżane przez GitHub Action (nie edytować ręcznie)
 
-## Dane (`.github/workflows/futbol-dane.yml`, co 3 godziny, commit tylko przy zmianie)
+## Dane (`.github/workflows/futbol-dane.yml`, co godzinę, commit tylko przy zmianie)
+Od 27.11.2026 co godzinę: ESPN zawsze; FPL, xG, football-data, Ekstraklasa tylko w pełnym uruchomieniu (godziny UTC
+podzielne przez 3 albo ręcznie). Zapis decyduje `futbol-czy-zapisac.mjs`: nowe wyniki, mecz w ciągu 6 godzin albo pełne
+uruchomienie – inaczej bez commita (żeby nie było ~24 commitów dziennie).
 - `futbol-espn.mjs` → `dane/espn.json`: wyniki, terminarze, kluby z logami – PL, LaLiga, Bundesliga, Serie A, Ligue 1,
   Eredivisie, Liga Portugal, Championship, Liga Mistrzów, Liga Europy, Liga Konferencji (`uefa.europa.conf`, kod `ECL`, od 27.11.2026)
   (publiczne, nieudokumentowane API ESPN;
@@ -86,6 +89,8 @@ szczegóły meczu – do 5 na drużynę. Nazw klubów nie odmieniamy („Na korz
 (tylko dane sprzed meczu); podsumowanie trafień 1X2, dokładnego wyniku i samego modelu.
 
 ## Odrzucone (sprawdzone, nie działało)
+- źródło kursów do prognozy (27.11.2026): bet365, Pinnacle, średnia i maksimum rynku, Betfair – różnice w Brierze 0,0004–0,0007
+  i 0,1–0,2 pkt proc. trafności na 1464–3883 meczach (szum); zostaje bet365 (komplet meczów, bukmacher użytkownika w UK)
 - powiadomienia przed meczem (ntfy / Web Push) – użytkownik uznał za zbędne (27.11.2026)
 - osobna przewaga własnego boiska dla każdego klubu (ściąganie 10–40 pseudo-meczów) – bez poprawy
 - dostrajanie poprawki na remisy w ligach (rho od −0,16 do 0) – różnice ±0,0005 Briera

@@ -2,7 +2,7 @@ name: Futbol – dane (ESPN, FPL, xG, football-data, Ekstraklasa)
 
 on:
   schedule:
-    - cron: "17 */3 * * *"   # co 3 godziny
+    - cron: "17 * * * *"   # co godzinę: kursy i wyniki ESPN; pozostałe źródła i pełny zapis co 3 godziny
   workflow_dispatch:
 
 permissions:
@@ -18,19 +18,29 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+      - name: Pora
+        id: pora
+        run: |
+          # pełne uruchomienie co 3 godziny (godziny UTC podzielne przez 3) albo ręcznie
+          if [ "${{ github.event_name }}" != "schedule" ] || [ $(( 10#$(date -u +%H) % 3 )) -eq 0 ]; then echo "full=1" >> "$GITHUB_OUTPUT"; else echo "full=0" >> "$GITHUB_OUTPUT"; fi
       - uses: actions/setup-node@v4
         with:
           node-version: 20
       - run: node .github/scripts/futbol-espn.mjs
       - run: node .github/scripts/futbol-fpl.mjs
+        if: steps.pora.outputs.full == '1'
       - run: node .github/scripts/futbol-xg.mjs
+        if: steps.pora.outputs.full == '1'
       - run: node .github/scripts/futbol-fd.mjs
+        if: steps.pora.outputs.full == '1'
         continue-on-error: true   # niedostępne football-data nie blokuje reszty danych
       - run: node .github/scripts/futbol-ekstraklasa.mjs
+        if: steps.pora.outputs.full == '1'
         continue-on-error: true
       - name: Zapisz zmiany
         run: |
           if [ -z "$(git status --porcelain -- futbol/dane)" ]; then echo "brak zmian"; exit 0; fi
+          if ! FULL=${{ steps.pora.outputs.full }} node .github/scripts/futbol-czy-zapisac.mjs; then exit 0; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add futbol/dane

@@ -854,7 +854,7 @@
     return `<h2>Kursy bukmachera${o.book ? ` (${esc(o.book)})` : ""}</h2><div class="card"><div class="tbl-wrap"><table>
       <thead><tr><th class="t">Zakład</th><th>Kurs</th><th title="szansa z kursu po zdjęciu marży">Rynek</th><th>Model</th><th title="przewaga modelu">±</th></tr></thead><tbody>
       ${row("1", o.h, imp.h)}${row("X", o.d, imp.d)}${row("2", o.a, imp.a)}${ou}</tbody></table></div>
-      <p class="small muted" style="margin-bottom:0">„Rynek” – szansa wynikająca z kursu po zdjęciu marży (${pct(imp.margin, 1)}). „±” – przewaga modelu = szansa modelu × kurs − 1; dodatnia oznacza, że według modelu kurs jest zawyżony. Bardzo duża różnica (ze znakiem „?”) zwykle znaczy, że bukmacher wie coś, czego model nie zna – np. o składzie. Kursy z ESPN, odświeżane co 3 godziny.</p></div>`;
+      <p class="small muted" style="margin-bottom:0">„Rynek” – szansa wynikająca z kursu po zdjęciu marży (${pct(imp.margin, 1)}). „±” – przewaga modelu = szansa modelu × kurs − 1; dodatnia oznacza, że według modelu kurs jest zawyżony. Bardzo duża różnica (ze znakiem „?”) zwykle znaczy, że bukmacher wie coś, czego model nie zna – np. o składzie. Kursy odświeżane co godzinę przed meczami; najnowsze pobierają się też na żywo w tej karcie.</p></div>`;
   }
 
   function viewTypy() {
@@ -1258,7 +1258,7 @@
     if (S.raw.ek) h += `<div class="list-row" style="cursor:default"><span class="res W">✓</span><span class="x" style="white-space:normal"><b>Ekstraklasa</b> – wyniki i kursy z football-data.co.uk, terminarz 3 najbliższych kolejek z TheSportsDB (ESPN jej nie ma)<br><span class="small muted">stan z ${new Date(S.raw.ek.updated).toLocaleString("pl-PL")} · kursy na najbliższe mecze ok. 1–2 dni przed kolejką</span></span></div>`;
     const fdN = S.matches.filter(m => m.odds?.book === "bet365").length;
     h += `<div class="list-row" style="cursor:default"><span class="res ${S.raw.fd ? "W" : "P"}">${S.raw.fd ? "✓" : "!"}</span><span class="x" style="white-space:normal"><b>football-data.co.uk</b> – xG 8 lig i kursy bet365 rozegranych meczów (do sprawdzania zakładów)<br><span class="small muted">${S.raw.fd ? `kursy dla ${fdN} meczów · stan z ${new Date(S.raw.fd.updated).toLocaleString("pl-PL")}` : "niedostępne"}</span></span></div>`;
-    h += `<div class="row"><button class="btn" id="dRefresh">Odśwież teraz</button><span class="small muted">Dane na stronie odświeżane automatycznie co 3 godziny.${S.manual.length ? ` Wpisanych ręcznie: ${S.manual.length}.` : ""}</span></div></div>`;
+    h += `<div class="row"><button class="btn" id="dRefresh">Odśwież teraz</button><span class="small muted">Wyniki i kursy odświeżane automatycznie co godzinę przed meczami, pozostałe dane co 3 godziny.${S.manual.length ? ` Wpisanych ręcznie: ${S.manual.length}.` : ""}</span></div></div>`;
 
     h += `<h2>Prognozy</h2><div class="card"><label class="check" style="margin:0 0 12px"><input type="checkbox" id="mktT"${mktOn() ? " checked" : ""}> Prognoza z kursów bukmachera, gdy są (trafniejsza niż sam model; wyłącz, żeby widzieć tylko model)</label><label class="check" style="margin:0"><input type="checkbox" id="injT"${injOn() ? " checked" : ""}> Uwzględniaj nieobecnych zawodników (Premier League, mecze w najbliższych 10 dniach)</label>
       <label class="check" style="margin:12px 0 0"><input type="checkbox" id="fatT"${fatOn() ? " checked" : ""}> Uwzględniaj zmęczenie (mecz po ≤ ${M.FATIGUE.maxDays} dniach przerwy, gdy rywal odpoczywał dłużej)</label></div>`;
