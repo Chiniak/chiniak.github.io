@@ -1,7 +1,7 @@
 // Pobiera ranking siły klubów ClubElo (darmowy, tylko HTTP – dlatego przez GitHub Action) do futbol/dane/.
 //   clubelo.json        – stan na dziś (prognozy w aplikacji)
 //   clubelo-start.json  – stan na dzień przed początkiem testu skuteczności (uczciwy test wsteczny, bez wiedzy z przyszłości)
-// Zostają kluby z najwyższych lig oraz angielskie z 2. ligi (beniaminkowie).
+// Zostają kluby z najwyższych lig (poziom 1) oraz angielskie z 2. ligi (beniaminkowie).
 import { writeFile, mkdir, readFile, access } from "node:fs/promises";
 
 const DIR = new URL("../../futbol/dane/", import.meta.url);
