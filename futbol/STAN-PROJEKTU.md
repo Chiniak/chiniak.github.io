@@ -9,7 +9,7 @@ Użytkownik mieszka w Anglii – zakłady w £, ostrzeżenie UK Gambling Commiss
   wynikiem; wyszukiwarka wszystkich klubów; niżej siatka klubów wybranych rozgrywek. Typuj – wybór klubów z wyszukiwarką.
 - `model.js` – model: Poisson + Dixon-Coles, ważenie świeżości, Elo, symulacja sezonu, test wsteczny, rynki zakładów
 - `data.js` – wczytywanie i łączenie danych z `dane/`
-- `sw.js` – offline; **przy każdej zmianie plików podbij `CACHE`** (teraz `futbol-v26`)
+- `sw.js` – offline; **przy każdej zmianie plików podbij `CACHE`** (teraz `futbol-v27`)
 - `dane/` – pliki odświeżane przez GitHub Action (nie edytować ręcznie)
 
 ## Dane (`.github/workflows/futbol-dane.yml`, co godzinę, commit tylko przy zmianie)
@@ -121,7 +121,9 @@ uruchamia go przy każdej zmianie w `futbol/` i w PR. Ustawienia modelu w teści
   tablicę wyników ESPN (`D.loadScoreboard`, dzień meczu i dzień wcześniej – ESPN liczy dni wg czasu USA); stan, minuta,
   wynik, gole (karne, samobójcze), czerwone kartki. Sekcja „Na żywo” na górze zakładki Mecze ze wszystkich rozgrywek;
   dopasowanie po rozgrywkach + id drużyn ESPN (`S.teams[n].id`). Ekstraklasy brak (ESPN jej nie ma).
-- Historia: zakładka Mecze → „Wyniki” kolejka po kolejce (‹ ›, wybór sezonu), z ✓/✗ prognozy sprzed meczu (`preMatch`).
+- Historia: zakładka Mecze → „Wyniki a prognozy” kolejka po kolejce (‹ ›, wybór sezonu). Przy każdym meczu prognoza sprzed
+  meczu (`preMatch`) obok wyniku w 4 kategoriach: zwycięzca 1X2, dokładny wynik, gole 2,5, obie strzelą – z ✓/✗;
+  podsumowanie trafień dla kolejki i sezonu.
   Numery kolejek liczone w `assignRounds` (kolejka = max(rozegrane przez obie drużyny) + 1), w pucharach faza ligowa
   tak samo, dalej etapy (`m.round`).
 

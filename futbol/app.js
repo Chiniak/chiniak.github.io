@@ -1052,29 +1052,49 @@
     let idx = S.histIdx !== null && S.histIdx < gs.length && S.histFor === c + sea ? S.histIdx : (() => { let k = 0; gs.forEach((g, i) => { if (g.ms.some(M.played)) k = i; }); return k; })();
     S.histIdx = idx; S.histFor = c + sea;
     const g = gs[idx];
-    const played = g.ms.filter(M.played), rows = played.map(m => ({ m, x: preMatch(m, true) })), ok = rows.filter(r => r.x), hits = ok.filter(r => r.x.hit).length;
+    // trafienia w 4 kategoriach: zwycięzca (1/X/2), dokładny wynik, powyżej/poniżej 2,5 gola, obie strzelą
+    const tally = ms => { const xs = ms.filter(M.played).map(m => preMatch(m, true)).filter(Boolean);
+      const c4 = k => xs.filter(x => x[k]).length; return { n: xs.length, hit: c4("hit"), exact: c4("exact"), ou: c4("ouHit"), bt: c4("btHit") }; };
+    const tR = tally(g.ms), tS = tally(gs.flatMap(x => x.ms));
+    const outLab = (m, i) => i === 1 ? L("remis", "draw") : short(i === 0 ? m.home : m.away);
+    const ok = b => `<span class="ck ${b ? "y" : "n"}">${b ? "✓" : "✗"}</span>`;
+    const sumRow = (t, label) => t.n ? `<tr><td class="t">${label}</td><td><b>${t.hit}/${t.n}</b></td><td>${t.exact}/${t.n}</td><td>${t.ou}/${t.n}</td><td>${t.bt}/${t.n}</td></tr>` : "";
     const dates = g.ms.map(m => m.date).sort(), span = dates.length ? (dates[0] === dates[dates.length - 1] ? fmtDate(dates[0], false) : `${fmtDate(dates[0], false)} – ${fmtDate(dates[dates.length - 1], false)}`) : "";
-    const pickLab = (m, x) => { const i = x.main.probs.indexOf(Math.max(...x.main.probs)); return `${["1", "X", "2"][i]} ${pct(x.main.probs[i])}`; };
-    const row = m => {
-      const done = M.played(m), x = done ? preMatch(m, true) : null, lv = !done ? liveOf(m) : null;
-      const score = done ? `${m.hg}–${m.ag}` : lv && lv.state !== "pre" ? `<span class="live-txt">${lv.hs}–${lv.as}</span>` : m.time ? esc(m.time) : "–";
-      const mark = done ? (x ? `<span class="res ${x.hit ? "W" : "P"}">${x.hit ? "✓" : "✗"}</span>` : `<span class="res N">–</span>`) : `<span class="res N">·</span>`;
-      const wd = new Date(m.date + "T12:00:00").toLocaleDateString(LOC(), { weekday: "short" });
-      return `<div class="list-row rrow" data-match="${esc(m.id)}" title="${fmtDate(m.date)}">${mark}<span class="d">${wd}</span>
-        <span class="x rteams"><span class="rt">${badge(m.home, "sm")}<span class="nm">${esc(short(m.home))}</span></span><b class="rs">${score}</b><span class="rt r"><span class="nm">${esc(short(m.away))}</span>${badge(m.away, "sm")}</span></span>
-        <span class="small muted rp">${x ? pickLab(m, x) : !done ? (() => { const p = pred(m); const i = [p.win, p.draw, p.loss].indexOf(Math.max(p.win, p.draw, p.loss)); return `${["1", "X", "2"][i]} ${pct([p.win, p.draw, p.loss][i])}`; })() : ""}</span></div>`;
+    const card = m => {
+      const done = M.played(m), lv = !done ? liveOf(m) : null;
+      const head = `<div class="hm-head" data-match="${esc(m.id)}"><span class="small muted">${fmtDate(m.date)}${m.time ? " · " + esc(m.time) : ""}</span>
+        <div class="hm-teams"><span class="rt">${badge(m.home, "sm")}<span class="nm">${esc(short(m.home))}</span></span><b class="rs">${done ? `${m.hg}–${m.ag}` : lv && lv.state !== "pre" ? `<span class="live-txt">${lv.hs}–${lv.as}</span>` : "–"}</b><span class="rt r"><span class="nm">${esc(short(m.away))}</span>${badge(m.away, "sm")}</span></div></div>`;
+      if (!done) {
+        const p = pred(m), pr = [p.win, p.draw, p.loss], i = pr.indexOf(Math.max(...pr));
+        return `<div class="hm">${head}<div class="hm-grid small"><span class="muted">${L("Prognoza", "Forecast")}:</span><span>${esc(outLab(m, i))} ${pct(pr[i])} · ${L("typ", "pick")} ${p.top[0].hg}–${p.top[0].ag}</span></div></div>`;
+      }
+      const x = preMatch(m, true);
+      if (!x) return `<div class="hm">${head}<div class="small muted">${L("Brak prognozy sprzed meczu (mecz przed okresem testu albo prognoza jeszcze się liczy).", "No pre-match forecast (match before the test period, or still calculating).")}</div></div>`;
+      const pi = x.main.probs.indexOf(Math.max(...x.main.probs));
+      const lines = [
+        [L("Zwycięzca", "Winner"), `${esc(outLab(m, pi))} ${pct(x.main.probs[pi])}`, esc(outLab(m, x.res)), x.hit],
+        [L("Dokładny wynik", "Exact score"), `${x.main.top.hg}–${x.main.top.ag}`, `${m.hg}–${m.ag}`, x.exact],
+        [L("Gole", "Goals"), `${x.main.over >= 0.5 ? L("powyżej", "over") : L("poniżej", "under")} 2,5 · ${pct(Math.max(x.main.over, 1 - x.main.over))}`.replace("2,5", dec("2.5")), `${m.hg + m.ag} ${plural(m.hg + m.ag, "gol", "gole", "goli", "goal", "goals")}`, x.ouHit],
+        [L("Obie strzelą", "Both score"), `${x.main.btts >= 0.5 ? L("tak", "yes") : L("nie", "no")} · ${pct(Math.max(x.main.btts, 1 - x.main.btts))}`, x.both ? L("tak", "yes") : L("nie", "no"), x.btHit],
+      ];
+      return `<div class="hm">${head}
+        <div class="hm-tbl small"><span class="muted"></span><span class="muted">${L("Prognoza", "Forecast")}</span><span class="muted">${L("Wynik", "Result")}</span><span></span>
+          ${lines.map(([k, a, b, h]) => `<span class="muted">${k}</span><span>${a}</span><span><b>${b}</b></span>${ok(h)}`).join("")}</div>
+        <div class="small muted" style="margin-top:2px">${x.main.src === "model" ? L("prognoza z modelu (brak kursów)", "forecast from the model (no odds)") : L(`prognoza z kursów ${esc(x.main.src)}`, `forecast from ${esc(x.main.src)} odds`)}${x.model && x.main.src !== "model" ? ` · ${L("sam model", "model alone")}: ${esc(outLab(m, x.model.probs.indexOf(Math.max(...x.model.probs))))} ${x.mHit ? "✓" : "✗"}` : ""}</div></div>`;
     };
-    return `<h2>${L("Wyniki", "Results")} · ${esc(compName(c))}</h2>
+    return `<h2>${L("Wyniki a prognozy", "Results vs forecasts")} · ${esc(compName(c))}</h2>
       ${seasons.length > 1 ? `<div class="chips">${seasons.map(x => `<button class="chip${x === sea ? " on" : ""}" data-hseason="${x}">${L("Sezon", "Season")} ${x.replace("-", "/")}</button>`).join("")}</div>` : ""}
       <div class="card">
         <div class="rnav"><button class="btn sec small-btn" data-hround="${idx - 1}"${idx === 0 ? " disabled" : ""} aria-label="${L("Poprzednia", "Previous")}">‹</button>
           <div class="rtitle"><b>${esc(g.label)}</b><span class="small muted">${span}</span></div>
           <button class="btn sec small-btn" data-hround="${idx + 1}"${idx === gs.length - 1 ? " disabled" : ""} aria-label="${L("Następna", "Next")}">›</button></div>
-        ${ok.length ? `<p class="small" style="margin:8px 0 4px">${L(`Prognoza trafiła <b>${hits} z ${ok.length}</b> meczów (${pct(hits / ok.length)})`, `Forecast right in <b>${hits} of ${ok.length}</b> matches (${pct(hits / ok.length)})`)}${played.length < g.ms.length ? L(` · ${g.ms.length - played.length} do rozegrania`, ` · ${g.ms.length - played.length} still to play`) : ""}</p>` : ""}
-        ${g.ms.map(row).join("")}
-        <p class="small muted" style="margin:8px 0 0">${L("Prawa kolumna: najbardziej prawdopodobny wynik 1/X/2 przed meczem (z kursów albo modelu) i jego szansa. ✓/✗ – czy się sprawdził.", "Right column: the most likely 1/X/2 result before the match (from odds or the model) and its chance. ✓/✗ – whether it came true.")}${!isCup(c) ? L(" Numery kolejek wyliczone z terminarza – przy przełożonych meczach mogą się różnić od oficjalnych.", " Matchday numbers are derived from the fixture order – postponed matches may differ from the official round.") : ""}</p>
+        ${tR.n || tS.n ? `<div class="tbl-wrap" style="margin-top:8px"><table class="hsum"><thead><tr><th class="t">${L("Trafione", "Correct")}</th><th>1X2</th><th>${L("Wynik", "Score")}</th><th>${L("Gole", "Goals")}</th><th>${L("Obie", "BTTS")}</th></tr></thead><tbody>
+          ${sumRow(tR, L("kolejka", "round"))}${sumRow(tS, L("sezon", "season"))}</tbody></table></div>` : ""}
+        ${g.ms.map(card).join("")}
+        <p class="small muted" style="margin:8px 0 0">${L("Prognoza = najbardziej prawdopodobna odpowiedź przed meczem, policzona tylko z danych sprzed meczu (z kursów bukmachera, a bez nich – z modelu), obok jej szansa. ✓ – sprawdziła się. Dla porównania: rzut monetą trafia gole i „obie strzelą” w ok. 50%, zwycięzcę w ok. 33%, a dokładny wynik prawie nigdy (dobre prognozy: ok. 10%).", "Forecast = the most likely answer before the match, using only pre-match data (bookmaker odds, or the model without them), with its chance. ✓ – it came true. For comparison: a coin toss gets goals and \"both score\" right about 50% of the time, the winner about 33%, and the exact score almost never (good forecasts: about 10%).")}${!isCup(c) ? L(" Numery kolejek wyliczone z terminarza – przy przełożonych meczach mogą się różnić od oficjalnych.", " Matchday numbers are derived from the fixture order – postponed matches may differ from the official round.") : ""}</p>
       </div>`;
   }
+
 
   function zoneOf(c, i, n) {
     const z = D.COMP[c].zones;
@@ -1237,16 +1257,19 @@
     const ck = m.id + (lazy && !S.bts[m.comp] ? "~" : "");
     if (S.pmCache.has(ck)) return S.pmCache.get(ck);
     const bt = (lazy ? S.bts[m.comp] : btFor(m.comp)) && S.btMap.get(m.id);
-    const model = bt ? { probs: bt.probs, top: bt.top } : null;
+    const mg = bt ? M.fromXg(bt.xg.home, bt.xg.away) : null;
+    const model = bt ? { probs: bt.probs, top: bt.top, over: mg.over25, btts: mg.btts } : null;
     let main = null;
     if (m.odds?.h) {
       const f = M.fromOdds(m.odds, { total: bt ? bt.xg.home + bt.xg.away : 2.7 });
-      if (f) main = { probs: [f.win, f.draw, f.loss], top: f.top[0], src: m.odds.book || L("kursy", "odds") };
+      if (f) main = { probs: [f.win, f.draw, f.loss], top: f.top[0], over: f.over25, btts: f.btts, src: m.odds.book || L("kursy", "odds") };
     }
     if (!main && model) main = { ...model, src: "model" };
     if (!main) { S.pmCache.set(ck, null); return null; }
     const res = m.hg > m.ag ? 0 : m.hg === m.ag ? 1 : 2, pick = r => r.probs.indexOf(Math.max(...r.probs));
-    const out = { main, model, res, hit: pick(main) === res, exact: main.top.hg === m.hg && main.top.ag === m.ag, mHit: model ? pick(model) === res : null };
+    const over = m.hg + m.ag > 2.5, both = m.hg > 0 && m.ag > 0;
+    const out = { main, model, res, hit: pick(main) === res, exact: main.top.hg === m.hg && main.top.ag === m.ag, mHit: model ? pick(model) === res : null,
+      over, both, ouHit: (main.over >= 0.5) === over, btHit: (main.btts >= 0.5) === both };
     S.pmCache.set(ck, out);
     return out;
   }
