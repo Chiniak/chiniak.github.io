@@ -1,3 +1,3 @@
 include: [".well-known"]
-# projekt Androida (źródło APK) i testy – nie publikujemy ich jako strony
-exclude: ["podroznik-android", "podroznik-app", "podroznik-testy"]
+# projekt Androida (źródło APK), testy i kod serwera antyplagiatu – nie publikujemy ich jako strony
+exclude: ["podroznik-android", "podroznik-app", "podroznik-testy", "antyplagiat/worker"]

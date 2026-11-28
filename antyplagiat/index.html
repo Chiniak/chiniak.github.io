@@ -1,0 +1,602 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Sprawdzarka Plagiatu</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Literata:opsz,wght@7..72,400;7..72,600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: biurko korektora — po lewej maszynopis i źródła, po prawej ten sam tekst pokreślony zakreślaczami */
+:root {
+  color-scheme: light;
+  --bg: #f3f4f7;
+  --paper: #ffffff;
+  --ink: #1b2233;
+  --muted: #5d6578;
+  --line: #d9dce5;
+  --accent: #2443b8;
+  --accent-soft: #e6eafb;
+  --ok: #1d7a4a; --warn: #a86200; --bad: #b3261e;
+  --m1: #ffe066; --m2: #9be3c0; --m3: #ffb3c7; --m4: #a9cbff; --m5: #ffc58a; --m6: #d3b8ff; --m7: #c6e86f; --m8: #8fe3ea;
+  --mark-ink: #1b2233;
+  --f-display: "Instrument Sans", system-ui, sans-serif;
+  --f-text: "Literata", Georgia, serif;
+  --f-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121620; --paper: #1a1f2c; --ink: #e5e8f0; --muted: #9aa2b5; --line: #2d3444;
+  --accent: #8ea6ff; --accent-soft: #232c48;
+  --ok: #5fd39a; --warn: #f0b35a; --bad: #ff8a80;
+  --m1: #7a6610; --m2: #1f6b4b; --m3: #7d2f45; --m4: #284f87; --m5: #7f4a16; --m6: #553b85; --m7: #4d6614; --m8: #1c6670;
+  --mark-ink: #f4f6fb; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #121620; --paper: #1a1f2c; --ink: #e5e8f0; --muted: #9aa2b5; --line: #2d3444;
+  --accent: #8ea6ff; --accent-soft: #232c48;
+  --ok: #5fd39a; --warn: #f0b35a; --bad: #ff8a80;
+  --m1: #7a6610; --m2: #1f6b4b; --m3: #7d2f45; --m4: #284f87; --m5: #7f4a16; --m6: #553b85; --m7: #4d6614; --m8: #1c6670;
+  --mark-ink: #f4f6fb; color-scheme: dark }
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-display); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 48px; }
+[hidden] { display: none !important; }
+a { color: var(--accent); }
+.wrap { max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+header { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 24px; }
+h1 { font-size: 1.9rem; font-weight: 700; letter-spacing: -0.02em; margin: 0; text-wrap: balance; }
+.lede { margin: 4px 0 0; color: var(--muted); max-width: 62ch; }
+.grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 24px; align-items: start; }
+@media (max-width: 900px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+.col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.panel { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.panel.web { border-color: var(--accent); }
+.label { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; justify-content: space-between; }
+.row.start { justify-content: flex-start; }
+textarea { width: 100%; min-height: 150px; resize: vertical; font-family: var(--f-text); font-size: 0.95rem; line-height: 1.6;
+  color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+#target { min-height: 220px; }
+input[type="text"], input[type="url"] { font: inherit; color: var(--ink); background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 3px 6px; min-width: 0; flex: 1; }
+.src-head input[type="text"] { font-weight: 600; }
+.src-head input[type="text"]:hover { border-color: var(--line); }
+input.field { background: var(--bg); border-color: var(--line); padding: 6px 8px; font-family: var(--f-mono); font-size: 0.82rem; width: 100%; }
+textarea:focus-visible, input:focus-visible, button:focus-visible, select:focus-visible, a:focus-visible, label.btn:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn { font: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer; border-radius: 7px; padding: 6px 12px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+.btn:disabled { opacity: .55; cursor: not-allowed; }
+.btn.primary { background: var(--accent); color: var(--paper); border-color: var(--accent); }
+.btn.primary:hover:not(:disabled) { filter: brightness(1.1); color: var(--paper); }
+.btn.big { padding: 10px 18px; font-size: 0.95rem; }
+.btn.ghost { border-color: transparent; color: var(--muted); }
+.btn input[type="file"] { display: none; }
+.swatch { width: 14px; height: 14px; border-radius: 3px; flex: none; }
+.src-head { display: flex; align-items: center; gap: 8px; }
+.src-url { font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.src-meta { font-family: var(--f-mono); font-size: 0.78rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.settings { display: flex; flex-wrap: wrap; gap: 10px 20px; align-items: center; font-size: 0.88rem; }
+.settings label { display: inline-flex; align-items: center; gap: 6px; }
+.settings .wide { flex-basis: 100%; display: flex; flex-direction: column; align-items: stretch; gap: 4px; }
+select { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 3px 6px; }
+.badge { font-size: 0.7rem; font-weight: 600; letter-spacing: .04em; color: var(--accent); background: var(--accent-soft); padding: 2px 7px; border-radius: 999px; white-space: nowrap; }
+
+/* Wynik */
+.score { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 20px; align-items: center; }
+.bignum { font-family: var(--f-mono); font-size: 3.2rem; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
+.verdict { display: inline-block; font-weight: 600; font-size: 0.8rem; padding: 3px 10px; border-radius: 999px; border: 1px solid currentColor; }
+.v-ok { color: var(--ok); } .v-warn { color: var(--warn); } .v-bad { color: var(--bad); }
+.bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: var(--bg); border: 1px solid var(--line); }
+.bar span { display: block; height: 100%; }
+.per { display: flex; flex-direction: column; gap: 6px; font-size: 0.88rem; }
+.per div { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.per .pct { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.ellip { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.marked { font-family: var(--f-text); font-size: 1rem; line-height: 1.85; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 520px; overflow-y: auto; padding-right: 4px; }
+.marked mark { color: var(--mark-ink); border-radius: 3px; padding: 1px 0; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.empty { color: var(--muted); font-style: italic; }
+.frags { display: flex; flex-direction: column; gap: 10px; }
+.frag { border-left: 4px solid var(--line); padding: 4px 0 4px 12px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.frag q { font-family: var(--f-text); font-size: 0.92rem; quotes: "„" "”"; }
+.frag small { color: var(--muted); font-family: var(--f-mono); font-size: 0.75rem; overflow-wrap: anywhere; }
+.note { font-size: 0.82rem; color: var(--muted); max-width: 70ch; margin: 0; }
+.pill { font-size: 0.72rem; font-weight: 600; color: var(--accent); background: var(--accent-soft); padding: 2px 8px; border-radius: 999px; }
+
+/* Wyszukiwanie */
+.progress { height: 6px; border-radius: 3px; background: var(--bg); border: 1px solid var(--line); overflow: hidden; }
+.progress span { display: block; height: 100%; width: 0; background: var(--accent); }
+.status { font-size: 0.88rem; }
+.status.err { color: var(--bad); }
+.phrases { display: flex; flex-direction: column; gap: 8px; list-style: none; padding: 0; margin: 0; }
+.phrases li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; align-items: center; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
+.phrases q { font-family: var(--f-text); font-size: 0.9rem; quotes: "„" "”"; overflow-wrap: anywhere; }
+.phrases .st { grid-column: 1; font-family: var(--f-mono); font-size: 0.72rem; color: var(--muted); }
+.phrases .st.hit { color: var(--bad); }
+.phrases .st.none { color: var(--ok); }
+.phrases a { grid-row: 1 / span 2; grid-column: 2; font-size: 0.8rem; white-space: nowrap; }
+@media (prefers-reduced-motion: no-preference) { .bar span, .progress span { transition: width .3s ease; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Sprawdzarka Plagiatu</h1>
+      <p class="lede">Wklej tekst i kliknij „Szukaj w internecie”. Strona wyszuka charakterystyczne zdania w sieci, pobierze znalezione strony i zaznaczy fragmenty, które się z nimi pokrywają. Możesz też dodać własne źródła ręcznie.</p>
+    </div>
+    <div class="row start">
+      <button class="btn" id="loadSample" type="button">Wczytaj przykład</button>
+      <button class="btn ghost" id="clearAll" type="button">Wyczyść wszystko</button>
+    </div>
+  </header>
+
+  <div class="grid">
+    <div class="col">
+      <section class="panel">
+        <div class="row">
+          <span class="label">Tekst do sprawdzenia</span>
+          <span><span class="pill" id="sampleTag">przykład</span> <span class="src-meta" id="targetMeta"></span></span>
+        </div>
+        <textarea id="target" spellcheck="false" placeholder="Wklej tutaj wypracowanie, artykuł lub inny tekst…"></textarea>
+        <div class="row">
+          <label class="btn">Wczytaj plik .txt<input type="file" id="targetFile" accept=".txt,.md,text/plain"></label>
+          <button class="btn primary big" id="webBtn" type="button">Szukaj w internecie</button>
+        </div>
+      </section>
+
+      <section class="panel web" id="webPanel" hidden>
+        <div class="row">
+          <span class="label">Wyszukiwanie w internecie</span>
+          <button class="btn ghost" id="webStop" type="button">Zatrzymaj</button>
+        </div>
+        <div class="progress"><span id="webBar"></span></div>
+        <p class="status" id="webStatus"></p>
+      </section>
+
+      <section class="panel" id="phrasePanel" hidden>
+        <span class="label">Sprawdzone zdania · ręcznie w Google</span>
+        <p class="note">Brave ma mniejszy indeks niż Google. Kliknij „Google”, żeby sprawdzić to samo zdanie ręcznie. Jeśli znajdziesz kopię, wklej jej tekst jako źródło.</p>
+        <ul class="phrases" id="phrases"></ul>
+      </section>
+
+      <div class="row">
+        <span class="label">Źródła do porównania</span>
+        <button class="btn" id="addSrc" type="button">+ Dodaj źródło ręcznie</button>
+      </div>
+      <div class="col" id="sources"></div>
+
+      <section class="panel">
+        <span class="label">Ustawienia</span>
+        <div class="settings">
+          <label for="ngram">Długość wspólnego ciągu
+            <select id="ngram">
+              <option value="3">3 słowa (czuło)</option>
+              <option value="4">4 słowa</option>
+              <option value="5" selected>5 słów</option>
+              <option value="6">6 słów</option>
+              <option value="8">8 słów (ostrożnie)</option>
+            </select>
+          </label>
+          <label for="queries">Zdań do wyszukania
+            <select id="queries">
+              <option value="6">6 (szybko)</option>
+              <option value="10" selected>10</option>
+              <option value="15">15</option>
+              <option value="25">25 (dokładnie)</option>
+            </select>
+          </label>
+          <label for="diacr"><input type="checkbox" id="diacr" checked> Ignoruj polskie znaki (ą = a, ł = l…)</label>
+          <div class="wide">
+            <label for="workerUrl">Adres serwera wyszukiwania (Cloudflare Worker)</label>
+            <input class="field" type="url" id="workerUrl" placeholder="https://antyplagiat.twoja-nazwa.workers.dev" spellcheck="false">
+          </div>
+        </div>
+        <p class="note">Każde zdanie to jedno zapytanie do Brave Search, z Twojego darmowego limitu. Krótszy wspólny ciąg wyłapie więcej przeróbek, ale też więcej przypadkowych zbieżności.</p>
+      </section>
+    </div>
+
+    <div class="col">
+      <section class="panel" aria-live="polite">
+        <span class="label">Wynik</span>
+        <div class="score">
+          <div class="bignum" id="total">0%</div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <span><span class="verdict v-ok" id="verdict">Brak tekstu</span></span>
+            <span class="note" id="summary">Tekst pokrywający się ze źródłami.</span>
+          </div>
+        </div>
+        <div class="bar" id="bar"></div>
+        <div class="per" id="per"></div>
+      </section>
+
+      <section class="panel">
+        <span class="label">Tekst z zaznaczeniami</span>
+        <div class="marked" id="marked"></div>
+      </section>
+
+      <section class="panel">
+        <span class="label">Najdłuższe wspólne fragmenty</span>
+        <div class="frags" id="frags"></div>
+      </section>
+
+      <p class="note">Tekst do sprawdzenia nie jest nigdzie zapisywany. Do wyszukiwarki trafiają tylko wybrane zdania, a porównanie odbywa się w Twojej przeglądarce. Wynik to wskazówka, a nie wyrok: cytaty z przypisami i utarte zwroty też zostaną zaznaczone.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const COLORS = ['--m1','--m2','--m3','--m4','--m5','--m6','--m7','--m8'];
+  const MAX_WEB = 6;            // ile znalezionych stron dodać jako źródła
+  const MAX_CANDIDATES = 10;    // ile stron pobrać do porównania
+  const QUERY_DELAY = 1100;     // darmowy plan Brave: 1 zapytanie na sekundę
+  const DEFAULT_WORKER = '';    // możesz tu wpisać adres swojego Workera na stałe
+  const $ = id => document.getElementById(id);
+  const target = $('target'), sourcesEl = $('sources');
+  let sources = [];
+  let nextId = 1;
+  let isSample = false;
+  let abort = null;
+
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+  };
+  $('workerUrl').value = store.get('antyplagiat.worker') || DEFAULT_WORKER;
+  $('workerUrl').addEventListener('change', () => store.set('antyplagiat.worker', $('workerUrl').value.trim()));
+
+  const SAMPLE = {
+    target: "Wypracowanie: Znaczenie fotosyntezy\n\nFotosynteza to proces, w którym rośliny zielone, glony i niektóre bakterie przekształcają energię światła słonecznego w energię chemiczną. Bez niego życie na Ziemi wyglądałoby zupełnie inaczej, bo prawie wszystkie łańcuchy pokarmowe zaczynają się od roślin.\n\nProces fotosyntezy dzieli się na dwie fazy: fazę jasną, zależną od światła, oraz fazę ciemną. Moim zdaniem najważniejsze jest to, że w wyniku fotosyntezy z dwutlenku wegla i wody powstaje glukoza, a jako produkt uboczny uwalniany jest tlen, którym oddychamy.\n\nW szkole robiliśmy doświadczenie z moczarką kanadyjską i pod lampą wydzielało się z niej dużo pęcherzyków gazu.",
+    sources: [
+      { name: "Podręcznik biologii, rozdz. 4", text: "Fotosynteza to proces, w którym rośliny zielone, glony i niektóre bakterie przekształcają energię światła słonecznego w energię chemiczną. Zachodzi ona głównie w chloroplastach, które zawierają zielony barwnik zwany chlorofilem. W wyniku fotosyntezy z dwutlenku węgla i wody powstaje glukoza, a jako produkt uboczny uwalniany jest tlen." },
+      { name: "Artykuł z portalu edukacyjnego", text: "Proces fotosyntezy dzieli się na dwie fazy: fazę jasną, zależną od światła, oraz fazę ciemną, nazywaną cyklem Calvina. W fazie jasnej energia światła jest wykorzystywana do produkcji ATP i NADPH, które następnie napędzają wiązanie dwutlenku węgla w fazie ciemnej." }
+    ]
+  };
+
+  // ---------- Porównywanie tekstów ----------
+  function norm(w, strip) {
+    w = w.toLowerCase();
+    if (strip) w = w.replace(/ł/g, 'l').normalize('NFD').replace(/\p{M}/gu, '');
+    return w;
+  }
+  function tokenize(text, strip) {
+    const out = [];
+    for (const m of text.matchAll(/[\p{L}\p{N}]+/gu)) out.push({ w: norm(m[0], strip), s: m.index, e: m.index + m[0].length });
+    return out;
+  }
+  function ngramSet(toks, n) {
+    const set = new Set();
+    for (let i = 0; i + n <= toks.length; i++) set.add(toks.slice(i, i + n).map(t => t.w).join(' '));
+    return set;
+  }
+  function hitMask(toks, set, n) {
+    const hit = new Uint8Array(toks.length);
+    for (let i = 0; i + n <= toks.length; i++) {
+      if (set.has(toks.slice(i, i + n).map(t => t.w).join(' '))) for (let k = i; k < i + n; k++) hit[k] = 1;
+    }
+    return hit;
+  }
+
+  // ---------- Źródła ----------
+  function freeColor() {
+    const used = new Set(sources.map(s => s.color));
+    return COLORS.find(c => !used.has(c));
+  }
+  function addSource(name = '', text = '', extra = {}) {
+    const color = freeColor();
+    if (!color) return false;
+    sources.push({ id: nextId++, name: name || `Źródło ${sources.length + 1}`, text, color, ...extra });
+    return true;
+  }
+
+  function renderSources() {
+    sourcesEl.innerHTML = '';
+    if (!sources.length) {
+      const e = document.createElement('p');
+      e.className = 'note';
+      e.textContent = 'Brak źródeł. Kliknij „Szukaj w internecie” albo dodaj źródło ręcznie.';
+      sourcesEl.appendChild(e);
+    }
+    sources.forEach(src => {
+      const p = document.createElement('section');
+      p.className = 'panel';
+      p.innerHTML = `
+        <div class="src-head">
+          <span class="swatch" style="background:var(${src.color})"></span>
+          <input type="text" id="name-${src.id}" aria-label="Nazwa źródła">
+          ${src.web ? '<span class="badge">z internetu</span>' : ''}
+          <span class="src-meta" id="meta-${src.id}"></span>
+        </div>
+        ${src.url ? '<a class="src-url" target="_blank" rel="noopener noreferrer"></a>' : ''}
+        <textarea id="text-${src.id}" spellcheck="false" placeholder="Wklej tekst źródła: artykuł, fragment książki, inną pracę…"></textarea>
+        <div class="row start">
+          <label class="btn">Wczytaj plik .txt<input type="file" accept=".txt,.md,text/plain" id="file-${src.id}"></label>
+          <button class="btn ghost" type="button" id="del-${src.id}">Usuń źródło</button>
+        </div>`;
+      sourcesEl.appendChild(p);
+      const nameIn = p.querySelector('input[type=text]'), ta = p.querySelector('textarea');
+      nameIn.value = src.name; ta.value = src.text;
+      if (src.web) ta.style.minHeight = '90px';
+      const a = p.querySelector('.src-url');
+      if (a && /^https?:\/\//i.test(src.url)) { a.href = src.url; a.textContent = src.url; }
+      nameIn.addEventListener('input', () => { src.name = nameIn.value; schedule(); });
+      ta.addEventListener('input', () => { src.text = ta.value; markEdited(); schedule(); });
+      p.querySelector('input[type=file]').addEventListener('change', e => readFile(e.target, t => { src.text = t; ta.value = t; markEdited(); run(); }));
+      p.querySelector(`#del-${src.id}`).addEventListener('click', () => { sources = sources.filter(s => s !== src); renderSources(); run(); });
+    });
+    const full = sources.length >= COLORS.length;
+    $('addSrc').disabled = full;
+    $('addSrc').textContent = full ? `Maks. ${COLORS.length} źródeł` : '+ Dodaj źródło ręcznie';
+  }
+
+  function readFile(input, cb) {
+    const f = input.files && input.files[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = () => cb(String(r.result));
+    r.readAsText(f, 'utf-8');
+    input.value = '';
+  }
+
+  function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+  // ---------- Główne liczenie ----------
+  function run() {
+    const n = +$('ngram').value, strip = $('diacr').checked;
+    const text = target.value;
+    const toks = tokenize(text, strip);
+    $('targetMeta').textContent = `${toks.length} słów`;
+    const owner = new Array(toks.length).fill(-1);
+    const perCount = sources.map(() => 0);
+
+    sources.forEach((src, si) => {
+      const st = tokenize(src.text, strip);
+      const meta = document.getElementById(`meta-${src.id}`);
+      if (meta) meta.textContent = `${st.length} słów`;
+      const hit = hitMask(toks, ngramSet(st, n), n);
+      for (let k = 0; k < toks.length; k++) if (hit[k]) { perCount[si]++; if (owner[k] === -1) owner[k] = si; }
+    });
+
+    const matched = owner.filter(o => o !== -1).length;
+    const pct = toks.length ? Math.round(matched / toks.length * 100) : 0;
+    $('total').textContent = pct + '%';
+    const v = $('verdict');
+    if (!toks.length) { v.textContent = 'Brak tekstu'; v.className = 'verdict v-ok'; }
+    else if (!sources.some(s => s.text.trim())) { v.textContent = 'Brak źródeł'; v.className = 'verdict v-warn'; }
+    else if (pct < 10) { v.textContent = 'Niskie podobieństwo'; v.className = 'verdict v-ok'; }
+    else if (pct < 25) { v.textContent = 'Umiarkowane podobieństwo'; v.className = 'verdict v-warn'; }
+    else { v.textContent = 'Wysokie podobieństwo'; v.className = 'verdict v-bad'; }
+    $('summary').textContent = toks.length ? `${matched} z ${toks.length} słów występuje w ciągach co najmniej ${n} słów identycznych ze źródłami.` : 'Wklej tekst po lewej stronie.';
+
+    const firstOwn = sources.map((_, si) => owner.filter(o => o === si).length);
+    $('bar').innerHTML = toks.length ? sources.map((s, si) => `<span style="width:${firstOwn[si] / toks.length * 100}%;background:var(${s.color})"></span>`).join('') : '';
+    $('per').innerHTML = sources.map((s, si) => {
+      const p = toks.length ? Math.round(perCount[si] / toks.length * 100) : 0;
+      return `<div><span class="swatch" style="background:var(${s.color})"></span><span class="ellip">${esc(s.name || 'Bez nazwy')}</span><span class="pct">${p}%</span></div>`;
+    }).join('');
+
+    let html = '', pos = 0, i = 0;
+    const frags = [];
+    while (i < toks.length) {
+      const o = owner[i];
+      let j = i;
+      while (j + 1 < toks.length && owner[j + 1] === o) j++;
+      const s = toks[i].s, e = toks[j].e;
+      html += esc(text.slice(pos, s));
+      const chunk = esc(text.slice(s, e));
+      if (o === -1) html += chunk;
+      else {
+        html += `<mark style="background:var(${sources[o].color})" title="${esc(sources[o].name)}">${chunk}</mark>`;
+        frags.push({ o, words: j - i + 1, text: text.slice(s, e) });
+      }
+      pos = e; i = j + 1;
+    }
+    $('marked').innerHTML = text.trim() ? html + esc(text.slice(pos)) : '<span class="empty">Tu pojawi się sprawdzany tekst z kolorowymi zaznaczeniami.</span>';
+
+    frags.sort((a, b) => b.words - a.words);
+    $('frags').innerHTML = frags.length ? frags.slice(0, 12).map(f =>
+      `<div class="frag" style="border-left-color:var(${sources[f.o].color})"><q>${esc(f.text.replace(/\s+/g, ' '))}</q><small>${f.words} słów · ${esc(sources[f.o].name)}</small></div>`
+    ).join('') : '<span class="empty">Brak wspólnych fragmentów o tej długości.</span>';
+  }
+
+  // ---------- Wyszukiwanie w internecie ----------
+  // Wybiera z tekstu charakterystyczne frazy (8 kolejnych słów ze środka zdania).
+  function pickPhrases(text, k) {
+    const sentences = text.split(/(?<=[.!?…;:])\s+|\n+/).map(s => s.trim()).filter(Boolean);
+    const cands = [];
+    sentences.forEach((s, idx) => {
+      const words = s.match(/[\p{L}\p{N}]+(?:[-'’][\p{L}\p{N}]+)*/gu) || [];
+      if (words.length < 7) return;
+      const L = Math.min(8, words.length);
+      const start = Math.floor((words.length - L) / 2);
+      const w = words.slice(start, start + L);
+      const score = w.reduce((a, x) => a + Math.min(x.length, 12), 0) + (words.length >= 12 ? 5 : 0);
+      cands.push({ idx, phrase: w.join(' '), score });
+    });
+    const seen = new Set();
+    return cands
+      .filter(c => !seen.has(c.phrase.toLowerCase()) && seen.add(c.phrase.toLowerCase()))
+      .sort((a, b) => b.score - a.score).slice(0, k)
+      .sort((a, b) => a.idx - b.idx).map(c => c.phrase);
+  }
+
+  const sleep = (ms, signal) => new Promise((res, rej) => {
+    const t = setTimeout(res, ms);
+    signal.addEventListener('abort', () => { clearTimeout(t); rej(new DOMException('stop', 'AbortError')); }, { once: true });
+  });
+
+  async function api(base, path, params, signal) {
+    const u = new URL(path, base.replace(/\/+$/, '') + '/');
+    Object.entries(params).forEach(([k, v]) => u.searchParams.set(k, v));
+    let r;
+    try { r = await fetch(u, { signal }); }
+    catch (e) {
+      if (e.name === 'AbortError') throw e;
+      throw new Error('Nie można połączyć się z serwerem wyszukiwania. Sprawdź adres w ustawieniach.');
+    }
+    let data = {};
+    try { data = await r.json(); } catch {}
+    if (!r.ok) { const err = new Error(data.error || `Błąd serwera (${r.status}).`); err.status = r.status; throw err; }
+    return data;
+  }
+
+  function plural(n, one, few, many) {
+    if (n === 1) return one;
+    const d = n % 10, dd = n % 100;
+    return d >= 2 && d <= 4 && !(dd >= 12 && dd <= 14) ? few : many;
+  }
+
+  function setStatus(msg, pct, isErr = false) {
+    $('webStatus').textContent = msg;
+    $('webStatus').className = 'status' + (isErr ? ' err' : '');
+    if (pct != null) $('webBar').style.width = pct + '%';
+  }
+
+  function renderPhrases(list) {
+    $('phrasePanel').hidden = !list.length;
+    $('phrases').innerHTML = '';
+    list.forEach(p => {
+      const li = document.createElement('li');
+      const q = document.createElement('q'); q.textContent = p.phrase;
+      const st = document.createElement('span');
+      st.className = 'st' + (p.state === 'hit' ? ' hit' : p.state === 'none' ? ' none' : '');
+      st.textContent = { wait: 'czeka…', run: 'szukam…', hit: `Brave: ${p.count} ${plural(p.count, 'wynik', 'wyniki', 'wyników')}`, none: 'Brave: nic nie znalazł', err: 'błąd wyszukiwania' }[p.state];
+      const a = document.createElement('a');
+      a.className = 'btn'; a.target = '_blank'; a.rel = 'noopener noreferrer';
+      a.href = 'https://www.google.com/search?q=' + encodeURIComponent(`"${p.phrase}"`);
+      a.textContent = 'Google ↗';
+      li.append(q, st, a);
+      $('phrases').appendChild(li);
+    });
+  }
+
+  async function searchWeb() {
+    const base = $('workerUrl').value.trim();
+    const text = target.value;
+    const phrases = pickPhrases(text, +$('queries').value);
+    $('webPanel').hidden = false;
+    renderPhrases(phrases.map(phrase => ({ phrase, state: 'wait' })));
+    if (!phrases.length) { setStatus('Tekst jest za krótki. Potrzebne są zdania mające co najmniej 7 słów.', 0, true); return; }
+    if (!/^https:\/\//i.test(base)) {
+      setStatus('Wpisz w ustawieniach adres swojego serwera (Cloudflare Worker). Do tego czasu możesz sprawdzać zdania ręcznie przyciskami Google.', 0, true);
+      $('workerUrl').focus();
+      return;
+    }
+
+    abort = new AbortController();
+    const { signal } = abort;
+    $('webBtn').disabled = true; $('webStop').hidden = false;
+    const state = phrases.map(phrase => ({ phrase, state: 'wait', count: 0 }));
+    const found = new Map(); // url -> {url,title,snippet,hits}
+
+    try {
+      for (let i = 0; i < state.length; i++) {
+        state[i].state = 'run'; renderPhrases(state);
+        setStatus(`Szukam zdania ${i + 1} z ${state.length}…`, (i / state.length) * 60);
+        try {
+          const { results } = await api(base, 'search', { q: `"${state[i].phrase}"` }, signal);
+          state[i].count = results.length;
+          state[i].state = results.length ? 'hit' : 'none';
+          results.forEach((r, rank) => {
+            if (!/^https?:\/\//i.test(r.url)) return;
+            const f = found.get(r.url) || { url: r.url, title: r.title, snippet: '', hits: 0, best: 99 };
+            f.hits++; f.best = Math.min(f.best, rank);
+            if (r.snippet && !f.snippet.includes(r.snippet)) f.snippet += ' ' + r.snippet;
+            found.set(r.url, f);
+          });
+        } catch (e) {
+          if (e.name === 'AbortError') throw e;
+          state[i].state = 'err';
+          if (e.status === 403 || e.status === 500 || /połączyć/.test(e.message)) { renderPhrases(state); throw e; }
+          if (e.status === 429) await sleep(3000, signal);
+        }
+        renderPhrases(state);
+        if (i < state.length - 1) await sleep(QUERY_DELAY, signal);
+      }
+
+      const candidates = [...found.values()].sort((a, b) => b.hits - a.hits || a.best - b.best).slice(0, MAX_CANDIDATES);
+      if (!candidates.length) {
+        sources = sources.filter(s => !s.web); renderSources(); run();
+        setStatus('Brave nie znalazł żadnej z fraz w internecie. Dla pewności sprawdź kilka zdań w Google poniżej.', 100);
+        return;
+      }
+
+      // Pobierz strony i policz, jak bardzo każda pokrywa się z tekstem.
+      const n = +$('ngram').value, strip = $('diacr').checked;
+      const toks = tokenize(text, strip);
+      let done = 0;
+      const scored = [];
+      const queue = candidates.slice();
+      async function worker() {
+        while (queue.length) {
+          const c = queue.shift();
+          let body = '', title = c.title, full = false;
+          try {
+            const page = await api(base, 'fetch', { url: c.url }, signal);
+            body = page.text || ''; title = page.title || title; full = true;
+          } catch (e) { if (e.name === 'AbortError') throw e; }
+          if (!body.trim()) body = c.snippet.trim(); // strona zablokowana: użyj opisu z wyszukiwarki
+          const hit = hitMask(toks, ngramSet(tokenize(body, strip), n), n);
+          const score = hit.reduce((a, b) => a + b, 0);
+          scored.push({ ...c, title, body, full, score });
+          done++;
+          setStatus(`Porównuję znalezione strony: ${done} z ${candidates.length}…`, 60 + done / candidates.length * 40);
+        }
+      }
+      await Promise.all([worker(), worker(), worker()]);
+
+      sources = sources.filter(s => !s.web);
+      const best = scored.filter(s => s.score > 0).sort((a, b) => b.score - a.score);
+      let added = 0;
+      for (const s of best) {
+        if (added >= MAX_WEB) break;
+        let host = s.url; try { host = new URL(s.url).hostname.replace(/^www\./, ''); } catch {}
+        const name = (s.title ? `${s.title} · ${host}` : host) + (s.full ? '' : ' (tylko opis)');
+        if (!addSource(name, s.body, { web: true, url: s.url })) break;
+        added++;
+      }
+      renderSources(); run();
+      setStatus(added
+        ? `Gotowe. Dodano ${added} ${plural(added, 'stronę', 'strony', 'stron')} z internetu jako źródła (sprawdzono ${candidates.length}).`
+        : `Znaleziono ${candidates.length} stron, ale żadna nie ma wspólnych ciągów ${n} słów z tekstem.`, 100);
+    } catch (e) {
+      if (e.name === 'AbortError') setStatus('Zatrzymano wyszukiwanie.', null);
+      else setStatus(e.message, null, true);
+    } finally {
+      $('webBtn').disabled = false; $('webStop').hidden = true; abort = null;
+    }
+  }
+
+  // ---------- Zdarzenia ----------
+  let timer;
+  function schedule() { clearTimeout(timer); timer = setTimeout(run, 150); }
+  function markEdited() { if (isSample) { isSample = false; $('sampleTag').hidden = true; } }
+
+  function loadSample() {
+    sources = []; nextId = 1;
+    target.value = SAMPLE.target;
+    SAMPLE.sources.forEach(s => addSource(s.name, s.text));
+    isSample = true; $('sampleTag').hidden = false;
+    $('webPanel').hidden = true; $('phrasePanel').hidden = true;
+    renderSources(); run();
+  }
+
+  target.addEventListener('input', () => { markEdited(); schedule(); });
+  $('targetFile').addEventListener('change', e => readFile(e.target, t => { target.value = t; markEdited(); run(); }));
+  $('addSrc').addEventListener('click', () => { addSource(); renderSources(); run(); });
+  $('ngram').addEventListener('change', run);
+  $('diacr').addEventListener('change', run);
+  $('loadSample').addEventListener('click', loadSample);
+  $('webBtn').addEventListener('click', searchWeb);
+  $('webStop').addEventListener('click', () => abort && abort.abort());
+  $('clearAll').addEventListener('click', () => {
+    target.value = ''; sources = []; nextId = 1; markEdited();
+    $('webPanel').hidden = true; $('phrasePanel').hidden = true;
+    renderSources(); run();
+  });
+
+  loadSample();
+})();
+</script>
+</body>
+</html>
